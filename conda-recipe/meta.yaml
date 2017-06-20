@@ -12,16 +12,13 @@ requirements:
     - python
     - numpy
     - vtk
-    
+    - setuptools
+ 
   run:
     - python
     - numpy
-    - mkl
-    - libxml2
-    - libtiff
-    - libpng
-    - libiconv
-    - jpeg
+    - vtk
+
 
 	
 about:
