@@ -1,1 +1,1 @@
-from ccpi.CILViewer import CILViewer
+from ccpi.viewer.CILViewer import CILViewer
