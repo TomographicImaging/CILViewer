@@ -1,9 +1,8 @@
-mkdir "$SRC_DIR/ccpi"
-cp -r "$RECIPE_DIR/../.." "$SRC_DIR/ccpi"
+mkdir "$SRC_DIR/ccpiviewer"
+cp -r "$RECIPE_DIR/.." "$SRC_DIR/ccpiviewer"
 
-cd $SRC_DIR/ccpi/Python
+cd $SRC_DIR/ccpiviewer
 
-$PYTHON setup.py build_ext
 $PYTHON setup.py install
 
 
