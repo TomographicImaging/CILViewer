@@ -5,13 +5,13 @@ Created on Wed Jun  7 09:57:13 2017
 @author: ofn77899
 """
 
-from setuptools import setup, find_packages
+from distutils.core import setup
+#from setuptools import setup, find_packages
+
 setup(
-    name="CIL Viewer",
-    version="0.1",
+    name="ccpi-viewer",
+    version="0.9",
     packages=['ccpi','ccpi.viewer'],
-    scripts=['ccpi/viewer/CILViewer.py'],
-	package_dir={'':'.'},
 	install_requires=['numpy','vtk'],
 
     # Project uses reStructuredText, so ensure that the docutils get
