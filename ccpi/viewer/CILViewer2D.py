@@ -51,14 +51,14 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
     def __init__(self, callback):
         vtk.vtkInteractorStyleTrackballCamera.__init__(self)
         self.callback = callback
-#        self.RemoveObservers("MouseWheelForwardEvent")
-#        self.RemoveObservers("MouseWheelBackwardEvent")
-#        self.RemoveObservers("KeyPressEvent")
-#        self.RemoveObservers("LeftButtonPressEvent")
-#        self.RemoveObservers("RightButtonPressEvent")
-#        self.RemoveObservers("LeftButtonReleaseEvent")
-#        self.RemoveObservers("RightButtonReleaseEvent")
-#        self.RemoveObservers("MouseMoveEvent")
+        self.RemoveObservers("MouseWheelForwardEvent")
+        self.RemoveObservers("MouseWheelBackwardEvent")
+        self.RemoveObservers("KeyPressEvent")
+        self.RemoveObservers("LeftButtonPressEvent")
+        self.RemoveObservers("RightButtonPressEvent")
+        self.RemoveObservers("LeftButtonReleaseEvent")
+        self.RemoveObservers("RightButtonReleaseEvent")
+        self.RemoveObservers("MouseMoveEvent")
         
         priority = 1.0
         
@@ -323,16 +323,25 @@ class CILViewer2D():
     ############### Handle events
     def OnMouseWheelForward(self, interactor, event):
         maxSlice = self.img3D.GetDimensions()[self.sliceOrientation]
-        if (self.sliceno + 1 < maxSlice):
-            self.sliceno = self.sliceno + 1
+        shift = interactor.GetShiftKey()
+        advance = 1
+        if shift:
+            advance = 10
+            
+        if (self.sliceno + 10 < maxSlice):
+            self.sliceno = self.sliceno + advance
             self.updatePipeline()
         else:
             print ("maxSlice %d request %d" % (maxSlice, self.sliceno + 1 ))
     
     def OnMouseWheelBackward(self, interactor, event):
         minSlice = 0
-        if (self.sliceno - 1 >= minSlice):
-            self.sliceno = self.sliceno - 1
+        shift = interactor.GetShiftKey()
+        advance = 1
+        if shift:
+            advance = 10
+        if (self.sliceno - advance >= minSlice):
+            self.sliceno = self.sliceno - advance
             self.updatePipeline()
         else:
             print ("minSlice %d request %d" % (minSlice, self.sliceno + 1 ))
