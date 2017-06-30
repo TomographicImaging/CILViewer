@@ -51,14 +51,14 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
     def __init__(self, callback):
         vtk.vtkInteractorStyleTrackballCamera.__init__(self)
         self.callback = callback
-        self.RemoveObservers("MouseWheelForwardEvent")
-        self.RemoveObservers("MouseWheelBackwardEvent")
-        self.RemoveObservers("KeyPressEvent")
-        self.RemoveObservers("LeftButtonPressEvent")
-        self.RemoveObservers("RightButtonPressEvent")
-        self.RemoveObservers("LeftButtonReleaseEvent")
-        self.RemoveObservers("RightButtonReleaseEvent")
-        self.RemoveObservers("MouseMoveEvent")
+#        self.RemoveObservers("MouseWheelForwardEvent")
+#        self.RemoveObservers("MouseWheelBackwardEvent")
+#        self.RemoveObservers("KeyPressEvent")
+#        self.RemoveObservers("LeftButtonPressEvent")
+#        self.RemoveObservers("RightButtonPressEvent")
+#        self.RemoveObservers("LeftButtonReleaseEvent")
+#        self.RemoveObservers("RightButtonReleaseEvent")
+#        self.RemoveObservers("MouseMoveEvent")
         
         priority = 1.0
         
@@ -104,10 +104,14 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
     def GetDeltaEventPosition(self):
         x,y = self.GetInteractor().GetEventPosition()
         return (x - self.InitialEventPosition[0] , y - self.InitialEventPosition[1])
+    
+    def Dolly(self, factor):
+        self.callback.ren.GetActiveCamera().Dolly(factor)
+        self.callback.ren.ResetCameraClippingRange()
         
 
 class CILViewer2D():
-    '''Simple 3D Viewer based on VTK classes'''
+    '''Simple Interactive Viewer based on VTK classes'''
     
     def __init__(self, dimx=600,dimy=600):
         '''creates the rendering pipeline'''
@@ -124,6 +128,8 @@ class CILViewer2D():
         self.iren.SetRenderWindow(self.renWin)
         self.iren.Initialize()
         self.ren.SetBackground(.1, .2, .4)
+        
+        self.ren.GetActiveCamera().ParallelProjectionOn()
         
         # data
         self.img3D = None
@@ -147,13 +153,42 @@ class CILViewer2D():
         self.ROIWidget.GetBorderRepresentation().GetBorderProperty().SetColor(0,1,0)
         self.ROIWidget.AddObserver(vtk.vtkWidgetEvent.Select, self.OnROIModifiedEvent, 1.0)
         
+        # edge points of the ROI
         self.ROI = ()
         
+        #picker
         self.picker = vtk.vtkPropPicker()
         self.picker.PickFromListOn()
         self.picker.AddPickList(self.sliceActor)
 
         self.iren.SetPicker(self.picker)
+        
+        # corner annotation
+        self.cornerAnnotation = vtk.vtkCornerAnnotation()
+        self.cornerAnnotation.SetMaximumFontSize(12);
+        self.cornerAnnotation.PickableOff();
+        self.cornerAnnotation.VisibilityOff();
+        self.cornerAnnotation.GetTextProperty().ShadowOn();
+        self.cornerAnnotation.SetLayerNumber(1);
+        
+        self.ren.AddViewProp(self.cornerAnnotation)
+        
+        
+        # cursor doesn't show up
+        self.cursor = vtk.vtkCursor2D()
+        self.cursorMapper = vtk.vtkPolyDataMapper2D()
+        self.cursorActor = vtk.vtkActor2D()
+        self.cursor.SetModelBounds(-10, 10, -10, 10, 0, 0)
+        self.cursor.SetFocalPoint(0, 0, 0)
+        self.cursor.AllOff()
+        self.cursor.AxesOn()
+        self.cursorActor.PickableOff()
+        self.cursorActor.VisibilityOn()
+        self.cursorActor.GetProperty().SetColor(1, 1, 1)
+        self.cursorActor.SetLayerNumber(1)
+        self.cursorMapper.SetInputData(self.cursor.GetOutput())
+        self.cursorActor.SetMapper(self.cursorMapper)
+        
         
         
         
@@ -226,6 +261,8 @@ class CILViewer2D():
                    extent[2], extent[3],
                    extent[4], extent[5])
         self.sliceActor.Update()
+        
+        self.updateCornerAnnotation("Slice %d/%d" % (self.sliceno + 1 , self.img3D.GetDimensions()[self.sliceOrientation]))
         self.AdjustCamera()
         
         self.renWin.Render()
@@ -269,6 +306,10 @@ class CILViewer2D():
         self.sliceActor.Update()
         self.ren.AddActor(self.sliceActor)
         self.AdjustCamera()
+        
+        self.ren.AddViewProp(self.cursorActor)
+        self.cursorActor.VisibilityOn()
+        
         self.iren.Initialize()
         self.renWin.Render()
         self.iren.Start()
@@ -290,7 +331,7 @@ class CILViewer2D():
     
     def OnMouseWheelBackward(self, interactor, event):
         minSlice = 0
-        if (self.sliceno - 1 > minSlice):
+        if (self.sliceno - 1 >= minSlice):
             self.sliceno = self.sliceno - 1
             self.updatePipeline()
         else:
@@ -299,22 +340,22 @@ class CILViewer2D():
     def OnKeyPress(self, interactor, event):
         #print ("Pressed key %s" % interactor.GetKeyCode())
         # Slice Orientation 
-        if interactor.GetKeyCode() == "x":
+        if interactor.GetKeyCode() == "X":
             # slice on the other orientation
             self.sliceOrientation = SLICE_ORIENTATION_YZ
             self.sliceno = int(self.img3D.GetDimensions()[1] / 2)
             self.updatePipeline()
-        elif interactor.GetKeyCode() == "y":
+        elif interactor.GetKeyCode() == "Y":
             # slice on the other orientation
             self.sliceOrientation = SLICE_ORIENTATION_XZ
             self.sliceno = int(self.img3D.GetDimensions()[1] / 2)
             self.updatePipeline()
-        elif interactor.GetKeyCode() == "z":
+        elif interactor.GetKeyCode() == "Z":
             # slice on the other orientation
             self.sliceOrientation = SLICE_ORIENTATION_XY
             self.sliceno = int(self.img3D.GetDimensions()[2] / 2)
             self.updatePipeline()
-        if interactor.GetKeyCode() == "X":
+        if interactor.GetKeyCode() == "x":
             # Change the camera view point
             camera = vtk.vtkCamera()
             camera.SetFocalPoint(self.ren.GetActiveCamera().GetFocalPoint())
@@ -326,9 +367,9 @@ class CILViewer2D():
             self.ren.SetActiveCamera(camera)
             self.ren.ResetCamera()
             self.ren.Render()
-            interactor.SetKeyCode("x")
+            interactor.SetKeyCode("X")
             self.OnKeyPress(interactor, event)
-        elif interactor.GetKeyCode() == "Y":
+        elif interactor.GetKeyCode() == "y":
              # Change the camera view point
             camera = vtk.vtkCamera()
             camera.SetFocalPoint(self.ren.GetActiveCamera().GetFocalPoint())
@@ -340,9 +381,9 @@ class CILViewer2D():
             self.ren.SetActiveCamera(camera)
             self.ren.ResetCamera()
             self.ren.Render()
-            interactor.SetKeyCode("y")
+            interactor.SetKeyCode("Y")
             self.OnKeyPress(interactor, event)
-        elif interactor.GetKeyCode() == "Z":
+        elif interactor.GetKeyCode() == "z":
              # Change the camera view point
             camera = vtk.vtkCamera()
             camera.SetFocalPoint(self.ren.GetActiveCamera().GetFocalPoint())
@@ -354,7 +395,7 @@ class CILViewer2D():
             self.ren.SetActiveCamera(camera)
             self.ren.ResetCamera()
             self.ren.Render()
-            interactor.SetKeyCode("z")
+            interactor.SetKeyCode("Z")
             self.OnKeyPress(interactor, event)
         elif interactor.GetKeyCode() == "a":
             # reset color/window
@@ -363,7 +404,6 @@ class CILViewer2D():
             
             self.InitialLevel = (cmax+cmin)/2
             self.InitialWindow = cmax-cmin
-    
             
             self.wl.SetLevel(self.InitialLevel)
             self.wl.SetWindow(self.InitialWindow)
@@ -382,33 +422,53 @@ class CILViewer2D():
         alt = interactor.GetAltKey()
         shift = interactor.GetShiftKey()
         ctrl = interactor.GetControlKey()
-        print ("alt pressed " + (lambda x : "Yes" if x else "No")(alt))
-        print ("shift pressed " + (lambda x : "Yes" if x else "No")(shift))
-        print ("ctrl pressed " + (lambda x : "Yes" if x else "No")(ctrl))
+#        print ("alt pressed " + (lambda x : "Yes" if x else "No")(alt))
+#        print ("shift pressed " + (lambda x : "Yes" if x else "No")(shift))
+#        print ("ctrl pressed " + (lambda x : "Yes" if x else "No")(ctrl))
         
         interactor.SetInitialEventPosition(interactor.GetEventPosition())
         
         if ctrl and not (alt and shift): 
             self.event = ViewerEvent.CREATE_ROI_EVENT
+            wsize = self.renWin.GetSize()
+            position = interactor.GetEventPosition()
+            self.ROIWidget.GetBorderRepresentation().SetPosition((position[0]/wsize[0] - 0.05) , (position[1]/wsize[1] - 0.05))
+            self.ROIWidget.GetBorderRepresentation().SetPosition2( (0.1) , (0.1))
+            
             self.ROIWidget.On()
             self.renWin.Render()
             print ("Event %s is CREATE_ROI_EVENT" % (event))
         elif alt and not (shift and ctrl):
             self.event = ViewerEvent.DELETE_ROI_EVENT
+            self.ROIWidget.Off()
+            self.updateCornerAnnotation("", 1, False)
+            self.renWin.Render()
             print ("Event %s is DELETE_ROI_EVENT" % (event))
         elif not (ctrl and alt and shift):
             self.event = ViewerEvent.PICK_EVENT
+            self.HandlePickEvent(interactor, event)
             print ("Event %s is PICK_EVENT" % (event))
         
             
     
+    def OnLeftButtonReleaseEvent(self, interactor, event):
+        if self.event == ViewerEvent.CREATE_ROI_EVENT:
+            #bc = self.ROIWidget.GetBorderRepresentation().GetPositionCoordinate()
+            #print (bc.GetValue())
+            self.OnROIModifiedEvent(interactor, event)
+            
+        elif self.event == ViewerEvent.PICK_EVENT:
+            self.HandlePickEvent(interactor, event)
+         
+        self.event = ViewerEvent.NO_EVENT
+
     def OnRightButtonPressEvent(self, interactor, event):
         alt = interactor.GetAltKey()
         shift = interactor.GetShiftKey()
         ctrl = interactor.GetControlKey()
-        print ("alt pressed " + (lambda x : "Yes" if x else "No")(alt))
-        print ("shift pressed " + (lambda x : "Yes" if x else "No")(shift))
-        print ("ctrl pressed " + (lambda x : "Yes" if x else "No")(ctrl))
+#        print ("alt pressed " + (lambda x : "Yes" if x else "No")(alt))
+#        print ("shift pressed " + (lambda x : "Yes" if x else "No")(shift))
+#        print ("ctrl pressed " + (lambda x : "Yes" if x else "No")(ctrl))
         
         interactor.SetInitialEventPosition(interactor.GetEventPosition())
         
@@ -419,27 +479,26 @@ class CILViewer2D():
             self.HandleWindowLevel(interactor, event)
         elif shift and not (ctrl and alt):
             self.event = ViewerEvent.ZOOM_EVENT
+            self.style.StartDolly()
             print ("Event %s is ZOOM_EVENT" % (event))
         elif ctrl and not (shift and alt):
             self.event = ViewerEvent.PAN_EVENT
             print ("Event %s is PAN_EVENT" % (event))
         
-    
-    def OnLeftButtonReleaseEvent(self, interactor, event):
-        if self.event == ViewerEvent.CREATE_ROI_EVENT:
-            bc = self.ROIWidget.GetBorderRepresentation().GetPositionCoordinate()
-            print (bc.GetValue())
-        elif self.event == ViewerEvent.PICK_EVENT:
-            position = interactor.GetInitialEventPosition()
-            print ("PICK " + str(position))
-            vox = self.viewport2imageCoordinate(position)
-            print ("Pixel %d,%d,%d Value %f" % vox )
-         
+    def OnRightButtonReleaseEvent(self, interactor, event):
+        print (event)
+        if self.event == ViewerEvent.WINDOW_LEVEL_EVENT:
+            self.InitialLevel = self.wl.GetLevel()
+            self.InitialWindow = self.wl.GetWindow()
+        elif self.event == ViewerEvent.ZOOM_EVENT:
+            self.style.EndDolly()
+			
         self.event = ViewerEvent.NO_EVENT
         
+    
     def OnROIModifiedEvent(self, interactor, event):
         
-        print ("ROI EVENT " + event)
+        #print ("ROI EVENT " + event)
         p1 = self.ROIWidget.GetBorderRepresentation().GetPositionCoordinate()
         p2 = self.ROIWidget.GetBorderRepresentation().GetPosition2Coordinate()
         wsize = self.renWin.GetSize()
@@ -454,7 +513,11 @@ class CILViewer2D():
         self.ROI = (vox1 , vox2)
         #print ("Pixel1 %d,%d,%d Value %f" % vox1 )
         #print ("Pixel2 %d,%d,%d Value %f" % vox2 )
-        
+        x = self.ROI[1][0] - self.ROI[0][0]
+        y = self.ROI[1][1] - self.ROI[0][1]
+        text = "ROI: %d x %d, %d Mp" % (x,y,x*y/1024/1024)
+        print (text)
+        self.updateCornerAnnotation(text, 1)
         self.event = ViewerEvent.NO_EVENT
         
     def viewport2imageCoordinate(self, viewerposition):
@@ -483,14 +546,6 @@ class CILViewer2D():
         else:
             return (0,0,0,0)
 
-    
-    def OnRightButtonReleaseEvent(self, interactor, event):
-        print (event)
-        if self.event == ViewerEvent.WINDOW_LEVEL_EVENT:
-            self.InitialLevel = self.wl.GetLevel()
-            self.InitialWindow = self.wl.GetWindow()
-			
-        self.event = ViewerEvent.NO_EVENT
         
     
     def GetRenderWindow(self):
@@ -500,8 +555,60 @@ class CILViewer2D():
         if self.event == ViewerEvent.WINDOW_LEVEL_EVENT:
             print ("Event %s is WINDOW_LEVEL_EVENT" % (event))
             self.HandleWindowLevel(interactor, event)    
+        elif self.event == ViewerEvent.PICK_EVENT:
+            self.HandlePickEvent(interactor, event)
+        elif self.event == ViewerEvent.ZOOM_EVENT:
+            self.HandleZoomEvent(interactor, event)
             
             
+    def HandleZoomEvent(self, interactor, event):
+        dx,dy = interactor.GetDeltaEventPosition()   
+        size = self.GetRenderWindow().GetSize()
+        dy = 4 * dy / size[0]
+        print ("distance: " + str(self.ren.GetActiveCamera().GetDistance()))
+        
+        print ("camera dolly %f" % (1 + dy))
+        newCamera = False
+        if newCamera:
+            camera = vtk.vtkCamera()
+            camera.SetFocalPoint(self.ren.GetActiveCamera().GetFocalPoint())
+            cpos = self.ren.GetActiveCamera().GetPosition()
+            print ("current position " + str(cpos))
+            camera.SetViewUp(self.ren.GetActiveCamera().GetViewUp())
+            camera.SetPosition(cpos)
+            newposition = [i for i in self.ren.GetActiveCamera().GetFocalPoint()]
+            
+            delta = newposition[self.sliceOrientation] - cpos[self.sliceOrientation]
+            newposition[self.sliceOrientation] = newposition[self.sliceOrientation] + (1+dy) * delta
+            print ("new position " + str(newposition))
+            camera.SetPosition(newposition)
+            #camera.SetViewUp(0,1,0)
+            #camera.Dolly(1+dy)
+            self.ren.SetActiveCamera(camera)
+            self.ren.ResetCamera()
+        else :
+            self.style.Dolly(1+dy)
+#            self.ren.GetActiveCamera().Dolly(1 + dy)
+#            
+#            if self.style.GetAutoAdjustCameraClippingRange():
+#                self.ren.ResetCameraClippingRange()
+#                print ("autoadjust clipping range")
+#            else:
+#                cam = self.ren.GetActiveCamera()
+#                bounds = self.sliceActor.GetBounds()
+#                spos = bounds[self.sliceOrientation * 2]
+#                cpos = cam.GetPosition()[self.sliceOrientation]
+#                crange = abs(spos - cpos);
+#                spacing = self.img3D.GetSpacing()
+#                avg_spacing = (spacing[0] + spacing[1] + spacing[2]) / 3.0
+#                cam.SetClippingRange(	crange - avg_spacing * 3.0, crange + avg_spacing * 3.0)
+			
+		
+            
+            #self.ren.GetActiveCamera().SetDistance(self.ren.GetActiveCamera().GetDistance()*(1+dy))
+            #self.ren.ResetCamera()
+        print ("distance after: " + str(self.ren.GetActiveCamera().GetDistance()))
+        self.ren.Render()
     
     def HandleWindowLevel(self, interactor, event):
         dx,dy = interactor.GetDeltaEventPosition()
@@ -552,3 +659,21 @@ class CILViewer2D():
         self.AdjustCamera()
         
         self.renWin.Render()
+    
+    def HandlePickEvent(self, interactor, event):
+        position = interactor.GetEventPosition()
+        #print ("PICK " + str(position))
+        vox = self.viewport2imageCoordinate(position)
+        #print ("Pixel %d,%d,%d Value %f" % vox )
+        self.cornerAnnotation.VisibilityOn()
+        self.cornerAnnotation.SetText(0, "[%d,%d,%d] : %.2f" % vox)
+        self.iren.Render()
+        
+    def updateCornerAnnotation(self, text , idx=0, visibility=True):
+        if visibility:
+            self.cornerAnnotation.VisibilityOn()
+        else:
+            self.cornerAnnotation.VisibilityOff()
+            
+        self.cornerAnnotation.SetText(idx, text)
+        self.iren.Render()
