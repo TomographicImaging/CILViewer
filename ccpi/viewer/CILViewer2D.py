@@ -328,7 +328,7 @@ class CILViewer2D():
         if shift:
             advance = 10
             
-        if (self.sliceno + 10 < maxSlice):
+        if (self.sliceno + advance < maxSlice):
             self.sliceno = self.sliceno + advance
             self.updatePipeline()
         else:
