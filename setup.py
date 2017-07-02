@@ -24,6 +24,7 @@ setup(
 #        # And include any *.msg files found in the 'hello' package, too:
 #        'hello': ['*.msg'],
 #    },
+     zip_safe = False,
 
     # metadata for upload to PyPI
     author="Edoardo Pasca",
