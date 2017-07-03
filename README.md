@@ -1,5 +1,5 @@
 # CILViewer
-A simple Viewer for 3D data built with VTK.
+A simple Viewer for 3D data built with VTK and Python.
 
 The interactive viewer CILViewer2D provides:
 
