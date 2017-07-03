@@ -43,22 +43,21 @@ class ViewerEvent(Enum):
     # release button
     NO_EVENT = -1
 
-class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
-    
-    
-    
+
+#class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
+class CILInteractorStyle(vtk.vtkInteractorStyleImage):
     
     def __init__(self, callback):
-        vtk.vtkInteractorStyleTrackballCamera.__init__(self)
+        vtk.vtkInteractorStyleImage.__init__(self)
         self.callback = callback
-        self.RemoveObservers("MouseWheelForwardEvent")
-        self.RemoveObservers("MouseWheelBackwardEvent")
-        self.RemoveObservers("KeyPressEvent")
-        self.RemoveObservers("LeftButtonPressEvent")
-        self.RemoveObservers("RightButtonPressEvent")
-        self.RemoveObservers("LeftButtonReleaseEvent")
-        self.RemoveObservers("RightButtonReleaseEvent")
-        self.RemoveObservers("MouseMoveEvent")
+#        self.RemoveObservers("MouseWheelForwardEvent")
+#        self.RemoveObservers("MouseWheelBackwardEvent")
+#        self.RemoveObservers("KeyPressEvent")
+#        self.RemoveObservers("LeftButtonPressEvent")
+#        self.RemoveObservers("RightButtonPressEvent")
+#        self.RemoveObservers("LeftButtonReleaseEvent")
+#        self.RemoveObservers("RightButtonReleaseEvent")
+#        self.RemoveObservers("MouseMoveEvent")
         
         priority = 1.0
         
@@ -106,8 +105,9 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
         return (x - self.InitialEventPosition[0] , y - self.InitialEventPosition[1])
     
     def Dolly(self, factor):
-        self.callback.ren.GetActiveCamera().Dolly(factor)
+        self.callback.camera.Dolly(factor)
         self.callback.ren.ResetCameraClippingRange()
+    
         
 
 class CILViewer2D():
@@ -129,7 +129,9 @@ class CILViewer2D():
         self.iren.Initialize()
         self.ren.SetBackground(.1, .2, .4)
         
-        self.ren.GetActiveCamera().ParallelProjectionOn()
+        self.camera = vtk.vtkCamera()
+        self.camera.ParallelProjectionOn()
+        self.ren.SetActiveCamera(self.camera)
         
         # data
         self.img3D = None
@@ -189,6 +191,8 @@ class CILViewer2D():
         self.cursorMapper.SetInputData(self.cursor.GetOutput())
         self.cursorActor.SetMapper(self.cursorMapper)
         
+        # Zoom
+        self.InitialCameraPosition = ()
         
         
         
@@ -305,6 +309,11 @@ class CILViewer2D():
                    extent[4], extent[5])
         self.sliceActor.Update()
         self.ren.AddActor(self.sliceActor)
+        self.ren.ResetCamera()
+        self.ren.Render()
+        
+        
+        
         self.AdjustCamera()
         
         self.ren.AddViewProp(self.cursorActor)
@@ -314,8 +323,11 @@ class CILViewer2D():
         self.renWin.Render()
         self.iren.Start()
     
-    def AdjustCamera(self):
-        self.ren.ResetCamera()
+    def AdjustCamera(self, autoposition = False):
+        self.ren.ResetCameraClippingRange()
+        if autoposition:
+            self.ren.ResetCamera()
+        
             
     def getROI(self):
         return self.ROI
@@ -488,10 +500,11 @@ class CILViewer2D():
             self.HandleWindowLevel(interactor, event)
         elif shift and not (ctrl and alt):
             self.event = ViewerEvent.ZOOM_EVENT
-            self.style.StartDolly()
+            self.InitialCameraPosition = self.ren.GetActiveCamera().GetPosition()
             print ("Event %s is ZOOM_EVENT" % (event))
         elif ctrl and not (shift and alt):
             self.event = ViewerEvent.PAN_EVENT
+            self.InitialCameraPosition = self.ren.GetActiveCamera().GetPosition()
             print ("Event %s is PAN_EVENT" % (event))
         
     def OnRightButtonReleaseEvent(self, interactor, event):
@@ -499,8 +512,8 @@ class CILViewer2D():
         if self.event == ViewerEvent.WINDOW_LEVEL_EVENT:
             self.InitialLevel = self.wl.GetLevel()
             self.InitialWindow = self.wl.GetWindow()
-        elif self.event == ViewerEvent.ZOOM_EVENT:
-            self.style.EndDolly()
+        elif self.event == ViewerEvent.ZOOM_EVENT or self.event == ViewerEvent.PAN_EVENT:
+            self.InitialCameraPosition = ()
 			
         self.event = ViewerEvent.NO_EVENT
         
@@ -545,10 +558,6 @@ class CILViewer2D():
             spac = self.img3D.GetSpacing()
             orig = self.img3D.GetOrigin()
             imagePosition = [int(pickPosition[i] / spac[i] + orig[i]) for i in range(3) ]
-
-#            imagePositionZ = int(pointIndex / (dims[0] * dims[1]))
-#            imagePositionY = int((pointIndex - (imagePositionZ * dims[0] * dims[1])) / dims[0])
-#            imagePositionX = int(pointIndex - (imagePositionZ*dims[0]*dims[1]) - (imagePositionY*dims[0]))
             
             pixelValue = self.img3D.GetScalarComponentAsDouble(imagePosition[0], imagePosition[1], imagePosition[2], 0)
             return (imagePosition[0], imagePosition[1], imagePosition[2] , pixelValue)
@@ -568,57 +577,79 @@ class CILViewer2D():
             self.HandlePickEvent(interactor, event)
         elif self.event == ViewerEvent.ZOOM_EVENT:
             self.HandleZoomEvent(interactor, event)
+        elif self.event == ViewerEvent.PAN_EVENT:
+            self.HandlePanEvent(interactor, event)
             
             
     def HandleZoomEvent(self, interactor, event):
         dx,dy = interactor.GetDeltaEventPosition()   
         size = self.GetRenderWindow().GetSize()
-        dy = 4 * dy / size[0]
+        dy = - 4 * dy / size[1]
+        
         print ("distance: " + str(self.ren.GetActiveCamera().GetDistance()))
         
-        print ("camera dolly %f" % (1 + dy))
-        newCamera = False
-        if newCamera:
-            camera = vtk.vtkCamera()
-            camera.SetFocalPoint(self.ren.GetActiveCamera().GetFocalPoint())
-            cpos = self.ren.GetActiveCamera().GetPosition()
-            print ("current position " + str(cpos))
-            camera.SetViewUp(self.ren.GetActiveCamera().GetViewUp())
-            camera.SetPosition(cpos)
-            newposition = [i for i in self.ren.GetActiveCamera().GetFocalPoint()]
-            
-            delta = newposition[self.sliceOrientation] - cpos[self.sliceOrientation]
-            newposition[self.sliceOrientation] = newposition[self.sliceOrientation] + (1+dy) * delta
-            print ("new position " + str(newposition))
-            camera.SetPosition(newposition)
-            #camera.SetViewUp(0,1,0)
-            #camera.Dolly(1+dy)
-            self.ren.SetActiveCamera(camera)
-            self.ren.ResetCamera()
-        else :
-            self.style.Dolly(1+dy)
-#            self.ren.GetActiveCamera().Dolly(1 + dy)
-#            
-#            if self.style.GetAutoAdjustCameraClippingRange():
-#                self.ren.ResetCameraClippingRange()
-#                print ("autoadjust clipping range")
-#            else:
-#                cam = self.ren.GetActiveCamera()
-#                bounds = self.sliceActor.GetBounds()
-#                spos = bounds[self.sliceOrientation * 2]
-#                cpos = cam.GetPosition()[self.sliceOrientation]
-#                crange = abs(spos - cpos);
-#                spacing = self.img3D.GetSpacing()
-#                avg_spacing = (spacing[0] + spacing[1] + spacing[2]) / 3.0
-#                cam.SetClippingRange(	crange - avg_spacing * 3.0, crange + avg_spacing * 3.0)
-			
+        print ("\ndy: %f\ncamera dolly %f\n" % (dy, 1 + dy))
+        
+        camera = vtk.vtkCamera()
+        camera.SetFocalPoint(self.ren.GetActiveCamera().GetFocalPoint())
+        #print ("current position " + str(self.InitialCameraPosition))
+        camera.SetViewUp(self.ren.GetActiveCamera().GetViewUp())
+        camera.SetPosition(self.InitialCameraPosition)
+        newposition = [i for i in self.InitialCameraPosition]
+        if self.sliceOrientation == SLICE_ORIENTATION_XY: 
+            newposition[SLICE_ORIENTATION_XY] *= ( 1 + dy )
+        elif self.sliceOrientation == SLICE_ORIENTATION_XZ:
+            newposition[SLICE_ORIENTATION_XZ] *= ( 1 + dy )
+        elif self.sliceOrientation == SLICE_ORIENTATION_YZ:
+            newposition[SLICE_ORIENTATION_YZ] *= ( 1 + dy )
+        #print ("new position " + str(newposition))
+        camera.SetPosition(newposition)
+        self.ren.SetActiveCamera(camera)
+        
+        self.renWin.Render()
+        	
 		
             
-            #self.ren.GetActiveCamera().SetDistance(self.ren.GetActiveCamera().GetDistance()*(1+dy))
-            #self.ren.ResetCamera()
         print ("distance after: " + str(self.ren.GetActiveCamera().GetDistance()))
-        self.ren.Render()
-    
+        
+    def HandlePanEvent(self, interactor, event):
+        x,y = interactor.GetEventPosition()
+        x0,y0 = interactor.GetInitialEventPosition()
+        
+        ic = self.viewport2imageCoordinate((x,y))
+        ic0 = self.viewport2imageCoordinate((x0,y0))
+        
+        dx = 4 *( ic[0] - ic0[0])
+        dy = 4* (ic[1] - ic0[1])
+        
+        camera = vtk.vtkCamera()
+        #print ("current position " + str(self.InitialCameraPosition))
+        camera.SetViewUp(self.ren.GetActiveCamera().GetViewUp())
+        camera.SetPosition(self.InitialCameraPosition)
+        newposition = [i for i in self.InitialCameraPosition]
+        newfocalpoint = [i for i in self.ren.GetActiveCamera().GetFocalPoint()]
+        if self.sliceOrientation == SLICE_ORIENTATION_XY: 
+            newposition[0] -= dx
+            newposition[1] -= dy
+            newfocalpoint[0] = newposition[0]
+            newfocalpoint[1] = newposition[1]
+        elif self.sliceOrientation == SLICE_ORIENTATION_XZ:
+            newposition[0] -= dx
+            newposition[2] -= dy
+            newfocalpoint[0] = newposition[0]
+            newfocalpoint[2] = newposition[2]
+        elif self.sliceOrientation == SLICE_ORIENTATION_YZ:
+            newposition[1] -= dx
+            newposition[2] -= dy
+            newfocalpoint[2] = newposition[2]
+            newfocalpoint[1] = newposition[1]
+        #print ("new position " + str(newposition))
+        camera.SetFocalPoint(newfocalpoint)
+        camera.SetPosition(newposition)
+        self.ren.SetActiveCamera(camera)
+        
+        self.renWin.Render()
+        
     def HandleWindowLevel(self, interactor, event):
         dx,dy = interactor.GetDeltaEventPosition()
         print ("Event delta %d %d" % (dx,dy))
