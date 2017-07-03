@@ -21,4 +21,7 @@ The interactive viewer CILViewer2D provides:
     - Translate ROI: Middle Mouse Button within ROI
     - Delete ROI: ALT + Left Mouse Button
 
-
+![Window/Level](pics/windowLevel.png)
+![Zoom](pics/zoom.png)
+![Slice X + Pick](pics/sliceXPick.png)
+![ROI](pics/ROI.png)
