@@ -435,6 +435,9 @@ class CILViewer2D():
             self.AdjustCamera()
             self.renWin.Render()
             
+        elif interactor.GetKeyCode() == "s":
+            filename = "current_render"
+            self.saveRender(filename)
         else :
             #print ("Unhandled event %s" % (interactor.GetKeyCode(), )))
             pass 
@@ -717,3 +720,17 @@ class CILViewer2D():
             
         self.cornerAnnotation.SetText(idx, text)
         self.iren.Render()
+        
+    def saveRender(self, filename, renWin=None):
+        '''Save the render window to PNG file'''
+        # screenshot code:
+        w2if = vtk.vtkWindowToImageFilter()
+        if renWin == None:
+            renWin = self.renWin
+        w2if.SetInput(renWin)
+        w2if.Update()
+         
+        writer = vtk.vtkPNGWriter()
+        writer.SetFileName("%s.png" % (filename))
+        writer.SetInputConnection(w2if.GetOutputPort())
+        writer.Write()
