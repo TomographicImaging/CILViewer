@@ -16,7 +16,7 @@
 import vtk
 import numpy
 #import math
-from vtk.util import numpy_support
+from vtk.util import numpy_support , vtkImageImportFromArray
 from enum import Enum
 
 SLICE_ORIENTATION_XY = 2 # Z
@@ -207,40 +207,32 @@ class CILViewer2D():
         self.installPipeline()
 
     def setInputAsNumpy(self, numpyarray):
-        if (len(numpy.shape(numpyarray)) == 3):
-            doubleImg = vtk.vtkImageData()
-            shape = numpy.shape(numpyarray)
-            doubleImg.SetDimensions(shape[0], shape[1], shape[2])
-            doubleImg.SetOrigin(0,0,0)
-            doubleImg.SetSpacing(1,1,1)
-            doubleImg.SetExtent(0, shape[0]-1, 0, shape[1]-1, 0, shape[2]-1)
-            #self.img3D.SetScalarType(vtk.VTK_UNSIGNED_SHORT, vtk.vtkInformation())
-            doubleImg.AllocateScalars(vtk.VTK_DOUBLE,1)
-            
-            for i in range(shape[0]):
-                for j in range(shape[1]):
-                    for k in range(shape[2]):
-                        doubleImg.SetScalarComponentFromDouble(
-                            i,j,k,0, numpyarray[i][j][k])
-        #self.setInput3DData( numpy_support.numpy_to_vtk(numpyarray) )
-            # rescale to appropriate VTK_UNSIGNED_SHORT
-            stats = vtk.vtkImageAccumulate()
-            stats.SetInputData(doubleImg)
-            stats.Update()
-            iMin = stats.GetMin()[0]
-            iMax = stats.GetMax()[0]
-            scale = vtk.VTK_UNSIGNED_SHORT_MAX / (iMax - iMin)
+        importer = vtkImageImportFromArray()
+        #importer.SetConvertIntToUnsignedShort(True)
+        importer.SetArray(numpyarray)
+        importer.SetDataSpacing((1.,1.,1.))
+        importer.SetDataOrigin((0,0,0))
+        importer.Update()
+        # swap axes
+        
+        # rescale to appropriate VTK_UNSIGNED_SHORT
+        stats = vtk.vtkImageAccumulate()
+        stats.SetInputData(importer.GetOutput())
+        stats.Update()
+        iMin = stats.GetMin()[0]
+        iMax = stats.GetMax()[0]
+        scale = vtk.VTK_UNSIGNED_SHORT_MAX / (iMax - iMin)
 
-            shiftScaler = vtk.vtkImageShiftScale ()
-            shiftScaler.SetInputData(doubleImg)
-            shiftScaler.SetScale(scale)
-            shiftScaler.SetShift(iMin)
-            shiftScaler.SetOutputScalarType(vtk.VTK_UNSIGNED_SHORT)
-            shiftScaler.Update()
-            self.img3D = shiftScaler.GetOutput()
-            
-            self.installPipeline()
-    
+        shiftScaler = vtk.vtkImageShiftScale ()
+        shiftScaler.SetInputData(importer.GetOutput())
+        shiftScaler.SetScale(scale)
+        shiftScaler.SetShift(iMin)
+        shiftScaler.SetOutputScalarType(vtk.VTK_UNSIGNED_SHORT)
+        shiftScaler.Update()
+        self.img3D = shiftScaler.GetOutput()
+        
+        self.installPipeline()
+
     def displaySlice(self, sliceno = 0):
         self.sliceno = sliceno
         
@@ -250,7 +242,7 @@ class CILViewer2D():
         
         return self.sliceActorNo
 
-    def updatePipeline(self):
+    def updatePipeline(self, resetcamera = False):
         extent = [ i for i in self.img3D.GetExtent()]
         extent[self.sliceOrientation * 2] = self.sliceno
         extent[self.sliceOrientation * 2 + 1] = self.sliceno 
@@ -267,7 +259,7 @@ class CILViewer2D():
         self.sliceActor.Update()
         
         self.updateCornerAnnotation("Slice %d/%d" % (self.sliceno + 1 , self.img3D.GetDimensions()[self.sliceOrientation]))
-        self.AdjustCamera()
+        self.AdjustCamera(resetcamera)
         
         self.renWin.Render()
         
@@ -323,9 +315,9 @@ class CILViewer2D():
         self.renWin.Render()
         self.iren.Start()
     
-    def AdjustCamera(self, autoposition = False):
+    def AdjustCamera(self, resetcamera = False):
         self.ren.ResetCameraClippingRange()
-        if autoposition:
+        if resetcamera:
             self.ren.ResetCamera()
         
             
@@ -365,17 +357,17 @@ class CILViewer2D():
             # slice on the other orientation
             self.sliceOrientation = SLICE_ORIENTATION_YZ
             self.sliceno = int(self.img3D.GetDimensions()[1] / 2)
-            self.updatePipeline()
+            self.updatePipeline(True)
         elif interactor.GetKeyCode() == "Y":
             # slice on the other orientation
             self.sliceOrientation = SLICE_ORIENTATION_XZ
             self.sliceno = int(self.img3D.GetDimensions()[1] / 2)
-            self.updatePipeline()
+            self.updatePipeline(True)
         elif interactor.GetKeyCode() == "Z":
             # slice on the other orientation
             self.sliceOrientation = SLICE_ORIENTATION_XY
             self.sliceno = int(self.img3D.GetDimensions()[2] / 2)
-            self.updatePipeline()
+            self.updatePipeline(True)
         if interactor.GetKeyCode() == "x":
             # Change the camera view point
             camera = vtk.vtkCamera()
@@ -386,7 +378,7 @@ class CILViewer2D():
             camera.SetPosition(newposition)
             camera.SetViewUp(0,0,-1)
             self.ren.SetActiveCamera(camera)
-            self.ren.ResetCamera()
+            #self.ren.ResetCamera()
             self.ren.Render()
             interactor.SetKeyCode("X")
             self.OnKeyPress(interactor, event)
@@ -400,7 +392,7 @@ class CILViewer2D():
             camera.SetPosition(newposition)
             camera.SetViewUp(0,0,-1)
             self.ren.SetActiveCamera(camera)
-            self.ren.ResetCamera()
+            #self.ren.ResetCamera()
             self.ren.Render()
             interactor.SetKeyCode("Y")
             self.OnKeyPress(interactor, event)
@@ -536,11 +528,22 @@ class CILViewer2D():
         vox2 = self.viewport2imageCoordinate(pp2)
         
         self.ROI = (vox1 , vox2)
-        #print ("Pixel1 %d,%d,%d Value %f" % vox1 )
-        #print ("Pixel2 %d,%d,%d Value %f" % vox2 )
-        x = self.ROI[1][0] - self.ROI[0][0]
-        y = self.ROI[1][1] - self.ROI[0][1]
-        text = "ROI: %d x %d, %d Mp" % (x,y,x*y/1024/1024)
+        print ("Pixel1 %d,%d,%d Value %f" % vox1 )
+        print ("Pixel2 %d,%d,%d Value %f" % vox2 )
+        if self.sliceOrientation == SLICE_ORIENTATION_XY: 
+            print ("slice orientation : XY")
+            x = abs(self.ROI[1][0] - self.ROI[0][0])
+            y = abs(self.ROI[1][1] - self.ROI[0][1])
+        elif self.sliceOrientation == SLICE_ORIENTATION_XZ:
+            print ("slice orientation : XY")
+            x = abs(self.ROI[1][0] - self.ROI[0][0])
+            y = abs(self.ROI[1][2] - self.ROI[0][2])
+        elif self.sliceOrientation == SLICE_ORIENTATION_YZ:
+            print ("slice orientation : XY")
+            x = abs(self.ROI[1][1] - self.ROI[0][1])
+            y = abs(self.ROI[1][2] - self.ROI[0][2])
+        
+        text = "ROI: %d x %d, %.2f kp" % (x,y,float(x*y)/1024.)
         print (text)
         self.updateCornerAnnotation(text, 1)
         self.event = ViewerEvent.NO_EVENT
