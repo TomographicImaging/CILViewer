@@ -15,7 +15,6 @@
    
 import vtk
 import numpy
-#import math
 from vtk.util import numpy_support , vtkImageImportFromArray
 from enum import Enum
 
@@ -26,6 +25,31 @@ SLICE_ORIENTATION_YZ = 0 # X
 CONTROL_KEY = 8
 SHIFT_KEY = 4
 ALT_KEY = -128
+
+# Utility functions to transform numpy arrays to vtkImageData and viceversa
+def numpy2vtkImporter(nparray, spacing=(1.,1.,1.), origin=(0,0,0)):
+    importer = vtkImageImportFromArray.vtkImageImportFromArray()
+    importer.SetArray(numpy.transpose(nparray).copy())
+    importer.SetDataSpacing(spacing)
+    importer.SetDataOrigin(origin)
+    return importer
+
+def numpy2vtk(nparray, spacing=(1.,1.,1.), origin=(0,0,0)):
+    importer = numpy2vtkImporter(nparray, spacing, origin)
+    importer.Update()
+    return importer.GetOutput()
+
+def vtk2numpy(imgdata):
+    # transform the VTK data to 3D numpy array
+    img_data = numpy_support.vtk_to_numpy(
+            imgdata.GetPointData().GetScalars())
+
+    dims = imgdata.GetDimensions()
+    dims = (dims[2],dims[1],dims[0])
+    data3d = numpy.reshape(img_data, dims)
+    
+    return numpy.transpose(data3d).copy() 
+
 
 class ViewerEvent(Enum):
     # left button
@@ -206,31 +230,32 @@ class CILViewer2D():
         self.img3D = imageData
         self.installPipeline()
 
-    def setInputAsNumpy(self, numpyarray):
-        importer = vtkImageImportFromArray()
-        #importer.SetConvertIntToUnsignedShort(True)
-        importer.SetArray(numpyarray)
-        importer.SetDataSpacing((1.,1.,1.))
-        importer.SetDataOrigin((0,0,0))
+    def setInputAsNumpy(self, numpyarray,  origin=(0,0,0), spacing=(1.,1.,1.), rescale=True,):
+        importer = numpy2vtkImporter(numpyarray, spacing, origin)
         importer.Update()
-        # swap axes
         
-        # rescale to appropriate VTK_UNSIGNED_SHORT
-        stats = vtk.vtkImageAccumulate()
-        stats.SetInputData(importer.GetOutput())
-        stats.Update()
-        iMin = stats.GetMin()[0]
-        iMax = stats.GetMax()[0]
-        scale = vtk.VTK_UNSIGNED_SHORT_MAX / (iMax - iMin)
-
-        shiftScaler = vtk.vtkImageShiftScale ()
-        shiftScaler.SetInputData(importer.GetOutput())
-        shiftScaler.SetScale(scale)
-        shiftScaler.SetShift(iMin)
-        shiftScaler.SetOutputScalarType(vtk.VTK_UNSIGNED_SHORT)
-        shiftScaler.Update()
-        self.img3D = shiftScaler.GetOutput()
-        
+        if rescale:
+            # rescale to appropriate VTK_UNSIGNED_SHORT
+            stats = vtk.vtkImageAccumulate()
+            stats.SetInputData(importer.GetOutput())
+            stats.Update()
+            iMin = stats.GetMin()[0]
+            iMax = stats.GetMax()[0]
+            if (iMax - iMin == 0):
+                scale = 1
+            else:
+                scale = vtk.VTK_UNSIGNED_SHORT_MAX / (iMax - iMin)
+    
+            shiftScaler = vtk.vtkImageShiftScale ()
+            shiftScaler.SetInputData(importer.GetOutput())
+            shiftScaler.SetScale(scale)
+            shiftScaler.SetShift(iMin)
+            shiftScaler.SetOutputScalarType(vtk.VTK_UNSIGNED_SHORT)
+            shiftScaler.Update()
+            self.img3D = shiftScaler.GetOutput()
+        else:
+            self.img3D = importer.GetOutput()
+            
         self.installPipeline()
 
     def displaySlice(self, sliceno = 0):
@@ -300,6 +325,7 @@ class CILViewer2D():
                    extent[2], extent[3],
                    extent[4], extent[5])
         self.sliceActor.Update()
+        self.sliceActor.SetInterpolate(False)
         self.ren.AddActor(self.sliceActor)
         self.ren.ResetCamera()
         self.ren.Render()
@@ -737,3 +763,6 @@ class CILViewer2D():
         writer.SetFileName("%s.png" % (filename))
         writer.SetInputConnection(w2if.GetOutputPort())
         writer.Write()
+        
+    def startRenderLoop(self):
+        self.iren.Start()

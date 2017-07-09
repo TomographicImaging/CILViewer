@@ -22,8 +22,6 @@ SLICE_ORIENTATION_XY = 2 # Z
 SLICE_ORIENTATION_XZ = 1 # Y
 SLICE_ORIENTATION_YZ = 0 # X
 
-
-
 class CILViewer():
     '''Simple 3D Viewer based on VTK classes'''
     
@@ -283,7 +281,7 @@ class CILViewer():
             shiftScaler.Update()
             self.img3D = shiftScaler.GetOutput()
             
-    def displaySliceActor(self, sliceno = 0):
+    def displaySliceActor(self, sliceno):
         self.sliceno = sliceno
         first = False
         
@@ -350,12 +348,3 @@ class CILViewer():
         return (imageActor , voi, windowLevel, imageAccumulate)
 
 
-    # Set interpolation on
-    def setInterpolateOn(self):
-        self.sliceActor.SetInterpolate(True)
-        self.renWin.Render()
-
-    # Set interpolation off
-    def setInterpolateOff(self):
-        self.sliceActor.SetInterpolate(False)
-        self.renWin.Render()

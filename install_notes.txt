@@ -1,0 +1,4 @@
+# build the package
+conda build conda-recipe -c conda-forge --python 3.5
+# upload to the channel
+anaconda upload C:\Apps\Miniconda2\conda-bld\win-64\ccpi-viewer-0.1-py35_0.tar.bz2
