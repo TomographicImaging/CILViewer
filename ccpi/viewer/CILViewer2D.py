@@ -26,31 +26,94 @@ CONTROL_KEY = 8
 SHIFT_KEY = 4
 ALT_KEY = -128
 
-# Utility functions to transform numpy arrays to vtkImageData and viceversa
-def numpy2vtkImporter(nparray, spacing=(1.,1.,1.), origin=(0,0,0)):
-    importer = vtkImageImportFromArray.vtkImageImportFromArray()
-    importer.SetArray(numpy.transpose(nparray).copy())
-    importer.SetDataSpacing(spacing)
-    importer.SetDataOrigin(origin)
-    return importer
 
-def numpy2vtk(nparray, spacing=(1.,1.,1.), origin=(0,0,0)):
-    importer = numpy2vtkImporter(nparray, spacing, origin)
-    importer.Update()
-    return importer.GetOutput()
-
-def vtk2numpy(imgdata):
-    # transform the VTK data to 3D numpy array
-    img_data = numpy_support.vtk_to_numpy(
-            imgdata.GetPointData().GetScalars())
-
-    dims = imgdata.GetDimensions()
-    dims = (dims[2],dims[1],dims[0])
-    data3d = numpy.reshape(img_data, dims)
+# Converter class
+class Converter():
     
-    return numpy.transpose(data3d).copy() 
+    # Utility functions to transform numpy arrays to vtkImageData and viceversa
+    @staticmethod
+    def numpy2vtkImporter(nparray, spacing=(1.,1.,1.), origin=(0,0,0)):
+        '''Creates a vtkImageImportFromArray object and returns it.
+        
+        It handles the different axis order from numpy to VTK'''
+        importer = vtkImageImportFromArray.vtkImageImportFromArray()
+        importer.SetArray(numpy.transpose(nparray).copy())
+        importer.SetDataSpacing(spacing)
+        importer.SetDataOrigin(origin)
+        return importer
+    
+    @staticmethod
+    def numpy2vtk(nparray, spacing=(1.,1.,1.), origin=(0,0,0)):
+        '''Converts a 3D numpy array to a vtkImageData'''
+        importer = Converter.numpy2vtkImporter(nparray, spacing, origin)
+        importer.Update()
+        return importer.GetOutput()
+    
+    @staticmethod
+    def vtk2numpy(imgdata):
+        '''Converts the VTK data to 3D numpy array'''
+        img_data = numpy_support.vtk_to_numpy(
+                imgdata.GetPointData().GetScalars())
+    
+        dims = imgdata.GetDimensions()
+        dims = (dims[2],dims[1],dims[0])
+        data3d = numpy.reshape(img_data, dims)
+        
+        return numpy.transpose(data3d).copy() 
+
+    @staticmethod
+    def tiffStack2numpy(filename, indices):
+        '''Converts a stack of TIFF files to numpy array.
+        
+        filename must contain the whole path. The filename is supposed to be named and
+        have a suffix with the ordinal file number, i.e. /path/to/projection_%03d.tif
+        
+        indices are the suffix, generally an increasing number'''
+        
+        stack = vtk.vtkImageData()
+        reader = vtk.vtkTIFFReader()
+        
+        #directory = "C:\\Users\\ofn77899\\Documents\\CCPi\\IMAT\\20170419_crabtomo\\crabtomo\\"
+        
+        stack_image = numpy.asarray([])
+        nreduced = len(indices)
+        
+        for num in range(len(indices)):
+            fn = filename % indices[num]
+            print ("resampling %s" % ( fn ) )
+            reader.SetFileName(fn)
+            reader.Update()     
+            print (reader.GetOutput().GetScalarTypeAsString())
+            if num == 0:
+                sliced = reader.GetOutput().GetExtent()
+                stack.SetExtent(sliced[0],sliced[1], sliced[2],sliced[3], 0, nreduced-1)
+                stack.AllocateScalars(reader.GetOutput().GetScalarType(), 1)
+                print ("Image Size: %d" % ((sliced[1]+1)*(sliced[3]+1) ))
+                stack_image = Converter.vtk2numpy(stack)
+                print ("Stack shape %s" % str(numpy.shape(stack_image)))
+            
+            theSlice = Converter.vtk2numpy(reader.GetOutput())
+            print ("Slice shape %s" % str(numpy.shape(theSlice)))
+            stack_image.T[num] = theSlice.T[0].copy()
+        
+        return stack_image
+
+                    
 
 
+
+## Utility functions to transform numpy arrays to vtkImageData and viceversa
+#def numpy2vtkImporter(nparray, spacing=(1.,1.,1.), origin=(0,0,0)):
+#    return Converter.numpy2vtkImporter(nparray, spacing, origin)
+#
+#def numpy2vtk(nparray, spacing=(1.,1.,1.), origin=(0,0,0)):
+#    return Converter.numpy2vtk(nparray, spacing, origin)
+#
+#def vtk2numpy(imgdata):
+#    return Converter.vtk2numpy(imgdata)
+#
+#def tiffStack2numpy(filename, indices):
+#    return Converter.tiffStack2numpy(filename, indices)
 
 class ViewerEvent(Enum):
     # left button
@@ -269,12 +332,12 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
         elif interactor.GetKeyCode() == "Y":
             # slice on the other orientation
             self.SetSliceOrientation (  SLICE_ORIENTATION_XZ )
-            self.SetActiveSlice ( int(self.img3D.GetDimensions()[1] / 2) )
+            self.SetActiveSlice ( int(self.GetInputData().GetDimensions()[1] / 2) )
             self.UpdatePipeline(True)
         elif interactor.GetKeyCode() == "Z":
             # slice on the other orientation
             self.SetSliceOrientation (  SLICE_ORIENTATION_XY )
-            self.SetActiveSlice ( int(self.img3D.GetDimensions()[2] / 2) )
+            self.SetActiveSlice ( int(self.GetInputData().GetDimensions()[2] / 2) )
             self.UpdatePipeline(True)
         if interactor.GetKeyCode() == "x":
             # Change the camera view point
@@ -292,8 +355,8 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
         elif interactor.GetKeyCode() == "y":
              # Change the camera view point
             camera = vtk.vtkCamera()
-            camera.SetFocalPoint(self.ren.GetActiveCamera().GetFocalPoint())
-            camera.SetViewUp(self.ren.GetActiveCamera().GetViewUp())
+            camera.SetFocalPoint(self.GetActiveCamera().GetFocalPoint())
+            camera.SetViewUp(self.GetActiveCamera().GetViewUp())
             newposition = [i for i in self.ren.GetActiveCamera().GetFocalPoint()]
             newposition[SLICE_ORIENTATION_XZ] = numpy.sqrt(newposition[SLICE_ORIENTATION_XY] ** 2 + newposition[SLICE_ORIENTATION_YZ] ** 2) 
             camera.SetPosition(newposition)
@@ -305,9 +368,9 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
         elif interactor.GetKeyCode() == "z":
              # Change the camera view point
             camera = vtk.vtkCamera()
-            camera.SetFocalPoint(self.ren.GetActiveCamera().GetFocalPoint())
-            camera.SetViewUp(self.ren.GetActiveCamera().GetViewUp())
-            newposition = [i for i in self.ren.GetActiveCamera().GetFocalPoint()]
+            camera.SetFocalPoint(self.GetActiveCamera().GetFocalPoint())
+            camera.SetViewUp(self.GetActiveCamera().GetViewUp())
+            newposition = [i for i in self.GetActiveCamera().GetFocalPoint()]
             newposition[SLICE_ORIENTATION_XY] = numpy.sqrt(newposition[SLICE_ORIENTATION_YZ] ** 2 + newposition[SLICE_ORIENTATION_XZ] ** 2) 
             camera.SetPosition(newposition)
             camera.SetViewUp(0,1,0)
@@ -655,8 +718,6 @@ class CILViewer2D():
         self.renWin.SetSize(dimx,dimy)
         self.renWin.AddRenderer(self.ren)
         self.style = CILInteractorStyle(self)
-        #self.style = vtk.vtkInteractorStyleTrackballCamera()
-        #self.style.SetCallback(self)
         self.iren = vtk.vtkRenderWindowInteractor()
         self.iren.SetInteractorStyle(self.style)
         self.iren.SetRenderWindow(self.renWin)
@@ -671,15 +732,19 @@ class CILViewer2D():
         self.img3D = None
         self.sliceno = 0
         self.sliceOrientation = SLICE_ORIENTATION_XY
+        
+        #Actors
         self.sliceActor = vtk.vtkImageActor()
         self.voi = vtk.vtkExtractVOI()
         self.wl = vtk.vtkImageMapToWindowLevelColors()
         self.ia = vtk.vtkImageAccumulate()
         self.sliceActorNo = 0
         
+        #initial Window/Level
         self.InitialLevel = 0
         self.InitialWindow = 0
         
+        #ViewerEvent
         self.event = ViewerEvent.NO_EVENT
         
         # ROI Widget
@@ -707,7 +772,6 @@ class CILViewer2D():
         self.cornerAnnotation.GetTextProperty().ShadowOn();
         self.cornerAnnotation.SetLayerNumber(1);
         
-        self.ren.AddViewProp(self.cornerAnnotation)
         
         
         # cursor doesn't show up
@@ -735,9 +799,11 @@ class CILViewer2D():
         self.roiVOI = vtk.vtkExtractVOI()
         self.histogramPlotActor = vtk.vtkXYPlotActor()
         self.histogramPlotActor.ExchangeAxesOff();
-        self.histogramPlotActor.SetLabelFormat( "%g" )
+        self.histogramPlotActor.SetXLabelFormat( "%g" )
+        self.histogramPlotActor.SetXLabelFormat( "%g" )
+        self.histogramPlotActor.SetAdjustXLabels(3)
         self.histogramPlotActor.SetXTitle( "Level" )
-        self.histogramPlotActor.SetYTitle( "Counts" )
+        self.histogramPlotActor.SetYTitle( "N" )
         self.histogramPlotActor.SetXValuesToValue()
         self.histogramPlotActor.SetPlotColor(0, (0,1,1) )
         self.histogramPlotActor.SetPosition(0.6,0.6)
@@ -756,7 +822,7 @@ class CILViewer2D():
         self.installPipeline()
 
     def setInputAsNumpy(self, numpyarray,  origin=(0,0,0), spacing=(1.,1.,1.), rescale=True,):
-        importer = numpy2vtkImporter(numpyarray, spacing, origin)
+        importer = Converter.numpy2vtkImporter(numpyarray, spacing, origin)
         importer.Update()
         
         if rescale:
@@ -820,6 +886,9 @@ class CILViewer2D():
         
     def installPipeline(self):
         '''Slices a 3D volume and then creates an actor to be rendered'''
+        
+        self.ren.AddViewProp(self.cornerAnnotation)
+        
         self.voi.SetInputData(self.img3D)
         #select one slice in Z
         extent = [ i for i in self.img3D.GetExtent()]
@@ -858,8 +927,6 @@ class CILViewer2D():
         self.ren.AddActor(self.sliceActor)
         self.ren.ResetCamera()
         self.ren.Render()
-        
-        
         
         self.AdjustCamera()
         
