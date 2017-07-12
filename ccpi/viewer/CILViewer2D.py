@@ -237,7 +237,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
         self._viewer.AdjustCamera()
         
     def SaveRender(self, filename):
-        self._viewer.SaveRender(filename)
+        self._viewer.saveRender(filename)
         
     def GetRenderWindow(self):
         return self._viewer.renWin
