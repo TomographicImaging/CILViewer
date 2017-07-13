@@ -484,10 +484,14 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
         elif shift and not (ctrl and alt):
             self.SetViewerEvent( ViewerEvent.ZOOM_EVENT )
             self.SetInitialCameraPosition( self.GetActiveCamera().GetPosition())
+            self.ResampleImageActorIfNeeded()
             print ("Event %s is ZOOM_EVENT" % (event))
         elif ctrl and not (shift and alt):
             self.SetViewerEvent (ViewerEvent.PAN_EVENT )
             self.SetInitialCameraPosition ( self.GetActiveCamera().GetPosition() )
+            # check if we have to resample the actor to get a smooth display
+            self.ResampleImageActorIfNeeded()
+        
             print ("Event %s is PAN_EVENT" % (event))
         
     def OnRightButtonReleaseEvent(self, interactor, event):
@@ -495,9 +499,10 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
         if self.GetViewerEvent() == ViewerEvent.WINDOW_LEVEL_EVENT:
             self.SetInitialLevel( self.GetWindowLevel().GetLevel() )
             self.SetInitialWindow ( self.GetWindowLevel().GetWindow() )
-        elif self.GetViewerEvent() == ViewerEvent.ZOOM_EVENT or \
-             self.GetViewerEvent() == ViewerEvent.PAN_EVENT:
-            self.SetInitialCameraPosition( () )
+        elif self.GetViewerEvent() == ViewerEvent.ZOOM_EVENT or self.GetViewerEvent() == ViewerEvent.PAN_EVENT:
+            self.StopResampleIfNeeded()
+                 
+            self.SetInitialCameraPosition( (1,1,1) )
 			
         self.SetViewerEvent( ViewerEvent.NO_EVENT )
         
@@ -590,20 +595,30 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
         #print ("current position " + str(self.InitialCameraPosition))
         camera.SetViewUp(self.GetActiveCamera().GetViewUp())
         camera.SetPosition(self.GetInitialCameraPosition())
+        #camera.SetClippingRange( self.GetActiveCamera().GetClippingRange() )
         newposition = [i for i in self.GetInitialCameraPosition()]
-        if self.GetSliceOrientation() == SLICE_ORIENTATION_XY: 
-            dist = newposition[SLICE_ORIENTATION_XY] * ( 1 + dy ) 
-            newposition[SLICE_ORIENTATION_XY] *= ( 1 + dy )
-        elif self.GetSliceOrientation() == SLICE_ORIENTATION_XZ:
-            newposition[SLICE_ORIENTATION_XZ] *= ( 1 + dy )
-        elif self.GetSliceOrientation() == SLICE_ORIENTATION_YZ:
-            newposition[SLICE_ORIENTATION_YZ] *= ( 1 + dy )
-        #print ("new position " + str(newposition))
+#        if self.GetSliceOrientation() == SLICE_ORIENTATION_XY: 
+#            #dist = newposition[SLICE_ORIENTATION_XY] * ( 1 + dy ) 
+#            newposition[SLICE_ORIENTATION_XY] *= ( 1 + dy )
+#        elif self.GetSliceOrientation() == SLICE_ORIENTATION_XZ:
+#            newposition[SLICE_ORIENTATION_XZ] *= ( 1 + dy )
+#        elif self.GetSliceOrientation() == SLICE_ORIENTATION_YZ:
+#            newposition[SLICE_ORIENTATION_YZ] *= ( 1 + dy )
+        newposition[self.GetSliceOrientation()] *= ( 1 + dy )
         camera.SetPosition(newposition)
+        
+        print ("camera distance %f clipping range %s " %( camera.GetDistance(), 
+                                                         str(camera.GetClippingRange())))
+        
+        if camera.GetDistance() > camera.GetClippingRange()[1]:
+            #cr = camera.GetClippingRange()
+            camera.SetClippingRange(0.1 * camera.GetDistance(), camera.GetDistance() * 1.2)
+        if camera.GetDistance() < camera.GetClippingRange()[0]:
+            camera.SetClippingRange(0.1 * camera.GetDistance(), camera.GetDistance() * 1.2)
         self.SetActiveCamera(camera)
         
         self.Render()
-        	
+        
         print ("distance after: " + str(self.GetActiveCamera().GetDistance()))
         
     def HandlePanEvent(self, interactor, event):
@@ -701,6 +716,36 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
         #print ("Pixel %d,%d,%d Value %f" % vox )
         self._viewer.cornerAnnotation.VisibilityOn()
         self.UpdateCornerAnnotation("[%d,%d,%d] : %.2f" % vox , 0)
+        self.Render()
+    
+    def ResampleImageActorIfNeeded(self):
+        dims = self.GetDimensions()
+        resample = False
+        print ("Should Resample? %s" % str(dims))
+        maxSquareSize = 128
+        if self.GetSliceOrientation() == SLICE_ORIENTATION_XY: 
+            if (dims[0]*dims[1]) > (maxSquareSize * maxSquareSize):
+                resample = True
+        elif self.GetSliceOrientation() == SLICE_ORIENTATION_XZ:
+            if (dims[0]*dims[2]) > (maxSquareSize * maxSquareSize):
+                resample = True
+        elif self.GetSliceOrientation() == SLICE_ORIENTATION_YZ:
+            if (dims[1]*dims[2]) > (maxSquareSize * maxSquareSize):
+                resample = True
+        #resample = False
+        if (resample):
+            # resample to 512x512
+            sliceDims = [dims[i] for i in range(len(dims)) if i != self.GetSliceOrientation()]
+            downsample = int(max(sliceDims)/maxSquareSize)
+            ds = [downsample if i!= self.GetSliceOrientation() else 1 for i in range(len(dims)) ]
+            print ("Downsample %s" % str(ds))
+            self._viewer.voi.SetSampleRate(*ds)
+            self.UpdatePipeline()
+            self.Render()
+            
+    def StopResampleIfNeeded(self):
+        self._viewer.voi.SetSampleRate(1,1,1)
+        self.UpdatePipeline()
         self.Render()
         
 ###############################################################################
