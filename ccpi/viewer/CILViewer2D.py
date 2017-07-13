@@ -586,40 +586,43 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
         size = self.GetRenderWindow().GetSize()
         dy = - 4 * dy / size[1]
         
-        print ("distance: " + str(self.GetActiveCamera().GetDistance()))
+        #print ("distance: " + str(self.GetActiveCamera().GetDistance()))
         
-        print ("\ndy: %f\ncamera dolly %f\n" % (dy, 1 + dy))
+        #print ("\ndy: %f\ncamera dolly %f\n" % (dy, 1 + dy))
+        #print ("Initial position %s" % str(self.GetInitialCameraPosition()))
+        
+        pC = self.GetActiveCamera().GetPosition()
+        pF = self.GetActiveCamera().GetFocalPoint()
+        
+        dzoom = pF[self.GetSliceOrientation()] - pC[self.GetSliceOrientation()]
         
         camera = vtk.vtkCamera()
         camera.SetFocalPoint(self.GetActiveCamera().GetFocalPoint())
-        #print ("current position " + str(self.InitialCameraPosition))
         camera.SetViewUp(self.GetActiveCamera().GetViewUp())
         camera.SetPosition(self.GetInitialCameraPosition())
-        #camera.SetClippingRange( self.GetActiveCamera().GetClippingRange() )
         newposition = [i for i in self.GetInitialCameraPosition()]
-#        if self.GetSliceOrientation() == SLICE_ORIENTATION_XY: 
-#            #dist = newposition[SLICE_ORIENTATION_XY] * ( 1 + dy ) 
-#            newposition[SLICE_ORIENTATION_XY] *= ( 1 + dy )
-#        elif self.GetSliceOrientation() == SLICE_ORIENTATION_XZ:
-#            newposition[SLICE_ORIENTATION_XZ] *= ( 1 + dy )
-#        elif self.GetSliceOrientation() == SLICE_ORIENTATION_YZ:
-#            newposition[SLICE_ORIENTATION_YZ] *= ( 1 + dy )
+
         newposition[self.GetSliceOrientation()] *= ( 1 + dy )
-        camera.SetPosition(newposition)
-        
-        print ("camera distance %f clipping range %s " %( camera.GetDistance(), 
-                                                         str(camera.GetClippingRange())))
-        
-        if camera.GetDistance() > camera.GetClippingRange()[1]:
-            #cr = camera.GetClippingRange()
-            camera.SetClippingRange(0.1 * camera.GetDistance(), camera.GetDistance() * 1.2)
-        if camera.GetDistance() < camera.GetClippingRange()[0]:
-            camera.SetClippingRange(0.1 * camera.GetDistance(), camera.GetDistance() * 1.2)
-        self.SetActiveCamera(camera)
-        
-        self.Render()
-        
-        print ("distance after: " + str(self.GetActiveCamera().GetDistance()))
+        dzoom2 = pF[self.GetSliceOrientation()] - newposition[self.GetSliceOrientation()]
+        if dzoom * dzoom2 > 0:
+            # don't zoom too much    
+            #print ("Initial position %s" % str(self.GetInitialCameraPosition()))
+            
+            camera.SetPosition(newposition)
+            
+            #print ("camera distance %f clipping range %s " %( camera.GetDistance(), 
+            #                                                 str(camera.GetClippingRange())))
+            
+            if camera.GetDistance() > camera.GetClippingRange()[1]:
+                #cr = camera.GetClippingRange()
+                camera.SetClippingRange(0.1 * camera.GetDistance(), camera.GetDistance() * 1.2)
+            if camera.GetDistance() < camera.GetClippingRange()[0]:
+                camera.SetClippingRange(0.1 * camera.GetDistance(), camera.GetDistance() * 1.2)
+            self.SetActiveCamera(camera)
+            
+            self.Render()
+            
+            #print ("distance after: " + str(self.GetActiveCamera().GetDistance()))
         
     def HandlePanEvent(self, interactor, event):
         x,y = interactor.GetEventPosition()
