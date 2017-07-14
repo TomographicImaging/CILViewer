@@ -864,6 +864,9 @@ class CILViewer2D():
     
     def GetRenderer(self):
         return self.ren
+    
+    def GetRenderWindow(self):
+        return self.renWin
         
     def setInput3DData(self, imageData):
         self.img3D = imageData
@@ -983,7 +986,7 @@ class CILViewer2D():
         
         self.iren.Initialize()
         self.renWin.Render()
-        self.iren.Start()
+        #self.iren.Start()
     
     def AdjustCamera(self, resetcamera = False):
         self.ren.ResetCameraClippingRange()
@@ -1018,12 +1021,6 @@ class CILViewer2D():
             return (imagePosition[0], imagePosition[1], imagePosition[2] , pixelValue)
         else:
             return (0,0,0,0)
-
-        
-    
-    def GetRenderWindow(self):
-        return self.renWin
-    
     
     def startRenderLoop(self):
         self.iren.Start()
