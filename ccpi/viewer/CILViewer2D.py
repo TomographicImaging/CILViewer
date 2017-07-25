@@ -237,7 +237,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
         self._viewer.AdjustCamera()
         
     def SaveRender(self, filename):
-        self._viewer.saveRender(filename)
+        self._viewer.SaveRender(filename)
         
     def GetRenderWindow(self):
         return self._viewer.renWin
@@ -357,7 +357,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
             camera = vtk.vtkCamera()
             camera.SetFocalPoint(self.GetActiveCamera().GetFocalPoint())
             camera.SetViewUp(self.GetActiveCamera().GetViewUp())
-            newposition = [i for i in self.ren.GetActiveCamera().GetFocalPoint()]
+            newposition = [i for i in self.GetActiveCamera().GetFocalPoint()]
             newposition[SLICE_ORIENTATION_XZ] = numpy.sqrt(newposition[SLICE_ORIENTATION_XY] ** 2 + newposition[SLICE_ORIENTATION_YZ] ** 2) 
             camera.SetPosition(newposition)
             camera.SetViewUp(0,0,-1)
@@ -484,14 +484,10 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
         elif shift and not (ctrl and alt):
             self.SetViewerEvent( ViewerEvent.ZOOM_EVENT )
             self.SetInitialCameraPosition( self.GetActiveCamera().GetPosition())
-            self.ResampleImageActorIfNeeded()
             print ("Event %s is ZOOM_EVENT" % (event))
         elif ctrl and not (shift and alt):
             self.SetViewerEvent (ViewerEvent.PAN_EVENT )
             self.SetInitialCameraPosition ( self.GetActiveCamera().GetPosition() )
-            # check if we have to resample the actor to get a smooth display
-            self.ResampleImageActorIfNeeded()
-        
             print ("Event %s is PAN_EVENT" % (event))
         
     def OnRightButtonReleaseEvent(self, interactor, event):
@@ -499,10 +495,9 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
         if self.GetViewerEvent() == ViewerEvent.WINDOW_LEVEL_EVENT:
             self.SetInitialLevel( self.GetWindowLevel().GetLevel() )
             self.SetInitialWindow ( self.GetWindowLevel().GetWindow() )
-        elif self.GetViewerEvent() == ViewerEvent.ZOOM_EVENT or self.GetViewerEvent() == ViewerEvent.PAN_EVENT:
-            self.StopResampleIfNeeded()
-                 
-            self.SetInitialCameraPosition( (1,1,1) )
+        elif self.GetViewerEvent() == ViewerEvent.ZOOM_EVENT or \
+             self.GetViewerEvent() == ViewerEvent.PAN_EVENT:
+            self.SetInitialCameraPosition( () )
 			
         self.SetViewerEvent( ViewerEvent.NO_EVENT )
         
@@ -586,43 +581,30 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
         size = self.GetRenderWindow().GetSize()
         dy = - 4 * dy / size[1]
         
-        #print ("distance: " + str(self.GetActiveCamera().GetDistance()))
+        print ("distance: " + str(self.GetActiveCamera().GetDistance()))
         
-        #print ("\ndy: %f\ncamera dolly %f\n" % (dy, 1 + dy))
-        #print ("Initial position %s" % str(self.GetInitialCameraPosition()))
-        
-        pC = self.GetActiveCamera().GetPosition()
-        pF = self.GetActiveCamera().GetFocalPoint()
-        
-        dzoom = pF[self.GetSliceOrientation()] - pC[self.GetSliceOrientation()]
+        print ("\ndy: %f\ncamera dolly %f\n" % (dy, 1 + dy))
         
         camera = vtk.vtkCamera()
         camera.SetFocalPoint(self.GetActiveCamera().GetFocalPoint())
+        #print ("current position " + str(self.InitialCameraPosition))
         camera.SetViewUp(self.GetActiveCamera().GetViewUp())
         camera.SetPosition(self.GetInitialCameraPosition())
         newposition = [i for i in self.GetInitialCameraPosition()]
-
-        newposition[self.GetSliceOrientation()] *= ( 1 + dy )
-        dzoom2 = pF[self.GetSliceOrientation()] - newposition[self.GetSliceOrientation()]
-        if dzoom * dzoom2 > 0:
-            # don't zoom too much    
-            #print ("Initial position %s" % str(self.GetInitialCameraPosition()))
-            
-            camera.SetPosition(newposition)
-            
-            #print ("camera distance %f clipping range %s " %( camera.GetDistance(), 
-            #                                                 str(camera.GetClippingRange())))
-            
-            if camera.GetDistance() > camera.GetClippingRange()[1]:
-                #cr = camera.GetClippingRange()
-                camera.SetClippingRange(0.1 * camera.GetDistance(), camera.GetDistance() * 1.2)
-            if camera.GetDistance() < camera.GetClippingRange()[0]:
-                camera.SetClippingRange(0.1 * camera.GetDistance(), camera.GetDistance() * 1.2)
-            self.SetActiveCamera(camera)
-            
-            self.Render()
-            
-            #print ("distance after: " + str(self.GetActiveCamera().GetDistance()))
+        if self.GetSliceOrientation() == SLICE_ORIENTATION_XY: 
+            dist = newposition[SLICE_ORIENTATION_XY] * ( 1 + dy ) 
+            newposition[SLICE_ORIENTATION_XY] *= ( 1 + dy )
+        elif self.GetSliceOrientation() == SLICE_ORIENTATION_XZ:
+            newposition[SLICE_ORIENTATION_XZ] *= ( 1 + dy )
+        elif self.GetSliceOrientation() == SLICE_ORIENTATION_YZ:
+            newposition[SLICE_ORIENTATION_YZ] *= ( 1 + dy )
+        #print ("new position " + str(newposition))
+        camera.SetPosition(newposition)
+        self.SetActiveCamera(camera)
+        
+        self.Render()
+        	
+        print ("distance after: " + str(self.GetActiveCamera().GetDistance()))
         
     def HandlePanEvent(self, interactor, event):
         x,y = interactor.GetEventPosition()
@@ -719,36 +701,6 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
         #print ("Pixel %d,%d,%d Value %f" % vox )
         self._viewer.cornerAnnotation.VisibilityOn()
         self.UpdateCornerAnnotation("[%d,%d,%d] : %.2f" % vox , 0)
-        self.Render()
-    
-    def ResampleImageActorIfNeeded(self):
-        dims = self.GetDimensions()
-        resample = False
-        print ("Should Resample? %s" % str(dims))
-        maxSquareSize = 128
-        if self.GetSliceOrientation() == SLICE_ORIENTATION_XY: 
-            if (dims[0]*dims[1]) > (maxSquareSize * maxSquareSize):
-                resample = True
-        elif self.GetSliceOrientation() == SLICE_ORIENTATION_XZ:
-            if (dims[0]*dims[2]) > (maxSquareSize * maxSquareSize):
-                resample = True
-        elif self.GetSliceOrientation() == SLICE_ORIENTATION_YZ:
-            if (dims[1]*dims[2]) > (maxSquareSize * maxSquareSize):
-                resample = True
-        #resample = False
-        if (resample):
-            # resample to 512x512
-            sliceDims = [dims[i] for i in range(len(dims)) if i != self.GetSliceOrientation()]
-            downsample = int(max(sliceDims)/maxSquareSize)
-            ds = [downsample if i!= self.GetSliceOrientation() else 1 for i in range(len(dims)) ]
-            print ("Downsample %s" % str(ds))
-            self._viewer.voi.SetSampleRate(*ds)
-            self.UpdatePipeline()
-            self.Render()
-            
-    def StopResampleIfNeeded(self):
-        self._viewer.voi.SetSampleRate(1,1,1)
-        self.UpdatePipeline()
         self.Render()
         
 ###############################################################################
@@ -864,15 +816,13 @@ class CILViewer2D():
     
     def GetRenderer(self):
         return self.ren
-    
-    def GetRenderWindow(self):
-        return self.renWin
         
     def setInput3DData(self, imageData):
         self.img3D = imageData
         self.installPipeline()
 
-    def setInputAsNumpy(self, numpyarray,  origin=(0,0,0), spacing=(1.,1.,1.), rescale=True,):
+    def setInputAsNumpy(self, numpyarray,  origin=(0,0,0), spacing=(1.,1.,1.), 
+                        rescale=True, dtype=vtk.VTK_UNSIGNED_SHORT):
         importer = Converter.numpy2vtkImporter(numpyarray, spacing, origin)
         importer.Update()
         
@@ -886,13 +836,16 @@ class CILViewer2D():
             if (iMax - iMin == 0):
                 scale = 1
             else:
-                scale = vtk.VTK_UNSIGNED_SHORT_MAX / (iMax - iMin)
+                if dtype == vtk.VTK_UNSIGNED_SHORT:
+                    scale = vtk.VTK_UNSIGNED_SHORT_MAX / (iMax - iMin)
+                elif dtype == vtk.VTK_UNSIGNED_INT:
+                    scale = vtk.VTK_UNSIGNED_INT_MAX / (iMax - iMin)
     
             shiftScaler = vtk.vtkImageShiftScale ()
             shiftScaler.SetInputData(importer.GetOutput())
             shiftScaler.SetScale(scale)
-            shiftScaler.SetShift(iMin)
-            shiftScaler.SetOutputScalarType(vtk.VTK_UNSIGNED_SHORT)
+            shiftScaler.SetShift(-iMin)
+            shiftScaler.SetOutputScalarType(dtype)
             shiftScaler.Update()
             self.img3D = shiftScaler.GetOutput()
         else:
@@ -986,7 +939,7 @@ class CILViewer2D():
         
         self.iren.Initialize()
         self.renWin.Render()
-        #self.iren.Start()
+        self.iren.Start()
     
     def AdjustCamera(self, resetcamera = False):
         self.ren.ResetCameraClippingRange()
@@ -1021,6 +974,12 @@ class CILViewer2D():
             return (imagePosition[0], imagePosition[1], imagePosition[2] , pixelValue)
         else:
             return (0,0,0,0)
+
+        
+    
+    def GetRenderWindow(self):
+        return self.renWin
+    
     
     def startRenderLoop(self):
         self.iren.Start()
@@ -1087,7 +1046,6 @@ class CILViewer2D():
             extent[0] = self.GetActiveSlice()
             extent[1] = self.GetActiveSlice()+1
         
-        
         self.roiVOI.SetVOI(extent)
         self.roiVOI.SetInputData(self.img3D)
         self.roiVOI.Update()
@@ -1099,7 +1057,7 @@ class CILViewer2D():
         self.roiIA.SetComponentOrigin( int(irange[0]),0,0 );
         self.roiIA.SetComponentSpacing( 1,0,0 );
         self.roiIA.Update()
-     
+        
         self.histogramPlotActor.AddDataSetInputConnection(self.roiIA.GetOutputPort())
         self.histogramPlotActor.SetXRange(irange[0],irange[1])
         
