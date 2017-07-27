@@ -939,7 +939,7 @@ class CILViewer2D():
         
         self.iren.Initialize()
         self.renWin.Render()
-        self.iren.Start()
+        #self.iren.Start()
     
     def AdjustCamera(self, resetcamera = False):
         self.ren.ResetCameraClippingRange()
