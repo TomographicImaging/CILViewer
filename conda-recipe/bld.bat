@@ -1,6 +1,4 @@
-SET CIL_VERSION 2>Nul | Findstr/I "."
-IF ERRORLEVEL 1  
-(
+IF NOT DEFINED CIL_VERSION (
 ECHO CIL_VERSION Not Defined.
 exit 1
 )
