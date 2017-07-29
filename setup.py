@@ -7,10 +7,16 @@ Created on Wed Jun  7 09:57:13 2017
 
 from distutils.core import setup
 #from setuptools import setup, find_packages
+import os
+
+cil_version=os.environ['CIL_VERSION']
+if  cil_version == '':
+    print("Please set the environmental variable CIL_VERSION")
+    sys.exit(1)
 
 setup(
     name="ccpi-viewer",
-    version="0.9",
+    version=cil_version,
     packages=['ccpi','ccpi.viewer'],
 	install_requires=['numpy','vtk'],
 
