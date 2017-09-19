@@ -62,43 +62,109 @@ class Converter():
         return numpy.transpose(data3d).copy() 
 
     @staticmethod
-    def tiffStack2numpy(filename, indices):
+    def tiffStack2numpy(filename=None, indices=None,
+                        extent = None , sampleRate = None ,\
+                        flatField = None, darkField = None
+                        , filenames= None):
         '''Converts a stack of TIFF files to numpy array.
         
         filename must contain the whole path. The filename is supposed to be named and
         have a suffix with the ordinal file number, i.e. /path/to/projection_%03d.tif
         
-        indices are the suffix, generally an increasing number'''
+        indices are the suffix, generally an increasing number
+        
+        Optionally extracts only a selection of the 2D images and (optionally)
+        normalizes.
+        '''
+        if filename is not None and indices is not None:
+            filenames = [ filename % num for num in indices]
+        return Converter._tiffStack2numpy(filenames=filenames, extent=extent,
+                                         sampleRate=sampleRate, 
+                                         flatField=flatField, 
+                                         darkField=darkField)
+    
+    @staticmethod
+    def _tiffStack2numpy(filenames, 
+                        extent = None , sampleRate = None ,\
+                        flatField = None, darkField = None):
+        '''Converts a stack of TIFF files to numpy array.
+        
+        filename must contain the whole path. The filename is supposed to be named and
+        have a suffix with the ordinal file number, i.e. /path/to/projection_%03d.tif
+        
+        indices are the suffix, generally an increasing number
+        
+        Optionally extracts only a selection of the 2D images and (optionally)
+        normalizes.
+        '''
         
         stack = vtk.vtkImageData()
         reader = vtk.vtkTIFFReader()
+        voi = vtk.vtkExtractVOI()
         
         #directory = "C:\\Users\\ofn77899\\Documents\\CCPi\\IMAT\\20170419_crabtomo\\crabtomo\\"
         
         stack_image = numpy.asarray([])
-        nreduced = len(indices)
+        nreduced = len(filenames)
         
-        for num in range(len(indices)):
-            fn = filename % indices[num]
+        for num in range(len(filenames)):
+            #fn = filename % indices[num]
+            fn = filenames[num]
             print ("resampling %s" % ( fn ) )
             reader.SetFileName(fn)
             reader.Update()     
             print (reader.GetOutput().GetScalarTypeAsString())
             if num == 0:
-                sliced = reader.GetOutput().GetExtent()
-                stack.SetExtent(sliced[0],sliced[1], sliced[2],sliced[3], 0, nreduced-1)
-                stack.AllocateScalars(reader.GetOutput().GetScalarType(), 1)
+                if (extent == None):
+                    sliced = reader.GetOutput().GetExtent()
+                    stack.SetExtent(sliced[0],sliced[1], sliced[2],sliced[3], 0, nreduced-1)
+                else:
+                    sliced = extent
+                    voi.SetVOI(extent)
+                   
+                    if sampleRate is not None:
+                        voi.SetSampleRate(sampleRate)
+                        ext = numpy.asarray([(sliced[2*i+1] - sliced[2*i])/sampleRate[i] for i in range(3)], dtype=int)
+                        print ("ext {0}".format(ext))
+                        stack.SetExtent(0, ext[0] , 0, ext[1], 0, nreduced-1)
+                    else:
+                         stack.SetExtent(0, sliced[1] - sliced[0] , 0, sliced[3]-sliced[2], 0, nreduced-1)
+                if (flatField != None and darkField != None):
+                    stack.AllocateScalars(vtk.VTK_FLOAT, 1)
+                else:
+                    stack.AllocateScalars(reader.GetOutput().GetScalarType(), 1)
                 print ("Image Size: %d" % ((sliced[1]+1)*(sliced[3]+1) ))
                 stack_image = Converter.vtk2numpy(stack)
                 print ("Stack shape %s" % str(numpy.shape(stack_image)))
             
-            theSlice = Converter.vtk2numpy(reader.GetOutput())
+            if extent!=None:
+                voi.SetInputData(reader.GetOutput())
+                voi.Update()
+                img = voi.GetOutput()
+            else:
+                img = reader.GetOutput()
+                
+            theSlice = Converter.vtk2numpy(img).T[0]
+            if darkField != None and flatField != None:
+                print("Try to normalize")
+                #if numpy.shape(darkField) == numpy.shape(flatField) and numpy.shape(flatField) == numpy.shape(theSlice):
+                theSlice = Converter.normalize(theSlice, darkField, flatField, 0.01)
+                print (theSlice.dtype)
+            
+                    
             print ("Slice shape %s" % str(numpy.shape(theSlice)))
-            stack_image.T[num] = theSlice.T[0].copy()
+            stack_image.T[num] = theSlice.copy()
         
         return stack_image
-
-                    
+    
+    @staticmethod
+    def normalize(projection, dark, flat, def_val=0):
+        a = (projection - dark)
+        b = (flat-dark)
+        with numpy.errstate(divide='ignore', invalid='ignore'):
+            c = numpy.true_divide( a, b )
+            c[ ~ numpy.isfinite( c )] = def_val  # set to not zero if 0/0 
+        return c
 
 
 
@@ -710,15 +776,27 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
 class CILViewer2D():
     '''Simple Interactive Viewer based on VTK classes'''
     
-    def __init__(self, dimx=600,dimy=600):
+    def __init__(self, dimx=600,dimy=600, ren=None, renWin=None,iren=None):
         '''creates the rendering pipeline'''
         # create a rendering window and renderer
-        self.ren = vtk.vtkRenderer()
-        self.renWin = vtk.vtkRenderWindow()
+        if ren == None:
+            self.ren = vtk.vtkRenderer()
+        else:
+            self.ren = ren
+        if renWin == None:
+            self.renWin = vtk.vtkRenderWindow()
+        else:
+            self.renWin = renWin
+        if iren == None:
+            self.iren = vtk.vtkRenderWindowInteractor()
+        else:
+            self.iren = iren
+            
         self.renWin.SetSize(dimx,dimy)
         self.renWin.AddRenderer(self.ren)
+        
         self.style = CILInteractorStyle(self)
-        self.iren = vtk.vtkRenderWindowInteractor()
+        
         self.iren.SetInteractorStyle(self.style)
         self.iren.SetRenderWindow(self.renWin)
         self.iren.Initialize()
@@ -949,6 +1027,11 @@ class CILViewer2D():
             
     def getROI(self):
         return self.ROI
+    
+    def getROIExtent(self):
+        p0 = self.ROI[0]
+        p1 = self.ROI[1]
+        return (p0[0], p1[0],p0[1],p1[1],p0[2],p1[2])
         
     ############### Handle events are moved to the interactor style
     
