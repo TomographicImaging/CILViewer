@@ -1021,6 +1021,13 @@ class CILViewer2D():
     
     def AdjustCamera(self, resetcamera = False):
         self.ren.ResetCameraClippingRange()
+        
+        # adjust camera focal point
+        camera = self.GetRenderer().GetActiveCamera()
+        fp = list (camera.GetFocalPoint())
+        fp[self.sliceOrientation] = self.sliceno
+        camera.SetFocalPoint(fp)
+        
         if resetcamera:
             self.ren.ResetCamera()
         
