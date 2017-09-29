@@ -206,6 +206,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
         self.callback = callback
         self._viewer = callback
         priority = 1.0
+        self.debug = True
         
 #        self.AddObserver("MouseWheelForwardEvent" , callback.OnMouseWheelForward , priority)
 #        self.AddObserver("MouseWheelBackwardEvent" , callback.OnMouseWheelBackward, priority)
@@ -227,7 +228,11 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
         
         self.InitialEventPosition = (0,0)
         
-        
+
+    def log(self, msg):
+        if self.debug:
+            print(msg)
+            
     def SetInitialEventPosition(self, xy):
         self.InitialEventPosition = xy
         
@@ -373,7 +378,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
             
             self.UpdatePipeline()
         else:
-            print ("maxSlice %d request %d" % (maxSlice, self.GetActiveSlice() + 1 ))
+            log ("maxSlice %d request %d" % (maxSlice, self.GetActiveSlice() ))
     
     def OnMouseWheelBackward(self, interactor, event):
         minSlice = 0
@@ -385,7 +390,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
             self.SetActiveSlice( self.GetActiveSlice() - advance)
             self.UpdatePipeline()
         else:
-            print ("minSlice %d request %d" % (minSlice, self.GetActiveSlice() + 1 ))
+            log ("minSlice %d request %d" % (minSlice, self.GetActiveSlice() ))
         
     def OnKeyPress(self, interactor, event):
         #print ("Pressed key %s" % interactor.GetKeyCode())
@@ -466,7 +471,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
             filename = "current_render"
             self.SaveRender(filename)
         elif interactor.GetKeyCode() == "q":
-            print ("Terminating by pressing q %s" % (interactor.GetKeyCode(), ))
+            print ("Render loop terminating by pressing %s" % (interactor.GetKeyCode(), ))
             interactor.SetKeyCode("e")
             self.OnKeyPress(interactor, event)
         else :
@@ -493,18 +498,18 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
             self.GetROIWidget().On()
             self.SetDisplayHistogram(True)
             self.Render()
-            print ("Event %s is CREATE_ROI_EVENT" % (event))
+            log ("Event %s is CREATE_ROI_EVENT" % (event))
         elif alt and not (shift and ctrl):
             self.SetViewerEvent( ViewerEvent.DELETE_ROI_EVENT )
             self.GetROIWidget().Off()
             self._viewer.updateCornerAnnotation("", 1, False)
             self.SetDisplayHistogram(False)
             self.Render()
-            print ("Event %s is DELETE_ROI_EVENT" % (event))
+            log ("Event %s is DELETE_ROI_EVENT" % (event))
         elif not (ctrl and alt and shift):
             self.SetViewerEvent ( ViewerEvent.PICK_EVENT )
             self.HandlePickEvent(interactor, event)
-            print ("Event %s is PICK_EVENT" % (event))
+            log ("Event %s is PICK_EVENT" % (event))
         
           
     def SetDisplayHistogram(self, display):
@@ -545,19 +550,19 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
         
         if alt and not (ctrl and shift):
             self.SetViewerEvent( ViewerEvent.WINDOW_LEVEL_EVENT )
-            print ("Event %s is WINDOW_LEVEL_EVENT" % (event))
+            log ("Event %s is WINDOW_LEVEL_EVENT" % (event))
             self.HandleWindowLevel(interactor, event)
         elif shift and not (ctrl and alt):
             self.SetViewerEvent( ViewerEvent.ZOOM_EVENT )
             self.SetInitialCameraPosition( self.GetActiveCamera().GetPosition())
-            print ("Event %s is ZOOM_EVENT" % (event))
+            log ("Event %s is ZOOM_EVENT" % (event))
         elif ctrl and not (shift and alt):
             self.SetViewerEvent (ViewerEvent.PAN_EVENT )
             self.SetInitialCameraPosition ( self.GetActiveCamera().GetPosition() )
-            print ("Event %s is PAN_EVENT" % (event))
+            log ("Event %s is PAN_EVENT" % (event))
         
     def OnRightButtonReleaseEvent(self, interactor, event):
-        print (event)
+        log (event)
         if self.GetViewerEvent() == ViewerEvent.WINDOW_LEVEL_EVENT:
             self.SetInitialLevel( self.GetWindowLevel().GetLevel() )
             self.SetInitialWindow ( self.GetWindowLevel().GetWindow() )
@@ -584,23 +589,23 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
         
         self.SetROI( (vox1 , vox2) )
         roi = self.GetROI()
-        print ("Pixel1 %d,%d,%d Value %f" % vox1 )
-        print ("Pixel2 %d,%d,%d Value %f" % vox2 )
+        log ("Pixel1 %d,%d,%d Value %f" % vox1 )
+        log ("Pixel2 %d,%d,%d Value %f" % vox2 )
         if self.GetSliceOrientation() == SLICE_ORIENTATION_XY: 
-            print ("slice orientation : XY")
+            log ("slice orientation : XY")
             x = abs(roi[1][0] - roi[0][0])
             y = abs(roi[1][1] - roi[0][1])
         elif self.GetSliceOrientation() == SLICE_ORIENTATION_XZ:
-            print ("slice orientation : XY")
+            log ("slice orientation : XY")
             x = abs(roi[1][0] - roi[0][0])
             y = abs(roi[1][2] - roi[0][2])
         elif self.GetSliceOrientation() == SLICE_ORIENTATION_YZ:
-            print ("slice orientation : XY")
+            log ("slice orientation : XY")
             x = abs(roi[1][1] - roi[0][1])
             y = abs(roi[1][2] - roi[0][2])
         
         text = "ROI: %d x %d, %.2f kp" % (x,y,float(x*y)/1024.)
-        print (text)
+        log (text)
         self.UpdateCornerAnnotation(text, 1)
         self.UpdateROIHistogram()
         self.SetViewerEvent( ViewerEvent.NO_EVENT )
@@ -613,11 +618,11 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
         pickPosition[self.GetSliceOrientation()] = \
             self.GetInputData().GetSpacing()[self.GetSliceOrientation()] * self.GetActiveSlice() + \
             self.GetInputData().GetOrigin()[self.GetSliceOrientation()]
-        print ("Pick Position " + str (pickPosition))
+        log ("Pick Position " + str (pickPosition))
         
         if (pickPosition != [0,0,0]):
             dims = self.GetInputData().GetDimensions()
-            print (dims)
+            log (dims)
             spac = self.GetInputData().GetSpacing()
             orig = self.GetInputData().GetOrigin()
             imagePosition = [int(pickPosition[i] / spac[i] + orig[i]) for i in range(3) ]
@@ -632,7 +637,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
     
     def OnMouseMoveEvent(self, interactor, event):        
         if self.GetViewerEvent() == ViewerEvent.WINDOW_LEVEL_EVENT:
-            print ("Event %s is WINDOW_LEVEL_EVENT" % (event))
+            log ("Event %s is WINDOW_LEVEL_EVENT" % (event))
             self.HandleWindowLevel(interactor, event)    
         elif self.GetViewerEvent() == ViewerEvent.PICK_EVENT:
             self.HandlePickEvent(interactor, event)
@@ -647,9 +652,9 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
         size = self.GetRenderWindow().GetSize()
         dy = - 4 * dy / size[1]
         
-        print ("distance: " + str(self.GetActiveCamera().GetDistance()))
+        log ("distance: " + str(self.GetActiveCamera().GetDistance()))
         
-        print ("\ndy: %f\ncamera dolly %f\n" % (dy, 1 + dy))
+        log ("\ndy: %f\ncamera dolly %f\n" % (dy, 1 + dy))
         
         camera = vtk.vtkCamera()
         camera.SetFocalPoint(self.GetActiveCamera().GetFocalPoint())
@@ -670,7 +675,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
         
         self.Render()
         	
-        print ("distance after: " + str(self.GetActiveCamera().GetDistance()))
+        log ("distance after: " + str(self.GetActiveCamera().GetDistance()))
         
     def HandlePanEvent(self, interactor, event):
         x,y = interactor.GetEventPosition()
@@ -712,7 +717,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
         
     def HandleWindowLevel(self, interactor, event):
         dx,dy = interactor.GetDeltaEventPosition()
-        print ("Event delta %d %d" % (dx,dy))
+        log ("Event delta %d %d" % (dx,dy))
         size = self.GetRenderWindow().GetSize()
         
         dx = 4 * dx / size[0]
@@ -776,7 +781,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
 class CILViewer2D():
     '''Simple Interactive Viewer based on VTK classes'''
     
-    def __init__(self, dimx=600,dimy=600, ren=None, renWin=None,iren=None):
+    def __init__(self, dimx=600,dimy=600, ren=None, renWin=None,iren=None, debug=True):
         '''creates the rendering pipeline'''
         # create a rendering window and renderer
         if ren == None:
@@ -791,11 +796,14 @@ class CILViewer2D():
             self.iren = vtk.vtkRenderWindowInteractor()
         else:
             self.iren = iren
-            
+
+        self.debug = debug
+        
         self.renWin.SetSize(dimx,dimy)
         self.renWin.AddRenderer(self.ren)
         
         self.style = CILInteractorStyle(self)
+        self.style.debug = debug
         
         self.iren.SetInteractorStyle(self.style)
         self.iren.SetRenderWindow(self.renWin)
@@ -888,7 +896,11 @@ class CILViewer2D():
         self.histogramPlotActor.SetPosition2(0.4,0.4)
  
         
-        
+
+    def log(self, msg):
+        if self.debug:
+            print(msg)
+            
     def GetInteractor(self):
         return self.iren
     
@@ -1051,11 +1063,11 @@ class CILViewer2D():
         pickPosition[self.sliceOrientation] = \
             self.img3D.GetSpacing()[self.sliceOrientation] * self.sliceno + \
             self.img3D.GetOrigin()[self.sliceOrientation]
-        print ("Pick Position " + str (pickPosition))
+        log ("Pick Position " + str (pickPosition))
         
         if (pickPosition != [0,0,0]):
             dims = self.img3D.GetDimensions()
-            print (dims)
+            log (dims)
             spac = self.img3D.GetSpacing()
             orig = self.img3D.GetOrigin()
             imagePosition = [int(pickPosition[i] / spac[i] + orig[i]) for i in range(3) ]
@@ -1107,7 +1119,7 @@ class CILViewer2D():
         
         extent = [0 for i in range(6)]
         if self.GetSliceOrientation() == SLICE_ORIENTATION_XY: 
-            print ("slice orientation : XY")
+            log ("slice orientation : XY")
             extent[0] = self.ROI[0][0]
             extent[1] = self.ROI[1][0]
             extent[2] = self.ROI[0][1]
@@ -1116,7 +1128,7 @@ class CILViewer2D():
             extent[5] = self.GetActiveSlice()+1
             #y = abs(roi[1][1] - roi[0][1])
         elif self.GetSliceOrientation() == SLICE_ORIENTATION_XZ:
-            print ("slice orientation : XY")
+            log ("slice orientation : XY")
             extent[0] = self.ROI[0][0]
             extent[1] = self.ROI[1][0]
             #x = abs(roi[1][0] - roi[0][0])
@@ -1126,7 +1138,7 @@ class CILViewer2D():
             extent[2] = self.GetActiveSlice()
             extent[3] = self.GetActiveSlice()+1
         elif self.GetSliceOrientation() == SLICE_ORIENTATION_YZ:
-            print ("slice orientation : XY")
+            log ("slice orientation : XY")
             extent[2] = self.ROI[0][1]
             extent[3] = self.ROI[1][1]
             #x = abs(roi[1][1] - roi[0][1])
@@ -1152,5 +1164,10 @@ class CILViewer2D():
         self.histogramPlotActor.SetXRange(irange[0],irange[1])
         
         self.histogramPlotActor.SetYRange( self.roiIA.GetOutput().GetScalarRange() )
-        
+
+    def setSliceOrientation(self, axis):
+        if axis in ['x','y','z']:
+            self.GetInteractor().SetKeyCode(axis)
+            self.style.OnKeyPress(v.GetInteractor(), "KeyPressEvent")
+            
         
