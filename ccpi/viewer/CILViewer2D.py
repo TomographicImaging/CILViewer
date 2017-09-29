@@ -43,23 +43,41 @@ class Converter():
         return importer
     
     @staticmethod
-    def numpy2vtk(nparray, spacing=(1.,1.,1.), origin=(0,0,0)):
-        '''Converts a 3D numpy array to a vtkImageData'''
-        importer = Converter.numpy2vtkImporter(nparray, spacing, origin)
-        importer.Update()
-        return importer.GetOutput()
+    def vtk2numpy(imgdata, transpose=[0,1,2]):
+    '''Converts the VTK data to 3D numpy array
+
+Points in a VTK ImageData have indices as X-Y-Z (FORTRAN-contiguos)
+index = x + dimX * y + z * dimX * dimY,
+meaning that the slicing a VTK ImageData is easy in the Z axis
+
+Points in Numpy have indices as Z-Y-X (C-contiguous)
+index = z + dimZ * y + x * dimZ * dimY
+meaning that the slicing of a numpy array is easy on the X axis
+
+The function imgdata.GetPointData().GetScalars() returns a pointer to a
+vtk<TYPE>Array where the data is stored as X-Y-Z.
+'''
+    img_data = numpy_support.vtk_to_numpy(
+            imgdata.GetPointData().GetScalars())
+
+    dims = imgdata.GetDimensions()
+    print ("vtk2numpy: VTKImageData dims {0}".format(dims))
     
-    @staticmethod
-    def vtk2numpy(imgdata):
-        '''Converts the VTK data to 3D numpy array'''
-        img_data = numpy_support.vtk_to_numpy(
-                imgdata.GetPointData().GetScalars())
-    
-        dims = imgdata.GetDimensions()
+    old = True
+    if old:
         dims = (dims[2],dims[1],dims[0])
-        data3d = numpy.reshape(img_data, dims)
-        
-        return numpy.transpose(data3d).copy() 
+        data3d = numpy.reshape(img_data, dims, order='C')
+        data3d = numpy.ascontiguousarray(data3d)
+    else:
+        data3d = numpy.ascontiguousarray(
+            numpy.reshape(img_data, dims, order='F')
+            )
+        data3d = numpy.transpose(data3d, [2,1,0])    
+    if transpose == [0,1,2]:
+        return data3d
+    else:
+        return numpy.transpose(data3d, transpose).copy()
+
 
     @staticmethod
     def tiffStack2numpy(filename=None, indices=None,
@@ -102,8 +120,6 @@ class Converter():
         reader = vtk.vtkTIFFReader()
         voi = vtk.vtkExtractVOI()
         
-        #directory = "C:\\Users\\ofn77899\\Documents\\CCPi\\IMAT\\20170419_crabtomo\\crabtomo\\"
-        
         stack_image = numpy.asarray([])
         nreduced = len(filenames)
         
@@ -125,7 +141,7 @@ class Converter():
                     if sampleRate is not None:
                         voi.SetSampleRate(sampleRate)
                         ext = numpy.asarray([(sliced[2*i+1] - sliced[2*i])/sampleRate[i] for i in range(3)], dtype=int)
-                        print ("ext {0}".format(ext))
+                        #print ("ext {0}".format(ext))
                         stack.SetExtent(0, ext[0] , 0, ext[1], 0, nreduced-1)
                     else:
                          stack.SetExtent(0, sliced[1] - sliced[0] , 0, sliced[3]-sliced[2], 0, nreduced-1)
@@ -144,7 +160,7 @@ class Converter():
             else:
                 img = reader.GetOutput()
                 
-            theSlice = Converter.vtk2numpy(img).T[0]
+            theSlice = Converter.vtk2numpy(img)[0]
             if darkField != None and flatField != None:
                 print("Try to normalize")
                 #if numpy.shape(darkField) == numpy.shape(flatField) and numpy.shape(flatField) == numpy.shape(theSlice):
@@ -153,7 +169,7 @@ class Converter():
             
                     
             print ("Slice shape %s" % str(numpy.shape(theSlice)))
-            stack_image.T[num] = theSlice.copy()
+            stack_image[num] = theSlice.copy()
         
         return stack_image
     
@@ -168,18 +184,6 @@ class Converter():
 
 
 
-## Utility functions to transform numpy arrays to vtkImageData and viceversa
-#def numpy2vtkImporter(nparray, spacing=(1.,1.,1.), origin=(0,0,0)):
-#    return Converter.numpy2vtkImporter(nparray, spacing, origin)
-#
-#def numpy2vtk(nparray, spacing=(1.,1.,1.), origin=(0,0,0)):
-#    return Converter.numpy2vtk(nparray, spacing, origin)
-#
-#def vtk2numpy(imgdata):
-#    return Converter.vtk2numpy(imgdata)
-#
-#def tiffStack2numpy(filename, indices):
-#    return Converter.tiffStack2numpy(filename, indices)
 
 class ViewerEvent(Enum):
     # left button
