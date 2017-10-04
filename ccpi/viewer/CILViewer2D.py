@@ -37,53 +37,53 @@ class Converter():
         
         It handles the different axis order from numpy to VTK'''
         importer = vtkImageImportFromArray.vtkImageImportFromArray()
-        importer.SetArray(numpy.transpose(nparray).copy())
+        importer.SetArray(numpy.transpose(nparray, [2,1,0]).copy())
         importer.SetDataSpacing(spacing)
         importer.SetDataOrigin(origin)
         return importer
     
     @staticmethod
     def vtk2numpy(imgdata, transpose=[0,1,2]):
-    '''Converts the VTK data to 3D numpy array
+        '''Converts the VTK data to 3D numpy array
 
-Points in a VTK ImageData have indices as X-Y-Z (FORTRAN-contiguos)
-index = x + dimX * y + z * dimX * dimY,
-meaning that the slicing a VTK ImageData is easy in the Z axis
+        Points in a VTK ImageData have indices as X-Y-Z (FORTRAN-contiguos)
+        index = x + dimX * y + z * dimX * dimY,
+        meaning that the slicing a VTK ImageData is easy in the Z axis
 
-Points in Numpy have indices as Z-Y-X (C-contiguous)
-index = z + dimZ * y + x * dimZ * dimY
-meaning that the slicing of a numpy array is easy on the X axis
+        Points in Numpy have indices as Z-Y-X (C-contiguous)
+        index = z + dimZ * y + x * dimZ * dimY
+        meaning that the slicing of a numpy array is easy on the X axis
 
-The function imgdata.GetPointData().GetScalars() returns a pointer to a
-vtk<TYPE>Array where the data is stored as X-Y-Z.
-'''
-    img_data = numpy_support.vtk_to_numpy(
-            imgdata.GetPointData().GetScalars())
+        The function imgdata.GetPointData().GetScalars() returns a pointer to a
+        vtk<TYPE>Array where the data is stored as X-Y-Z.
+        '''
+        img_data = numpy_support.vtk_to_numpy(
+                imgdata.GetPointData().GetScalars())
 
-    dims = imgdata.GetDimensions()
-    print ("vtk2numpy: VTKImageData dims {0}".format(dims))
-    
-    old = True
-    if old:
-        dims = (dims[2],dims[1],dims[0])
-        data3d = numpy.reshape(img_data, dims, order='C')
-        data3d = numpy.ascontiguousarray(data3d)
-    else:
-        data3d = numpy.ascontiguousarray(
-            numpy.reshape(img_data, dims, order='F')
-            )
-        data3d = numpy.transpose(data3d, [2,1,0])    
-    if transpose == [0,1,2]:
-        return data3d
-    else:
-        return numpy.transpose(data3d, transpose).copy()
+        dims = imgdata.GetDimensions()
+        print ("vtk2numpy: VTKImageData dims {0}".format(dims))
+        
+        old = True
+        if old:
+            dims = (dims[2],dims[1],dims[0])
+            data3d = numpy.reshape(img_data, dims, order='C')
+            data3d = numpy.ascontiguousarray(data3d)
+        else:
+            data3d = numpy.ascontiguousarray(
+                numpy.reshape(img_data, dims, order='F')
+                )
+            data3d = numpy.transpose(data3d, [2,1,0])    
+        if transpose == [0,1,2]:
+            return data3d
+        else:
+            return numpy.transpose(data3d, transpose).copy()
 
 
     @staticmethod
     def tiffStack2numpy(filename=None, indices=None,
                         extent = None , sampleRate = None ,\
                         flatField = None, darkField = None
-                        , filenames= None):
+                        , filenames= None, tiffOrientation=1):
         '''Converts a stack of TIFF files to numpy array.
         
         filename must contain the whole path. The filename is supposed to be named and
@@ -100,11 +100,11 @@ vtk<TYPE>Array where the data is stored as X-Y-Z.
                                          sampleRate=sampleRate, 
                                          flatField=flatField, 
                                          darkField=darkField)
-    
+
     @staticmethod
     def _tiffStack2numpy(filenames, 
                         extent = None , sampleRate = None ,\
-                        flatField = None, darkField = None):
+                        flatField = None, darkField = None, tiffOrientation=1):
         '''Converts a stack of TIFF files to numpy array.
         
         filename must contain the whole path. The filename is supposed to be named and
@@ -128,6 +128,7 @@ vtk<TYPE>Array where the data is stored as X-Y-Z.
             fn = filenames[num]
             print ("resampling %s" % ( fn ) )
             reader.SetFileName(fn)
+            reader.SetOrientationType(tiffOrientation)
             reader.Update()     
             print (reader.GetOutput().GetScalarTypeAsString())
             if num == 0:
@@ -382,7 +383,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
             
             self.UpdatePipeline()
         else:
-            log ("maxSlice %d request %d" % (maxSlice, self.GetActiveSlice() ))
+            self.log ("maxSlice %d request %d" % (maxSlice, self.GetActiveSlice() ))
     
     def OnMouseWheelBackward(self, interactor, event):
         minSlice = 0
@@ -394,7 +395,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
             self.SetActiveSlice( self.GetActiveSlice() - advance)
             self.UpdatePipeline()
         else:
-            log ("minSlice %d request %d" % (minSlice, self.GetActiveSlice() ))
+            self.log ("minSlice %d request %d" % (minSlice, self.GetActiveSlice() ))
         
     def OnKeyPress(self, interactor, event):
         #print ("Pressed key %s" % interactor.GetKeyCode())
@@ -502,18 +503,18 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
             self.GetROIWidget().On()
             self.SetDisplayHistogram(True)
             self.Render()
-            log ("Event %s is CREATE_ROI_EVENT" % (event))
+            self.log ("Event %s is CREATE_ROI_EVENT" % (event))
         elif alt and not (shift and ctrl):
             self.SetViewerEvent( ViewerEvent.DELETE_ROI_EVENT )
             self.GetROIWidget().Off()
             self._viewer.updateCornerAnnotation("", 1, False)
             self.SetDisplayHistogram(False)
             self.Render()
-            log ("Event %s is DELETE_ROI_EVENT" % (event))
+            self.log ("Event %s is DELETE_ROI_EVENT" % (event))
         elif not (ctrl and alt and shift):
             self.SetViewerEvent ( ViewerEvent.PICK_EVENT )
             self.HandlePickEvent(interactor, event)
-            log ("Event %s is PICK_EVENT" % (event))
+            self.log ("Event %s is PICK_EVENT" % (event))
         
           
     def SetDisplayHistogram(self, display):
@@ -554,19 +555,19 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
         
         if alt and not (ctrl and shift):
             self.SetViewerEvent( ViewerEvent.WINDOW_LEVEL_EVENT )
-            log ("Event %s is WINDOW_LEVEL_EVENT" % (event))
+            self.log ("Event %s is WINDOW_LEVEL_EVENT" % (event))
             self.HandleWindowLevel(interactor, event)
         elif shift and not (ctrl and alt):
             self.SetViewerEvent( ViewerEvent.ZOOM_EVENT )
             self.SetInitialCameraPosition( self.GetActiveCamera().GetPosition())
-            log ("Event %s is ZOOM_EVENT" % (event))
+            self.log ("Event %s is ZOOM_EVENT" % (event))
         elif ctrl and not (shift and alt):
             self.SetViewerEvent (ViewerEvent.PAN_EVENT )
             self.SetInitialCameraPosition ( self.GetActiveCamera().GetPosition() )
-            log ("Event %s is PAN_EVENT" % (event))
+            self.log ("Event %s is PAN_EVENT" % (event))
         
     def OnRightButtonReleaseEvent(self, interactor, event):
-        log (event)
+        self.log (event)
         if self.GetViewerEvent() == ViewerEvent.WINDOW_LEVEL_EVENT:
             self.SetInitialLevel( self.GetWindowLevel().GetLevel() )
             self.SetInitialWindow ( self.GetWindowLevel().GetWindow() )
@@ -593,23 +594,23 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
         
         self.SetROI( (vox1 , vox2) )
         roi = self.GetROI()
-        log ("Pixel1 %d,%d,%d Value %f" % vox1 )
-        log ("Pixel2 %d,%d,%d Value %f" % vox2 )
+        self.log ("Pixel1 %d,%d,%d Value %f" % vox1 )
+        self.log ("Pixel2 %d,%d,%d Value %f" % vox2 )
         if self.GetSliceOrientation() == SLICE_ORIENTATION_XY: 
-            log ("slice orientation : XY")
+            self.log ("slice orientation : XY")
             x = abs(roi[1][0] - roi[0][0])
             y = abs(roi[1][1] - roi[0][1])
         elif self.GetSliceOrientation() == SLICE_ORIENTATION_XZ:
-            log ("slice orientation : XY")
+            self.log ("slice orientation : XY")
             x = abs(roi[1][0] - roi[0][0])
             y = abs(roi[1][2] - roi[0][2])
         elif self.GetSliceOrientation() == SLICE_ORIENTATION_YZ:
-            log ("slice orientation : XY")
+            self.log ("slice orientation : XY")
             x = abs(roi[1][1] - roi[0][1])
             y = abs(roi[1][2] - roi[0][2])
         
         text = "ROI: %d x %d, %.2f kp" % (x,y,float(x*y)/1024.)
-        log (text)
+        self.log (text)
         self.UpdateCornerAnnotation(text, 1)
         self.UpdateROIHistogram()
         self.SetViewerEvent( ViewerEvent.NO_EVENT )
@@ -622,11 +623,11 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
         pickPosition[self.GetSliceOrientation()] = \
             self.GetInputData().GetSpacing()[self.GetSliceOrientation()] * self.GetActiveSlice() + \
             self.GetInputData().GetOrigin()[self.GetSliceOrientation()]
-        log ("Pick Position " + str (pickPosition))
+        self.log ("Pick Position " + str (pickPosition))
         
         if (pickPosition != [0,0,0]):
             dims = self.GetInputData().GetDimensions()
-            log (dims)
+            self.log (dims)
             spac = self.GetInputData().GetSpacing()
             orig = self.GetInputData().GetOrigin()
             imagePosition = [int(pickPosition[i] / spac[i] + orig[i]) for i in range(3) ]
@@ -641,7 +642,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
     
     def OnMouseMoveEvent(self, interactor, event):        
         if self.GetViewerEvent() == ViewerEvent.WINDOW_LEVEL_EVENT:
-            log ("Event %s is WINDOW_LEVEL_EVENT" % (event))
+            self.log ("Event %s is WINDOW_LEVEL_EVENT" % (event))
             self.HandleWindowLevel(interactor, event)    
         elif self.GetViewerEvent() == ViewerEvent.PICK_EVENT:
             self.HandlePickEvent(interactor, event)
@@ -656,11 +657,12 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
         size = self.GetRenderWindow().GetSize()
         dy = - 4 * dy / size[1]
         
-        log ("distance: " + str(self.GetActiveCamera().GetDistance()))
+        self.log ("distance: " + str(self.GetActiveCamera().GetDistance()))
         
-        log ("\ndy: %f\ncamera dolly %f\n" % (dy, 1 + dy))
+        self.log ("\ndy: %f\ncamera dolly %f\n" % (dy, 1 + dy))
         
         camera = vtk.vtkCamera()
+        camera.DeepCopy(self.GetActiveCamera())
         camera.SetFocalPoint(self.GetActiveCamera().GetFocalPoint())
         #print ("current position " + str(self.InitialCameraPosition))
         camera.SetViewUp(self.GetActiveCamera().GetViewUp())
@@ -676,10 +678,14 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
         #print ("new position " + str(newposition))
         camera.SetPosition(newposition)
         self.SetActiveCamera(camera)
-        
+
+        dist = self.GetActiveCamera().GetDistance()
+        self.log ("distance after: " + str(dist))
+        cr = self.GetActiveCamera().GetClippingRange()
+        if dist > cr[1]:
+            self.GetActiveCamera().SetClippingRange(cr[0] , dist)
         self.Render()
         	
-        log ("distance after: " + str(self.GetActiveCamera().GetDistance()))
         
     def HandlePanEvent(self, interactor, event):
         x,y = interactor.GetEventPosition()
@@ -688,8 +694,8 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
         ic = self.viewport2imageCoordinate((x,y))
         ic0 = self.viewport2imageCoordinate((x0,y0))
         
-        dx = 4 *( ic[0] - ic0[0])
-        dy = 4* (ic[1] - ic0[1])
+        dx = 1 * ( ic[0] - ic0[0] )
+        dy = 1 * ( ic[1] - ic0[1] )
         
         camera = vtk.vtkCamera()
         #print ("current position " + str(self.InitialCameraPosition))
@@ -721,7 +727,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
         
     def HandleWindowLevel(self, interactor, event):
         dx,dy = interactor.GetDeltaEventPosition()
-        log ("Event delta %d %d" % (dx,dy))
+        self.log ("Event delta %d %d" % (dx,dy))
         size = self.GetRenderWindow().GetSize()
         
         dx = 4 * dx / size[0]
@@ -898,7 +904,10 @@ class CILViewer2D():
         self.histogramPlotActor.SetPlotColor(0, (0,1,1) )
         self.histogramPlotActor.SetPosition(0.6,0.6)
         self.histogramPlotActor.SetPosition2(0.4,0.4)
- 
+
+        # rescale input image
+        # contains (scale, shift)
+        self.rescale = [ False , (1,0) ]
         
 
     def log(self, msg):
@@ -917,6 +926,10 @@ class CILViewer2D():
 
     def setInputAsNumpy(self, numpyarray,  origin=(0,0,0), spacing=(1.,1.,1.), 
                         rescale=True, dtype=vtk.VTK_UNSIGNED_SHORT):
+
+        self.rescale[0] = rescale
+            
+        
         importer = Converter.numpy2vtkImporter(numpyarray, spacing, origin)
         importer.Update()
         
@@ -934,7 +947,8 @@ class CILViewer2D():
                     scale = vtk.VTK_UNSIGNED_SHORT_MAX / (iMax - iMin)
                 elif dtype == vtk.VTK_UNSIGNED_INT:
                     scale = vtk.VTK_UNSIGNED_INT_MAX / (iMax - iMin)
-    
+
+            self.rescale[1] = (scale, -iMin)
             shiftScaler = vtk.vtkImageShiftScale ()
             shiftScaler.SetInputData(importer.GetOutput())
             shiftScaler.SetScale(scale)
@@ -1067,16 +1081,18 @@ class CILViewer2D():
         pickPosition[self.sliceOrientation] = \
             self.img3D.GetSpacing()[self.sliceOrientation] * self.sliceno + \
             self.img3D.GetOrigin()[self.sliceOrientation]
-        log ("Pick Position " + str (pickPosition))
+        self.log ("Pick Position " + str (pickPosition))
         
         if (pickPosition != [0,0,0]):
             dims = self.img3D.GetDimensions()
-            log (dims)
+            self.log (dims)
             spac = self.img3D.GetSpacing()
             orig = self.img3D.GetOrigin()
             imagePosition = [int(pickPosition[i] / spac[i] + orig[i]) for i in range(3) ]
             
             pixelValue = self.img3D.GetScalarComponentAsDouble(imagePosition[0], imagePosition[1], imagePosition[2], 0)
+            if self.rescale[0]:
+                pixelValue = (pixelValue - self.rescale[1][1])/ self.rescale[1][0]
             return (imagePosition[0], imagePosition[1], imagePosition[2] , pixelValue)
         else:
             return (0,0,0,0)
@@ -1123,7 +1139,7 @@ class CILViewer2D():
         
         extent = [0 for i in range(6)]
         if self.GetSliceOrientation() == SLICE_ORIENTATION_XY: 
-            log ("slice orientation : XY")
+            self.log ("slice orientation : XY")
             extent[0] = self.ROI[0][0]
             extent[1] = self.ROI[1][0]
             extent[2] = self.ROI[0][1]
@@ -1132,7 +1148,7 @@ class CILViewer2D():
             extent[5] = self.GetActiveSlice()+1
             #y = abs(roi[1][1] - roi[0][1])
         elif self.GetSliceOrientation() == SLICE_ORIENTATION_XZ:
-            log ("slice orientation : XY")
+            self.log ("slice orientation : XY")
             extent[0] = self.ROI[0][0]
             extent[1] = self.ROI[1][0]
             #x = abs(roi[1][0] - roi[0][0])
@@ -1142,7 +1158,7 @@ class CILViewer2D():
             extent[2] = self.GetActiveSlice()
             extent[3] = self.GetActiveSlice()+1
         elif self.GetSliceOrientation() == SLICE_ORIENTATION_YZ:
-            log ("slice orientation : XY")
+            self.log ("slice orientation : XY")
             extent[2] = self.ROI[0][1]
             extent[3] = self.ROI[1][1]
             #x = abs(roi[1][1] - roi[0][1])
@@ -1172,6 +1188,6 @@ class CILViewer2D():
     def setSliceOrientation(self, axis):
         if axis in ['x','y','z']:
             self.GetInteractor().SetKeyCode(axis)
-            self.style.OnKeyPress(v.GetInteractor(), "KeyPressEvent")
+            self.style.OnKeyPress(self.GetInteractor(), "KeyPressEvent")
             
         
