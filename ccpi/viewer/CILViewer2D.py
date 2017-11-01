@@ -457,22 +457,16 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
             self.OnKeyPress(interactor, event)
         elif interactor.GetKeyCode() == "a":
             # reset color/window
-            #cmax = self._viewer.ia.GetMax()[0]
-            #cmin = self._viewer.ia.GetMin()[0]
-            
-            self.log("autorange extent {0}".format(self._viewer.ia.GetInput().GetExtent()))
             cmin, cmax = self._viewer.ia.GetAutoRange()
-            self.log("autorange: {0} {1} {3}{2}".format(cmin, cmax, self._viewer.ia.GetMedian(),
-                                                        self._viewer.ia.GetAutoRangePercentiles()))
-            
-            #self.log("autorange: {0} {1}".format(*self._viewer.ia.GetAutoRangePercentiles()))
-            #cmin = self._viewer.ia.GetMinimum()
-            #cmax = self._viewer.ia.GetMaximum()
-            
-            #self.log("autorange: {0} {1} {2}".format(cmin, cmax, self._viewer.ia.GetMedian()))
-            
-            self.SetInitialLevel( self._viewer.ia.GetMedian() )
-            self.SetInitialWindow( (cmax-cmin)  )
+
+            # probably the level could be the median of the image within
+            # the percintiles 
+            level = self._viewer.ia.GetMedian()
+            # accomodates all values between the level an the percentiles
+            window = 2*max(abs(level-cmin),abs(level-cmax))
+
+            self.SetInitialLevel( level )
+            self.SetInitialWindow( window  )
             
             self.GetWindowLevel().SetLevel(self.GetInitialLevel())
             self.GetWindowLevel().SetWindow(self.GetInitialWindow())
@@ -1029,17 +1023,19 @@ class CILViewer2D():
     
         self.wl = vtk.vtkImageMapToWindowLevelColors()
         self.ia.SetInputData(self.voi.GetOutput())
-        self.ia.SetAutoRangePercentiles(0.1,0.9)
+        self.ia.SetAutoRangePercentiles(0.01,0.99)
         self.ia.Update()
         #cmax = self.ia.GetMax()[0]
         #cmin = self.ia.GetMin()[0]
         cmin, cmax = self.ia.GetAutoRange()
-        self.log("cmin {0}/{2} cmax {1}/{3}".format(cmin,cmax,
-                                                    self.ia.GetMinimum(),
-                                                    self.ia.GetMaximum()))
-        #self.InitialLevel = (cmax+cmin)/2
-        self.InitialLevel = self.ia.GetMedian()
-        self.InitialWindow = (cmax-cmin) * 0.5
+        # probably the level could be the median of the image within
+        # the percentiles 
+        level = self.ia.GetMedian()
+        # accomodates all values between the level an the percentiles
+        window = 2*max(abs(level-cmin),abs(level-cmax))
+
+        self.InitialLevel = level
+        self.InitialWindow = window
         self.log("level {0} window {1}".format(self.InitialLevel,
                                                self.InitialWindow))
         
