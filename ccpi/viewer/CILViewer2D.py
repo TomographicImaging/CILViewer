@@ -403,7 +403,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
         if interactor.GetKeyCode() == "X":
             # slice on the other orientation
             self.SetSliceOrientation ( SLICE_ORIENTATION_YZ )
-            self.SetActiveSlice( int(self.GetDimensions()[1] / 2) )
+            self.SetActiveSlice( int(self.GetDimensions()[0] / 2) )
             self.UpdatePipeline(True)
         elif interactor.GetKeyCode() == "Y":
             # slice on the other orientation
@@ -457,11 +457,22 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
             self.OnKeyPress(interactor, event)
         elif interactor.GetKeyCode() == "a":
             # reset color/window
-            cmax = self._viewer.ia.GetMax()[0]
-            cmin = self._viewer.ia.GetMin()[0]
+            #cmax = self._viewer.ia.GetMax()[0]
+            #cmin = self._viewer.ia.GetMin()[0]
             
-            self.SetInitialLevel( (cmax+cmin)/2 )
-            self.SetInitialWindow( cmax-cmin )
+            self.log("autorange extent {0}".format(self._viewer.ia.GetInput().GetExtent()))
+            cmin, cmax = self._viewer.ia.GetAutoRange()
+            self.log("autorange: {0} {1} {3}{2}".format(cmin, cmax, self._viewer.ia.GetMedian(),
+                                                        self._viewer.ia.GetAutoRangePercentiles()))
+            
+            #self.log("autorange: {0} {1}".format(*self._viewer.ia.GetAutoRangePercentiles()))
+            #cmin = self._viewer.ia.GetMinimum()
+            #cmax = self._viewer.ia.GetMaximum()
+            
+            #self.log("autorange: {0} {1} {2}".format(cmin, cmax, self._viewer.ia.GetMedian()))
+            
+            self.SetInitialLevel( self._viewer.ia.GetMedian() )
+            self.SetInitialWindow( (cmax-cmin)  )
             
             self.GetWindowLevel().SetLevel(self.GetInitialLevel())
             self.GetWindowLevel().SetWindow(self.GetInitialWindow())
@@ -497,6 +508,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
             self.SetViewerEvent( ViewerEvent.CREATE_ROI_EVENT )
             wsize = self.GetRenderWindow().GetSize()
             position = interactor.GetEventPosition()
+            print ("position", ((position[0]/wsize[0] - 0.05) , (position[1]/wsize[1] - 0.05)))
             self.GetROIWidget().GetBorderRepresentation().SetPosition((position[0]/wsize[0] - 0.05) , (position[1]/wsize[1] - 0.05))
             self.GetROIWidget().GetBorderRepresentation().SetPosition2( (0.1) , (0.1))
             
@@ -591,9 +603,9 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
         pp2 = [p2.GetValue()[0] * wsize[0] + pp1[0] , p2.GetValue()[1] * wsize[1] + pp1[1] , 0.0]
         vox1 = self.viewport2imageCoordinate(pp1)
         vox2 = self.viewport2imageCoordinate(pp2)
-        
         self.SetROI( (vox1 , vox2) )
         roi = self.GetROI()
+        self.log("ROI {0}".format(roi))
         self.log ("Pixel1 %d,%d,%d Value %f" % vox1 )
         self.log ("Pixel2 %d,%d,%d Value %f" % vox2 )
         if self.GetSliceOrientation() == SLICE_ORIENTATION_XY: 
@@ -730,8 +742,8 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
         self.log ("Event delta %d %d" % (dx,dy))
         size = self.GetRenderWindow().GetSize()
         
-        dx = 4 * dx / size[0]
-        dy = 4 * dy / size[1]
+        dx = 1 * dx / size[0]
+        dy = 1 * dy / size[1]
         window = self.GetInitialWindow()
         level = self.GetInitialLevel()
         
@@ -755,8 +767,8 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
 
 		 # Compute new window level
 
-        newWindow = dx + window
-        newLevel = level - dy
+        newWindow = window + dx 
+        newLevel  = level + dy
 
         # Stay away from zero and really
 
@@ -768,7 +780,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
 
         self.GetWindowLevel().SetWindow(newWindow)
         self.GetWindowLevel().SetLevel(newLevel)
-        
+        self.log("new level {0} window {1}".format(newLevel,newWindow))        
         self.GetWindowLevel().Update()
         self.UpdateSliceActor()
         self.AdjustCamera()
@@ -833,7 +845,7 @@ class CILViewer2D():
         self.sliceActor = vtk.vtkImageActor()
         self.voi = vtk.vtkExtractVOI()
         self.wl = vtk.vtkImageMapToWindowLevelColors()
-        self.ia = vtk.vtkImageAccumulate()
+        self.ia = vtk.vtkImageHistogramStatistics()
         self.sliceActorNo = 0
         
         #initial Window/Level
@@ -977,8 +989,9 @@ class CILViewer2D():
         self.voi.SetVOI(extent[0], extent[1],
                    extent[2], extent[3],
                    extent[4], extent[5])
-        
+        self.log ("extent {0}".format(extent))
         self.voi.Update()
+        self.log("VOI dimensions {0}".format(self.voi.GetOutput().GetDimensions()))
         self.ia.Update()
         self.wl.Update()
         self.sliceActor.SetDisplayExtent(extent[0], extent[1],
@@ -1016,13 +1029,20 @@ class CILViewer2D():
     
         self.wl = vtk.vtkImageMapToWindowLevelColors()
         self.ia.SetInputData(self.voi.GetOutput())
+        self.ia.SetAutoRangePercentiles(0.1,0.9)
         self.ia.Update()
-        cmax = self.ia.GetMax()[0]
-        cmin = self.ia.GetMin()[0]
+        #cmax = self.ia.GetMax()[0]
+        #cmin = self.ia.GetMin()[0]
+        cmin, cmax = self.ia.GetAutoRange()
+        self.log("cmin {0}/{2} cmax {1}/{3}".format(cmin,cmax,
+                                                    self.ia.GetMinimum(),
+                                                    self.ia.GetMaximum()))
+        #self.InitialLevel = (cmax+cmin)/2
+        self.InitialLevel = self.ia.GetMedian()
+        self.InitialWindow = (cmax-cmin) * 0.5
+        self.log("level {0} window {1}".format(self.InitialLevel,
+                                               self.InitialWindow))
         
-        self.InitialLevel = (cmax+cmin)/2
-        self.InitialWindow = cmax-cmin
-
         
         self.wl.SetLevel(self.InitialLevel)
         self.wl.SetWindow(self.InitialWindow)
@@ -1140,34 +1160,35 @@ class CILViewer2D():
         extent = [0 for i in range(6)]
         if self.GetSliceOrientation() == SLICE_ORIENTATION_XY: 
             self.log ("slice orientation : XY")
-            extent[0] = self.ROI[0][0]
-            extent[1] = self.ROI[1][0]
-            extent[2] = self.ROI[0][1]
-            extent[3] = self.ROI[1][1]
+            extent[0] = min( self.ROI[0][0] , self.ROI[1][0])
+            extent[1] = max( self.ROI[0][0] , self.ROI[1][0])
+            extent[2] = min( self.ROI[0][1] , self.ROI[1][1])
+            extent[3] = max( self.ROI[0][1] , self.ROI[1][1])
             extent[4] = self.GetActiveSlice()
             extent[5] = self.GetActiveSlice()+1
             #y = abs(roi[1][1] - roi[0][1])
         elif self.GetSliceOrientation() == SLICE_ORIENTATION_XZ:
             self.log ("slice orientation : XY")
-            extent[0] = self.ROI[0][0]
-            extent[1] = self.ROI[1][0]
+            extent[0] = min( self.ROI[0][0] , self.ROI[1][0])
+            extent[1] = max( self.ROI[0][0] , self.ROI[1][0])
             #x = abs(roi[1][0] - roi[0][0])
-            extent[4] = self.ROI[0][2]
-            extent[5] = self.ROI[1][2]
+            extent[4] = min( self.ROI[0][2] , self.ROI[1][2])
+            extent[5] = max( self.ROI[0][2] , self.ROI[1][2])
             #y = abs(roi[1][2] - roi[0][2])
             extent[2] = self.GetActiveSlice()
             extent[3] = self.GetActiveSlice()+1
         elif self.GetSliceOrientation() == SLICE_ORIENTATION_YZ:
             self.log ("slice orientation : XY")
-            extent[2] = self.ROI[0][1]
-            extent[3] = self.ROI[1][1]
+            extent[2] = min( self.ROI[0][1] , self.ROI[1][1])
+            extent[3] = max( self.ROI[0][1] , self.ROI[1][1])
             #x = abs(roi[1][1] - roi[0][1])
-            extent[4] = self.ROI[0][2]
-            extent[5] = self.ROI[1][2]
+            extent[4] = min( self.ROI[0][2] , self.ROI[1][2])
+            extent[5] = max( self.ROI[0][2] , self.ROI[1][2])
             #y = abs(roi[1][2] - roi[0][2])
             extent[0] = self.GetActiveSlice()
             extent[1] = self.GetActiveSlice()+1
-        
+
+        self.log("updateROIHistogram {0}".format(extent))
         self.roiVOI.SetVOI(extent)
         self.roiVOI.SetInputData(self.img3D)
         self.roiVOI.Update()
