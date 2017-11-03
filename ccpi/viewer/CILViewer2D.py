@@ -225,7 +225,9 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
         self.AddObserver("MouseWheelForwardEvent" , self.OnMouseWheelForward , priority)
         self.AddObserver("MouseWheelBackwardEvent" , self.OnMouseWheelBackward, priority)
         self.AddObserver('KeyPressEvent', self.OnKeyPress, priority)
-        self.AddObserver('LeftButtonPressEvent', self.OnLeftButtonPressEvent, priority)
+        self.AddObserver('LeftButtonPressEvent',
+                         self.OnLeftButtonPressEvent,
+                         priority)
         self.AddObserver('RightButtonPressEvent', self.OnRightButtonPressEvent, priority)
         self.AddObserver('LeftButtonReleaseEvent', self.OnLeftButtonReleaseEvent, priority)
         self.AddObserver('RightButtonReleaseEvent', self.OnRightButtonReleaseEvent, priority)
@@ -398,6 +400,8 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
             self.log ("minSlice %d request %d" % (minSlice, self.GetActiveSlice() ))
         
     def OnKeyPress(self, interactor, event):
+        interactor = self._viewer.GetInteractor()
+        
         #print ("Pressed key %s" % interactor.GetKeyCode())
         # Slice Orientation 
         if interactor.GetKeyCode() == "X":
@@ -489,20 +493,18 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
             pass 
     
     def OnLeftButtonPressEvent(self, interactor, event):
+        interactor = self._viewer.GetInteractor()
         alt = interactor.GetAltKey()
         shift = interactor.GetShiftKey()
         ctrl = interactor.GetControlKey()
-#        print ("alt pressed " + (lambda x : "Yes" if x else "No")(alt))
-#        print ("shift pressed " + (lambda x : "Yes" if x else "No")(shift))
-#        print ("ctrl pressed " + (lambda x : "Yes" if x else "No")(ctrl))
         
-        interactor.SetInitialEventPosition(interactor.GetEventPosition())
+        self.SetInitialEventPosition(interactor.GetEventPosition())
         
         if ctrl and not (alt and shift): 
             self.SetViewerEvent( ViewerEvent.CREATE_ROI_EVENT )
             wsize = self.GetRenderWindow().GetSize()
             position = interactor.GetEventPosition()
-            print ("position", ((position[0]/wsize[0] - 0.05) , (position[1]/wsize[1] - 0.05)))
+            self.log ("position {0} {1}".format((position[0]/wsize[0] - 0.05) , (position[1]/wsize[1] - 0.05)))
             self.GetROIWidget().GetBorderRepresentation().SetPosition((position[0]/wsize[0] - 0.05) , (position[1]/wsize[1] - 0.05))
             self.GetROIWidget().GetBorderRepresentation().SetPosition2( (0.1) , (0.1))
             
@@ -538,6 +540,8 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
             
     
     def OnLeftButtonReleaseEvent(self, interactor, event):
+        interactor = self._viewer.GetInteractor()
+        
         if self.GetViewerEvent() == ViewerEvent.CREATE_ROI_EVENT:
             #bc = self.ROIWidget.GetBorderRepresentation().GetPositionCoordinate()
             #print (bc.GetValue())
@@ -549,14 +553,13 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
         self.SetViewerEvent( ViewerEvent.NO_EVENT )
 
     def OnRightButtonPressEvent(self, interactor, event):
+        interactor = self._viewer.GetInteractor()
+        
         alt = interactor.GetAltKey()
         shift = interactor.GetShiftKey()
         ctrl = interactor.GetControlKey()
-#        print ("alt pressed " + (lambda x : "Yes" if x else "No")(alt))
-#        print ("shift pressed " + (lambda x : "Yes" if x else "No")(shift))
-#        print ("ctrl pressed " + (lambda x : "Yes" if x else "No")(ctrl))
         
-        interactor.SetInitialEventPosition(interactor.GetEventPosition())
+        self.SetInitialEventPosition(interactor.GetEventPosition())
         
         
         if alt and not (ctrl and shift):
