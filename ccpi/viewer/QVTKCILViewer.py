@@ -108,6 +108,9 @@ elif PyQtImpl == "PySide":
 else:
     raise ImportError("Unknown PyQt implementation " + repr(PyQtImpl))
 
+from CILViewer2D import CILViewer2D , Converter, CILInteractorStyle
+
+
 # Define types for base class, based on string
 if QVTKRWIBase == "QWidget":
     QVTKRWIBaseClass = QWidget
@@ -276,9 +279,12 @@ class QVTKCILViewer(QVTKRWIBaseClass):
         try:
             self._Iren = kw['iren']
         except KeyError:
-            self._Iren = vtk.vtkGenericRenderWindowInteractor()
+            self._Iren = vtk.vtkRenderWindowInteractor()
             self._Iren.SetRenderWindow(self._RenderWindow)
 
+        self.viewer = CILViewer2D(renWin = self._RenderWindow,
+                                  iren = self._Iren)
+                                  
         # do all the necessary qt setup
         self.setAttribute(Qt.WA_OpaquePaintEvent)
         self.setAttribute(Qt.WA_PaintOnScreen)
@@ -307,6 +313,8 @@ class QVTKCILViewer(QVTKRWIBaseClass):
             return lambda t=self._Iren: t
         elif hasattr(self._Iren, attr):
             return getattr(self._Iren, attr)
+        elif hasattr(self.viewer, attr):
+            return getattr(self.viewer, attr)
         else:
             raise AttributeError(self.__class__.__name__ +
                   " has no attribute named " + attr)
@@ -368,6 +376,7 @@ class QVTKCILViewer(QVTKRWIBaseClass):
         ctrl = shift = False
 
         if hasattr(ev, 'modifiers'):
+        
             if ev.modifiers() & Qt.ShiftModifier:
                 shift = True
             if ev.modifiers() & Qt.ControlModifier:
@@ -380,26 +389,54 @@ class QVTKCILViewer(QVTKRWIBaseClass):
 
         return ctrl, shift
 
+    def _GetCtrlShiftAlt(self, ev):
+        ctrl = shift = alt = False
+
+        if hasattr(ev, 'modifiers'):
+            
+            if ev.modifiers() & Qt.ShiftModifier:
+                shift = True
+            if ev.modifiers() & Qt.ControlModifier:
+                ctrl = True
+            if ev.modifiers() & Qt.AltModifier:
+                alt = True
+        else:
+            if self.__saveModifiers & Qt.ShiftModifier:
+                shift = True
+            if self.__saveModifiers & Qt.ControlModifier:
+                ctrl = True
+            if self.__saveModifiers & Qt.AltModifier:
+                alt = True
+
+        return ctrl, shift, alt
     def enterEvent(self, ev):
-        ctrl, shift = self._GetCtrlShift(ev)
+        ctrl, shift, alt = self._GetCtrlShiftAlt(ev)
         self._Iren.SetEventInformationFlipY(self.__saveX, self.__saveY,
                                             ctrl, shift, chr(0), 0, None)
         self._Iren.EnterEvent()
 
     def leaveEvent(self, ev):
-        ctrl, shift = self._GetCtrlShift(ev)
+        ctrl, shift , alt = self._GetCtrlShiftAlt(ev)
         self._Iren.SetEventInformationFlipY(self.__saveX, self.__saveY,
                                             ctrl, shift, chr(0), 0, None)
         self._Iren.LeaveEvent()
 
     def mousePressEvent(self, ev):
-        ctrl, shift = self._GetCtrlShift(ev)
+        ctrl, shift, alt  = self._GetCtrlShiftAlt(ev)
+        print (ctrl, shift, alt)
         repeat = 0
         if ev.type() == QEvent.MouseButtonDblClick:
             repeat = 1
         self._Iren.SetEventInformationFlipY(ev.x(), ev.y(),
                                             ctrl, shift, chr(0), repeat, None)
-
+        self._Iren.SetAltKey(alt)
+        self._Iren.SetShiftKey(shift)
+        self._Iren.SetControlKey(ctrl)
+        print (self._Iren.GetControlKey(),
+               self._Iren.GetShiftKey(),
+               self._Iren.GetAltKey())
+        print ("QVTKCILViewer",self._Iren)
+        
         self._ActiveButton = ev.button()
 
         if self._ActiveButton == Qt.LeftButton:
@@ -408,6 +445,8 @@ class QVTKCILViewer(QVTKRWIBaseClass):
             self._Iren.RightButtonPressEvent()
         elif self._ActiveButton == Qt.MidButton:
             self._Iren.MiddleButtonPressEvent()
+
+    
 
     def mouseReleaseEvent(self, ev):
         ctrl, shift = self._GetCtrlShift(ev)
@@ -478,6 +517,11 @@ class QVTKCILViewer(QVTKRWIBaseClass):
     def Render(self):
         self.update()
 
+    def GetInteractor(self):
+        return self.viewer.GetInteractor()
+
+    def GetRenderer(self):
+        return self.viewer.GetRenderer()
 
 def QVTKRenderWidgetConeExample():
     """A simple example that uses the QVTKRenderWindowInteractor class."""
