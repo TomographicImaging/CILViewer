@@ -10,9 +10,10 @@ Created on Thu Jul 27 12:18:58 2017
 import sys
 import vtk
 from PyQt5 import QtCore, QtWidgets
-from vtk.qt.QVTKRenderWindowInteractor import QVTKRenderWindowInteractor
+#from vtk.qt.QVTKRenderWindowInteractor import QVTKRenderWindowInteractor
 from QVTKCILViewer import QVTKCILViewer
 from ccpi.viewer.CILViewer2D import CILViewer2D , Converter, CILInteractorStyle
+import numpy
  
 class MainWindow(QtWidgets.QMainWindow):
  
@@ -53,7 +54,10 @@ class MainWindow(QtWidgets.QMainWindow):
         self.iren.Initialize()
 
     def display(self, imageData):
-        self.vtkWidget.setInput3DData(imageData)
+        if type(imageData) == vtk.vtkCommonDataModelPython.vtkImageData:
+            self.vtkWidget.setInput3DData(imageData)
+        elif type(imageData) == numpy.ndarray:
+            self.vtkWidget.setInputAsNumpy(imageData)
         self.iren.Initialize()
         self.show()
 
@@ -63,10 +67,12 @@ if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)
  
     window = MainWindow()
-    reader = vtk.vtkMetaImageReader()
-    reader.SetFileName("C:\\Users\\ofn77899\\Documents\\GitHub\\CCPi-Simpleflex\\data\\head.mha")
-    reader.Update()
+##    reader = vtk.vtkMetaImageReader()
+##    reader.SetFileName("C:\\Users\\ofn77899\\Documents\\GitHub\\CCPi-Simpleflex\\data\\head.mha")
+##    reader.Update()
     
-    window.display(reader.GetOutput())
+##    window.display(reader.GetOutput())
  
+    X = numpy.load("C:\\Users\\ofn77899\\Documents\\GitHub\\CCPi-FISTA_reconstruction\\src\\Python\\test\\FISTA.npy")
+    window.display(X)  
     sys.exit(app.exec_())
