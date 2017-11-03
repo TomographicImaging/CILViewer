@@ -12,8 +12,6 @@ build:
 requirements:
   build:
     - python
-    - numpy
-    - vtk
     - setuptools
  
   run:
