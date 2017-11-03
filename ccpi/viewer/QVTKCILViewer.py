@@ -1,4 +1,8 @@
 """
+QVTKCILViewer
+
+is a widget embedding the CILViewer2D in a QtVTK Widget. This file is based on
+QVTKWidget
 A simple VTK widget for PyQt or PySide.
 See http://www.trolltech.com for Qt documentation,
 http://www.riverbankcomputing.co.uk for PyQt, and
@@ -108,7 +112,7 @@ elif PyQtImpl == "PySide":
 else:
     raise ImportError("Unknown PyQt implementation " + repr(PyQtImpl))
 
-from CILViewer2D import CILViewer2D , Converter, CILInteractorStyle
+from ccpi.viewer.CILViewer2D import CILViewer2D , Converter, CILInteractorStyle
 
 
 # Define types for base class, based on string
@@ -423,7 +427,6 @@ class QVTKCILViewer(QVTKRWIBaseClass):
 
     def mousePressEvent(self, ev):
         ctrl, shift, alt  = self._GetCtrlShiftAlt(ev)
-        print (ctrl, shift, alt)
         repeat = 0
         if ev.type() == QEvent.MouseButtonDblClick:
             repeat = 1
@@ -432,11 +435,7 @@ class QVTKCILViewer(QVTKRWIBaseClass):
         self._Iren.SetAltKey(alt)
         self._Iren.SetShiftKey(shift)
         self._Iren.SetControlKey(ctrl)
-        print (self._Iren.GetControlKey(),
-               self._Iren.GetShiftKey(),
-               self._Iren.GetAltKey())
-        print ("QVTKCILViewer",self._Iren)
-        
+                
         self._ActiveButton = ev.button()
 
         if self._ActiveButton == Qt.LeftButton:

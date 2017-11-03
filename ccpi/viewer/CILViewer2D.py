@@ -498,18 +498,13 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
         shift = interactor.GetShiftKey()
         ctrl = interactor.GetControlKey()
         
-        print ("CILViewer interactor style" , interactor)
-        print ("alt pressed " + (lambda x : "Yes" if x else "No")(alt))
-        print ("shift pressed " + (lambda x : "Yes" if x else "No")(shift))
-        print ("ctrl pressed " + (lambda x : "Yes" if x else "No")(ctrl))
-        
         self.SetInitialEventPosition(interactor.GetEventPosition())
         
         if ctrl and not (alt and shift): 
             self.SetViewerEvent( ViewerEvent.CREATE_ROI_EVENT )
             wsize = self.GetRenderWindow().GetSize()
             position = interactor.GetEventPosition()
-            print ("position", ((position[0]/wsize[0] - 0.05) , (position[1]/wsize[1] - 0.05)))
+            self.log ("position {0} {1}".format((position[0]/wsize[0] - 0.05) , (position[1]/wsize[1] - 0.05)))
             self.GetROIWidget().GetBorderRepresentation().SetPosition((position[0]/wsize[0] - 0.05) , (position[1]/wsize[1] - 0.05))
             self.GetROIWidget().GetBorderRepresentation().SetPosition2( (0.1) , (0.1))
             
@@ -563,9 +558,6 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
         alt = interactor.GetAltKey()
         shift = interactor.GetShiftKey()
         ctrl = interactor.GetControlKey()
-        print ("alt pressed " + (lambda x : "Yes" if x else "No")(alt))
-        print ("shift pressed " + (lambda x : "Yes" if x else "No")(shift))
-        print ("ctrl pressed " + (lambda x : "Yes" if x else "No")(ctrl))
         
         self.SetInitialEventPosition(interactor.GetEventPosition())
         
