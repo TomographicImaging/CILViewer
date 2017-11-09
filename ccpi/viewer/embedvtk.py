@@ -14,7 +14,7 @@ from ccpi.viewer.QVTKCILViewer import QVTKCILViewer
 from ccpi.viewer.CILViewer2D import CILViewer2D , Converter, CILInteractorStyle
 import numpy
  
-class MainWindow(QtWidgets.QMainWindow):
+class CILWidget(QtWidgets.QMainWindow):
  
     def __init__(self, parent = None):
         QtWidgets.QMainWindow.__init__(self, parent)
@@ -53,19 +53,39 @@ class MainWindow(QtWidgets.QMainWindow):
         self.iren.Initialize()
 
     def display(self, imageData):
+        print ("and here")
         if type(imageData) == vtk.vtkCommonDataModelPython.vtkImageData:
             self.vtkWidget.setInput3DData(imageData)
         elif type(imageData) == numpy.ndarray:
             self.vtkWidget.setInputAsNumpy(imageData)
         self.iren.Initialize()
-        self.show()
+        print ("down here")
+        try:
+            self.show()
+        except Error:
+            print ("error")
 
+
+import threading
+class viewer(threading.Thread):
+
+    def __init__(self, **kwargs):
+        self.window = CILWidget()
+        #app = QtWidgets.QApplication(['MainWindow'])
  
-if __name__ == "__main__":
+        #super(viewer, self).__init__(kwargs)
+        
+    def display(self, img):
+        print("come here")
+        self.window.display(img)
+
+
+        
+def runme(): 
+    #app = QtWidgets.QApplication(sys.argv)
+    app = QtWidgets.QApplication(['MainWindow'])
  
-    app = QtWidgets.QApplication(sys.argv)
- 
-    window = MainWindow()
+    window = CILWidget()
 ##    reader = vtk.vtkMetaImageReader()
 ##    reader.SetFileName("C:\\Users\\ofn77899\\Documents\\GitHub\\CCPi-Simpleflex\\data\\head.mha")
 ##    reader.Update()
@@ -75,3 +95,9 @@ if __name__ == "__main__":
     X = numpy.load("C:\\Users\\ofn77899\\Documents\\GitHub\\CCPi-FISTA_reconstruction\\src\\Python\\test\\FISTA.npy")
     window.display(X)  
     sys.exit(app.exec_())
+
+
+if __name__ == "__main__":
+    #   runme()
+    X = numpy.load("C:\\Users\\ofn77899\\Documents\\GitHub\\CCPi-FISTA_reconstruction\\src\\Python\\test\\FISTA.npy")
+    print ("hello World")
