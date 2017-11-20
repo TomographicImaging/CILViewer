@@ -639,7 +639,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
             self.log (dims)
             spac = self.GetInputData().GetSpacing()
             orig = self.GetInputData().GetOrigin()
-            imagePosition = [int(pickPosition[i] / spac[i] + orig[i]) for i in range(3) ]
+            imagePosition = [round(pickPosition[i] / spac[i] + orig[i]) for i in range(3) ]
             
             pixelValue = self.GetInputData().GetScalarComponentAsDouble(imagePosition[0], imagePosition[1], imagePosition[2], 0)
             return (imagePosition[0], imagePosition[1], imagePosition[2] , pixelValue)
@@ -1026,7 +1026,7 @@ class CILViewer2D():
     
         self.wl = vtk.vtkImageMapToWindowLevelColors()
         self.ia.SetInputData(self.voi.GetOutput())
-        self.ia.SetAutoRangePercentiles(0.01,0.99)
+        self.ia.SetAutoRangePercentiles(1.0,99.)
         self.ia.Update()
         #cmax = self.ia.GetMax()[0]
         #cmin = self.ia.GetMin()[0]
@@ -1107,7 +1107,7 @@ class CILViewer2D():
             self.log (dims)
             spac = self.img3D.GetSpacing()
             orig = self.img3D.GetOrigin()
-            imagePosition = [int(pickPosition[i] / spac[i] + orig[i]) for i in range(3) ]
+            imagePosition = [round((pickPosition[i]+0.5) / spac[i] + orig[i]) for i in range(3) ]
             
             pixelValue = self.img3D.GetScalarComponentAsDouble(imagePosition[0], imagePosition[1], imagePosition[2], 0)
             if self.rescale[0]:
