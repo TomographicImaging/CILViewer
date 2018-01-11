@@ -201,6 +201,8 @@ class ViewerEvent(Enum):
     DELETE_ROI_EVENT = 5
     # release button
     NO_EVENT = -1
+    # plots a profile for the X and Y line at the pointer location
+    SHOW_LINE_PROFILE = 6
 
 
 #class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
@@ -371,6 +373,9 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
     def UpdateROIHistogram(self):
         self._viewer.updateROIHistogram()
         
+    def UpdateLinePlot(self, imagecoordinate, display):
+        self._viewer.updateLinePlot(imagecoordinate, display)
+        
         
     ############### Handle events
     def OnMouseWheelForward(self, interactor, event):
@@ -488,6 +493,13 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
             print ("Render loop terminating by pressing %s" % (interactor.GetKeyCode(), ))
             interactor.SetKeyCode("e")
             self.OnKeyPress(interactor, event)
+        elif interactor.GetKeyCode() == "l":
+            if self.GetViewerEvent() == ViewerEvent.SHOW_LINE_PROFILE:
+                self.SetViewerEvent(ViewerEvent.NO_EVENT)
+                self.DisplayLineProfile(interactor, event, False)
+            else:    
+                self.SetViewerEvent( ViewerEvent.SHOW_LINE_PROFILE )
+                self.DisplayLineProfile(interactor, event, True)
         else :
             #print ("Unhandled event %s" % (interactor.GetKeyCode(), )))
             pass 
@@ -537,7 +549,8 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
         else:
             self._viewer.histogramPlotActor.VisibilityOff()
             self._viewer.displayHistogram = False
-            
+    
+   
     
     def OnLeftButtonReleaseEvent(self, interactor, event):
         interactor = self._viewer.GetInteractor()
@@ -659,6 +672,8 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
             self.HandleZoomEvent(interactor, event)
         elif self.GetViewerEvent() == ViewerEvent.PAN_EVENT:
             self.HandlePanEvent(interactor, event)
+        elif self.GetViewerEvent() == ViewerEvent.SHOW_LINE_PROFILE:
+            self.DisplayLineProfile(interactor, event, True)
             
             
     def HandleZoomEvent(self, interactor, event):
@@ -792,6 +807,15 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
         self._viewer.cornerAnnotation.VisibilityOn()
         self.UpdateCornerAnnotation("[%d,%d,%d] : %.2f" % vox , 0)
         self.Render()
+    
+    def DisplayLineProfile(self, interactor, event, display):
+        x,y = interactor.GetEventPosition()        
+        ic = self.viewport2imageCoordinate((x,y))
+        self.UpdateLinePlot(ic, display)
+            
+        
+        
+        
         
 ###############################################################################
     
@@ -913,6 +937,24 @@ class CILViewer2D():
         self.histogramPlotActor.SetPlotColor(0, (0,1,1) )
         self.histogramPlotActor.SetPosition(0.6,0.6)
         self.histogramPlotActor.SetPosition2(0.4,0.4)
+        
+        # XY Plot for X and Y slices
+        self.displayLinePlot = False
+        self.linePlot = 0
+        self.lineVOIX = vtk.vtkExtractVOI()
+        self.lineVOIY = vtk.vtkExtractVOI()
+        self.linePlotActor = vtk.vtkXYPlotActor()
+        self.linePlotActor.ExchangeAxesOff();
+        #self.linePlotActor.SetXLabelFormat( "%g" )
+        #self.linePlotActor.SetXLabelFormat( "%g" )
+        #self.linePlotActor.SetAdjustXLabels(3)
+        #self.linePlotActor.SetXTitle( "Level" )
+        #self.linePlotActor.SetYTitle( "N" )
+        self.linePlotActor.SetXValuesToValue()
+        self.linePlotActor.SetPlotColor(0, (0,1,1) )
+        self.linePlotActor.SetPlotColor(1, (1,1,0) )
+        self.linePlotActor.SetPosition(0.6,0.6)
+        self.linePlotActor.SetPosition2(0.4,0.4)
 
         # rescale input image
         # contains (scale, shift)
@@ -1210,4 +1252,72 @@ class CILViewer2D():
             self.GetInteractor().SetKeyCode(axis)
             self.style.OnKeyPress(self.GetInteractor(), "KeyPressEvent")
             
+    def updateLinePlot(self, imagecoordinate, display):
+        self.displayLinePlot = display
+        extent_x = list(self.img3D.GetExtent())
+        extent_y = list(self.img3D.GetExtent())
+        self.log("imagecoordinate {0}".format(imagecoordinate))
+        if display:
+            #extract profile along X
+            if self.GetSliceOrientation() == SLICE_ORIENTATION_XY: 
+                self.log ("slice orientation : XY")
+                extent_y[0] = imagecoordinate[0]
+                extent_y[1] = imagecoordinate[0] 
+                
+                extent_x[2] = imagecoordinate[1]
+                extent_x[3] = imagecoordinate[1]
+                
+                extent_y[4] = self.GetActiveSlice()
+                extent_y[5] = self.GetActiveSlice()
+                extent_x[4] = self.GetActiveSlice()
+                extent_x[5] = self.GetActiveSlice()
+                #y = abs(roi[1][1] - roi[0][1])
+            elif self.GetSliceOrientation() == SLICE_ORIENTATION_XZ:
+                self.log ("slice orientation : XZ")
+                extent_y[0] = imagecoordinate[0]
+                extent_y[1] = imagecoordinate[0]
+                #x = abs(roi[1][0] - roi[0][0])
+                extent_x[4] = imagecoordinate[2]
+                extent_x[5] = imagecoordinate[2]
+                #y = abs(roi[1][2] - roi[0][2])
+                extent_x[2] = self.GetActiveSlice()
+                extent_x[3] = self.GetActiveSlice()
+                extent_y[2] = self.GetActiveSlice()
+                extent_y[3] = self.GetActiveSlice()
+            elif self.GetSliceOrientation() == SLICE_ORIENTATION_YZ:
+                self.log ("slice orientation : YZ")
+                extent_y[2] = imagecoordinate[1]
+                extent_y[3] = imagecoordinate[1]
+                #x = abs(roi[1][1] - roi[0][1])
+                extent_x[4] = imagecoordinate[2]
+                extent_x[5] = imagecoordinate[2]
+                #y = abs(roi[1][2] - roi[0][2])
+                extent_x[0] = self.GetActiveSlice()
+                extent_x[1] = self.GetActiveSlice()
+                extent_y[0] = self.GetActiveSlice()
+                extent_y[1] = self.GetActiveSlice()
+            
+            self.log("x {0} extent_x {1}".format(imagecoordinate[0], extent_x) )
+            self.log("y {0} extent_y {1}".format(imagecoordinate[1], extent_y) )
+            self.lineVOIX.SetVOI(extent_x)
+            self.lineVOIX.SetInputData(self.img3D)
+            self.lineVOIX.Update()
+            self.lineVOIY.SetVOI(extent_y)
+            self.lineVOIY.SetInputData(self.img3D)
+            self.lineVOIY.Update()
+        
+            if self.linePlot == 0:
+                self.linePlotActor.AddDataSetInputConnection(self.lineVOIX.GetOutputPort())
+                #self.linePlotActor.AddDataSetInputConnection(self.lineVOIY.GetOutputPort())
+            
+                self.GetRenderer().AddActor(self.linePlotActor)
+            
+            
+            self.log("data length x {0} y {1}".format(self.lineVOIX.GetOutput().GetDimensions(),
+                     self.lineVOIY.GetOutput().GetDimensions()))
+            self.linePlotActor.VisibilityOn()
+            self.renWin.Render()
+            
+        else:
+            self.linePlotActor.VisibilityOff()
         
