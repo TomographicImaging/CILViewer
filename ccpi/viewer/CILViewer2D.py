@@ -1257,6 +1257,9 @@ class CILViewer2D():
         extent_x = list(self.img3D.GetExtent())
         extent_y = list(self.img3D.GetExtent())
         self.log("imagecoordinate {0}".format(imagecoordinate))
+        xarray = vtk.vtkImageData()
+        yarray = vtk.vtkImageData()
+        
         if display:
             #extract profile along X
             if self.GetSliceOrientation() == SLICE_ORIENTATION_XY: 
@@ -1271,6 +1274,14 @@ class CILViewer2D():
                 extent_y[5] = self.GetActiveSlice()
                 extent_x[4] = self.GetActiveSlice()
                 extent_x[5] = self.GetActiveSlice()
+                
+                xarray.SetDimensions(extent_x[1]-extent_x[0] , 0 , 0)
+                yarray.SetDimensions(extent_y[3]-extent_y[2] , 0 , 0)
+                xarray.SetExtent(extent_x[0], extent_x[1], 0,0 , 0,0)
+                yarray.SetExtent(extent_y[2], extent_y[3], 0,0 , 0,0)
+                self.linePlot.SetDataObjectXComponent(0,0)
+                self.linePlot.SetDataObjectXComponent(1,1)
+                
                 #y = abs(roi[1][1] - roi[0][1])
             elif self.GetSliceOrientation() == SLICE_ORIENTATION_XZ:
                 self.log ("slice orientation : XZ")
@@ -1284,6 +1295,13 @@ class CILViewer2D():
                 extent_x[3] = self.GetActiveSlice()
                 extent_y[2] = self.GetActiveSlice()
                 extent_y[3] = self.GetActiveSlice()
+                self.linePlot.SetDataObjectXComponent(0,0)
+                self.linePlot.SetDataObjectXComponent(1,3)
+                xarray.SetDimensions(extent_x[1]-extent_x[0], 0 , 0)
+                yarray.SetDimensions(extent_y[5]-extent_y[4], 0 , 0)
+                xarray.SetExtent(extent_x[0], extent_x[1], 0,0 , 0,0)
+                yarray.SetExtent(extent_y[4], extent_y[5], 0,0 , 0,0)
+                
             elif self.GetSliceOrientation() == SLICE_ORIENTATION_YZ:
                 self.log ("slice orientation : YZ")
                 extent_y[2] = imagecoordinate[1]
@@ -1296,6 +1314,17 @@ class CILViewer2D():
                 extent_x[1] = self.GetActiveSlice()
                 extent_y[0] = self.GetActiveSlice()
                 extent_y[1] = self.GetActiveSlice()
+                
+                self.linePlot.SetDataObjectXComponent(0,2)
+                self.linePlot.SetDataObjectXComponent(1,0)
+                
+                xarray.SetDimensions(extent_x[5]-extent_x[4], 0 , 0)
+                yarray.SetDimensions(extent_y[3]-extent_y[2], 0 , 0)
+                xarray.SetExtent(extent_x[4], extent_x[5], 0,0 , 0,0)
+                yarray.SetExtent(extent_y[2], extent_y[3], 0,0 , 0,0)
+                
+            xarray.AllocateScalars(self.img3D.GetScalarType(), 1)
+            yarray.AllocateScalars(self.img3D.GetScalarType(), 1)
             
             self.log("x {0} extent_x {1}".format(imagecoordinate[0], extent_x) )
             self.log("y {0} extent_y {1}".format(imagecoordinate[1], extent_y) )
@@ -1305,12 +1334,16 @@ class CILViewer2D():
             self.lineVOIY.SetVOI(extent_y)
             self.lineVOIY.SetInputData(self.img3D)
             self.lineVOIY.Update()
+            
+            # fill
         
             if self.linePlot == 0:
                 self.linePlotActor.AddDataSetInputConnection(self.lineVOIX.GetOutputPort())
-                #self.linePlotActor.AddDataSetInputConnection(self.lineVOIY.GetOutputPort())
-            
+                self.linePlotActor.AddDataSetInputConnection(self.lineVOIY.GetOutputPort())
+                #self.linePlotActor.AddDataSetInput(xarray)
+                #self.linePlotActor.AddDataSetInput(yarray)
                 self.GetRenderer().AddActor(self.linePlotActor)
+                self.linePlot = 1
             
             
             self.log("data length x {0} y {1}".format(self.lineVOIX.GetOutput().GetDimensions(),
