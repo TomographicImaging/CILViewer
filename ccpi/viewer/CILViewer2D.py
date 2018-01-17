@@ -655,6 +655,11 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
             imagePosition = [round(pickPosition[i] / spac[i] + orig[i]) for i in range(3) ]
             
             pixelValue = self.GetInputData().GetScalarComponentAsDouble(imagePosition[0], imagePosition[1], imagePosition[2], 0)
+            if self.viewer.rescale[0]:
+                scale , shift = self.viewer.rescale[1]
+                # pix = orig * scale - shift
+                # orig = (shift + pix) / scale
+                pixelValue = (shift + pixelValue) / scale
             return (imagePosition[0], imagePosition[1], imagePosition[2] , pixelValue)
         else:
             return (0,0,0,0)
