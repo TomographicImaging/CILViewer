@@ -391,6 +391,9 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
             self.UpdatePipeline()
         else:
             self.log ("maxSlice %d request %d" % (maxSlice, self.GetActiveSlice() ))
+        
+        if self.GetViewerEvent() == ViewerEvent.SHOW_LINE_PROFILE:
+            self.DisplayLineProfile(interactor, event, True)
     
     def OnMouseWheelBackward(self, interactor, event):
         minSlice = 0
@@ -403,6 +406,8 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
             self.UpdatePipeline()
         else:
             self.log ("minSlice %d request %d" % (minSlice, self.GetActiveSlice() ))
+        if self.GetViewerEvent() == ViewerEvent.SHOW_LINE_PROFILE:
+            self.DisplayLineProfile(interactor, event, True)
         
     def OnKeyPress(self, interactor, event):
         interactor = self._viewer.GetInteractor()
@@ -654,12 +659,13 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
             orig = self.GetInputData().GetOrigin()
             imagePosition = [round(pickPosition[i] / spac[i] + orig[i]) for i in range(3) ]
             
-            pixelValue = self.GetInputData().GetScalarComponentAsDouble(imagePosition[0], imagePosition[1], imagePosition[2], 0)
-            if self.viewer.rescale[0]:
-                scale , shift = self.viewer.rescale[1]
-                # pix = orig * scale - shift
-                # orig = (shift + pix) / scale
-                pixelValue = (shift + pixelValue) / scale
+            pixelValue = self.GetInputData().GetScalarComponentAsDouble(
+                    imagePosition[0], imagePosition[1], imagePosition[2], 0)
+            if self._viewer.rescale[0]:
+                scale , shift = self._viewer.rescale[1]
+                # pix = orig * scale + shift
+                # orig = (-shift + pix) / scale
+                pixelValue = (-shift + pixelValue) / scale
             return (imagePosition[0], imagePosition[1], imagePosition[2] , pixelValue)
         else:
             return (0,0,0,0)
@@ -810,7 +816,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
         vox = self.viewport2imageCoordinate(position)
         #print ("Pixel %d,%d,%d Value %f" % vox )
         self._viewer.cornerAnnotation.VisibilityOn()
-        self.UpdateCornerAnnotation("[%d,%d,%d] : %.2f" % vox , 0)
+        self.UpdateCornerAnnotation("[%d,%d,%d] : %.2g" % vox , 0)
         self.Render()
     
     def DisplayLineProfile(self, interactor, event, display):
@@ -940,8 +946,8 @@ class CILViewer2D():
         self.histogramPlotActor.SetYTitle( "N" )
         self.histogramPlotActor.SetXValuesToValue()
         self.histogramPlotActor.SetPlotColor(0, (0,1,1) )
-        self.histogramPlotActor.SetPosition(0.6,0.6)
-        self.histogramPlotActor.SetPosition2(0.4,0.4)
+        self.histogramPlotActor.SetPosition2(0.6,0.6)
+        self.histogramPlotActor.SetPosition(0.4,0.4)
         
         # XY Plot for X and Y slices
         self.displayLinePlot = False
@@ -949,18 +955,22 @@ class CILViewer2D():
         self.lineVOIX = vtk.vtkExtractVOI()
         self.lineVOIY = vtk.vtkExtractVOI()
         self.linePlotActor = vtk.vtkXYPlotActor()
-        self.linePlotActor.ExchangeAxesOff();
-        #self.linePlotActor.SetXLabelFormat( "%g" )
-        #self.linePlotActor.SetXLabelFormat( "%g" )
+        self.linePlotActor.ExchangeAxesOff()
+        self.linePlotActor.SetXTitle( "" )
+        self.linePlotActor.SetYTitle( "" )
+        self.linePlotActor.SetXLabelFormat( "%.0f" )
+        self.linePlotActor.SetYLabelFormat( "%.2f" )
         #self.linePlotActor.SetAdjustXLabels(3)
         #self.linePlotActor.SetXTitle( "Level" )
         #self.linePlotActor.SetYTitle( "N" )
         self.linePlotActor.SetXValuesToValue()
-        self.linePlotActor.SetPlotColor(0, (0,1,1) )
+        self.linePlotActor.SetPlotColor(0, (1,0,0.5) )
         self.linePlotActor.SetPlotColor(1, (1,1,0) )
-        self.linePlotActor.SetPosition(0.6,0.6)
-        self.linePlotActor.SetPosition2(0.4,0.4)
-
+        self.linePlotActor.SetPosition2(1,0.4 )
+        self.linePlotActor.SetPosition(0,0.1)
+        self.linePlotActor.SetPlotLabel(0,'horiz')
+        self.linePlotActor.SetPlotLabel(1,'vert')
+        self.linePlotActor.LegendOn()
         # rescale input image
         # contains (scale, shift)
         self.rescale = [ False , (1,0) ]
@@ -1211,7 +1221,7 @@ class CILViewer2D():
             extent[2] = min( self.ROI[0][1] , self.ROI[1][1])
             extent[3] = max( self.ROI[0][1] , self.ROI[1][1])
             extent[4] = self.GetActiveSlice()
-            extent[5] = self.GetActiveSlice()+1
+            extent[5] = self.GetActiveSlice()
             #y = abs(roi[1][1] - roi[0][1])
         elif self.GetSliceOrientation() == SLICE_ORIENTATION_XZ:
             self.log ("slice orientation : XY")
@@ -1222,7 +1232,7 @@ class CILViewer2D():
             extent[5] = max( self.ROI[0][2] , self.ROI[1][2])
             #y = abs(roi[1][2] - roi[0][2])
             extent[2] = self.GetActiveSlice()
-            extent[3] = self.GetActiveSlice()+1
+            extent[3] = self.GetActiveSlice()
         elif self.GetSliceOrientation() == SLICE_ORIENTATION_YZ:
             self.log ("slice orientation : XY")
             extent[2] = min( self.ROI[0][1] , self.ROI[1][1])
@@ -1232,7 +1242,7 @@ class CILViewer2D():
             extent[5] = max( self.ROI[0][2] , self.ROI[1][2])
             #y = abs(roi[1][2] - roi[0][2])
             extent[0] = self.GetActiveSlice()
-            extent[1] = self.GetActiveSlice()+1
+            extent[1] = self.GetActiveSlice()
 
         self.log("updateROIHistogram {0}".format(extent))
         self.roiVOI.SetVOI(extent)
@@ -1241,10 +1251,17 @@ class CILViewer2D():
         irange = self.roiVOI.GetOutput().GetScalarRange()
         
         self.roiIA.SetInputData(self.roiVOI.GetOutput())
+        
         self.roiIA.IgnoreZeroOff()
-        self.roiIA.SetComponentExtent(0,int(irange[1]-irange[0]-1),0,0,0,0 )
+        #self.roiIA.SetComponentExtent(0,int(irange[1]-irange[0]-1),0,0,0,0 )
         self.roiIA.SetComponentOrigin( int(irange[0]),0,0 );
         self.roiIA.SetComponentSpacing( 1,0,0 );
+        self.roiIA.Update()
+        #use 255 bins
+        delta = self.roiIA.GetMax()[0] - self.roiIA.GetMin()[0]
+        nbins = 255
+        self.roiIA.SetComponentSpacing(delta/nbins,0,0)
+        self.roiIA.SetComponentExtent(0,nbins,0,0,0,0 )
         self.roiIA.Update()
         
         self.histogramPlotActor.AddDataSetInputConnection(self.roiIA.GetOutputPort())
@@ -1262,8 +1279,7 @@ class CILViewer2D():
         extent_x = list(self.img3D.GetExtent())
         extent_y = list(self.img3D.GetExtent())
         self.log("imagecoordinate {0}".format(imagecoordinate))
-        xarray = vtk.vtkImageData()
-        yarray = vtk.vtkImageData()
+        
         
         if display:
             #extract profile along X
@@ -1280,12 +1296,8 @@ class CILViewer2D():
                 extent_x[4] = self.GetActiveSlice()
                 extent_x[5] = self.GetActiveSlice()
                 
-                xarray.SetDimensions(extent_x[1]-extent_x[0] , 0 , 0)
-                yarray.SetDimensions(extent_y[3]-extent_y[2] , 0 , 0)
-                xarray.SetExtent(extent_x[0], extent_x[1], 0,0 , 0,0)
-                yarray.SetExtent(extent_y[2], extent_y[3], 0,0 , 0,0)
-                self.linePlot.SetDataObjectXComponent(0,0)
-                self.linePlot.SetDataObjectXComponent(1,1)
+                self.linePlotActor.SetDataObjectXComponent(0,0)
+                self.linePlotActor.SetDataObjectXComponent(1,1)
                 
                 #y = abs(roi[1][1] - roi[0][1])
             elif self.GetSliceOrientation() == SLICE_ORIENTATION_XZ:
@@ -1300,12 +1312,9 @@ class CILViewer2D():
                 extent_x[3] = self.GetActiveSlice()
                 extent_y[2] = self.GetActiveSlice()
                 extent_y[3] = self.GetActiveSlice()
-                self.linePlot.SetDataObjectXComponent(0,0)
-                self.linePlot.SetDataObjectXComponent(1,3)
-                xarray.SetDimensions(extent_x[1]-extent_x[0], 0 , 0)
-                yarray.SetDimensions(extent_y[5]-extent_y[4], 0 , 0)
-                xarray.SetExtent(extent_x[0], extent_x[1], 0,0 , 0,0)
-                yarray.SetExtent(extent_y[4], extent_y[5], 0,0 , 0,0)
+                self.linePlotActor.SetDataObjectXComponent(0,0)
+                self.linePlotActor.SetDataObjectXComponent(1,2)
+                
                 
             elif self.GetSliceOrientation() == SLICE_ORIENTATION_YZ:
                 self.log ("slice orientation : YZ")
@@ -1320,16 +1329,9 @@ class CILViewer2D():
                 extent_y[0] = self.GetActiveSlice()
                 extent_y[1] = self.GetActiveSlice()
                 
-                self.linePlot.SetDataObjectXComponent(0,2)
-                self.linePlot.SetDataObjectXComponent(1,0)
+                self.linePlotActor.SetDataObjectXComponent(0,1)
+                self.linePlotActor.SetDataObjectXComponent(1,2)
                 
-                xarray.SetDimensions(extent_x[5]-extent_x[4], 0 , 0)
-                yarray.SetDimensions(extent_y[3]-extent_y[2], 0 , 0)
-                xarray.SetExtent(extent_x[4], extent_x[5], 0,0 , 0,0)
-                yarray.SetExtent(extent_y[2], extent_y[3], 0,0 , 0,0)
-                
-            xarray.AllocateScalars(self.img3D.GetScalarType(), 1)
-            yarray.AllocateScalars(self.img3D.GetScalarType(), 1)
             
             self.log("x {0} extent_x {1}".format(imagecoordinate[0], extent_x) )
             self.log("y {0} extent_y {1}".format(imagecoordinate[1], extent_y) )
