@@ -25,3 +25,4 @@ The interactive viewer CILViewer2D provides:
 ![Zoom](pics/zoom.png)
 ![Slice X + Pick](pics/sliceXPick.png)
 ![ROI](pics/ROI.png)
+![line](pics/line.png)
