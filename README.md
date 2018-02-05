@@ -10,6 +10,7 @@ The interactive viewer CILViewer2D provides:
     - 'z' slices on the XY
     - 'a' auto window/level to accomodate all values
     - 's' save render to PNG (current_render.png)
+    - 'l' plots horizontal and vertical profiles of the displayed image at the pointer location
   - slice up/down: mouse scroll (10 x pressing SHIFT)
   - Window/Level: ALT + Right Mouse Button + drag
   - Pan: CTRL + Right Mouse Button + drag
