@@ -382,9 +382,9 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
 
         # Set initial values from origin to max for each side
         roiv = [
-            [0, dims[0]], # x
-            [0, dims[1]], # y
-            [0, dims[2]]  # z
+            0, dims[0], # x
+            0, dims[1], # y
+            0, dims[2]  # z
         ]
 
         if not self._viewer.ROIV:
@@ -395,7 +395,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
         self._viewer.ROIV = self.createroiv(roiv, point1, point2)
 
     def RemoveROIV(self):
-        self._viewer.ROIV = ()
+        self._viewer.ROIV = None
 
     def GetROIV(self):
         return self._viewer.ROIV
@@ -412,8 +412,10 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
             ymax = max(point1[1], point2[1])
 
             # Use python list aliasing to set the base_roiv to match current parameters
-            base_roiv[0] = [xmin,xmax]
-            base_roiv[1] = [ymin, ymax]
+            base_roiv[0] = xmin
+            base_roiv[1] = xmax
+            base_roiv[2] = ymin
+            base_roiv[3] = ymax
 
         elif orientation == SLICE_ORIENTATION_XZ: # y
             # Z axis is inverted
@@ -425,8 +427,10 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
             zmax = max(point1[2], point2[2])
 
             # Use python list aliasing to set the base_roiv to match current parameters
-            base_roiv[0] = [xmin, xmax]
-            base_roiv[2] = [zmin, zmax]
+            base_roiv[0] = xmin
+            base_roiv[1] = xmax
+            base_roiv[4] = zmin
+            base_roiv[5] = zmax
 
         elif orientation == SLICE_ORIENTATION_YZ: # x
             # Z and Y axis are inverted
@@ -438,8 +442,10 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
             zmax = max(point1[2], point2[2])
 
             # Use python list aliasing to set the base_roiv to match current parameters
-            base_roiv[1] = [ymin, ymax]
-            base_roiv[2] = [zmin, zmax]
+            base_roiv[2] = ymin
+            base_roiv[3] = ymax
+            base_roiv[4] = zmin
+            base_roiv[5] = zmax
 
         return base_roiv
 
@@ -449,8 +455,8 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
         roiv = self.GetROIV()
         # print (roiv)
 
-        lower_limit = [roiv[i][0] for i in range(3)]
-        upper_limit = [roiv[i][1] for i in range(3)]
+        lower_limit = roiv[::2]
+        upper_limit = roiv[1::2]
 
         point1 =  self.imageCoordinate2display(lower_limit)
         point2 =  self.imageCoordinate2display(upper_limit)
@@ -1150,7 +1156,9 @@ class CILViewer2D():
         self.ROI = ()
 
         # Edge points of Volumetric ROI
-        self.ROIV = ()
+        # self.ROIV = vtk.vtkExtractVOI()
+        self.ROIV = None
+
 
         #picker
         self.picker = vtk.vtkPropPicker()
