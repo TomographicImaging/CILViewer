@@ -215,15 +215,6 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
         priority = 1.0
         self.debug = True
 
-#        self.AddObserver("MouseWheelForwardEvent" , callback.OnMouseWheelForward , priority)
-#        self.AddObserver("MouseWheelBackwardEvent" , callback.OnMouseWheelBackward, priority)
-#        self.AddObserver('KeyPressEvent', callback.OnKeyPress, priority)
-#        self.AddObserver('LeftButtonPressEvent', callback.OnLeftButtonPressEvent, priority)
-#        self.AddObserver('RightButtonPressEvent', callback.OnRightButtonPressEvent, priority)
-#        self.AddObserver('LeftButtonReleaseEvent', callback.OnLeftButtonReleaseEvent, priority)
-#        self.AddObserver('RightButtonReleaseEvent', callback.OnRightButtonReleaseEvent, priority)
-#        self.AddObserver('MouseMoveEvent', callback.OnMouseMoveEvent, priority)
-
         self.AddObserver("MouseWheelForwardEvent" , self.OnMouseWheelForward , priority)
         self.AddObserver("MouseWheelBackwardEvent" , self.OnMouseWheelBackward, priority)
         self.AddObserver('KeyPressEvent', self.OnKeyPress, priority)
@@ -237,8 +228,11 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
 
         self.InitialEventPosition = (0,0)
 
-        self.test = None
+        # Initialise difference from zoom event start point
+        self.dy = 0
 
+        # Test value
+        self.test = None
 
     def log(self, msg):
         if self.debug:
@@ -377,6 +371,9 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
 
     def UpdateLinePlot(self, imagecoordinate, display):
         self._viewer.updateLinePlot(imagecoordinate, display)
+
+    def validateValue(self, value, axis):
+        return self._viewer.validateValue(value, axis)
 
     def SetROIV(self, point1, point2):
 
@@ -788,12 +785,15 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
              self.GetViewerEvent() == ViewerEvent.PAN_EVENT:
             self.SetInitialCameraPosition( () )
 
+            # Reset difference from start of zoom event
+            self.dy = 0
+
         self.SetViewerEvent( ViewerEvent.NO_EVENT )
 
 
     def OnROIModifiedEvent(self, interactor, event):
         print ("ROI MODIFIED")
-        # print (event)
+        print (event)
 
         p1 = self.GetROIWidget().GetBorderRepresentation().GetPositionCoordinate()
         p2 = self.GetROIWidget().GetBorderRepresentation().GetPosition2Coordinate()
@@ -805,12 +805,15 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
         vox1 = self.display2imageCoordinate(pp1)
         vox2 = self.display2imageCoordinate(pp2)
 
+        print ("VOX1 VOX2",vox1, vox2)
+
         # Set the initial values of the ROIV
         self.SetROIV(vox1,vox2)
 
         if event == 'InteractionEvent':
             # Only update the edges of the ROI if we are actively dragging or resizing the ROI
             self.UpdateROIV(vox1,vox2)
+            print ("ROIV", self.GetROIV())
 
         self.SetROI( (vox1 , vox2) )
         roi = self.GetROI()
@@ -868,7 +871,12 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
                 # pix = orig * scale + shift
                 # orig = (-shift + pix) / scale
                 pixelValue = (-shift + pixelValue) / scale
-            return (imagePosition[0], imagePosition[1], imagePosition[2] , pixelValue)
+            return (
+                self.validateValue(imagePosition[0], 'x'),
+                self.validateValue(imagePosition[1], 'y'),
+                self.validateValue(imagePosition[2], 'z'),
+                pixelValue
+            )
         else:
             return (0,0,0,0)
 
@@ -942,38 +950,23 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
 
 
     def HandleZoomEvent(self, interactor, event):
+        camera = self.GetActiveCamera()
+
+        # Extract change from start of event
         dx,dy = interactor.GetDeltaEventPosition()
-        size = self.GetRenderWindow().GetSize()
-        dy = - 4 * dy / size[1]
+        window_y_size = self.GetRenderWindow().GetSize()[1]
 
-        self.log ("distance: " + str(self.GetActiveCamera().GetDistance()))
+        # Determine whether the user is zooming in or out
+        change = dy - self.dy
 
-        self.log ("\ndy: %f\ncamera dolly %f\n" % (dy, 1 + dy))
+        # Make sure that a change has been registered
+        if change != 0:
+            # >1 zoom in, <1 zoom out
+            camera.Zoom(1 + change/window_y_size)
+            self.Render()
 
-        camera = vtk.vtkCamera()
-        camera.DeepCopy(self.GetActiveCamera())
-        camera.SetFocalPoint(self.GetActiveCamera().GetFocalPoint())
-        #print ("current position " + str(self.InitialCameraPosition))
-        camera.SetViewUp(self.GetActiveCamera().GetViewUp())
-        camera.SetPosition(self.GetInitialCameraPosition())
-        newposition = [i for i in self.GetInitialCameraPosition()]
-        if self.GetSliceOrientation() == SLICE_ORIENTATION_XY:
-            dist = newposition[SLICE_ORIENTATION_XY] * ( 1 + dy )
-            newposition[SLICE_ORIENTATION_XY] *= ( 1 + dy )
-        elif self.GetSliceOrientation() == SLICE_ORIENTATION_XZ:
-            newposition[SLICE_ORIENTATION_XZ] *= ( 1 + dy )
-        elif self.GetSliceOrientation() == SLICE_ORIENTATION_YZ:
-            newposition[SLICE_ORIENTATION_YZ] *= ( 1 + dy )
-        #print ("new position " + str(newposition))
-        camera.SetPosition(newposition)
-        self.SetActiveCamera(camera)
-
-        dist = self.GetActiveCamera().GetDistance()
-        self.log ("distance after: " + str(dist))
-        cr = self.GetActiveCamera().GetClippingRange()
-        if dist > cr[1]:
-            self.GetActiveCamera().SetClippingRange(cr[0] , dist)
-        self.Render()
+        # Set the overall change value
+        self.dy = dy
 
 
     def HandlePanEvent(self, interactor, event):
@@ -1479,37 +1472,62 @@ class CILViewer2D():
         writer.SetInputConnection(w2if.GetOutputPort())
         writer.Write()
 
+    def validateValue(self,value, axis):
+        dims = self.img3D.GetDimensions()
+        max_slice = [x-1 for x in dims]
+
+        axis_int = {
+            'x': 0,
+            'y': 1,
+            'z': 2
+        }
+
+        if axis in axis_int.keys():
+            i = axis_int[axis]
+        else:
+            raise KeyError
+
+        if value < 0:
+            return 0
+        if value > max_slice[i]:
+            return max_slice[i]
+        else:
+            return value
+
+
+
+
     def updateROIHistogram(self):
         print ("Updating hist")
 
         extent = [0 for i in range(6)]
         if self.GetSliceOrientation() == SLICE_ORIENTATION_XY:
-            self.log ("slice orientation : XY")
-            extent[0] = min( self.ROI[0][0] , self.ROI[1][0])
-            extent[1] = max( self.ROI[0][0] , self.ROI[1][0])
-            extent[2] = min( self.ROI[0][1] , self.ROI[1][1])
-            extent[3] = max( self.ROI[0][1] , self.ROI[1][1])
+            self.log("slice orientation : XY")
+            extent[0] = self.validateValue(min(self.ROI[0][0], self.ROI[1][0]), 'x')
+            extent[1] = self.validateValue(max(self.ROI[0][0], self.ROI[1][0]), 'x')
+            extent[2] = self.validateValue(min(self.ROI[0][1], self.ROI[1][1]), 'y')
+            extent[3] = self.validateValue(max(self.ROI[0][1], self.ROI[1][1]), 'y')
             extent[4] = self.GetActiveSlice()
             extent[5] = self.GetActiveSlice()
-            #y = abs(roi[1][1] - roi[0][1])
+            # y = abs(roi[1][1] - roi[0][1])
         elif self.GetSliceOrientation() == SLICE_ORIENTATION_XZ:
-            self.log ("slice orientation : XZ")
-            extent[0] = min( self.ROI[0][0] , self.ROI[1][0])
-            extent[1] = max( self.ROI[0][0] , self.ROI[1][0])
-            #x = abs(roi[1][0] - roi[0][0])
-            extent[4] = min( self.ROI[0][2] , self.ROI[1][2])
-            extent[5] = max( self.ROI[0][2] , self.ROI[1][2])
-            #y = abs(roi[1][2] - roi[0][2])
+            self.log("slice orientation : XZ")
+            extent[0] = self.validateValue(min(self.ROI[0][0], self.ROI[1][0]), 'x')
+            extent[1] = self.validateValue(max(self.ROI[0][0], self.ROI[1][0]), 'x')
+            # x = abs(roi[1][0] - roi[0][0])
+            extent[4] = self.validateValue(min(self.ROI[0][2], self.ROI[1][2]), 'z')
+            extent[5] = self.validateValue(max(self.ROI[0][2], self.ROI[1][2]), 'z')
+            # y = abs(roi[1][2] - roi[0][2])
             extent[2] = self.GetActiveSlice()
             extent[3] = self.GetActiveSlice()
         elif self.GetSliceOrientation() == SLICE_ORIENTATION_YZ:
-            self.log ("slice orientation : YZ")
-            extent[2] = min( self.ROI[0][1] , self.ROI[1][1])
-            extent[3] = max( self.ROI[0][1] , self.ROI[1][1])
-            #x = abs(roi[1][1] - roi[0][1])
-            extent[4] = min( self.ROI[0][2] , self.ROI[1][2])
-            extent[5] = max( self.ROI[0][2] , self.ROI[1][2])
-            #y = abs(roi[1][2] - roi[0][2])
+            self.log("slice orientation : YZ")
+            extent[2] = self.validateValue(min(self.ROI[0][1], self.ROI[1][1]), 'y')
+            extent[3] = self.validateValue(max(self.ROI[0][1], self.ROI[1][1]), 'y')
+            # x = abs(roi[1][1] - roi[0][1])
+            extent[4] = self.validateValue(min(self.ROI[0][2], self.ROI[1][2]), 'z')
+            extent[5] = self.validateValue(max(self.ROI[0][2], self.ROI[1][2]), 'z')
+            # y = abs(roi[1][2] - roi[0][2])
             extent[0] = self.GetActiveSlice()
             extent[1] = self.GetActiveSlice()
 
