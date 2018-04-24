@@ -1,0 +1,11 @@
+Metadata-Version: 1.0
+Name: ccpi-viewer
+Version: 0.9
+Summary: CCPi Core Imaging Library - VTK Viewer Module
+Home-page: http://www.ccpi.ac.uk
+Author: Edoardo Pasca
+Author-email: edo.paskino@gmail.com
+License: Apache v2.0
+Description: UNKNOWN
+Keywords: 3D data viewer
+Platform: UNKNOWN
