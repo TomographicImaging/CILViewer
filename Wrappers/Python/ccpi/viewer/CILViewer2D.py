@@ -186,26 +186,40 @@ class Converter():
 
 
 
-class ViewerEvent(Enum):
-    # left button
-    PICK_EVENT = 0
-    # alt  + right button + move
-    WINDOW_LEVEL_EVENT = 1
-    # shift + right button
-    ZOOM_EVENT = 2
-    # control + right button
-    PAN_EVENT = 3
-    # control + left button
-    CREATE_ROI_EVENT = 4
-    # alt + left button
-    DELETE_ROI_EVENT = 5
-    # release button
-    NO_EVENT = -1
-    # plots a profile for the X and Y line at the pointer location
-    SHOW_LINE_PROFILE = 6
+class ViewerEventManager():
+
+    def __init__(self):
+        # If all values are false it signifies no event
+        self.events = {
+            "PICK_EVENT": False,                # left  mouse
+            "WINDOW_LEVEL_EVENT": False,        # alt + right mouse + move
+            "ZOOM_EVENT": False,                # shift + right mouse + move
+            "PAN_EVENT": False,                 # ctrl + right mouse + move
+            "CREATE_ROI_EVENT": False,          # ctrl + left mouse
+            "DELETE_ROI_EVENT": False,          # alt + left mouse
+            "SHOW_LINE_PROFILE_EVENT": False    # l
+        }
+
+    def __str__(self):
+        return str(self.events)
+
+    def On(self, event):
+        self.events[event] = True
+
+    def Off(self, event):
+        self.events[event] = False
+
+    def setAllInactive(self):
+        self.events = {x:False for x in self.events}
+
+    def isActive(self, event):
+        return self.events[event]
+
+    def isAllInactive(self):
+        """Returns True if all events are inactive"""
+        return all(not x for x in self.events.values())
 
 
-#class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
 class CILInteractorStyle(vtk.vtkInteractorStyleImage):
 
     def __init__(self, callback):
@@ -258,9 +272,6 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
 
     def GetEventPosition(self):
         return self.GetInteractor().GetEventPosition()
-
-    def GetEventPositionInWorldCoordinates(self):
-        pass
 
     def GetDeltaEventPosition(self):
         x,y = self.GetInteractor().GetEventPosition()
@@ -321,11 +332,14 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
     def GetROIWidget(self):
         return self._viewer.ROIWidget
 
-    def SetViewerEvent(self, event):
-        self._viewer.event = event
+    def SetEventActive(self, event):
+        self._viewer.event.On(event)
 
-    def GetViewerEvent(self):
-        return self._viewer.event
+    def SetEventInactive(self, event):
+        self._viewer.event.Off(event)
+
+    def GetViewerEvent(self, event):
+        return self._viewer.event.isActive(event)
 
     def SetInitialCameraPosition(self, position):
         self._viewer.InitialCameraPosition = position
@@ -498,7 +512,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
         else:
             self.log ("maxSlice %d request %d" % (maxSlice, self.GetActiveSlice() ))
 
-        if self.GetViewerEvent() == ViewerEvent.SHOW_LINE_PROFILE:
+        if self.GetViewerEvent("SHOW_LINE_PROFILE_EVENT"):
             self.DisplayLineProfile(interactor, event, True)
 
     def OnMouseWheelBackward(self, interactor, event):
@@ -512,13 +526,12 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
             self.UpdatePipeline()
         else:
             self.log ("minSlice %d request %d" % (minSlice, self.GetActiveSlice() ))
-        if self.GetViewerEvent() == ViewerEvent.SHOW_LINE_PROFILE:
+        if self.GetViewerEvent("SHOW_LINE_PROFILE_EVENT"):
             self.DisplayLineProfile(interactor, event, True)
 
     def OnKeyPress(self, interactor, event):
-        # interactor = self._viewer.GetInteractor()
 
-        #print ("Pressed key %s" % interactor.GetKeyCode())
+        # print ("Pressed key %s" % interactor.GetKeyCode())
         # Slice Orientation
         if interactor.GetKeyCode() == "X":
             # slice on the other orientation
@@ -596,7 +609,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
             # probably the level could be the median of the image within
             # the percintiles
             level = self._viewer.ia.GetMedian()
-            # accomodates all values between the level an the percentiles
+            # accommodates all values between the level an the percentiles
             window = 2*max(abs(level-cmin),abs(level-cmax))
 
             self.SetInitialLevel( level )
@@ -621,11 +634,12 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
             self.OnKeyPress(interactor, event)
 
         elif interactor.GetKeyCode() == "l":
-            if self.GetViewerEvent() == ViewerEvent.SHOW_LINE_PROFILE:
-                self.SetViewerEvent(ViewerEvent.NO_EVENT)
+            if self.GetViewerEvent("SHOW_LINE_PROFILE_EVENT"):
+
+                self.SetEventInactive("SHOW_LINE_PROFILE_EVENT")
                 self.DisplayLineProfile(interactor, event, False)
             else:
-                self.SetViewerEvent( ViewerEvent.SHOW_LINE_PROFILE )
+                self.SetEventActive("SHOW_LINE_PROFILE_EVENT")
                 self.DisplayLineProfile(interactor, event, True)
 
         else :
@@ -642,7 +656,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
         self.SetInitialEventPosition(interactor.GetEventPosition())
 
         if ctrl and not (alt and shift):
-            self.SetViewerEvent( ViewerEvent.CREATE_ROI_EVENT )
+            self.SetEventActive("CREATE_ROI_EVENT")
             position = interactor.GetEventPosition()
             self.InitialiseBox(position)
             self.SetDisplayHistogram(True)
@@ -650,7 +664,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
             self.log ("Event %s is CREATE_ROI_EVENT" % (event))
 
         elif alt and not (shift and ctrl):
-            self.SetViewerEvent( ViewerEvent.DELETE_ROI_EVENT )
+            self.SetEventActive("DELETE_ROI_EVENT")
             self.GetROIWidget().Off()
             self._viewer.updateCornerAnnotation("", 1, False)
             self.SetDisplayHistogram(False)
@@ -658,7 +672,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
             self.log ("Event %s is DELETE_ROI_EVENT" % (event))
 
         elif not (ctrl and alt and shift):
-            self.SetViewerEvent ( ViewerEvent.PICK_EVENT )
+            self.SetEventActive("PICK_EVENT")
             self.HandlePickEvent(interactor, event)
             self.log ("Event %s is PICK_EVENT" % (event))
 
@@ -678,16 +692,16 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
     def OnLeftButtonReleaseEvent(self, interactor, event):
         interactor = self._viewer.GetInteractor()
 
-        if self.GetViewerEvent() == ViewerEvent.CREATE_ROI_EVENT:
-            #bc = self.ROIWidget.GetBorderRepresentation().GetPositionCoordinate()
-            #print (bc.GetValue())
+        if self.GetViewerEvent("CREATE_ROI_EVENT"):
             self.OnROIModifiedEvent(interactor, event)
-            pass
 
-        elif self.GetViewerEvent() == ViewerEvent.PICK_EVENT:
+        elif self.GetViewerEvent("PICK_EVENT"):
             self.HandlePickEvent(interactor, event)
 
-        self.SetViewerEvent( ViewerEvent.NO_EVENT )
+        # Turn off CREATE_ROI and PICK_EVENT
+        self.SetEventInactive("CREATE_ROI_EVENT")
+        self.SetEventInactive("PICK_EVENT")
+        self.SetEventInactive("DELETE_ROI_EVENT")
 
     def OnRightButtonPressEvent(self, interactor, event):
         interactor = self._viewer.GetInteractor()
@@ -700,31 +714,33 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
 
 
         if alt and not (ctrl and shift):
-            self.SetViewerEvent( ViewerEvent.WINDOW_LEVEL_EVENT )
+            self.SetEventActive("WINDOW_LEVEL_EVENT")
             self.log ("Event %s is WINDOW_LEVEL_EVENT" % (event))
             self.HandleWindowLevel(interactor, event)
         elif shift and not (ctrl and alt):
-            self.SetViewerEvent( ViewerEvent.ZOOM_EVENT )
+            self.SetEventActive("ZOOM_EVENT")
             self.SetInitialCameraPosition( self.GetActiveCamera().GetPosition())
             self.log ("Event %s is ZOOM_EVENT" % (event))
         elif ctrl and not (shift and alt):
-            self.SetViewerEvent (ViewerEvent.PAN_EVENT )
+            self.SetEventActive("PAN_EVENT")
             self.SetInitialCameraPosition ( self.GetActiveCamera().GetPosition() )
             self.log ("Event %s is PAN_EVENT" % (event))
 
     def OnRightButtonReleaseEvent(self, interactor, event):
         self.log (event)
-        if self.GetViewerEvent() == ViewerEvent.WINDOW_LEVEL_EVENT:
+        if self.GetViewerEvent("WINDOW_LEVEL_EVENT"):
             self.SetInitialLevel( self.GetWindowLevel().GetLevel() )
             self.SetInitialWindow ( self.GetWindowLevel().GetWindow() )
-        elif self.GetViewerEvent() == ViewerEvent.ZOOM_EVENT or \
-             self.GetViewerEvent() == ViewerEvent.PAN_EVENT:
+        elif self.GetViewerEvent("ZOOM_EVENT") or self.GetViewerEvent("PAN_EVENT"):
             self.SetInitialCameraPosition( () )
 
             # Reset difference from start of zoom event
             self.dy = 0
 
-        self.SetViewerEvent( ViewerEvent.NO_EVENT )
+        # self.SetViewerEvent( ViewerEvent.NO_EVENT )
+        self.SetEventInactive("WINDOW_LEVEL_EVENT")
+        self.SetEventInactive("ZOOM_EVENT")
+        self.SetEventInactive("PAN_EVENT")
 
     def OnROIModifiedEvent(self, interactor, event):
 
@@ -772,7 +788,8 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
         self.log (text)
         self.UpdateCornerAnnotation(text, 1)
         self.UpdateROIHistogram()
-        self.SetViewerEvent( ViewerEvent.NO_EVENT )
+        # self.SetViewerEvent( ViewerEvent.NO_EVENT )
+        self.SetEventInactive("CREATE_ROI_EVENT")
 
 ###########################  Coordinate conversion methods ############################
 
@@ -891,16 +908,21 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
 ##################################  END ######################################
 
     def OnMouseMoveEvent(self, interactor, event):
-        if self.GetViewerEvent() == ViewerEvent.WINDOW_LEVEL_EVENT:
+
+        if self.GetViewerEvent("WINDOW_LEVEL_EVENT"):
             self.log ("Event %s is WINDOW_LEVEL_EVENT" % (event))
             self.HandleWindowLevel(interactor, event)
-        elif self.GetViewerEvent() == ViewerEvent.PICK_EVENT:
+
+        elif self.GetViewerEvent("PICK_EVENT"):
             self.HandlePickEvent(interactor, event)
-        elif self.GetViewerEvent() == ViewerEvent.ZOOM_EVENT:
+
+        elif self.GetViewerEvent("ZOOM_EVENT"):
             self.HandleZoomEvent(interactor, event)
-        elif self.GetViewerEvent() == ViewerEvent.PAN_EVENT:
+
+        elif self.GetViewerEvent("PAN_EVENT"):
             self.HandlePanEvent(interactor, event)
-        elif self.GetViewerEvent() == ViewerEvent.SHOW_LINE_PROFILE:
+
+        elif self.GetViewerEvent("SHOW_LINE_PROFILE_EVENT"):
             self.DisplayLineProfile(interactor, event, True)
 
 
@@ -1084,7 +1106,7 @@ class CILViewer2D():
         self.InitialWindow = 0
 
         #ViewerEvent
-        self.event = ViewerEvent.NO_EVENT
+        self.event = ViewerEventManager()
 
         # ROI Widget
         # self.ROIWidget = vtk.vtkBorderWidget()
@@ -1569,4 +1591,5 @@ class CILViewer2D():
 
         else:
             self.linePlotActor.VisibilityOff()
+            self.renWin.Render()
 
