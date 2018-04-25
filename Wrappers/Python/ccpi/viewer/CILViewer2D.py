@@ -248,13 +248,13 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
         self.GetInteractor().SetKeyCode(keycode)
 
     def GetControlKey(self):
-        return self.GetInteractor().GetControlKey() #== CONTROL_KEY
+        return self.GetInteractor().GetControlKey()
 
     def GetShiftKey(self):
-        return self.GetInteractor().GetShiftKey() #== SHIFT_KEY
+        return self.GetInteractor().GetShiftKey()
 
     def GetAltKey(self):
-        return self.GetInteractor().GetAltKey() #== ALT_KEY
+        return self.GetInteractor().GetAltKey()
 
     def GetEventPosition(self):
         return self.GetInteractor().GetEventPosition()
