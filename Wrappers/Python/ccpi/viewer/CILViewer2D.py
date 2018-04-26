@@ -1655,24 +1655,10 @@ class CILViewer2D():
 
     def updateLinePlot(self, imagecoordinate, display):
 
-        # # Set position of line plot
-        # origin_display = self.style.world2display((0,0,0))
-        #
-        # # Offset the origin to account for the labels
-        # origin_nview = self.style.display2normalisedViewport((origin_display[0]-45,origin_display[1]-24))
-        #
-        # top_right_disp = self.style.world2display(self.style.GetImageWorldExtent())
-        # top_right_nview = self.style.display2normalisedViewport((top_right_disp[0]+20,top_right_disp[1]))
-        #
-        # self.linePlotActor.SetPosition(origin_nview)
-        # self.linePlotActor.SetPosition2(top_right_nview[0]-origin_nview[0],0.4)
-
-
         self.displayLinePlot = display
         extent_x = list(self.img3D.GetExtent())
         extent_y = list(self.img3D.GetExtent())
         self.log("imagecoordinate {0}".format(imagecoordinate))
-
 
         if display:
             #extract profile along X
@@ -1735,17 +1721,51 @@ class CILViewer2D():
             self.lineVOIY.SetInputData(self.img3D)
             self.lineVOIY.Update()
 
-            # fill
 
+            # fill
             if self.linePlot == 0:
                 self.linePlotActor.AddDataSetInputConnection(self.lineVOIX.GetOutputPort())
                 self.linePlotActor.AddDataSetInputConnection(self.lineVOIY.GetOutputPort())
-                #self.linePlotActor.AddDataSetInput(xarray)
-                #self.linePlotActor.AddDataSetInput(yarray)
                 self.GetRenderer().AddActor(self.linePlotActor)
                 self.linePlot = 1
 
-            print ("TEST", self.lineVOIY.GetOutputPort())
+
+            # Set position of line plot
+
+            # Set up character sizes and borders
+            width = 8
+            border = 12
+            height = 12
+
+            # Calculate the world origin in display coordinates
+            origin_display = self.style.world2display((0,0,0))
+
+            # Calculate the offset due to labels and borders on the graphs y-axis
+            max_y = max(
+                int(self.lineVOIY.GetOutput().GetScalarRange()[1]),
+                int(self.lineVOIX.GetOutput().GetScalarRange()[1])
+            )
+            y_digits = len(str(max_y))
+            x_min_offset = (width * y_digits) + border
+            y_min_offset = height + border
+
+            # Offset the origin to account for the labels
+            origin_nview = self.style.display2normalisedViewport(
+                (
+                    origin_display[0] - x_min_offset,
+                    origin_display[1] - y_min_offset
+                )
+            )
+
+            # Calculate the far right border
+            top_right_disp = self.style.world2display(self.style.GetImageWorldExtent())
+            top_right_nview = self.style.display2normalisedViewport(
+                (top_right_disp[0] + border + height, top_right_disp[1])
+            )
+
+            # Set the position on the image
+            self.linePlotActor.SetPosition(origin_nview)
+            self.linePlotActor.SetPosition2(top_right_nview[0] - origin_nview[0], 0.4)
 
             self.log("data length x {0} y {1}".format(self.lineVOIX.GetOutput().GetDimensions(),
                      self.lineVOIY.GetOutput().GetDimensions()))
