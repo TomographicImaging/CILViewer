@@ -649,6 +649,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
     def OnLeftButtonPressEvent(self, interactor, event):
         # print ("INTERACTOR", interactor)
         # interactor = self._viewer.GetInteractor()
+
         alt = interactor.GetAltKey()
         shift = interactor.GetShiftKey()
         ctrl = interactor.GetControlKey()
@@ -803,6 +804,19 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
 
         return coord.GetComputedWorldValue(self.GetRenderer())
 
+    def world2display(self, world_coords):
+        """
+        Takes coordinates in the world system and converts them to 2D display coordinates
+        :param world_coords: (x,y,z) coordinate in the world
+        :return: (x,y) screen coordinate
+        """
+
+        vc = vtk.vtkCoordinate()
+        vc.SetCoordinateSystemToWorld()
+        vc.SetValue(world_coords)
+
+        return vc.GetComputedDoubleDisplayValue(self.GetRenderer())
+
 
     def display2imageCoordinate(self, viewerposition):
         """
@@ -901,6 +915,16 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
         vc.SetValue(world_coord)
 
         return vc.GetComputedDoubleViewportValue(self.GetRenderer())
+
+    def display2normalisedViewport(self,display_coords):
+
+        wsize = self.GetRenderWindow().GetSize()
+
+        x = display_coords[0]/wsize[0]
+        y = display_coords[1]/wsize[1]
+
+        return x,y
+
 
 ##################################  END ######################################
 
@@ -1314,8 +1338,13 @@ class CILViewer2D():
         self.linePlotActor.SetXValuesToValue()
         self.linePlotActor.SetPlotColor(0, (1,0,0.5) )
         self.linePlotActor.SetPlotColor(1, (1,1,0) )
-        self.linePlotActor.SetPosition2(1,0.4 )
         self.linePlotActor.SetPosition(0,0.1)
+        self.linePlotActor.SetPosition2(1,0.4)
+
+        # Makes sure that x axis only goes as far as the number of pixels in the image
+        self.linePlotActor.SetAdjustXLabels(0)
+
+        # Add legend
         self.linePlotActor.SetPlotLabel(0,'horiz')
         self.linePlotActor.SetPlotLabel(1,'vert')
         self.linePlotActor.LegendOn()
@@ -1625,6 +1654,20 @@ class CILViewer2D():
             self.style.OnKeyPress(self.GetInteractor(), "KeyPressEvent")
 
     def updateLinePlot(self, imagecoordinate, display):
+
+        # # Set position of line plot
+        # origin_display = self.style.world2display((0,0,0))
+        #
+        # # Offset the origin to account for the labels
+        # origin_nview = self.style.display2normalisedViewport((origin_display[0]-45,origin_display[1]-24))
+        #
+        # top_right_disp = self.style.world2display(self.style.GetImageWorldExtent())
+        # top_right_nview = self.style.display2normalisedViewport((top_right_disp[0]+20,top_right_disp[1]))
+        #
+        # self.linePlotActor.SetPosition(origin_nview)
+        # self.linePlotActor.SetPosition2(top_right_nview[0]-origin_nview[0],0.4)
+
+
         self.displayLinePlot = display
         extent_x = list(self.img3D.GetExtent())
         extent_y = list(self.img3D.GetExtent())
@@ -1702,6 +1745,7 @@ class CILViewer2D():
                 self.GetRenderer().AddActor(self.linePlotActor)
                 self.linePlot = 1
 
+            print ("TEST", self.lineVOIY.GetOutputPort())
 
             self.log("data length x {0} y {1}".format(self.lineVOIX.GetOutput().GetDimensions(),
                      self.lineVOIY.GetOutput().GetDimensions()))
