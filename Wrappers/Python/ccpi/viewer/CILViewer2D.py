@@ -369,6 +369,19 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
     def UpdateLinePlot(self, imagecoordinate, display):
         self._viewer.updateLinePlot(imagecoordinate, display)
 
+    def GetCrosshairs(self):
+        actor = self._viewer.crosshairsActor
+        vert = self._viewer.vertLine
+        horiz = self._viewer.horizLine
+
+        return actor, vert, horiz
+
+    def GetImageWorldExtent(self):
+        """
+        Compute and return the maximum extent of the image in the rendered world
+        """
+        return self.image2world(self.GetInputData().GetExtent()[1::2])
+
     def validateValue(self, value, axis):
         return self._viewer.validateValue(value, axis)
 
@@ -420,7 +433,8 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
         world_mouse_pos = coord.GetComputedWorldValue(self.GetRenderer())
 
         # Get maximum extents of the image in world coords
-        world_image_max = self.image2world(self.GetInputData().GetExtent()[1::2])
+        world_image_max = self.GetImageWorldExtent()
+
 
         # Set the minimum world value
         world_image_min = (0,0,0)
@@ -635,6 +649,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
     def OnLeftButtonPressEvent(self, interactor, event):
         # print ("INTERACTOR", interactor)
         # interactor = self._viewer.GetInteractor()
+
         alt = interactor.GetAltKey()
         shift = interactor.GetShiftKey()
         ctrl = interactor.GetControlKey()
@@ -789,6 +804,19 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
 
         return coord.GetComputedWorldValue(self.GetRenderer())
 
+    def world2display(self, world_coords):
+        """
+        Takes coordinates in the world system and converts them to 2D display coordinates
+        :param world_coords: (x,y,z) coordinate in the world
+        :return: (x,y) screen coordinate
+        """
+
+        vc = vtk.vtkCoordinate()
+        vc.SetCoordinateSystemToWorld()
+        vc.SetValue(world_coords)
+
+        return vc.GetComputedDoubleDisplayValue(self.GetRenderer())
+
 
     def display2imageCoordinate(self, viewerposition):
         """
@@ -887,6 +915,16 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
         vc.SetValue(world_coord)
 
         return vc.GetComputedDoubleViewportValue(self.GetRenderer())
+
+    def display2normalisedViewport(self,display_coords):
+
+        wsize = self.GetRenderWindow().GetSize()
+
+        x = display_coords[0]/wsize[0]
+        y = display_coords[1]/wsize[1]
+
+        return x,y
+
 
 ##################################  END ######################################
 
@@ -1019,13 +1057,127 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
         ic = self.display2imageCoordinate((x,y))
         self.UpdateLinePlot(ic, display)
 
+        # Plot horiz and vertical lines to indicate where the user is looking
 
+        # Get the actor and line objects
+        actor, vertLine, horizLine = self.GetCrosshairs()
 
+        # Create the polydata where we will store all the geometric data
+        linesPolyData = vtk.vtkPolyData()
 
+        # Get the maximum extent of the image in the world
+        world_image_max = self.GetImageWorldExtent()
+        event_world = self.display2world((x,y))
 
+        # Make sure that the crosshairs stop at the boundary of the image
+        event_truncated = [0,0,0]
 
+        for i,axis in enumerate(event_world):
+            if axis > world_image_max[i]:
+                event_truncated[i] = world_image_max[i]
+            elif axis < 0:
+                event_truncated[i] = 0.0
+            else:
+                event_truncated[i] = axis
 
+        event_world = event_truncated
 
+        # Set the end points of the lines
+        if self.GetSliceOrientation() == SLICE_ORIENTATION_XY: #Z
+            # Z Max +1 to make sure line is drawn on top
+            top_of_world = world_image_max[2] + 1
+
+            # Get line position from event postion in world coordinates
+            horiz = event_world[0]
+            vert = event_world[1]
+
+            # X Line
+            p0 = [horiz, 0.0, top_of_world]
+            p1 = [horiz, world_image_max[1], top_of_world]
+
+            # Y Line
+            p2 = [0.0, vert, top_of_world]
+            p3 = [world_image_max[0], vert, top_of_world]
+
+        elif self.GetSliceOrientation() == SLICE_ORIENTATION_XZ: #Y
+            # Camera is opposite side in this orientation so we use bottom of world, -1
+            # Get line position from event postion in world coordinates
+            horiz = event_world[0]
+            vert = event_world[2]
+
+            # X Line
+            p0 = [horiz, -1, 0.0]
+            p1 = [horiz, -1, world_image_max[2]]
+
+            # Z Line
+            p2 = [0.0, -1, vert]
+            p3 = [world_image_max[0], -1, vert]
+
+        elif self.GetSliceOrientation() == SLICE_ORIENTATION_YZ: #X
+            # X Max +1 to make sure line is drawn on top
+            top_of_world = world_image_max[0] + 1
+
+            # Get line position from event postion in world coordinates
+            horiz = event_world[1]
+            vert = event_world[2]
+
+            # Y Line
+            p0 = [top_of_world, horiz, 0.0]
+            p1 = [top_of_world, horiz, world_image_max[2]]
+
+            # Z Line
+            p2 = [top_of_world, 0.0, vert]
+            p3 = [top_of_world, world_image_max[1], vert]
+
+        # Create a vtkPoints container and store the points in it
+        pts = vtk.vtkPoints()
+        pts.InsertNextPoint(p0)
+        pts.InsertNextPoint(p1)
+        pts.InsertNextPoint(p2)
+        pts.InsertNextPoint(p3)
+
+        # Add the points to the polydata container
+        linesPolyData.SetPoints(pts)
+
+        # Create the first line (between Origin and P0)
+        vertLine.GetPointIds().SetId(0, 0)  # the second 0 is the index of the Origin in linesPolyData's points
+        vertLine.GetPointIds().SetId(1, 1)  # the second 1 is the index of P0 in linesPolyData's points
+
+        # Create the second line (between Origin and P1)
+        horizLine.GetPointIds().SetId(0, 2)  # the second 0 is the index of the Origin in linesPolyData's points
+        horizLine.GetPointIds().SetId(1, 3)  # 2 is the index of P1 in linesPolyData's points
+
+        # Create a vtkCellArray container and store the lines in it
+        lines = vtk.vtkCellArray()
+        lines.InsertNextCell(vertLine)
+        lines.InsertNextCell(horizLine)
+
+        # Add the lines to the polydata container
+        linesPolyData.SetLines(lines)
+
+        namedColors = vtk.vtkNamedColors()
+
+        # Create a vtkUnsignedCharArray container and store the colors in it
+        colors = vtk.vtkUnsignedCharArray()
+        colors.SetNumberOfComponents(3)
+
+        colors.InsertNextTypedTuple(namedColors.GetColor3ub("Yellow"))
+        colors.InsertNextTypedTuple(namedColors.GetColor3ub("Magenta"))
+
+        # Color the lines.
+        # SetScalars() automatically associates the values in the data array passed as parameter
+        # to the elements in the same indices of the cell data array on which it is called.
+        linesPolyData.GetCellData().SetScalars(colors)
+
+        # Setup the visualization pipeline
+        mapper = vtk.vtkPolyDataMapper()
+        mapper.SetInputData(linesPolyData)
+
+        actor.SetMapper(mapper)
+        actor.GetProperty().SetLineWidth(2)
+
+        self.UpdatePipeline()
+        self.Render()
 
 ###############################################################################
 
@@ -1173,18 +1325,30 @@ class CILViewer2D():
         self.linePlotActor.SetXTitle( "" )
         self.linePlotActor.SetYTitle( "" )
         self.linePlotActor.SetXLabelFormat( "%.0f" )
-        self.linePlotActor.SetYLabelFormat( "%.2f" )
+        self.linePlotActor.SetYLabelFormat( "%.0f" )
         #self.linePlotActor.SetAdjustXLabels(3)
         #self.linePlotActor.SetXTitle( "Level" )
         #self.linePlotActor.SetYTitle( "N" )
         self.linePlotActor.SetXValuesToValue()
         self.linePlotActor.SetPlotColor(0, (1,0,0.5) )
         self.linePlotActor.SetPlotColor(1, (1,1,0) )
-        self.linePlotActor.SetPosition2(1,0.4 )
         self.linePlotActor.SetPosition(0,0.1)
+        self.linePlotActor.SetPosition2(1,0.4)
+
+        # Makes sure that x axis only goes as far as the number of pixels in the image
+        self.linePlotActor.SetAdjustXLabels(0)
+
+        # Add legend
         self.linePlotActor.SetPlotLabel(0,'horiz')
         self.linePlotActor.SetPlotLabel(1,'vert')
         self.linePlotActor.LegendOn()
+
+        # crosshair lines for X Y slices
+        self.horizLine = vtk.vtkLine()
+        self.vertLine = vtk.vtkLine()
+        self.crosshairsActor = vtk.vtkActor()
+        self.GetRenderer().AddActor(self.crosshairsActor)
+
         # rescale input image
         # contains (scale, shift)
         self.rescale = [ False , (1,0) ]
@@ -1484,11 +1648,11 @@ class CILViewer2D():
             self.style.OnKeyPress(self.GetInteractor(), "KeyPressEvent")
 
     def updateLinePlot(self, imagecoordinate, display):
+
         self.displayLinePlot = display
         extent_x = list(self.img3D.GetExtent())
         extent_y = list(self.img3D.GetExtent())
         self.log("imagecoordinate {0}".format(imagecoordinate))
-
 
         if display:
             #extract profile along X
@@ -1551,22 +1715,60 @@ class CILViewer2D():
             self.lineVOIY.SetInputData(self.img3D)
             self.lineVOIY.Update()
 
-            # fill
 
+            # fill
             if self.linePlot == 0:
                 self.linePlotActor.AddDataSetInputConnection(self.lineVOIX.GetOutputPort())
                 self.linePlotActor.AddDataSetInputConnection(self.lineVOIY.GetOutputPort())
-                #self.linePlotActor.AddDataSetInput(xarray)
-                #self.linePlotActor.AddDataSetInput(yarray)
                 self.GetRenderer().AddActor(self.linePlotActor)
                 self.linePlot = 1
 
 
+            # Set position of line plot
+
+            # Set up character sizes and borders
+            width = 8
+            border = 12
+            height = 12
+
+            # Calculate the world origin in display coordinates
+            origin_display = self.style.world2display((0,0,0))
+
+            # Calculate the offset due to labels and borders on the graphs y-axis
+            max_y = max(
+                int(self.lineVOIY.GetOutput().GetScalarRange()[1]),
+                int(self.lineVOIX.GetOutput().GetScalarRange()[1])
+            )
+            y_digits = len(str(max_y))
+            x_min_offset = (width * y_digits) + border
+            y_min_offset = height + border
+
+            # Offset the origin to account for the labels
+            origin_nview = self.style.display2normalisedViewport(
+                (
+                    origin_display[0] - x_min_offset,
+                    origin_display[1] - y_min_offset
+                )
+            )
+
+            # Calculate the far right border
+            top_right_disp = self.style.world2display(self.style.GetImageWorldExtent())
+            top_right_nview = self.style.display2normalisedViewport(
+                (top_right_disp[0] + border + height, top_right_disp[1])
+            )
+
+            # Set the position on the image
+            self.linePlotActor.SetPosition(origin_nview)
+            self.linePlotActor.SetPosition2(top_right_nview[0] - origin_nview[0], 0.4)
+
             self.log("data length x {0} y {1}".format(self.lineVOIX.GetOutput().GetDimensions(),
                      self.lineVOIY.GetOutput().GetDimensions()))
             self.linePlotActor.VisibilityOn()
+            self.crosshairsActor.VisibilityOn()
+
             self.renWin.Render()
 
         else:
             self.linePlotActor.VisibilityOff()
+            self.crosshairsActor.VisibilityOff()
 
