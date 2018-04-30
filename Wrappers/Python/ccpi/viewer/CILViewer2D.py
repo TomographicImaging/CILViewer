@@ -248,13 +248,13 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
         self.GetInteractor().SetKeyCode(keycode)
 
     def GetControlKey(self):
-        return self.GetInteractor().GetControlKey() #== CONTROL_KEY
+        return self.GetInteractor().GetControlKey()
 
     def GetShiftKey(self):
-        return self.GetInteractor().GetShiftKey() #== SHIFT_KEY
+        return self.GetInteractor().GetShiftKey()
 
     def GetAltKey(self):
-        return self.GetInteractor().GetAltKey() #== ALT_KEY
+        return self.GetInteractor().GetAltKey()
 
     def GetEventPosition(self):
         return self.GetInteractor().GetEventPosition()
@@ -961,8 +961,8 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
         # Set the overall change value
         self.dy = dy
 
-
     def HandlePanEvent(self, interactor, event):
+
         x,y = interactor.GetEventPosition()
         x0,y0 = interactor.GetInitialEventPosition()
 
@@ -972,11 +972,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
         dx = 1 * ( ic[0] - ic0[0] )
         dy = 1 * ( ic[1] - ic0[1] )
 
-        camera = vtk.vtkCamera()
-        camera.ParallelProjectionOn()
-        #print ("current position " + str(self.InitialCameraPosition))
-        camera.SetViewUp(self.GetActiveCamera().GetViewUp())
-        camera.SetPosition(self.GetInitialCameraPosition())
+        camera = self.GetActiveCamera()
         newposition = [i for i in self.GetInitialCameraPosition()]
         newfocalpoint = [i for i in self.GetActiveCamera().GetFocalPoint()]
         if self.GetSliceOrientation() == SLICE_ORIENTATION_XY:
@@ -994,10 +990,8 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
             newposition[2] -= dy
             newfocalpoint[2] = newposition[2]
             newfocalpoint[1] = newposition[1]
-        #print ("new position " + str(newposition))
         camera.SetFocalPoint(newfocalpoint)
         camera.SetPosition(newposition)
-        self.SetActiveCamera(camera)
 
         self.Render()
 
