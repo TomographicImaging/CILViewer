@@ -1,0 +1,4 @@
+ccpi_viewer.egg-info
+*.pyc
+__pycache__
+
