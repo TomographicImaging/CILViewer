@@ -223,7 +223,7 @@ class QVTKCILViewer(QVTKRWIBaseClass):
         10: Qt.CrossCursor,          # VTK_CURSOR_CROSSHAIR
     }
 
-    def __init__(self, parent=None, **kw):
+    def __init__(self, parent=None, **kwargs):
         # the current button
         self._ActiveButton = Qt.NoButton
 
@@ -237,23 +237,23 @@ class QVTKCILViewer(QVTKRWIBaseClass):
         # do special handling of some keywords:
         # stereo, rw
         print (parent)
-        print (kw)
+        print (kwargs)
 
         try:
-            stereo = bool(kw['stereo'])
+            stereo = bool(kwargs['stereo'])
         except KeyError:
             stereo = False
 
         try:
-            rw = kw['rw']
+            rw = kwargs['rw']
             print ("passed render window")
         except KeyError:
             rw = None
 
         # create base qt-level widget
         if QVTKRWIBase == "QWidget":
-            if "wflags" in kw:
-                wflags = kw['wflags']
+            if "wflags" in kwargs:
+                wflags = kwargs['wflags']
             else:
                 wflags = Qt.WindowFlags()
             QWidget.__init__(self, parent, wflags | Qt.MSWindowsOwnDC)
@@ -297,7 +297,7 @@ class QVTKCILViewer(QVTKRWIBaseClass):
             self._RenderWindow.SetStereoTypeToCrystalEyes()
 
         try:
-            self._Iren = kw['iren']
+            self._Iren = kwargs['iren']
         except KeyError:
             self._Iren = vtk.vtkRenderWindowInteractor()
             self._Iren.SetRenderWindow(self._RenderWindow)
