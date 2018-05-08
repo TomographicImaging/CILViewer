@@ -70,6 +70,7 @@ class Window(QMainWindow):
         openAction.triggered.connect(self.openFile)
 
         saveAction = QAction(self.style().standardIcon(QStyle.SP_DialogSaveButton), 'Save current render as PNG', self)
+        saveAction.setShortcut("Ctrl+S")
         saveAction.triggered.connect(self.saveFile)
 
         # Add actions to toolbar
@@ -104,9 +105,11 @@ class Window(QMainWindow):
         dialog = QFileDialog(self)
         dialog.setAcceptMode(QFileDialog.AcceptSave)
 
-        fn = dialog.getSaveFileName(self,'Save As')
+        fn = dialog.getSaveFileName(self,'Save As','.',"Images (*.png)")
 
-        self.vtkWidget.viewer.saveRender(fn[0])
+        # Only save if the user has selected a name
+        if fn[0]:
+            self.vtkWidget.viewer.saveRender(fn[0])
 
     def close(self):
         qApp.quit()
