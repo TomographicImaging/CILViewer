@@ -3,6 +3,9 @@ from PyQt5 import QtGui, QtCore
 from PyQt5.QtWidgets import *
 import vtk
 from ccpi.viewer.QVTKCILViewer import QVTKCILViewer
+from ccpi.viewer.CILViewer2D import Converter
+from natsort import natsorted
+import imghdr
 
 class ErrorObserver:
 
@@ -22,6 +25,19 @@ class ErrorObserver:
 
    def ErrorMessage(self):
        return self.__ErrorMessage
+
+
+def sentenceCase(string):
+    if string:
+        first_word = string.split()[0]
+        world_len = len(first_word)
+
+        return first_word.capitalize() + string[world_len:]
+
+    else:
+        return ''
+
+
 
 class Window(QMainWindow):
 
@@ -70,7 +86,7 @@ class Window(QMainWindow):
         openAction.triggered.connect(self.openFile)
 
         saveAction = QAction(self.style().standardIcon(QStyle.SP_DialogSaveButton), 'Save current render as PNG', self)
-        saveAction.setShortcut("Ctrl+S")
+        # saveAction.setShortcut("Ctrl+S")
         saveAction.triggered.connect(self.saveFile)
 
         # Add actions to toolbar
@@ -79,21 +95,44 @@ class Window(QMainWindow):
 
 
     def openFile(self):
-        fn = QFileDialog.getOpenFileName(self, 'Open File')
+        fn = QFileDialog.getOpenFileNames(self, 'Open File','../../../../../data')
 
-        reader = vtk.vtkMetaImageReader()
-        reader.AddObserver("ErrorEvent", self.e)
-        reader.SetFileName(fn[0])
-        reader.Update()
+        # If the user has pressed cancel, the first element of the tuple will be empty.
+        # Quit the method cleanly
+        if not fn[0]:
+            return
+
+        # Single file selection
+        if len(fn[0]) == 1:
+            file = fn[0][0]
+
+            reader = vtk.vtkMetaImageReader()
+            reader.AddObserver("ErrorEvent", self.e)
+            reader.SetFileName(file)
+            reader.Update()
+
+        # Multiple TIFF files selected
+        else:
+            # Make sure that the files are sorted 0 - end
+            filenames = natsorted(fn[0])
+
+            # Basic test for tiff images
+            for file in filenames:
+                ftype = imghdr.what(file)
+                if ftype != 'tiff':
+                    # A non-TIFF file has been loaded, present error message and exit method
+                    self.e('','','When reading multiple files, all files must TIFF formatted.')
+                    file = file
+                    self.displayFileErrorDialog(file)
+                    return
+
+            # Have passed basic test, can attempt to load
+            numpy_image = Converter.tiffStack2numpy(filenames=filenames)
+            reader = Converter.numpy2vtkImporter(numpy_image)
+            reader.Update()
 
         if self.e.ErrorOccurred():
-            if fn[0]:
-                msg = QMessageBox(self)
-                msg.setIcon(QMessageBox.Critical)
-                msg.setWindowTitle("READ ERROR")
-                msg.setText("Error reading file: ({})".format(fn[0]))
-                msg.setDetailedText(self.e.ErrorMessage())
-                msg.exec_()
+            self.displayFileErrorDialog(file)
 
         else:
             self.vtkWidget.viewer.setInput3DData(reader.GetOutput())
@@ -110,6 +149,15 @@ class Window(QMainWindow):
         # Only save if the user has selected a name
         if fn[0]:
             self.vtkWidget.viewer.saveRender(fn[0])
+
+    def displayFileErrorDialog(self, file):
+        msg = QMessageBox(self)
+        msg.setIcon(QMessageBox.Critical)
+        msg.setWindowTitle("READ ERROR")
+        msg.setText("Error reading file: ({filename})".format(filename=file))
+        msg.setDetailedText(self.e.ErrorMessage())
+        msg.exec_()
+
 
     def close(self):
         qApp.quit()
