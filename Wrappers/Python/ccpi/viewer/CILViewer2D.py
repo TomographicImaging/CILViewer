@@ -17,6 +17,7 @@ import vtk
 import numpy
 from vtk.util import numpy_support , vtkImageImportFromArray
 from enum import Enum
+import os
 
 SLICE_ORIENTATION_XY = 2 # Z
 SLICE_ORIENTATION_XZ = 1 # Y
@@ -1579,8 +1580,15 @@ class CILViewer2D():
         w2if.SetInput(renWin)
         w2if.Update()
 
+        # Check if user has supplied an extension
+        extn = os.path.splitext(filename)[1]
+        if extn.lower() == '.png':
+                saveFilename = filename
+        else:
+            saveFilename = filename+'.png'
+
         writer = vtk.vtkPNGWriter()
-        writer.SetFileName("%s.png" % (filename))
+        writer.SetFileName(saveFilename)
         writer.SetInputConnection(w2if.GetOutputPort())
         writer.Write()
 
