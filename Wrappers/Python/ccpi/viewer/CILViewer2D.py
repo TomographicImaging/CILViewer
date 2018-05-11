@@ -18,6 +18,7 @@ import numpy
 from vtk.util import numpy_support , vtkImageImportFromArray
 from enum import Enum
 import os
+import math
 
 SLICE_ORIENTATION_XY = 2 # Z
 SLICE_ORIENTATION_XZ = 1 # Y
@@ -82,7 +83,7 @@ class Converter():
 
     @staticmethod
     def tiffStack2numpy(filename=None, indices=None,
-                        extent = None , sampleRate = None ,\
+                        extent = None , sampleRate = None ,
                         flatField = None, darkField = None
                         , filenames= None, tiffOrientation=1):
         '''Converts a stack of TIFF files to numpy array.
@@ -101,6 +102,70 @@ class Converter():
                                          sampleRate=sampleRate,
                                          flatField=flatField,
                                          darkField=darkField)
+    @staticmethod
+    def tiffStack2numpyEnforceBounds(filename=None, indices=None,
+                        extent = None , sampleRate = None ,
+                        flatField = None, darkField = None
+                        , filenames= None, tiffOrientation=1, bounds=(512,512,512)):
+        """
+        Converts a stack of TIFF files to numpy array. This is constrained to a 512x512x512 cube
+
+        filename must contain the whole path. The filename is supposed to be named and
+        have a suffix with the ordinal file number, i.e. /path/to/projection_%03d.tif
+
+        indices are the suffix, generally an increasing number
+
+        Optionally extracts only a selection of the 2D images and (optionally)
+        normalizes.
+
+        :param (string) filename:   full path prefix
+        :param (list)   indices:    Indices to append to path for file selection
+        :param (tuple)  extent:     Allows option to select a subset
+        :param (tuple)  sampleRate: Allows downsampling to reduce data load on visualiser
+        :param          flatField:  --
+        :param          darkField:  --
+        :param (list)   filenames:  Filenames for processing
+        :param (int)    tiffOrientation: --
+        :param (tuple)  bounds:     Maximum size of display cube (x,y,z)
+
+        :return (numpy.ndarray): Image data as a numpy array
+        """
+
+        if filename is not None and indices is not None:
+            filenames = [filename % num for num in indices]
+
+        # Get number of files as an index value
+        file_index = len(filenames) - 1
+
+        # Get the xy extent of the first image in the list
+        if extent is None:
+            reader = vtk.vtkTIFFReader()
+            reader.SetFileName(filenames[0])
+            reader.SetOrientationType(tiffOrientation)
+            reader.Update()
+            img_ext = reader.GetOutput().GetExtent()
+
+            stack_extent =  img_ext[0:5] + (file_index,)
+            size = stack_extent[1::2]
+        else:
+            size = extent[1::2]
+
+        # Calculate re-sample rate
+        sample_rate = tuple(map(lambda x,y: math.ceil(float(x)/y), size, bounds))
+
+        # If a user has defined resample rate, check to see which has higher factor and keep that
+        if sampleRate is not None:
+            sampleRate = Converter.highest_tuple_element(sampleRate, sample_rate)
+
+        # Re-sample input filelist
+        list_sample_index = sampleRate[2]
+        filenames = filenames[::list_sample_index]
+
+        return Converter._tiffStack2numpy(filenames=filenames, extent=extent,
+                                          sampleRate=sampleRate,
+                                          flatField=flatField,
+                                          darkField=darkField)
+
 
     @staticmethod
     def _tiffStack2numpy(filenames,
@@ -125,6 +190,8 @@ class Converter():
         nreduced = len(filenames)
 
         for num in range(len(filenames)):
+
+
             #fn = filename % indices[num]
             fn = filenames[num]
             print ("resampling %s" % ( fn ) )
@@ -133,29 +200,42 @@ class Converter():
             reader.Update()
             print (reader.GetOutput().GetScalarTypeAsString())
             if num == 0:
-                if (extent == None):
+
+                # Extent
+                if extent is None:
                     sliced = reader.GetOutput().GetExtent()
                     stack.SetExtent(sliced[0],sliced[1], sliced[2],sliced[3], 0, nreduced-1)
-                else:
-                    sliced = extent
-                    voi.SetVOI(extent)
 
                     if sampleRate is not None:
                         voi.SetSampleRate(sampleRate)
                         ext = numpy.asarray([(sliced[2*i+1] - sliced[2*i])/sampleRate[i] for i in range(3)], dtype=int)
-                        #print ("ext {0}".format(ext))
+                        stack.SetExtent(0, ext[0], 0, ext[1], 0, nreduced - 1)
+                else:
+                    sliced = extent
+                    voi.SetVOI(extent)
+
+                    # Sample Rate
+                    if sampleRate is not None:
+                        voi.SetSampleRate(sampleRate)
+                        ext = numpy.asarray([(sliced[2*i+1] - sliced[2*i])/sampleRate[i] for i in range(3)], dtype=int)
+                        # print ("ext {0}".format(ext))
                         stack.SetExtent(0, ext[0] , 0, ext[1], 0, nreduced-1)
                     else:
-                         stack.SetExtent(0, sliced[1] - sliced[0] , 0, sliced[3]-sliced[2], 0, nreduced-1)
+                         stack.SetExtent(0, sliced[1] - sliced[0], 0, sliced[3]-sliced[2], 0, nreduced-1)
+
+                # Flatfield
                 if (flatField != None and darkField != None):
                     stack.AllocateScalars(vtk.VTK_FLOAT, 1)
                 else:
                     stack.AllocateScalars(reader.GetOutput().GetScalarType(), 1)
+
+
+
                 print ("Image Size: %d" % ((sliced[1]+1)*(sliced[3]+1) ))
                 stack_image = Converter.vtk2numpy(stack)
                 print ("Stack shape %s" % str(numpy.shape(stack_image)))
 
-            if extent!=None:
+            if extent is not None or sampleRate is not None :
                 voi.SetInputData(reader.GetOutput())
                 voi.Update()
                 img = voi.GetOutput()
@@ -183,6 +263,26 @@ class Converter():
             c = numpy.true_divide( a, b )
             c[ ~ numpy.isfinite( c )] = def_val  # set to not zero if 0/0
         return c
+
+    @staticmethod
+    def highest_tuple_element(user,calc):
+        """
+        Returns a tuple containing the maximum combination in elementwise comparison
+        :param (tuple)  user: User suppliec tuple
+        :param (tuple)  calc: Calculated tuple
+
+        :return (tuple): Highest elementwise combination
+        """
+
+        output = []
+        for u, c in zip(user,calc):
+            if u > c:
+                output.append(u)
+            else:
+                output.append(c)
+
+        return tuple(output)
+
 
 
 
