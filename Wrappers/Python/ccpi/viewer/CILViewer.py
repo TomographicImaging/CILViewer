@@ -27,12 +27,22 @@ SLICE_ORIENTATION_YZ = 0 # X
 class CILViewer():
     '''Simple 3D Viewer based on VTK classes'''
     
-    def __init__(self, dimx=600,dimy=600):
+    def __init__(self, dimx=600,dimy=600, renWin=None, iren=None):
         '''creates the rendering pipeline'''
+
+        # Handle arguments
+        if renWin:
+            self.renWin = renWin
+        else:
+            self.renWin = vtk.vtkRenderWindow()
+
+        if iren:
+            self.iren = iren
+        else:
+            self.iren = vtk.vtkRenderWindowInteractor()
         
         # create a rendering window and renderer
         self.ren = vtk.vtkRenderer()
-        self.renWin = vtk.vtkRenderWindow()
         self.renWin.SetSize(dimx,dimy)
         self.renWin.AddRenderer(self.ren)
 
@@ -46,7 +56,7 @@ class CILViewer():
         self.ia = None
         self.sliceActorNo = 0
         # create a renderwindowinteractor
-        self.iren = vtk.vtkRenderWindowInteractor()
+
         self.iren.SetRenderWindow(self.renWin)
 
         self.style = vtk.vtkInteractorStyleTrackballCamera()
