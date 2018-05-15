@@ -156,6 +156,8 @@ class Converter():
         # If a user has defined resample rate, check to see which has higher factor and keep that
         if sampleRate is not None:
             sampleRate = Converter.highest_tuple_element(sampleRate, sample_rate)
+        else:
+            sampleRate = sample_rate
 
         # Re-sample input filelist
         list_sample_index = sampleRate[2]
