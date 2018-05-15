@@ -74,7 +74,7 @@ class Window(QMainWindow):
         self.toolbar()
 
         self.statusBar()
-        self.setStatusTip('Open file to begin visualiser...')
+        self.setStatusTip('Open file to begin visualisation...')
 
         self.show()
 

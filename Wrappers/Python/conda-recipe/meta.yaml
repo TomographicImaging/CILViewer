@@ -9,7 +9,8 @@ build:
     - CIL_VERSION
 
   entry_points:
-    - CILViewerLaunch = ccpi.viewer.standaloneQT:main
+    - CILViewerLaunch = ccpi.viewer.applicationsQT.standaloneQT:main
+    - triViewerLaunch = ccpi.viewer.applicationsQT.triWidgetQT:main
 #  number: 0
   
 requirements:
