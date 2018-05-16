@@ -83,7 +83,7 @@ class Ui_MainWindow(object):
         self.viewer3DWidget = QVTKWidget(viewer=CILViewer)
         self.verticalLayout.addWidget(self.viewer3DWidget)
         # reader = vtk.vtkMetaImageReader()
-        # reader.SetFileName("../../../../../data/head.mha")
+        # reader.SetFileName("../../../../../../data/head.mha")
         # reader.Update()
         # self.viewer3DWidget.viewer.setInput3DData(reader.GetOutput())
 
@@ -172,6 +172,7 @@ class Ui_MainWindow(object):
 
         else:
             self.viewerWidget.viewer.setInput3DData(reader.GetOutput())
+            self.viewer3DWidget.viewer.setInput3DData(reader.GetOutput())
 
             MainWindow.setStatusTip('Ready')
 

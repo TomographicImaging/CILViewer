@@ -23,6 +23,129 @@ SLICE_ORIENTATION_XZ = 1 # Y
 SLICE_ORIENTATION_YZ = 0 # X
 
 
+class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
+
+    def __init__(self, callback):
+        vtk.vtkInteractorStyleTrackballCamera.__init__(self)
+        self._viewer = callback
+        self.AddObserver('MouseWheelForwardEvent', self.mouseInteraction, 1.0)
+        self.AddObserver('MouseWheelBackwardEvent', self.mouseInteraction, 1.0)
+        self.AddObserver('KeyPressEvent', self.keyPress, 1.0)
+
+    def GetSliceOrientation(self):
+        return self._viewer.sliceOrientation
+
+    def GetDimensions(self):
+        return self._viewer.img3D.GetDimensions()
+
+    def GetActiveSlice(self):
+        return self._viewer.sliceno
+
+    def SetActiveSlice(self, value):
+        self._viewer.sliceno = value
+
+    def UpdatePipeline(self, resetcamera=False):
+        self._viewer.updatePipeline(resetcamera)
+
+    def GetSliceActorNo(self):
+        return self._viewer.sliceActorNo
+
+    def SetSliceOrientation(self, orientation):
+        self._viewer.sliceOrientation = orientation
+
+    def SetActiveCamera(self, camera):
+        self._viewer.ren.SetActiveCamera(camera)
+
+    def Render(self):
+        self._viewer.ren.Render()
+
+    def GetKeyCode(self):
+        return self.GetInteractor().GetKeyCode()
+
+    def mouseInteraction(self, interactor, event):
+        if event == 'MouseWheelForwardEvent':
+            maxSlice = self.GetDimensions()[self.GetSliceOrientation()]
+            print (self.GetActiveSlice())
+            if (self.GetActiveSlice() + 1 < maxSlice):
+                self.SetActiveSlice(self.GetActiveSlice() + 1)
+                self.UpdatePipeline()
+        else:
+            minSlice = 0
+            if (self.GetActiveSlice() - 1 > minSlice):
+                self.SetActiveSlice(self.GetActiveSlice() -1)
+                self.UpdatePipeline()
+
+    def keyPress(self, interactor, event):
+
+        if interactor.GetKeyCode() == "x":
+            # slice on the other orientation
+            self.SetSliceOrientation( SLICE_ORIENTATION_YZ )
+            self.SetActiveSlice(int(self.GetDimensions()[0]/2))
+            self.UpdatePipeline(resetcamera=True)
+
+        elif interactor.GetKeyCode() == "y":
+            # slice on the other orientation
+            self.SetSliceOrientation(SLICE_ORIENTATION_XZ)
+            self.SetActiveSlice(int(self.GetDimensions()[2] / 2))
+            self.UpdatePipeline(resetcamera=True)
+
+        elif interactor.GetKeyCode() == "z":
+            # slice on the other orientation
+            self.SetSliceOrientation(SLICE_ORIENTATION_XY)
+            self.SetActiveSlice(int(self.GetDimensions()[2] / 2))
+            self.UpdatePipeline(resetcamera=True)
+
+        if interactor.GetKeyCode() == "X":
+            # Change the camera view point
+            camera = vtk.vtkCamera()
+            camera.SetFocalPoint(self.ren.GetActiveCamera().GetFocalPoint())
+            camera.SetViewUp(self.ren.GetActiveCamera().GetViewUp())
+            newposition = [i for i in self.ren.GetActiveCamera().GetFocalPoint()]
+            newposition[SLICE_ORIENTATION_YZ] = math.sqrt(
+                newposition[SLICE_ORIENTATION_XY] ** 2 + newposition[SLICE_ORIENTATION_XZ] ** 2)
+            camera.SetPosition(newposition)
+            camera.SetViewUp(0, 0, -1)
+
+            self.SetActiveCamera(camera)
+            self.Render()
+            interactor.SetKeyCode("x")
+            self.keyPress(interactor, event)
+
+        elif interactor.GetKeyCode() == "Y":
+            # Change the camera view point
+            camera = vtk.vtkCamera()
+            camera.SetFocalPoint(self.ren.GetActiveCamera().GetFocalPoint())
+            camera.SetViewUp(self.ren.GetActiveCamera().GetViewUp())
+            newposition = [i for i in self.ren.GetActiveCamera().GetFocalPoint()]
+            newposition[SLICE_ORIENTATION_XZ] = math.sqrt(
+                newposition[SLICE_ORIENTATION_XY] ** 2 + newposition[SLICE_ORIENTATION_YZ] ** 2)
+            camera.SetPosition(newposition)
+            camera.SetViewUp(0, 0, -1)
+
+            self.SetActiveCamera(camera)
+            self.Render()
+            interactor.SetKeyCode("y")
+            self.keyPress(interactor, event)
+
+        elif interactor.GetKeyCode() == "Z":
+            # Change the camera view point
+            camera = vtk.vtkCamera()
+            camera.SetFocalPoint(self.ren.GetActiveCamera().GetFocalPoint())
+            camera.SetViewUp(self.ren.GetActiveCamera().GetViewUp())
+            newposition = [i for i in self.ren.GetActiveCamera().GetFocalPoint()]
+            newposition[SLICE_ORIENTATION_XY] = math.sqrt(
+                newposition[SLICE_ORIENTATION_YZ] ** 2 + newposition[SLICE_ORIENTATION_XZ] ** 2)
+            camera.SetPosition(newposition)
+            camera.SetViewUp(0, 0, -1)
+
+            self.SetActiveCamera(camera)
+            self.Render()
+            interactor.SetKeyCode("z")
+            self.keyPress(interactor, event)
+
+        else:
+            print("Unhandled event %s" % interactor.GetKeyCode())
+
 
 class CILViewer():
     '''Simple 3D Viewer based on VTK classes'''
@@ -50,34 +173,22 @@ class CILViewer():
         self.img3D = None
         self.sliceno = 0
         self.sliceOrientation = SLICE_ORIENTATION_XY
-        self.sliceActor = None
-        self.voi = None
-        self.wl = None
-        self.ia = None
+        self.sliceActor = vtk.vtkImageActor()
+        self.voi = vtk.vtkExtractVOI()
+        self.wl = vtk.vtkImageMapToWindowLevelColors()
+        self.ia = vtk.vtkImageHistogramStatistics()
         self.sliceActorNo = 0
+
         # create a renderwindowinteractor
-
-        self.iren.SetRenderWindow(self.renWin)
-
-        self.style = vtk.vtkInteractorStyleTrackballCamera()
+        self.style = CILInteractorStyle(self)
         self.iren.SetInteractorStyle(self.style)
+        self.iren.SetRenderWindow(self.renWin)
 
         self.ren.SetBackground(.1, .2, .4)
 
         self.actors = {}
-        self.iren.RemoveObservers('MouseWheelForwardEvent')
-        self.iren.RemoveObservers('MouseWheelBackwardEvent')
-        
-        self.iren.AddObserver('MouseWheelForwardEvent', self.mouseInteraction, 1.0)
-        self.iren.AddObserver('MouseWheelBackwardEvent', self.mouseInteraction, 1.0)
-
-        self.iren.RemoveObservers('KeyPressEvent')
-        self.iren.AddObserver('KeyPressEvent', self.keyPress, 1.0)
-        
         
         self.iren.Initialize()
-
-        
 
     def getRenderer(self):
         '''returns the renderer'''
@@ -148,7 +259,6 @@ class CILViewer():
         '''Adds an actor to the render'''
         return self.showActor(0, actor)
             
-        
     def saveRender(self, filename, renWin=None):
         '''Save the render window to PNG file'''
         # screenshot code:
@@ -163,102 +273,12 @@ class CILViewer():
         writer.SetInputConnection(w2if.GetOutputPort())
         writer.Write()
 
-    
     def startRenderLoop(self):
         self.iren.Start()
 
-
-    def setupObservers(self, interactor):
-        interactor.RemoveObservers('LeftButtonPressEvent')
-        interactor.AddObserver('LeftButtonPressEvent', self.mouseInteraction)
-        interactor.Initialize()
-
-        
-    def mouseInteraction(self, interactor, event):
-        if event == 'MouseWheelForwardEvent':
-            maxSlice = self.img3D.GetDimensions()[self.sliceOrientation]
-            if (self.sliceno + 1 < maxSlice):
-                self.hideActor(self.sliceActorNo)
-                self.sliceno = self.sliceno + 1
-                self.displaySliceActor(self.sliceno)
-        else:
-            minSlice = 0
-            if (self.sliceno - 1 > minSlice):
-                self.hideActor(self.sliceActorNo)
-                self.sliceno = self.sliceno - 1
-                self.displaySliceActor(self.sliceno)
-                 
-
-    def keyPress(self, interactor, event):
-        #print ("Pressed key %s" % interactor.GetKeyCode())
-        # Slice Orientation 
-        if interactor.GetKeyCode() == "x":
-            # slice on the other orientation
-            self.sliceOrientation = SLICE_ORIENTATION_YZ
-            self.sliceno = int(self.img3D.GetDimensions()[1] / 2)
-            self.hideActor(self.sliceActorNo)
-            self.displaySliceActor(self.sliceno)
-        elif interactor.GetKeyCode() == "y":
-            # slice on the other orientation
-            self.sliceOrientation = SLICE_ORIENTATION_XZ
-            self.sliceno = int(self.img3D.GetDimensions()[1] / 2)
-            self.hideActor(self.sliceActorNo)
-            self.displaySliceActor(self.sliceno)
-        elif interactor.GetKeyCode() == "z":
-            # slice on the other orientation
-            self.sliceOrientation = SLICE_ORIENTATION_XY
-            self.sliceno = int(self.img3D.GetDimensions()[2] / 2)
-            self.hideActor(self.sliceActorNo)
-            self.displaySliceActor(self.sliceno)
-        if interactor.GetKeyCode() == "X":
-            # Change the camera view point
-            camera = vtk.vtkCamera()
-            camera.SetFocalPoint(self.ren.GetActiveCamera().GetFocalPoint())
-            camera.SetViewUp(self.ren.GetActiveCamera().GetViewUp())
-            newposition = [i for i in self.ren.GetActiveCamera().GetFocalPoint()]
-            newposition[SLICE_ORIENTATION_YZ] = math.sqrt(newposition[SLICE_ORIENTATION_XY] ** 2 + newposition[SLICE_ORIENTATION_XZ] ** 2) 
-            camera.SetPosition(newposition)
-            camera.SetViewUp(0,0,-1)
-            self.ren.SetActiveCamera(camera)
-            self.ren.ResetCamera()
-            self.ren.Render()
-            interactor.SetKeyCode("x")
-            self.keyPress(interactor, event)
-        elif interactor.GetKeyCode() == "Y":
-             # Change the camera view point
-            camera = vtk.vtkCamera()
-            camera.SetFocalPoint(self.ren.GetActiveCamera().GetFocalPoint())
-            camera.SetViewUp(self.ren.GetActiveCamera().GetViewUp())
-            newposition = [i for i in self.ren.GetActiveCamera().GetFocalPoint()]
-            newposition[SLICE_ORIENTATION_XZ] = math.sqrt(newposition[SLICE_ORIENTATION_XY] ** 2 + newposition[SLICE_ORIENTATION_YZ] ** 2) 
-            camera.SetPosition(newposition)
-            camera.SetViewUp(0,0,-1)
-            self.ren.SetActiveCamera(camera)
-            self.ren.ResetCamera()
-            self.ren.Render()
-            interactor.SetKeyCode("y")
-            self.keyPress(interactor, event)
-        elif interactor.GetKeyCode() == "Z":
-             # Change the camera view point
-            camera = vtk.vtkCamera()
-            camera.SetFocalPoint(self.ren.GetActiveCamera().GetFocalPoint())
-            camera.SetViewUp(self.ren.GetActiveCamera().GetViewUp())
-            newposition = [i for i in self.ren.GetActiveCamera().GetFocalPoint()]
-            newposition[SLICE_ORIENTATION_XY] = math.sqrt(newposition[SLICE_ORIENTATION_YZ] ** 2 + newposition[SLICE_ORIENTATION_XZ] ** 2) 
-            camera.SetPosition(newposition)
-            camera.SetViewUp(0,0,-1)
-            self.ren.SetActiveCamera(camera)
-            self.ren.ResetCamera()
-            self.ren.Render()
-            interactor.SetKeyCode("z")
-            self.keyPress(interactor, event)
-        else :
-            print ("Unhandled event %s" % interactor.GetKeyCode())
-
-
-        
     def setInput3DData(self, imageData):
         self.img3D = imageData
+        self.installPipeline()
 
     def setInputAsNumpy(self, numpyarray):
         if (len(numpy.shape(numpyarray)) == 3):
@@ -268,7 +288,6 @@ class CILViewer():
             doubleImg.SetOrigin(0,0,0)
             doubleImg.SetSpacing(1,1,1)
             doubleImg.SetExtent(0, shape[0]-1, 0, shape[1]-1, 0, shape[2]-1)
-            #self.img3D.SetScalarType(vtk.VTK_UNSIGNED_SHORT, vtk.vtkInformation())
             doubleImg.AllocateScalars(vtk.VTK_DOUBLE,1)
             
             for i in range(shape[0]):
@@ -276,7 +295,7 @@ class CILViewer():
                     for k in range(shape[2]):
                         doubleImg.SetScalarComponentFromDouble(
                             i,j,k,0, numpyarray[i][j][k])
-        #self.setInput3DData( numpy_support.numpy_to_vtk(numpyarray) )
+
             # rescale to appropriate VTK_UNSIGNED_SHORT
             stats = vtk.vtkImageAccumulate()
             stats.SetInputData(doubleImg)
@@ -292,73 +311,89 @@ class CILViewer():
             shiftScaler.SetOutputScalarType(vtk.VTK_UNSIGNED_SHORT)
             shiftScaler.Update()
             self.img3D = shiftScaler.GetOutput()
-            
-    def displaySliceActor(self, sliceno = 0):
-        self.sliceno = sliceno
-        first = False
-        
-        self.sliceActor , self.voi, self.wl , self.ia = \
-                        self.getSliceActor(self.img3D,
-                                                 sliceno,
-                                                 self.sliceActor,
-                                                 self.voi,
-                                                 self.wl,
-                                                 self.ia)
-        no = self.showActor(self.sliceActorNo, self.sliceActor)
-        self.sliceActorNo = no
-        
+
+    def installPipeline(self):
+        self.voi.SetInputData(self.img3D)
+
+        extent = [ i for i in self.img3D.GetExtent()]
+        extent[self.sliceOrientation * 2] = self.sliceno
+        extent[self.sliceOrientation * 2 + 1] = self.sliceno
+        self.voi.SetVOI(extent[0], extent[1],
+                   extent[2], extent[3],
+                   extent[4], extent[5])
+
+        self.voi.Update()
+
+        self.wl = vtk.vtkImageMapToWindowLevelColors()
+        self.ia.SetInputData(self.voi.GetOutput())
+        self.ia.SetAutoRangePercentiles(1.0, 99.)
+        self.ia.Update()
+
+        cmin, cmax = self.ia.GetAutoRange()
+        # probably the level could be the median of the image within
+        # the percentiles
+        level = self.ia.GetMedian()
+        # accomodates all values between the level an the percentiles
+        window = 2 * max(abs(level - cmin), abs(level - cmax))
+
+        self.InitialLevel = level
+        self.InitialWindow = window
+
+        self.wl.SetLevel(self.InitialLevel)
+        self.wl.SetWindow(self.InitialWindow)
+
+        self.wl.SetInputData(self.voi.GetOutput())
+        self.wl.Update()
+
+        self.sliceActor.SetInputData(self.wl.GetOutput())
+        self.sliceActor.SetDisplayExtent(extent[0], extent[1],
+                                         extent[2], extent[3],
+                                         extent[4], extent[5])
+        self.sliceActor.Update()
+        self.sliceActor.SetInterpolate(False)
+        self.ren.AddActor(self.sliceActor)
+        self.ren.ResetCamera()
+        self.ren.Render()
+
+        self.adjustCamera()
+
         self.iren.Initialize()
         self.renWin.Render()
-        
-        return self.sliceActorNo
 
-                      
-    def getSliceActor(self,
-                      imageData ,
-                      sliceno=0,
-                      imageActor=None ,
-                      voi=None,
-                      windowLevel=None,
-                      imageAccumulate=None):
-        '''Slices a 3D volume and then creates an actor to be rendered'''
-        if (voi==None):
-            voi = vtk.vtkExtractVOI()
-            #voi = vtk.vtkImageClip()
-        voi.SetInputData(imageData)
-        #select one slice in Z
-        extent = [ i for i in self.img3D.GetExtent()]
-        extent[self.sliceOrientation * 2] = sliceno
-        extent[self.sliceOrientation * 2 + 1] = sliceno 
-        voi.SetVOI(extent[0], extent[1],
+    def updatePipeline(self, resetcamera = False):
+        self.hideActor(self.sliceActorNo)
+
+        extent = [i for i in self.img3D.GetExtent()]
+        extent[self.sliceOrientation * 2] = self.sliceno
+        extent[self.sliceOrientation * 2 + 1] = self.sliceno
+        self.voi.SetVOI(extent[0], extent[1],
                    extent[2], extent[3],
                    extent[4], extent[5])
-        
-        voi.Update()
-        # set window/level for all slices
-        if imageAccumulate == None:
-            imageAccumulate = vtk.vtkImageAccumulate()
-        
-        if (windowLevel == None):
-            windowLevel = vtk.vtkImageMapToWindowLevelColors()
-            imageAccumulate.SetInputData(imageData)
-            imageAccumulate.Update()
-            cmax = imageAccumulate.GetMax()[0]
-            cmin = imageAccumulate.GetMin()[0]
-            windowLevel.SetLevel((cmax+cmin)/2)
-            windowLevel.SetWindow(cmax-cmin)
 
-        windowLevel.SetInputData(voi.GetOutput())
-        windowLevel.Update()
-            
-        if imageActor == None:
-            imageActor = vtk.vtkImageActor()
-        imageActor.SetInputData(windowLevel.GetOutput())
-        imageActor.SetDisplayExtent(extent[0], extent[1],
-                   extent[2], extent[3],
-                   extent[4], extent[5])
-        imageActor.Update()
-        return (imageActor , voi, windowLevel, imageAccumulate)
+        self.voi.Update()
+        self.ia.Update()
+        self.wl.Update()
 
+        # Set image actor
+        self.sliceActor.SetInputData(self.wl.GetOutput())
+        self.sliceActor.SetDisplayExtent(extent[0], extent[1],
+                                    extent[2], extent[3],
+                                    extent[4], extent[5])
+        self.sliceActor.Update()
+
+        no = self.showActor(self.sliceActorNo, self.sliceActor)
+        self.sliceActorNo = no
+
+        self.adjustCamera(resetcamera)
+
+        self.renWin.Render()
+
+    def adjustCamera(self, resetcamera= False):
+
+        self.ren.ResetCameraClippingRange()
+
+        if resetcamera:
+            self.ren.ResetCamera()
 
     # Set interpolation on
     def setInterpolateOn(self):

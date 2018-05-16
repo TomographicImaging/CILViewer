@@ -153,8 +153,6 @@ class Converter():
         # Calculate re-sample rate
         sample_rate = tuple(map(lambda x,y: math.ceil(float(x)/y), size, bounds))
 
-        print (sample_rate)
-
         # If a user has defined resample rate, check to see which has higher factor and keep that
         if sampleRate is not None:
             sampleRate = Converter.highest_tuple_element(sampleRate, sample_rate)
@@ -650,7 +648,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
 
     def OnKeyPress(self, interactor, event):
 
-        # print ("Pressed key %s" % interactor.GetKeyCode())
+        print ("Pressed key %s" % interactor)
         # Slice Orientation
         if interactor.GetKeyCode() == "X":
             # slice on the other orientation
