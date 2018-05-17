@@ -51,7 +51,9 @@ def sentenceCase(string):
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
-        MainWindow.setObjectName("MainWindow")
+        self.mainwindow = MainWindow
+        MainWindow.setObjectName("CIL Viewer")
+        MainWindow.setWindowTitle("CIL Viewer")
         MainWindow.resize(800, 600)
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
@@ -102,33 +104,31 @@ class Ui_MainWindow(object):
         closeAction.setShortcut("Ctrl+Q")
         closeAction.triggered.connect(self.close)
 
-
-        # Create menu bar
-        self.menubar = QtWidgets.QMenuBar(MainWindow)
-        self.menubar.setGeometry(QtCore.QRect(0, 0, 714, 22))
-        self.menubar.setObjectName("menubar")
-        self.menubar.setNativeMenuBar(False)
-
-        file_menu = self.menubar.addMenu('File')
-        file_menu.addAction(openAction)
-        file_menu.addSeparator()
-        file_menu.addAction(closeAction)
-
-        MainWindow.setMenuBar(self.menubar)
-
         #Create status bar
         self.statusbar = QtWidgets.QStatusBar(MainWindow)
         self.statusbar.setObjectName("statusbar")
         MainWindow.setStatusTip('Open file to begin visualisation...')
         MainWindow.setStatusBar(self.statusbar)
 
-        self.retranslateUi(MainWindow)
+        self.toolbar()
 
         self.e = ErrorObserver()
 
-    def retranslateUi(self, MainWindow):
-        _translate = QtCore.QCoreApplication.translate
-        MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
+    def toolbar(self):
+        # Initialise the toolbar
+        self.toolbar = self.mainwindow.addToolBar('Viewer tools')
+
+        # define actions
+        openAction = QtWidgets.QAction(self.mainwindow.style().standardIcon(QtWidgets.QStyle.SP_DirOpenIcon), 'Open file', self.mainwindow)
+        openAction.triggered.connect(self.openFile)
+
+        saveAction = QtWidgets.QAction(self.mainwindow.style().standardIcon(QtWidgets.QStyle.SP_DialogSaveButton), 'Save current render as PNG', self.mainwindow)
+        # saveAction.setShortcut("Ctrl+S")
+        saveAction.triggered.connect(self.saveFile)
+
+        # Add actions to toolbar
+        self.toolbar.addAction(openAction)
+        self.toolbar.addAction(saveAction)
 
     def openFile(self):
         fn = QtWidgets.QFileDialog.getOpenFileNames(MainWindow, 'Open File','../../../../../data')
@@ -177,10 +177,25 @@ class Ui_MainWindow(object):
             MainWindow.setStatusTip('Ready')
 
     def saveFile(self):
-        pass
+        dialog = QtWidgets.QFileDialog(self.mainwindow)
+        dialog.setAcceptMode(QtWidgets.QFileDialog.AcceptSave)
+
+        fn = dialog.getSaveFileName(self.mainwindow,'Save As','.',"Images (*.png)")
+
+        # Only save if the user has selected a name
+        if fn[0]:
+            self.viewerWidget.viewer.saveRender(fn[0])
 
     def close(self):
         QtWidgets.qApp.quit()
+
+    def displayFileErrorDialog(self, file):
+        msg = QtWidgets.QMessageBox(self.mainwindow)
+        msg.setIcon(QtWidgets.QMessageBox.Critical)
+        msg.setWindowTitle("READ ERROR")
+        msg.setText("Error reading file: ({filename})".format(filename=file))
+        msg.setDetailedText(self.e.ErrorMessage())
+        msg.exec_()
 
 if __name__ == "__main__":
     import sys
