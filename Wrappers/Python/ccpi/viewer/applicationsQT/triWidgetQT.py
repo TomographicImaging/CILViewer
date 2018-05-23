@@ -6,7 +6,7 @@
 #
 # WARNING! All changes made in this file will be lost!
 
-from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt5 import QtCore, QtGui, QtWidgets, Qt
 
 from ccpi.viewer.CILViewer2D import CILViewer2D, Converter
 from ccpi.viewer.CILViewer import CILViewer
@@ -66,12 +66,6 @@ class Ui_MainWindow(object):
         self.viewerWidget = QVTKWidget(viewer=CILViewer2D)
         self.horizontalLayout.addWidget(self.viewerWidget, 66)
 
-        # # Add data to the viewer
-        # reader = vtk.vtkMetaImageReader()
-        # reader.SetFileName("../../../../../data/head.mha")
-        # reader.Update()
-        # self.viewerWidget.viewer.setInput3DData(reader.GetOutput())
-
         # Create the vertical layout to handle the other displays
         self.verticalLayout = QtWidgets.QVBoxLayout()
         self.verticalLayout.setObjectName("verticalLayout")
@@ -84,10 +78,6 @@ class Ui_MainWindow(object):
         # Add the 3D viewer widget
         self.viewer3DWidget = QVTKWidget(viewer=CILViewer)
         self.verticalLayout.addWidget(self.viewer3DWidget)
-        # reader = vtk.vtkMetaImageReader()
-        # reader.SetFileName("../../../../../../data/head.mha")
-        # reader.Update()
-        # self.viewer3DWidget.viewer.setInput3DData(reader.GetOutput())
 
         # Add vertical layout to main layout
         self.horizontalLayout.addLayout(self.verticalLayout, 33)
@@ -119,16 +109,109 @@ class Ui_MainWindow(object):
         self.toolbar = self.mainwindow.addToolBar('Viewer tools')
 
         # define actions
+        open_icon = QtGui.QIcon()
         openAction = QtWidgets.QAction(self.mainwindow.style().standardIcon(QtWidgets.QStyle.SP_DirOpenIcon), 'Open file', self.mainwindow)
         openAction.triggered.connect(self.openFile)
 
+        save_icon = QtGui.QIcon()
         saveAction = QtWidgets.QAction(self.mainwindow.style().standardIcon(QtWidgets.QStyle.SP_DialogSaveButton), 'Save current render as PNG', self.mainwindow)
         # saveAction.setShortcut("Ctrl+S")
         saveAction.triggered.connect(self.saveFile)
 
+        plus_icon = QtGui.QIcon()
+        plus_icon.addPixmap(QtGui.QPixmap('icons/plus.png'),QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        connectGraphAction = QtWidgets.QAction(plus_icon, 'Connect graph widget', self.mainwindow)
+        connectGraphAction.triggered.connect(self.createDockableWindow)
+
         # Add actions to toolbar
         self.toolbar.addAction(openAction)
         self.toolbar.addAction(saveAction)
+        self.toolbar.addAction(connectGraphAction)
+
+    def createDockableWindow(self):
+        self.graphDockWidget = QtWidgets.QDockWidget(MainWindow)
+        self.graphDockWidget.setObjectName("dockWidget_3")
+        self.graphDockWidgetContents = QtWidgets.QWidget()
+        self.graphDockWidgetContents.setObjectName("dockWidgetContents_3")
+
+        # Add vertical layout to dock contents
+        self.graphDockVL = QtWidgets.QVBoxLayout(self.graphDockWidgetContents)
+        self.graphDockVL.setContentsMargins(0, 0, 0, 0)
+        self.graphDockVL.setObjectName("verticalLayout_3")
+
+        # Create widget for dock contents
+        self.dockWidget = QtWidgets.QWidget(self.graphDockWidgetContents)
+        self.dockWidget.setObjectName("widget")
+
+        # Add vertical layout to dock widget
+        self.graphWidgetVL = QtWidgets.QVBoxLayout(self.dockWidget)
+        self.graphWidgetVL.setContentsMargins(0, 0, 0, 0)
+        self.graphWidgetVL.setObjectName("verticalLayout_3")
+
+        # Add group box
+        self.graphParamsGroupBox = QtWidgets.QGroupBox(self.dockWidget)
+        self.graphParamsGroupBox.setObjectName("groupBox")
+        self.graphParamsGroupBox.setTitle("Graph Parameters")
+
+        # Add form layout to group box
+        self.graphWidgetFL = QtWidgets.QFormLayout(self.graphParamsGroupBox)
+        self.graphWidgetFL.setObjectName("formLayout_2")
+
+        # Create validation rule for text entry
+        validator = QtGui.QDoubleValidator()
+        validator.setDecimals(3)
+
+        # Add first field
+        self.fieldLabel_1 = QtWidgets.QLabel(self.graphParamsGroupBox)
+        self.fieldLabel_1.setObjectName("fieldLabel1")
+        self.fieldLabel_1.setText("Value 1")
+        self.graphWidgetFL.setWidget(0, QtWidgets.QFormLayout.LabelRole, self.fieldLabel_1)
+        self.lineEdit_1= QtWidgets.QLineEdit(self.graphParamsGroupBox)
+        self.lineEdit_1.setObjectName("lineEdit_1")
+        self.lineEdit_1.setValidator(validator)
+        self.graphWidgetFL.setWidget(0, QtWidgets.QFormLayout.FieldRole, self.lineEdit_1)
+
+        # Add second field
+        self.fieldLabel_2 = QtWidgets.QLabel(self.graphParamsGroupBox)
+        self.fieldLabel_2.setObjectName("fieldLabel_2")
+        self.fieldLabel_2.setText("Value 2")
+        self.graphWidgetFL.setWidget(1, QtWidgets.QFormLayout.LabelRole, self.fieldLabel_2)
+        self.lineEdit_2 = QtWidgets.QLineEdit(self.graphParamsGroupBox)
+        self.lineEdit_2.setObjectName("lineEdit_2")
+        self.lineEdit_2.setValidator(validator)
+
+        self.graphWidgetFL.setWidget(1, QtWidgets.QFormLayout.FieldRole, self.lineEdit_2)
+
+        # Add third field
+        self.fieldLabel_3 = QtWidgets.QLabel(self.graphParamsGroupBox)
+        self.fieldLabel_3.setObjectName("fieldLabel_3")
+        self.fieldLabel_3.setText("Value 3")
+        self.graphWidgetFL.setWidget(2, QtWidgets.QFormLayout.LabelRole, self.fieldLabel_3)
+        self.lineEdit_3 = QtWidgets.QLineEdit(self.graphParamsGroupBox)
+        self.lineEdit_3.setObjectName("lineEdit_3")
+        self.lineEdit_3.setValidator(validator)
+
+        self.graphWidgetFL.setWidget(2, QtWidgets.QFormLayout.FieldRole, self.lineEdit_3)
+
+        # Add submit button
+        self.graphParamsSubmitButton = QtWidgets.QPushButton(self.graphParamsGroupBox)
+        self.graphParamsSubmitButton.setObjectName("graphParamsSubmitButton")
+        self.graphParamsSubmitButton.setText("Update")
+        self.graphParamsSubmitButton.clicked.connect(self.updateGraph)
+        self.graphWidgetFL.setWidget(3, QtWidgets.QFormLayout.FieldRole, self.graphParamsSubmitButton)
+
+        # Add elements to layout
+        self.graphWidgetVL.addWidget(self.graphParamsGroupBox)
+        self.graphDockVL.addWidget(self.dockWidget)
+        self.graphDockWidget.setWidget(self.graphDockWidgetContents)
+        self.mainwindow.addDockWidget(QtCore.Qt.RightDockWidgetArea, self.graphDockWidget)
+
+    def updateGraph(self):
+        val1 = float(self.lineEdit_1.text())
+        val2 = float(self.lineEdit_2.text())
+        val3 = float(self.lineEdit_3.text())
+
+        print (val1, val2, val3)
 
     def openFile(self):
         fn = QtWidgets.QFileDialog.getOpenFileNames(MainWindow, 'Open File','../../../../../data')
