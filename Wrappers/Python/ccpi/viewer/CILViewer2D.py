@@ -648,7 +648,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
 
     def OnKeyPress(self, interactor, event):
 
-        print ("Pressed key %s" % interactor)
+        # print ("Pressed key %s" % interactor)
         # Slice Orientation
         if interactor.GetKeyCode() == "X":
             # slice on the other orientation
@@ -765,7 +765,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
 
     def OnLeftButtonPressEvent(self, interactor, event):
         # print ("INTERACTOR", interactor)
-        # interactor = self._viewer.GetInteractor()
+        # interactor = self._viewer.getInteractor()
 
         alt = interactor.GetAltKey()
         shift = interactor.GetShiftKey()
@@ -808,7 +808,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
             self._viewer.displayHistogram = False
 
     def OnLeftButtonReleaseEvent(self, interactor, event):
-        interactor = self._viewer.GetInteractor()
+        interactor = self._viewer.getInteractor()
 
         if self.GetViewerEvent("CREATE_ROI_EVENT"):
             self.OnROIModifiedEvent(interactor, event)
@@ -822,7 +822,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
         self.SetEventInactive("DELETE_ROI_EVENT")
 
     def OnRightButtonPressEvent(self, interactor, event):
-        interactor = self._viewer.GetInteractor()
+        interactor = self._viewer.getInteractor()
 
         alt = interactor.GetAltKey()
         shift = interactor.GetShiftKey()
@@ -1472,7 +1472,7 @@ class CILViewer2D():
         self.horizLine = vtk.vtkLine()
         self.vertLine = vtk.vtkLine()
         self.crosshairsActor = vtk.vtkActor()
-        self.GetRenderer().AddActor(self.crosshairsActor)
+        self.getRenderer().AddActor(self.crosshairsActor)
 
         # rescale input image
         # contains (scale, shift)
@@ -1483,10 +1483,10 @@ class CILViewer2D():
         if self.debug:
             print(msg)
 
-    def GetInteractor(self):
+    def getInteractor(self):
         return self.iren
 
-    def GetRenderer(self):
+    def getRenderer(self):
         return self.ren
 
     def setInput3DData(self, imageData):
@@ -1632,7 +1632,7 @@ class CILViewer2D():
         self.ren.ResetCameraClippingRange()
 
         # adjust camera focal point
-        camera = self.GetRenderer().GetActiveCamera()
+        camera = self.getRenderer().GetActiveCamera()
         fp = list (camera.GetFocalPoint())
         fp[self.sliceOrientation] = self.sliceno
         camera.SetFocalPoint(fp)
@@ -1776,8 +1776,8 @@ class CILViewer2D():
 
     def setSliceOrientation(self, axis):
         if axis in ['x','y','z']:
-            self.GetInteractor().SetKeyCode(axis)
-            self.style.OnKeyPress(self.GetInteractor(), "KeyPressEvent")
+            self.getInteractor().SetKeyCode(axis)
+            self.style.OnKeyPress(self.getInteractor(), "KeyPressEvent")
 
     def updateLinePlot(self, imagecoordinate, display):
 
@@ -1852,7 +1852,7 @@ class CILViewer2D():
             if self.linePlot == 0:
                 self.linePlotActor.AddDataSetInputConnection(self.lineVOIX.GetOutputPort())
                 self.linePlotActor.AddDataSetInputConnection(self.lineVOIY.GetOutputPort())
-                self.GetRenderer().AddActor(self.linePlotActor)
+                self.getRenderer().AddActor(self.linePlotActor)
                 self.linePlot = 1
 
 

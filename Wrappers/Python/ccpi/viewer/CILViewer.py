@@ -62,6 +62,12 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
     def GetKeyCode(self):
         return self.GetInteractor().GetKeyCode()
 
+    def SetKeyCode(self, keycode):
+        self.GetInteractor().SetKeyCode(keycode)
+
+    def GetActiveCamera(self):
+        return self._viewer.ren.GetActiveCamera()
+
     def mouseInteraction(self, interactor, event):
         if event == 'MouseWheelForwardEvent':
             maxSlice = self.GetDimensions()[self.GetSliceOrientation()]
@@ -77,30 +83,30 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
 
     def keyPress(self, interactor, event):
 
-        if interactor.GetKeyCode() == "x":
+        if interactor.GetKeyCode() == "X":
             # slice on the other orientation
             self.SetSliceOrientation( SLICE_ORIENTATION_YZ )
             self.SetActiveSlice(int(self.GetDimensions()[0]/2))
             self.UpdatePipeline(resetcamera=True)
 
-        elif interactor.GetKeyCode() == "y":
+        elif interactor.GetKeyCode() == "Y":
             # slice on the other orientation
             self.SetSliceOrientation(SLICE_ORIENTATION_XZ)
             self.SetActiveSlice(int(self.GetDimensions()[2] / 2))
             self.UpdatePipeline(resetcamera=True)
 
-        elif interactor.GetKeyCode() == "z":
+        elif interactor.GetKeyCode() == "Z":
             # slice on the other orientation
             self.SetSliceOrientation(SLICE_ORIENTATION_XY)
             self.SetActiveSlice(int(self.GetDimensions()[2] / 2))
             self.UpdatePipeline(resetcamera=True)
 
-        if interactor.GetKeyCode() == "X":
+        if interactor.GetKeyCode() == "x":
             # Change the camera view point
             camera = vtk.vtkCamera()
-            camera.SetFocalPoint(self.ren.GetActiveCamera().GetFocalPoint())
-            camera.SetViewUp(self.ren.GetActiveCamera().GetViewUp())
-            newposition = [i for i in self.ren.GetActiveCamera().GetFocalPoint()]
+            camera.SetFocalPoint(self.GetActiveCamera().GetFocalPoint())
+            camera.SetViewUp(self.GetActiveCamera().GetViewUp())
+            newposition = [i for i in self.GetActiveCamera().GetFocalPoint()]
             newposition[SLICE_ORIENTATION_YZ] = math.sqrt(
                 newposition[SLICE_ORIENTATION_XY] ** 2 + newposition[SLICE_ORIENTATION_XZ] ** 2)
             camera.SetPosition(newposition)
@@ -108,15 +114,15 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
 
             self.SetActiveCamera(camera)
             self.Render()
-            interactor.SetKeyCode("x")
+            interactor.SetKeyCode("X")
             self.keyPress(interactor, event)
 
-        elif interactor.GetKeyCode() == "Y":
+        elif interactor.GetKeyCode() == "y":
             # Change the camera view point
             camera = vtk.vtkCamera()
-            camera.SetFocalPoint(self.ren.GetActiveCamera().GetFocalPoint())
-            camera.SetViewUp(self.ren.GetActiveCamera().GetViewUp())
-            newposition = [i for i in self.ren.GetActiveCamera().GetFocalPoint()]
+            camera.SetFocalPoint(self.GetActiveCamera().GetFocalPoint())
+            camera.SetViewUp(self.GetActiveCamera().GetViewUp())
+            newposition = [i for i in self.GetActiveCamera().GetFocalPoint()]
             newposition[SLICE_ORIENTATION_XZ] = math.sqrt(
                 newposition[SLICE_ORIENTATION_XY] ** 2 + newposition[SLICE_ORIENTATION_YZ] ** 2)
             camera.SetPosition(newposition)
@@ -124,15 +130,15 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
 
             self.SetActiveCamera(camera)
             self.Render()
-            interactor.SetKeyCode("y")
+            interactor.SetKeyCode("Y")
             self.keyPress(interactor, event)
 
-        elif interactor.GetKeyCode() == "Z":
+        elif interactor.GetKeyCode() == "z":
             # Change the camera view point
             camera = vtk.vtkCamera()
-            camera.SetFocalPoint(self.ren.GetActiveCamera().GetFocalPoint())
-            camera.SetViewUp(self.ren.GetActiveCamera().GetViewUp())
-            newposition = [i for i in self.ren.GetActiveCamera().GetFocalPoint()]
+            camera.SetFocalPoint(self.GetActiveCamera().GetFocalPoint())
+            camera.SetViewUp(self.GetActiveCamera().GetViewUp())
+            newposition = [i for i in self.GetActiveCamera().GetFocalPoint()]
             newposition[SLICE_ORIENTATION_XY] = math.sqrt(
                 newposition[SLICE_ORIENTATION_YZ] ** 2 + newposition[SLICE_ORIENTATION_XZ] ** 2)
             camera.SetPosition(newposition)
@@ -140,12 +146,11 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
 
             self.SetActiveCamera(camera)
             self.Render()
-            interactor.SetKeyCode("z")
+            interactor.SetKeyCode("Z")
             self.keyPress(interactor, event)
 
         else:
             print("Unhandled event %s" % interactor.GetKeyCode())
-
 
 class CILViewer():
     '''Simple 3D Viewer based on VTK classes'''
@@ -193,6 +198,9 @@ class CILViewer():
     def getRenderer(self):
         '''returns the renderer'''
         return self.ren
+
+    def GetSliceOrientation(self):
+        return self.sliceOrientation
 
     def getRenderWindow(self):
         '''returns the render window'''

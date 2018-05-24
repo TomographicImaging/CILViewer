@@ -1,23 +1,27 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file '/Users/vdn73631/Desktop/frametest.ui'
-#
-# Created by: PyQt5 UI code generator 5.6
-#
-# WARNING! All changes made in this file will be lost!
 
-from PyQt5 import QtCore, QtGui, QtWidgets, Qt
 
+# Import viewer classes
 from ccpi.viewer.CILViewer2D import CILViewer2D, Converter
 from ccpi.viewer.CILViewer import CILViewer
 from ccpi.viewer.undirected_graph import UndirectedGraph
 
+# Import Class to convert vtk render window to QT widget
 from ccpi.viewer.QVTKWidget import QVTKWidget
-from ccpi.viewer.undirected_graph import generate_data
-import vtk
 
+# Import temporary function to generate data for the graph view
+# Will be replaced to read the data from the loaded image.
+from ccpi.viewer.undirected_graph import generate_data
+
+# Import modules requred to run the QT application
+from PyQt5 import QtCore, QtGui, QtWidgets, Qt
+import vtk
 from natsort import natsorted
 import imghdr
+
+# Import linking class to join 2D and 3D viewers
+import ccpi.viewer.viewerLinker as vlink
 
 class ErrorObserver:
 
@@ -55,6 +59,10 @@ class Ui_MainWindow(object):
         MainWindow.setObjectName("CIL Viewer")
         MainWindow.setWindowTitle("CIL Viewer")
         MainWindow.resize(800, 600)
+
+        # Set linked state
+        self.linked = True
+
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
 
@@ -63,7 +71,7 @@ class Ui_MainWindow(object):
         self.horizontalLayout.setObjectName("horizontalLayout")
 
         # Add the 2D viewer widget
-        self.viewerWidget = QVTKWidget(viewer=CILViewer2D)
+        self.viewerWidget = QVTKWidget(viewer=CILViewer2D, interactorStyle=vlink.Linked2DInteractorStyle)
         self.horizontalLayout.addWidget(self.viewerWidget, 66)
 
         # Create the vertical layout to handle the other displays
@@ -76,7 +84,7 @@ class Ui_MainWindow(object):
         self.graphWidget.viewer.update(generate_data())
 
         # Add the 3D viewer widget
-        self.viewer3DWidget = QVTKWidget(viewer=CILViewer)
+        self.viewer3DWidget = QVTKWidget(viewer=CILViewer, interactorStyle=vlink.Linked3DInteractorStyle)
         self.verticalLayout.addWidget(self.viewer3DWidget)
 
         # Add vertical layout to main layout
@@ -100,9 +108,14 @@ class Ui_MainWindow(object):
         MainWindow.setStatusTip('Open file to begin visualisation...')
         MainWindow.setStatusBar(self.statusbar)
 
+        # Initially link viewers
+        self.linkedViewersSetup()
+        self.link2D3D.enable()
+
         self.toolbar()
 
         self.e = ErrorObserver()
+
 
     def toolbar(self):
         # Initialise the toolbar
@@ -119,14 +132,46 @@ class Ui_MainWindow(object):
         saveAction.triggered.connect(self.saveFile)
 
         plus_icon = QtGui.QIcon()
-        plus_icon.addPixmap(QtGui.QPixmap('icons/plus.png'),QtGui.QIcon.Normal, QtGui.QIcon.Off)
-        connectGraphAction = QtWidgets.QAction(plus_icon, 'Connect graph widget', self.mainwindow)
+        plus_icon.addPixmap(QtGui.QPixmap('icons/plus.png'),QtGui.QIcon.Normal, QtGui.
+                            QIcon.Off)
+        connectGraphAction = QtWidgets.QAction(plus_icon, 'Set Graph Widget parameters', self.mainwindow)
         connectGraphAction.triggered.connect(self.createDockableWindow)
+
+        link_icon = QtGui.QIcon()
+        link_icon.addPixmap(QtGui.QPixmap('icons/link.png'),QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        self.linkViewersAction = QtWidgets.QAction(link_icon,'Toggle link between 2D and 3D viewers', self.mainwindow)
+        self.linkViewersAction.triggered.connect(self.toggleLink)
 
         # Add actions to toolbar
         self.toolbar.addAction(openAction)
         self.toolbar.addAction(saveAction)
         self.toolbar.addAction(connectGraphAction)
+        self.toolbar.addAction(self.linkViewersAction)
+
+    def linkedViewersSetup(self):
+        self.link2D3D = vlink.ViewerLinker(self.viewerWidget.viewer, self.viewer3DWidget.viewer)
+        self.link2D3D.setLinkPan(False)
+        self.link2D3D.setLinkZoom(False)
+        self.link2D3D.setLinkWindowLevel(True)
+        self.link2D3D.setLinkSlice(True)
+
+    def toggleLink(self):
+        link_icon = QtGui.QIcon()
+        link_icon.addPixmap(QtGui.QPixmap('icons/link.png'),QtGui.QIcon.Normal, QtGui.QIcon.Off)
+
+        link_icon_broken = QtGui.QIcon()
+        link_icon_broken.addPixmap(QtGui.QPixmap('icons/broken_link.png'),QtGui.QIcon.Normal, QtGui.QIcon.Off)
+
+        if self.linked:
+            self.link2D3D.disable()
+            self.linkViewersAction.setIcon(link_icon_broken)
+            self.linked = False
+
+        else:
+            self.link2D3D.enable()
+            self.linkViewersAction.setIcon(link_icon)
+            self.linked = True
+
 
     def createDockableWindow(self):
         self.graphDockWidget = QtWidgets.QDockWidget(MainWindow)
@@ -279,6 +324,9 @@ class Ui_MainWindow(object):
         msg.setText("Error reading file: ({filename})".format(filename=file))
         msg.setDetailedText(self.e.ErrorMessage())
         msg.exec_()
+
+
+
 
 if __name__ == "__main__":
     import sys

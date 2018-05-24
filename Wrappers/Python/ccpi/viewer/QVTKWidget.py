@@ -308,6 +308,11 @@ class QVTKWidget(QVTKRWIBaseClass):
             raise KeyError("Viewer class not provided. Submit an uninstantiated viewer class object"
                            "using 'viewer' keyword")
 
+        if 'interactorStyle' in kwargs.keys():
+            self.viewer.style = kwargs['interactorStyle'](self.viewer)
+            self.viewer.iren.SetInteractorStyle(self.viewer.style)
+
+
         # do all the necessary qt setup
         self.setAttribute(Qt.WA_OpaquePaintEvent)
         self.setAttribute(Qt.WA_PaintOnScreen)
