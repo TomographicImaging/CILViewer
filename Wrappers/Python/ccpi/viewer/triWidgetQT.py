@@ -259,7 +259,7 @@ class Ui_MainWindow(object):
         print (val1, val2, val3)
 
     def openFile(self):
-        fn = QtWidgets.QFileDialog.getOpenFileNames(MainWindow, 'Open File','../../../../../data')
+        fn = QtWidgets.QFileDialog.getOpenFileNames(self.mainwindow, 'Open File','../../../../../data')
 
         # If the user has pressed cancel, the first element of the tuple will be empty.
         # Quit the method cleanly
@@ -287,7 +287,7 @@ class Ui_MainWindow(object):
                     # A non-TIFF file has been loaded, present error message and exit method
                     self.e('','','When reading multiple files, all files must TIFF formatted.')
                     file = file
-                    MainWindow.displayFileErrorDialog(file)
+                    self.mainwindow.displayFileErrorDialog(file)
                     return
 
             # Have passed basic test, can attempt to load
