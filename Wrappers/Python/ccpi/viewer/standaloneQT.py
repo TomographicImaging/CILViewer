@@ -65,7 +65,7 @@ class Window(QMainWindow):
         self.frame = QFrame()
         self.vl = QVBoxLayout()
         self.vtkWidget = QVTKCILViewer(self.frame)
-        self.iren = self.vtkWidget.GetInteractor()
+        self.iren = self.vtkWidget.getInteractor()
         self.vl.addWidget(self.vtkWidget)
 
         self.frame.setLayout(self.vl)
