@@ -163,6 +163,12 @@ class Window(QMainWindow):
     def close(self):
         qApp.quit()
 
-App = QApplication(sys.argv)
-gui = Window()
-sys.exit(App.exec())
+
+def main():
+
+    App = QApplication(sys.argv)
+    gui = Window()
+    sys.exit(App.exec())
+
+if __name__=="__main__":
+    main()
