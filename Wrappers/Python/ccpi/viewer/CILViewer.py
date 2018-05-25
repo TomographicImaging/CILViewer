@@ -82,72 +82,23 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
                 self.UpdatePipeline()
 
     def keyPress(self, interactor, event):
+        if interactor.GetKeyCode() == "x":
 
-        if interactor.GetKeyCode() == "X":
-            # slice on the other orientation
             self.SetSliceOrientation( SLICE_ORIENTATION_YZ )
             self.SetActiveSlice(int(self.GetDimensions()[0]/2))
             self.UpdatePipeline(resetcamera=True)
 
-        elif interactor.GetKeyCode() == "Y":
-            # slice on the other orientation
+        elif interactor.GetKeyCode() == "y":
+
             self.SetSliceOrientation(SLICE_ORIENTATION_XZ)
             self.SetActiveSlice(int(self.GetDimensions()[2] / 2))
             self.UpdatePipeline(resetcamera=True)
 
-        elif interactor.GetKeyCode() == "Z":
-            # slice on the other orientation
+        elif interactor.GetKeyCode() == "z":
+
             self.SetSliceOrientation(SLICE_ORIENTATION_XY)
             self.SetActiveSlice(int(self.GetDimensions()[2] / 2))
             self.UpdatePipeline(resetcamera=True)
-
-        if interactor.GetKeyCode() == "x":
-            # Change the camera view point
-            camera = vtk.vtkCamera()
-            camera.SetFocalPoint(self.GetActiveCamera().GetFocalPoint())
-            camera.SetViewUp(self.GetActiveCamera().GetViewUp())
-            newposition = [i for i in self.GetActiveCamera().GetFocalPoint()]
-            newposition[SLICE_ORIENTATION_YZ] = math.sqrt(
-                newposition[SLICE_ORIENTATION_XY] ** 2 + newposition[SLICE_ORIENTATION_XZ] ** 2)
-            camera.SetPosition(newposition)
-            camera.SetViewUp(0, 0, -1)
-
-            self.SetActiveCamera(camera)
-            self.Render()
-            interactor.SetKeyCode("X")
-            self.keyPress(interactor, event)
-
-        elif interactor.GetKeyCode() == "y":
-            # Change the camera view point
-            camera = vtk.vtkCamera()
-            camera.SetFocalPoint(self.GetActiveCamera().GetFocalPoint())
-            camera.SetViewUp(self.GetActiveCamera().GetViewUp())
-            newposition = [i for i in self.GetActiveCamera().GetFocalPoint()]
-            newposition[SLICE_ORIENTATION_XZ] = math.sqrt(
-                newposition[SLICE_ORIENTATION_XY] ** 2 + newposition[SLICE_ORIENTATION_YZ] ** 2)
-            camera.SetPosition(newposition)
-            camera.SetViewUp(0, 0, -1)
-
-            self.SetActiveCamera(camera)
-            self.Render()
-            interactor.SetKeyCode("Y")
-            self.keyPress(interactor, event)
-
-        elif interactor.GetKeyCode() == "z":
-            # Change the camera view point
-            camera = vtk.vtkCamera()
-            camera.SetFocalPoint(self.GetActiveCamera().GetFocalPoint())
-            camera.SetViewUp(self.GetActiveCamera().GetViewUp())
-            newposition = [i for i in self.GetActiveCamera().GetFocalPoint()]
-            newposition[SLICE_ORIENTATION_XY] = math.sqrt(
-                newposition[SLICE_ORIENTATION_YZ] ** 2 + newposition[SLICE_ORIENTATION_XZ] ** 2)
-            camera.SetPosition(newposition)
-            camera.SetViewUp(0, 0, -1)
-
-            self.SetActiveCamera(camera)
-            self.Render()
-            interactor.SetKeyCode("Z")
-            self.keyPress(interactor, event)
 
         else:
             print("Unhandled event %s" % interactor.GetKeyCode())

@@ -648,27 +648,6 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
 
     def OnKeyPress(self, interactor, event):
 
-        # print ("Pressed key %s" % interactor)
-        # Slice Orientation
-        if interactor.GetKeyCode() == "X":
-            # slice on the other orientation
-
-            self.SetSliceOrientation ( SLICE_ORIENTATION_YZ )
-            self.SetActiveSlice( int(self.GetDimensions()[0] / 2) )
-            self.UpdatePipeline(True)
-
-        elif interactor.GetKeyCode() == "Y":
-            # slice on the other orientation
-            self.SetSliceOrientation (  SLICE_ORIENTATION_XZ )
-            self.SetActiveSlice ( int(self.GetInputData().GetDimensions()[1] / 2) )
-            self.UpdatePipeline(True)
-
-        elif interactor.GetKeyCode() == "Z":
-            # slice on the other orientation
-            self.SetSliceOrientation (  SLICE_ORIENTATION_XY )
-            self.SetActiveSlice ( int(self.GetInputData().GetDimensions()[2] / 2) )
-            self.UpdatePipeline(True)
-
         if interactor.GetKeyCode() == "x":
             # Change the camera view point
             camera = vtk.vtkCamera()
@@ -680,9 +659,10 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
             camera.SetPosition(newposition)
             camera.SetViewUp(0,0,1) # Orig
             self.SetActiveCamera(camera)
-            self.Render()
-            interactor.SetKeyCode("X")
-            self.OnKeyPress(interactor, event)
+
+            self.SetSliceOrientation ( SLICE_ORIENTATION_YZ )
+            self.SetActiveSlice( int(self.GetDimensions()[0] / 2) )
+            self.UpdatePipeline(True)
 
         elif interactor.GetKeyCode() == "y":
              # Change the camera view point
@@ -697,11 +677,10 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
             newposition[1] = -newposition[1]
             camera.SetPosition(newposition)
             camera.SetViewUp(0,0,1) # Orig
-            # camera.SetViewUp(0,0,1)
             self.SetActiveCamera(camera)
-            self.Render()
-            interactor.SetKeyCode("Y")
-            self.OnKeyPress(interactor, event)
+            self.SetSliceOrientation(SLICE_ORIENTATION_XZ)
+            self.SetActiveSlice(int(self.GetInputData().GetDimensions()[1] / 2))
+            self.UpdatePipeline(True)
 
         elif interactor.GetKeyCode() == "z":
              # Change the camera view point
@@ -715,9 +694,9 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
             camera.SetViewUp(0,1,0)
             self.SetActiveCamera(camera)
             self.ResetCamera()
-            self.Render()
-            interactor.SetKeyCode("Z")
-            self.OnKeyPress(interactor, event)
+            self.SetSliceOrientation(SLICE_ORIENTATION_XY)
+            self.SetActiveSlice(int(self.GetInputData().GetDimensions()[2] / 2))
+            self.UpdatePipeline(True)
 
         elif interactor.GetKeyCode() == "a":
             # reset color/window

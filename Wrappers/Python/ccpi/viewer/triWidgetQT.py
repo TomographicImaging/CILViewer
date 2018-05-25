@@ -131,10 +131,10 @@ class Ui_MainWindow(object):
         # saveAction.setShortcut("Ctrl+S")
         saveAction.triggered.connect(self.saveFile)
 
-        plus_icon = QtGui.QIcon()
-        plus_icon.addPixmap(QtGui.QPixmap('icons/plus.png'),QtGui.QIcon.Normal, QtGui.
+        tree_icon = QtGui.QIcon()
+        tree_icon.addPixmap(QtGui.QPixmap('icons/tree_icon.png'),QtGui.QIcon.Normal, QtGui.
                             QIcon.Off)
-        connectGraphAction = QtWidgets.QAction(plus_icon, 'Set Graph Widget parameters', self.mainwindow)
+        connectGraphAction = QtWidgets.QAction(tree_icon, 'Set Graph Widget parameters', self.mainwindow)
         connectGraphAction.triggered.connect(self.createDockableWindow)
 
         link_icon = QtGui.QIcon()

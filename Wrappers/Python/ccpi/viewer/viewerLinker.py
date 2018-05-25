@@ -165,12 +165,6 @@ class ViewerLinkObserver():
         # we want to pass the current event.
         shouldPassEvent = True
 
-        # Orientation shouldn't be linked
-        # if (interactor.GetKeyCode() == "x" or
-        #         interactor.GetKeyCode() == "y" or
-        #         interactor.GetKeyCode() == "z"):
-        #     shouldPassEvent = False
-
         # Strange bug with middle button, only target viewer responds to
         # MiddleButtonPressEvent, but not to ReleaseEvent. Let's ignore it.
         if (event == "MiddleButtonPressEvent" or
