@@ -174,7 +174,7 @@ class Ui_MainWindow(object):
 
 
     def createDockableWindow(self):
-        self.graphDockWidget = QtWidgets.QDockWidget(MainWindow)
+        self.graphDockWidget = QtWidgets.QDockWidget(self.mainwindow)
         self.graphDockWidget.setObjectName("dockWidget_3")
         self.graphDockWidgetContents = QtWidgets.QWidget()
         self.graphDockWidgetContents.setObjectName("dockWidgetContents_3")
@@ -296,13 +296,13 @@ class Ui_MainWindow(object):
             reader.Update()
 
         if self.e.ErrorOccurred():
-            MainWindow.displayFileErrorDialog(file)
+            self.mainwindow.displayFileErrorDialog(file)
 
         else:
             self.viewerWidget.viewer.setInput3DData(reader.GetOutput())
             self.viewer3DWidget.viewer.setInput3DData(reader.GetOutput())
 
-            MainWindow.setStatusTip('Ready')
+            self.mainwindow.setStatusTip('Ready')
 
     def saveFile(self):
         dialog = QtWidgets.QFileDialog(self.mainwindow)
