@@ -69,9 +69,9 @@ class UndirectedGraph(vtkGraphLayoutView):
 
         if renWin:
             self.SetRenderWindow(renWin)
-
         if iren:
             self.SetInteractor(iren)
+
 
         # Create layout strategy
         layoutStrategy = vtk.vtkAssignCoordinatesLayoutStrategy()

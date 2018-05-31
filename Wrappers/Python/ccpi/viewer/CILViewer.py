@@ -62,6 +62,12 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
     def GetKeyCode(self):
         return self.GetInteractor().GetKeyCode()
 
+    def SetKeyCode(self, keycode):
+        self.GetInteractor().SetKeyCode(keycode)
+
+    def GetActiveCamera(self):
+        return self._viewer.ren.GetActiveCamera()
+
     def mouseInteraction(self, interactor, event):
         if event == 'MouseWheelForwardEvent':
             maxSlice = self.GetDimensions()[self.GetSliceOrientation()]
@@ -76,76 +82,26 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
                 self.UpdatePipeline()
 
     def keyPress(self, interactor, event):
-
         if interactor.GetKeyCode() == "x":
-            # slice on the other orientation
+
             self.SetSliceOrientation( SLICE_ORIENTATION_YZ )
             self.SetActiveSlice(int(self.GetDimensions()[0]/2))
             self.UpdatePipeline(resetcamera=True)
 
         elif interactor.GetKeyCode() == "y":
-            # slice on the other orientation
+
             self.SetSliceOrientation(SLICE_ORIENTATION_XZ)
             self.SetActiveSlice(int(self.GetDimensions()[2] / 2))
             self.UpdatePipeline(resetcamera=True)
 
         elif interactor.GetKeyCode() == "z":
-            # slice on the other orientation
+
             self.SetSliceOrientation(SLICE_ORIENTATION_XY)
             self.SetActiveSlice(int(self.GetDimensions()[2] / 2))
             self.UpdatePipeline(resetcamera=True)
 
-        if interactor.GetKeyCode() == "X":
-            # Change the camera view point
-            camera = vtk.vtkCamera()
-            camera.SetFocalPoint(self.ren.GetActiveCamera().GetFocalPoint())
-            camera.SetViewUp(self.ren.GetActiveCamera().GetViewUp())
-            newposition = [i for i in self.ren.GetActiveCamera().GetFocalPoint()]
-            newposition[SLICE_ORIENTATION_YZ] = math.sqrt(
-                newposition[SLICE_ORIENTATION_XY] ** 2 + newposition[SLICE_ORIENTATION_XZ] ** 2)
-            camera.SetPosition(newposition)
-            camera.SetViewUp(0, 0, -1)
-
-            self.SetActiveCamera(camera)
-            self.Render()
-            interactor.SetKeyCode("x")
-            self.keyPress(interactor, event)
-
-        elif interactor.GetKeyCode() == "Y":
-            # Change the camera view point
-            camera = vtk.vtkCamera()
-            camera.SetFocalPoint(self.ren.GetActiveCamera().GetFocalPoint())
-            camera.SetViewUp(self.ren.GetActiveCamera().GetViewUp())
-            newposition = [i for i in self.ren.GetActiveCamera().GetFocalPoint()]
-            newposition[SLICE_ORIENTATION_XZ] = math.sqrt(
-                newposition[SLICE_ORIENTATION_XY] ** 2 + newposition[SLICE_ORIENTATION_YZ] ** 2)
-            camera.SetPosition(newposition)
-            camera.SetViewUp(0, 0, -1)
-
-            self.SetActiveCamera(camera)
-            self.Render()
-            interactor.SetKeyCode("y")
-            self.keyPress(interactor, event)
-
-        elif interactor.GetKeyCode() == "Z":
-            # Change the camera view point
-            camera = vtk.vtkCamera()
-            camera.SetFocalPoint(self.ren.GetActiveCamera().GetFocalPoint())
-            camera.SetViewUp(self.ren.GetActiveCamera().GetViewUp())
-            newposition = [i for i in self.ren.GetActiveCamera().GetFocalPoint()]
-            newposition[SLICE_ORIENTATION_XY] = math.sqrt(
-                newposition[SLICE_ORIENTATION_YZ] ** 2 + newposition[SLICE_ORIENTATION_XZ] ** 2)
-            camera.SetPosition(newposition)
-            camera.SetViewUp(0, 0, -1)
-
-            self.SetActiveCamera(camera)
-            self.Render()
-            interactor.SetKeyCode("z")
-            self.keyPress(interactor, event)
-
         else:
             print("Unhandled event %s" % interactor.GetKeyCode())
-
 
 class CILViewer():
     '''Simple 3D Viewer based on VTK classes'''
@@ -194,6 +150,9 @@ class CILViewer():
         '''returns the renderer'''
         return self.ren
 
+    def GetSliceOrientation(self):
+        return self.sliceOrientation
+
     def getRenderWindow(self):
         '''returns the render window'''
         return self.renWin
@@ -232,12 +191,16 @@ class CILViewer():
     def displayPolyData(self, polydata):
         self.setPolyDataActor(self.createPolyDataActor(polydata))
         
-    def hideActor(self, actorno):
+    def hideActor(self, actorno, delete=False):
         '''Hides an actor identified by its number in the list of actors'''
         try:
             if self.actors[actorno][1]:
                 self.ren.RemoveActor(self.actors[actorno][0])
                 self.actors[actorno][1] = False
+
+            if delete:
+                self.actors = {}
+
         except KeyError as ke:
             print ("Warning Actor not present")
         

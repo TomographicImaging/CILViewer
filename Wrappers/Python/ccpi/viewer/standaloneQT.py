@@ -65,7 +65,7 @@ class Window(QMainWindow):
         self.frame = QFrame()
         self.vl = QVBoxLayout()
         self.vtkWidget = QVTKCILViewer(self.frame)
-        self.iren = self.vtkWidget.GetInteractor()
+        self.iren = self.vtkWidget.getInteractor()
         self.vl.addWidget(self.vtkWidget)
 
         self.frame.setLayout(self.vl)
@@ -163,6 +163,12 @@ class Window(QMainWindow):
     def close(self):
         qApp.quit()
 
-App = QApplication(sys.argv)
-gui = Window()
-sys.exit(App.exec())
+
+def main():
+
+    App = QApplication(sys.argv)
+    gui = Window()
+    sys.exit(App.exec())
+
+if __name__=="__main__":
+    main()
