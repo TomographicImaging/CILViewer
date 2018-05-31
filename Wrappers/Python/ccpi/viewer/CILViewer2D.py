@@ -65,7 +65,7 @@ class Converter():
         dims = imgdata.GetDimensions()
         print ("vtk2numpy: VTKImageData dims {0}".format(dims))
 
-        old = True
+        old = False
         if old:
             dims = (dims[2],dims[1],dims[0])
             data3d = numpy.reshape(img_data, dims, order='C')
@@ -812,16 +812,16 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
 
         if alt and not (ctrl and shift):
             self.SetEventActive("WINDOW_LEVEL_EVENT")
-            self.log ("Event %s is WINDOW_LEVEL_EVENT" % (event))
+            self.log("Event %s is WINDOW_LEVEL_EVENT" % (event))
             self.HandleWindowLevel(interactor, event)
         elif shift and not (ctrl and alt):
             self.SetEventActive("ZOOM_EVENT")
             self.SetInitialCameraPosition( self.GetActiveCamera().GetPosition())
-            self.log ("Event %s is ZOOM_EVENT" % (event))
+            self.log("Event %s is ZOOM_EVENT" % (event))
         elif ctrl and not (shift and alt):
             self.SetEventActive("PAN_EVENT")
-            self.SetInitialCameraPosition ( self.GetActiveCamera().GetPosition() )
-            self.log ("Event %s is PAN_EVENT" % (event))
+            self.SetInitialCameraPosition( self.GetActiveCamera().GetPosition() )
+            self.log("Event %s is PAN_EVENT" % (event))
 
     def OnRightButtonReleaseEvent(self, interactor, event):
         self.log (event)

@@ -191,12 +191,16 @@ class CILViewer():
     def displayPolyData(self, polydata):
         self.setPolyDataActor(self.createPolyDataActor(polydata))
         
-    def hideActor(self, actorno):
+    def hideActor(self, actorno, delete=False):
         '''Hides an actor identified by its number in the list of actors'''
         try:
             if self.actors[actorno][1]:
                 self.ren.RemoveActor(self.actors[actorno][0])
                 self.actors[actorno][1] = False
+
+            if delete:
+                self.actors = {}
+
         except KeyError as ke:
             print ("Warning Actor not present")
         

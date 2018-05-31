@@ -23,6 +23,10 @@ import imghdr
 # Import linking class to join 2D and 3D viewers
 import ccpi.viewer.viewerLinker as vlink
 
+# Import segmenation algorithm and tools
+from ccpi.segmentation.SimpleflexSegmentor import SimpleflexSegmentor
+import numpy
+
 class ErrorObserver:
 
    def __init__(self):
@@ -63,6 +67,21 @@ class Ui_MainWindow(object):
         # Set linked state
         self.linked = True
 
+        # Set numpy data array for graph
+        self.numpy_input_data = None
+        self.annotationActor = False
+
+        # Add annotation for graph
+        self.cornerAnnotation = vtk.vtkCornerAnnotation()
+        self.cornerAnnotation.SetMaximumFontSize(12);
+        self.cornerAnnotation.PickableOff();
+        self.cornerAnnotation.VisibilityOff();
+        self.cornerAnnotation.GetTextProperty().ShadowOn();
+        self.cornerAnnotation.SetLayerNumber(1);
+
+        # Dockable window flag
+        self.hasDockableWindow = False
+
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
 
@@ -81,7 +100,7 @@ class Ui_MainWindow(object):
         # Add the graph widget
         self.graphWidget = QVTKWidget(viewer=UndirectedGraph)
         self.verticalLayout.addWidget(self.graphWidget)
-        self.graphWidget.viewer.update(generate_data())
+        # self.graphWidget.viewer.update(generate_data())
 
         # Add the 3D viewer widget
         self.viewer3DWidget = QVTKWidget(viewer=CILViewer, interactorStyle=vlink.Linked3DInteractorStyle)
@@ -122,13 +141,10 @@ class Ui_MainWindow(object):
         self.toolbar = self.mainwindow.addToolBar('Viewer tools')
 
         # define actions
-        open_icon = QtGui.QIcon()
         openAction = QtWidgets.QAction(self.mainwindow.style().standardIcon(QtWidgets.QStyle.SP_DirOpenIcon), 'Open file', self.mainwindow)
         openAction.triggered.connect(self.openFile)
 
-        save_icon = QtGui.QIcon()
         saveAction = QtWidgets.QAction(self.mainwindow.style().standardIcon(QtWidgets.QStyle.SP_DialogSaveButton), 'Save current render as PNG', self.mainwindow)
-        # saveAction.setShortcut("Ctrl+S")
         saveAction.triggered.connect(self.saveFile)
 
         tree_icon = QtGui.QIcon()
@@ -172,12 +188,34 @@ class Ui_MainWindow(object):
             self.linkViewersAction.setIcon(link_icon)
             self.linked = True
 
+    # def closeEvent(self):
+    #     print ("Closing")
 
     def createDockableWindow(self):
+
+        # Check if the dockable window has already been created
+        if self.hasDockableWindow:
+
+            # If the dockable window has already been created and is visible then don't add another one
+            if self.graphDockWidget.isVisible():
+                return
+            else:
+                # If the dockable window has already been created and is not visible. Set it to visible and return
+                self.graphDockWidget.setVisible(True)
+                return
+
+        # The dockable window has been activated for the first time.
+        # Set the hasDockableWindow flag
+        self.hasDockableWindow = True
+
+        # Setup segmentation
+        self.segmentor = SimpleflexSegmentor()
+
         self.graphDockWidget = QtWidgets.QDockWidget(self.mainwindow)
         self.graphDockWidget.setObjectName("dockWidget_3")
         self.graphDockWidgetContents = QtWidgets.QWidget()
         self.graphDockWidgetContents.setObjectName("dockWidgetContents_3")
+
 
         # Add vertical layout to dock contents
         self.graphDockVL = QtWidgets.QVBoxLayout(self.graphDockWidgetContents)
@@ -204,46 +242,59 @@ class Ui_MainWindow(object):
 
         # Create validation rule for text entry
         validator = QtGui.QDoubleValidator()
-        validator.setDecimals(3)
+        validator.setDecimals(2)
 
-        # Add first field
-        self.fieldLabel_1 = QtWidgets.QLabel(self.graphParamsGroupBox)
-        self.fieldLabel_1.setObjectName("fieldLabel1")
-        self.fieldLabel_1.setText("Value 1")
-        self.graphWidgetFL.setWidget(0, QtWidgets.QFormLayout.LabelRole, self.fieldLabel_1)
-        self.lineEdit_1= QtWidgets.QLineEdit(self.graphParamsGroupBox)
-        self.lineEdit_1.setObjectName("lineEdit_1")
-        self.lineEdit_1.setValidator(validator)
-        self.graphWidgetFL.setWidget(0, QtWidgets.QFormLayout.FieldRole, self.lineEdit_1)
+        # Add button to run graphing function
+        self.graphStart = QtWidgets.QPushButton(self.graphParamsGroupBox)
+        self.graphStart.setObjectName("graphStart")
+        self.graphStart.setText("Generate Graph")
+        self.graphStart.clicked.connect(self.generateGraph)
+        self.graphWidgetFL.setWidget(0, QtWidgets.QFormLayout.SpanningRole, self.graphStart)
 
-        # Add second field
-        self.fieldLabel_2 = QtWidgets.QLabel(self.graphParamsGroupBox)
-        self.fieldLabel_2.setObjectName("fieldLabel_2")
-        self.fieldLabel_2.setText("Value 2")
-        self.graphWidgetFL.setWidget(1, QtWidgets.QFormLayout.LabelRole, self.fieldLabel_2)
-        self.lineEdit_2 = QtWidgets.QLineEdit(self.graphParamsGroupBox)
-        self.lineEdit_2.setObjectName("lineEdit_2")
-        self.lineEdit_2.setValidator(validator)
+        # Add ISO Value field
+        self.isoValueLabel = QtWidgets.QLabel(self.graphParamsGroupBox)
+        self.isoValueLabel.setObjectName("fieldLabel1")
+        self.isoValueLabel.setText("Iso Value (%)")
+        self.graphWidgetFL.setWidget(1, QtWidgets.QFormLayout.LabelRole, self.isoValueLabel)
+        self.isoValueEntry= QtWidgets.QLineEdit(self.graphParamsGroupBox)
+        self.isoValueEntry.setObjectName("lineEdit_1")
+        self.isoValueEntry.setValidator(validator)
+        self.isoValueEntry.setText("35")
+        self.graphWidgetFL.setWidget(1, QtWidgets.QFormLayout.FieldRole, self.isoValueEntry)
 
-        self.graphWidgetFL.setWidget(1, QtWidgets.QFormLayout.FieldRole, self.lineEdit_2)
+        # Add Log Tree field
+        self.logTreeValueLabel = QtWidgets.QLabel(self.graphParamsGroupBox)
+        self.logTreeValueLabel.setObjectName("fieldLabel_2")
+        self.logTreeValueLabel.setText("Log Tree Size")
+        self.graphWidgetFL.setWidget(2, QtWidgets.QFormLayout.LabelRole, self.logTreeValueLabel)
+        self.logTreeValueEntry = QtWidgets.QLineEdit(self.graphParamsGroupBox)
+        self.logTreeValueEntry.setObjectName("lineEdit_2")
+        self.logTreeValueEntry.setValidator(validator)
+        self.logTreeValueEntry.setText("0.34")
+
+        self.graphWidgetFL.setWidget(2, QtWidgets.QFormLayout.FieldRole, self.logTreeValueEntry)
 
         # Add third field
-        self.fieldLabel_3 = QtWidgets.QLabel(self.graphParamsGroupBox)
-        self.fieldLabel_3.setObjectName("fieldLabel_3")
-        self.fieldLabel_3.setText("Value 3")
-        self.graphWidgetFL.setWidget(2, QtWidgets.QFormLayout.LabelRole, self.fieldLabel_3)
-        self.lineEdit_3 = QtWidgets.QLineEdit(self.graphParamsGroupBox)
-        self.lineEdit_3.setObjectName("lineEdit_3")
-        self.lineEdit_3.setValidator(validator)
+        self.dropdownLabel = QtWidgets.QLabel(self.graphParamsGroupBox)
+        self.dropdownLabel.setObjectName("fieldLabel_3")
+        self.dropdownLabel.setText("Value 3")
+        self.graphWidgetFL.setWidget(3, QtWidgets.QFormLayout.LabelRole, self.dropdownLabel)
+        self.dropdownValue = QtWidgets.QComboBox(self.graphParamsGroupBox)
+        self.dropdownValue.setObjectName("comboBox")
+        self.dropdownValue.addItem("Height")
+        self.dropdownValue.addItem("Volume")
+        self.dropdownValue.addItem("Hypervolume")
+        self.dropdownValue.addItem("Approx Hypervolume")
+        self.dropdownValue.setCurrentIndex(1)
 
-        self.graphWidgetFL.setWidget(2, QtWidgets.QFormLayout.FieldRole, self.lineEdit_3)
+        self.graphWidgetFL.setWidget(3, QtWidgets.QFormLayout.FieldRole, self.dropdownValue)
 
         # Add submit button
         self.graphParamsSubmitButton = QtWidgets.QPushButton(self.graphParamsGroupBox)
         self.graphParamsSubmitButton.setObjectName("graphParamsSubmitButton")
         self.graphParamsSubmitButton.setText("Update")
         self.graphParamsSubmitButton.clicked.connect(self.updateGraph)
-        self.graphWidgetFL.setWidget(3, QtWidgets.QFormLayout.FieldRole, self.graphParamsSubmitButton)
+        self.graphWidgetFL.setWidget(4, QtWidgets.QFormLayout.FieldRole, self.graphParamsSubmitButton)
 
         # Add elements to layout
         self.graphWidgetVL.addWidget(self.graphParamsGroupBox)
@@ -252,11 +303,175 @@ class Ui_MainWindow(object):
         self.mainwindow.addDockWidget(QtCore.Qt.RightDockWidgetArea, self.graphDockWidget)
 
     def updateGraph(self):
-        val1 = float(self.lineEdit_1.text())
-        val2 = float(self.lineEdit_2.text())
-        val3 = float(self.lineEdit_3.text())
+        # Set parameter values
+        val1 = float(self.isoValueEntry.text())
+        val2 = float(self.logTreeValueEntry.text())
+        self.segmentor.collapsePriority = self.dropdownValue.currentIndex()
+        self.segmentor.setIsoValuePercent(val1)
 
-        print (val1, val2, val3)
+        # Update tree
+        self.segmentor.updateTreeFromLogTreeSize(val2)
+
+        # Display results
+        self.displaySurfaces()
+        self.displayTree()
+
+    def generateGraph(self):
+
+        if self.numpy_input_data is not None:
+
+            self.segmentor.setInputData(self.numpy_input_data)
+            self.segmentor.calculateContourTree()
+
+            self.segmentor.setIsoValuePercent(float(self.isoValueEntry.text()))
+            self.segmentor.collapsePriority = self.dropdownValue.currentIndex()
+            self.segmentor.updateTreeFromLogTreeSize(float(self.logTreeValueEntry.text()))
+
+            # Display results
+            self.displaySurfaces()
+            self.displayTree()
+        else:
+            msg = QtWidgets.QMessageBox(self.mainwindow)
+            msg.setIcon(QtWidgets.QMessageBox.Critical)
+            msg.setWindowTitle("NO DATA")
+            msg.setText("No data has been loaded into the reader. Please load a file to run the graph.")
+            msg.exec_()
+
+    def displayTree(self):
+        print ("SOMETHING")
+        tree = self.segmentor.getContourTree()
+
+        if not self.annotationActor:
+            self.graphWidget.viewer.GetRenderer().AddActor(self.cornerAnnotation)
+            self.cornerAnnotation.VisibilityOn()
+
+        self.cornerAnnotation.SetText(0, "Features: {}".format(len(tree)/2))
+
+        graph = vtk.vtkMutableDirectedGraph()
+        X = vtk.vtkDoubleArray()
+        X.SetNumberOfComponents(1)
+        X.SetName("X")
+
+        Y = vtk.vtkDoubleArray()
+        Y.SetNumberOfComponents(1)
+        Y.SetName("Y")
+
+        weights = vtk.vtkDoubleArray()
+        weights.SetNumberOfComponents(1)
+        weights.SetName("Weights")
+
+        print("creating graph")
+        # Adding to graph now
+        N = int(len(tree) / 2)
+
+        # normalise the values in Y
+        # transpose tree
+        treeT = list(zip(*tree))
+        maxY = max(treeT[1])
+        minY = min(treeT[1])
+        deltaY = maxY - minY
+        print(minY, maxY, deltaY)
+        maxX = max(treeT[0])
+        minX = min(treeT[0])
+        deltaX = maxX - minX
+        print(minX, maxX, deltaX)
+
+        for i in range(N):
+            even = 2 * i
+            odd = even + 1
+            if odd >= len(tree):
+                raise ValueError('out of bounds')
+            v = [tree[2 * i], tree[2 * i + 1]]
+
+            # print(i, even, odd, "Adding",v[0],v[1])
+            v1 = graph.AddVertex()
+            v2 = graph.AddVertex()
+            graph.AddEdge(v1, v2)
+            X.InsertNextValue(v[0][0] / deltaX - minX)
+            X.InsertNextValue(v[1][0] / deltaX - minX)
+            Y.InsertNextValue(v[0][1] / deltaY - minY)
+            Y.InsertNextValue(v[1][1] / deltaY - minY)
+
+            weights.InsertNextValue(1.)
+        print("Finished")  # Execution reaches here, error seems to be in cleanup upon closing
+
+        graph.GetVertexData().AddArray(X)
+        graph.GetVertexData().AddArray(Y)
+        graph.GetEdgeData().AddArray(weights)
+
+        print("Added Data")
+        layoutStrategy = vtk.vtkAssignCoordinatesLayoutStrategy()
+        layoutStrategy.SetYCoordArrayName('Y')
+        layoutStrategy.SetXCoordArrayName('X')
+
+        self.graphWidget.viewer.update(graph)
+
+    def displaySurfaces(self):
+        #Display isosurfaces in 3D
+        # Create the VTK output
+        # Points coordinates structure
+        triangle_vertices = vtk.vtkPoints()
+
+        # associate the points to triangles
+        triangle = vtk.vtkTriangle()
+
+        # put all triangles in an array
+        triangles = vtk.vtkCellArray()
+        isTriangle = 0
+        nTriangle = 0
+
+        surface = 0
+        # associate each coordinate with a point: 3 coordinates are needed for a point
+        # in 3D. Additionally we perform a shift from image coordinates (pixel) which
+        # is the default of the Contour Tree Algorithm to the World Coordinates.
+
+        origin = self.origin
+        spacing = self.spacing
+
+        # augmented matrix for affine transformations
+        mScaling = numpy.asarray([spacing[0], 0, 0, 0,
+                                  0, spacing[1], 0, 0,
+                                  0, 0, spacing[2], 0,
+                                  0, 0, 0, 1]).reshape((4, 4))
+        mShift = numpy.asarray([1, 0, 0, origin[0],
+                                0, 1, 0, origin[1],
+                                0, 0, 1, origin[2],
+                                0, 0, 0, 1]).reshape((4, 4))
+
+        mTransform = numpy.dot(mScaling, mShift)
+        point_count = 0
+
+        surf_list = self.segmentor.getSurfaces()
+
+        for surf in surf_list:
+            print("Image-to-world coordinate trasformation ... %d" % surface)
+            for point in surf:
+                world_coord = numpy.dot(mTransform, point)
+                xCoord = world_coord[0]
+                yCoord = world_coord[1]
+                zCoord = world_coord[2]
+                triangle_vertices.InsertNextPoint(xCoord, yCoord, zCoord);
+
+                # The id of the vertex of the triangle (0,1,2) is linked to
+                # the id of the points in the list, so in facts we just link id-to-id
+                triangle.GetPointIds().SetId(isTriangle, point_count)
+                isTriangle += 1
+                point_count += 1
+
+                if (isTriangle == 3):
+                    isTriangle = 0;
+                    # insert the current triangle in the triangles array
+                    triangles.InsertNextCell(triangle);
+
+        surface += 1
+
+        # polydata object
+        trianglePolyData = vtk.vtkPolyData()
+        trianglePolyData.SetPoints(triangle_vertices)
+        trianglePolyData.SetPolys(triangles)
+
+        self.viewer3DWidget.viewer.hideActor(1, delete = True)
+        self.viewer3DWidget.viewer.displayPolyData(trianglePolyData)
 
     def openFile(self):
         fn = QtWidgets.QFileDialog.getOpenFileNames(self.mainwindow, 'Open File','../../../../../data')
@@ -292,6 +507,7 @@ class Ui_MainWindow(object):
 
             # Have passed basic test, can attempt to load
             numpy_image = Converter.tiffStack2numpyEnforceBounds(filenames=filenames)
+            print ("NUMPY DATA", numpy_image)
             reader = Converter.numpy2vtkImporter(numpy_image)
             reader.Update()
 
@@ -301,8 +517,10 @@ class Ui_MainWindow(object):
         else:
             self.viewerWidget.viewer.setInput3DData(reader.GetOutput())
             self.viewer3DWidget.viewer.setInput3DData(reader.GetOutput())
-
+            self.numpy_input_data = Converter.vtk2numpy(reader.GetOutput(), transpose=[2,1,0])
             self.mainwindow.setStatusTip('Ready')
+            self.spacing = reader.GetOutput().GetSpacing()
+            self.origin = reader.GetOutput().GetOrigin()
 
     def saveFile(self):
         dialog = QtWidgets.QFileDialog(self.mainwindow)
