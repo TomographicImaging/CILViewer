@@ -19,6 +19,7 @@ from vtk.util import numpy_support , vtkImageImportFromArray
 from enum import Enum
 import os
 import math
+from PIL import Image
 
 SLICE_ORIENTATION_XY = 2 # Z
 SLICE_ORIENTATION_XZ = 1 # Y
@@ -168,6 +169,39 @@ class Converter():
                                           flatField=flatField,
                                           darkField=darkField)
 
+
+
+    @staticmethod
+    def pureTiff2Numpy(filenames, sampleRate=None, bounds=(512,512,512)):
+        # Get array dimensions
+        first_img = Image.open(filenames[0])
+        first_arr = numpy.array(first_img)
+        shape = first_arr.shape
+
+        # Calculate sample rate
+        sample_rate = tuple(
+            map(lambda x, y: int(math.ceil(float(x) / y)), [len(filenames), shape[0], shape[1]], bounds)
+        )
+
+        # If a user has defined resample rate, check to see which has higher factor and keep that
+        if sampleRate is not None:
+            sampleRate = Converter.highest_tuple_element(sampleRate, sample_rate)
+        else:
+            sampleRate = sample_rate
+
+        # Get size of new numpy array based on sample rate
+        subsampled_arr = first_arr[0::sampleRate[1], 0::sampleRate[2]]
+        sub_shape = subsampled_arr.shape
+        subsampled_files = filenames[::sampleRate[0]]
+
+        output_array = numpy.empty((len(subsampled_files), sub_shape[0], sub_shape[1]), order='F')
+
+        for i, file in enumerate(subsampled_files):
+            img = Image.open(file)
+            img_arr = numpy.array(img)
+            output_array[i] = img_arr[0::sampleRate[1],0::sampleRate[2]].copy()
+
+        return output_array.transpose([2,1,0])
 
     @staticmethod
     def _tiffStack2numpy(filenames,

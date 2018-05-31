@@ -262,39 +262,46 @@ class Ui_MainWindow(object):
         self.isoValueEntry.setText("35")
         self.graphWidgetFL.setWidget(1, QtWidgets.QFormLayout.FieldRole, self.isoValueEntry)
 
+        # Add local/global checkbox
+        self.isGlobalCheck = QtWidgets.QCheckBox(self.graphParamsGroupBox)
+        self.isGlobalCheck.setText("Global Iso")
+        self.isGlobalCheck.setChecked(True)
+        self.graphWidgetFL.setWidget(2, QtWidgets.QFormLayout.FieldRole, self.isGlobalCheck)
+
+
         # Add Log Tree field
         self.logTreeValueLabel = QtWidgets.QLabel(self.graphParamsGroupBox)
         self.logTreeValueLabel.setObjectName("fieldLabel_2")
         self.logTreeValueLabel.setText("Log Tree Size")
-        self.graphWidgetFL.setWidget(2, QtWidgets.QFormLayout.LabelRole, self.logTreeValueLabel)
+        self.graphWidgetFL.setWidget(3, QtWidgets.QFormLayout.LabelRole, self.logTreeValueLabel)
         self.logTreeValueEntry = QtWidgets.QLineEdit(self.graphParamsGroupBox)
         self.logTreeValueEntry.setObjectName("lineEdit_2")
         self.logTreeValueEntry.setValidator(validator)
         self.logTreeValueEntry.setText("0.34")
 
-        self.graphWidgetFL.setWidget(2, QtWidgets.QFormLayout.FieldRole, self.logTreeValueEntry)
+        self.graphWidgetFL.setWidget(3, QtWidgets.QFormLayout.FieldRole, self.logTreeValueEntry)
 
         # Add third field
-        self.dropdownLabel = QtWidgets.QLabel(self.graphParamsGroupBox)
-        self.dropdownLabel.setObjectName("fieldLabel_3")
-        self.dropdownLabel.setText("Value 3")
-        self.graphWidgetFL.setWidget(3, QtWidgets.QFormLayout.LabelRole, self.dropdownLabel)
-        self.dropdownValue = QtWidgets.QComboBox(self.graphParamsGroupBox)
-        self.dropdownValue.setObjectName("comboBox")
-        self.dropdownValue.addItem("Height")
-        self.dropdownValue.addItem("Volume")
-        self.dropdownValue.addItem("Hypervolume")
-        self.dropdownValue.addItem("Approx Hypervolume")
-        self.dropdownValue.setCurrentIndex(1)
+        self.collapsePriorityLabel = QtWidgets.QLabel(self.graphParamsGroupBox)
+        self.collapsePriorityLabel.setObjectName("fieldLabel_3")
+        self.collapsePriorityLabel.setText("Collapse Priority")
+        self.graphWidgetFL.setWidget(4, QtWidgets.QFormLayout.LabelRole, self.collapsePriorityLabel)
+        self.collapsePriorityValue = QtWidgets.QComboBox(self.graphParamsGroupBox)
+        self.collapsePriorityValue.setObjectName("comboBox")
+        self.collapsePriorityValue.addItem("Height")
+        self.collapsePriorityValue.addItem("Volume")
+        self.collapsePriorityValue.addItem("Hypervolume")
+        self.collapsePriorityValue.addItem("Approx Hypervolume")
+        self.collapsePriorityValue.setCurrentIndex(1)
 
-        self.graphWidgetFL.setWidget(3, QtWidgets.QFormLayout.FieldRole, self.dropdownValue)
+        self.graphWidgetFL.setWidget(4, QtWidgets.QFormLayout.FieldRole, self.collapsePriorityValue)
 
         # Add submit button
         self.graphParamsSubmitButton = QtWidgets.QPushButton(self.graphParamsGroupBox)
         self.graphParamsSubmitButton.setObjectName("graphParamsSubmitButton")
         self.graphParamsSubmitButton.setText("Update")
         self.graphParamsSubmitButton.clicked.connect(self.updateGraph)
-        self.graphWidgetFL.setWidget(4, QtWidgets.QFormLayout.FieldRole, self.graphParamsSubmitButton)
+        self.graphWidgetFL.setWidget(5, QtWidgets.QFormLayout.FieldRole, self.graphParamsSubmitButton)
 
         # Add elements to layout
         self.graphWidgetVL.addWidget(self.graphParamsGroupBox)
@@ -306,11 +313,11 @@ class Ui_MainWindow(object):
         # Set parameter values
         val1 = float(self.isoValueEntry.text())
         val2 = float(self.logTreeValueEntry.text())
-        self.segmentor.collapsePriority = self.dropdownValue.currentIndex()
+        self.segmentor.collapsePriority = self.collapsePriorityValue.currentIndex()
         self.segmentor.setIsoValuePercent(val1)
 
         # Update tree
-        self.segmentor.updateTreeFromLogTreeSize(val2)
+        self.segmentor.updateTreeFromLogTreeSize(val2, self.isGlobalCheck.isChecked())
 
         # Display results
         self.displaySurfaces()
@@ -324,8 +331,8 @@ class Ui_MainWindow(object):
             self.segmentor.calculateContourTree()
 
             self.segmentor.setIsoValuePercent(float(self.isoValueEntry.text()))
-            self.segmentor.collapsePriority = self.dropdownValue.currentIndex()
-            self.segmentor.updateTreeFromLogTreeSize(float(self.logTreeValueEntry.text()))
+            self.segmentor.collapsePriority = self.collapsePriorityValue.currentIndex()
+            self.segmentor.updateTreeFromLogTreeSize(float(self.logTreeValueEntry.text()), self.isGlobalCheck.isChecked())
 
             # Display results
             self.displaySurfaces()
@@ -506,8 +513,8 @@ class Ui_MainWindow(object):
                     return
 
             # Have passed basic test, can attempt to load
-            numpy_image = Converter.tiffStack2numpyEnforceBounds(filenames=filenames)
-            print ("NUMPY DATA", numpy_image)
+            # numpy_image = Converter.tiffStack2numpyEnforceBounds(filenames=filenames, bounds=(256,256,256))
+            numpy_image = Converter.pureTiff2Numpy(filenames=filenames, bounds=(256,246,256))
             reader = Converter.numpy2vtkImporter(numpy_image)
             reader.Update()
 
