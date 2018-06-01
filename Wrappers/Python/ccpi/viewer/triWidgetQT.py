@@ -68,7 +68,7 @@ class Ui_MainWindow(object):
         self.linked = True
 
         # Set numpy data array for graph
-        self.numpy_input_data = None
+        self.graph_numpy_input_data = None
 
         # Dockable window flag
         self.hasDockableWindow = False
@@ -199,6 +199,10 @@ class Ui_MainWindow(object):
         # Set the hasDockableWindow flag
         self.hasDockableWindow = True
 
+        # Keep a collection of related elements to set enabled/disabled state
+        self.treeWidgetInitialElements = []
+        self.treeWidgetUpdateElements = []
+
         # Setup segmentation
         self.segmentor = SimpleflexSegmentor()
 
@@ -241,42 +245,55 @@ class Ui_MainWindow(object):
         self.graphStart.setText("Generate Graph")
         self.graphStart.clicked.connect(self.generateGraph)
         self.graphWidgetFL.setWidget(0, QtWidgets.QFormLayout.SpanningRole, self.graphStart)
+        self.treeWidgetInitialElements.append(self.graphStart)
+
+        # Add horizonal seperator
+        self.seperator = QtWidgets.QFrame(self.graphParamsGroupBox)
+        self.seperator.setFrameShape(QtWidgets.QFrame.HLine)
+        self.seperator.setFrameShadow(QtWidgets.QFrame.Raised)
+        self.graphWidgetFL.setWidget(1, QtWidgets.QFormLayout.SpanningRole, self.seperator)
+
 
         # Add ISO Value field
         self.isoValueLabel = QtWidgets.QLabel(self.graphParamsGroupBox)
         self.isoValueLabel.setObjectName("fieldLabel1")
         self.isoValueLabel.setText("Iso Value (%)")
-        self.graphWidgetFL.setWidget(1, QtWidgets.QFormLayout.LabelRole, self.isoValueLabel)
+        self.graphWidgetFL.setWidget(2, QtWidgets.QFormLayout.LabelRole, self.isoValueLabel)
         self.isoValueEntry= QtWidgets.QLineEdit(self.graphParamsGroupBox)
         self.isoValueEntry.setObjectName("lineEdit_1")
         self.isoValueEntry.setValidator(validator)
         self.isoValueEntry.setText("35")
-        self.graphWidgetFL.setWidget(1, QtWidgets.QFormLayout.FieldRole, self.isoValueEntry)
+        self.graphWidgetFL.setWidget(2, QtWidgets.QFormLayout.FieldRole, self.isoValueEntry)
+        self.treeWidgetUpdateElements.append(self.isoValueEntry)
+        self.treeWidgetUpdateElements.append(self.isoValueLabel)
 
         # Add local/global checkbox
         self.isGlobalCheck = QtWidgets.QCheckBox(self.graphParamsGroupBox)
         self.isGlobalCheck.setText("Global Iso")
         self.isGlobalCheck.setChecked(True)
-        self.graphWidgetFL.setWidget(2, QtWidgets.QFormLayout.FieldRole, self.isGlobalCheck)
-
+        self.graphWidgetFL.setWidget(3, QtWidgets.QFormLayout.FieldRole, self.isGlobalCheck)
+        self.treeWidgetUpdateElements.append(self.isGlobalCheck)
 
         # Add Log Tree field
         self.logTreeValueLabel = QtWidgets.QLabel(self.graphParamsGroupBox)
         self.logTreeValueLabel.setObjectName("fieldLabel_2")
         self.logTreeValueLabel.setText("Log Tree Size")
-        self.graphWidgetFL.setWidget(3, QtWidgets.QFormLayout.LabelRole, self.logTreeValueLabel)
+        self.graphWidgetFL.setWidget(4, QtWidgets.QFormLayout.LabelRole, self.logTreeValueLabel)
         self.logTreeValueEntry = QtWidgets.QLineEdit(self.graphParamsGroupBox)
         self.logTreeValueEntry.setObjectName("lineEdit_2")
         self.logTreeValueEntry.setValidator(validator)
         self.logTreeValueEntry.setText("0.34")
+        self.treeWidgetUpdateElements.append(self.logTreeValueEntry)
+        self.treeWidgetUpdateElements.append(self.logTreeValueLabel)
 
-        self.graphWidgetFL.setWidget(3, QtWidgets.QFormLayout.FieldRole, self.logTreeValueEntry)
+
+        self.graphWidgetFL.setWidget(4, QtWidgets.QFormLayout.FieldRole, self.logTreeValueEntry)
 
         # Add third field
         self.collapsePriorityLabel = QtWidgets.QLabel(self.graphParamsGroupBox)
         self.collapsePriorityLabel.setObjectName("fieldLabel_3")
         self.collapsePriorityLabel.setText("Collapse Priority")
-        self.graphWidgetFL.setWidget(4, QtWidgets.QFormLayout.LabelRole, self.collapsePriorityLabel)
+        self.graphWidgetFL.setWidget(5, QtWidgets.QFormLayout.LabelRole, self.collapsePriorityLabel)
         self.collapsePriorityValue = QtWidgets.QComboBox(self.graphParamsGroupBox)
         self.collapsePriorityValue.setObjectName("comboBox")
         self.collapsePriorityValue.addItem("Height")
@@ -284,15 +301,20 @@ class Ui_MainWindow(object):
         self.collapsePriorityValue.addItem("Hypervolume")
         self.collapsePriorityValue.addItem("Approx Hypervolume")
         self.collapsePriorityValue.setCurrentIndex(1)
+        self.treeWidgetUpdateElements.append(self.collapsePriorityValue)
+        self.treeWidgetUpdateElements.append(self.collapsePriorityLabel)
 
-        self.graphWidgetFL.setWidget(4, QtWidgets.QFormLayout.FieldRole, self.collapsePriorityValue)
+
+        self.graphWidgetFL.setWidget(5, QtWidgets.QFormLayout.FieldRole, self.collapsePriorityValue)
 
         # Add submit button
         self.graphParamsSubmitButton = QtWidgets.QPushButton(self.graphParamsGroupBox)
         self.graphParamsSubmitButton.setObjectName("graphParamsSubmitButton")
         self.graphParamsSubmitButton.setText("Update")
         self.graphParamsSubmitButton.clicked.connect(self.updateGraph)
-        self.graphWidgetFL.setWidget(5, QtWidgets.QFormLayout.FieldRole, self.graphParamsSubmitButton)
+        self.graphWidgetFL.setWidget(6, QtWidgets.QFormLayout.FieldRole, self.graphParamsSubmitButton)
+        self.treeWidgetUpdateElements.append(self.graphParamsSubmitButton)
+
 
         # Add elements to layout
         self.graphWidgetVL.addWidget(self.graphParamsGroupBox)
@@ -300,14 +322,20 @@ class Ui_MainWindow(object):
         self.graphDockWidget.setWidget(self.graphDockWidgetContents)
         self.mainwindow.addDockWidget(QtCore.Qt.RightDockWidgetArea, self.graphDockWidget)
 
+        # Set update elements to disabled when first opening the window
+        if self.graph_numpy_input_data is None:
+            for element in self.treeWidgetUpdateElements:
+                element.setEnabled(False)
+
+
     def updateGraph(self):
         # Set parameter values
         isoVal = float(self.isoValueEntry.text())
         logTreeVal = float(self.logTreeValueEntry.text())
         self.segmentor.collapsePriority = self.collapsePriorityValue.currentIndex()
 
+        # Make sure to set the LocalIsoValue when isGlobal is false (ie. Local)
         if self.isGlobalCheck.isChecked():
-            # Convert ISO value to decimal
             self.segmentor.setIsoValuePercent(isoVal)
         else:
             self.segmentor.setLocalIsoValuePercent(isoVal)
@@ -321,9 +349,9 @@ class Ui_MainWindow(object):
 
     def generateGraph(self):
 
-        if self.numpy_input_data is not None:
+        if self.graph_numpy_input_data is not None:
 
-            self.segmentor.setInputData(self.numpy_input_data)
+            self.segmentor.setInputData(self.graph_numpy_input_data)
             self.segmentor.calculateContourTree()
 
             self.segmentor.setIsoValuePercent(float(self.isoValueEntry.text()))
@@ -333,12 +361,21 @@ class Ui_MainWindow(object):
             # Display results
             self.displaySurfaces()
             self.displayTree()
+
+            # Once the graph has generated allow editing of the values and disable the generate button
+            for element in self.treeWidgetUpdateElements:
+                element.setEnabled(True)
+
+            for element in self.treeWidgetInitialElements:
+                element.setEnabled(False)
         else:
             msg = QtWidgets.QMessageBox(self.mainwindow)
             msg.setIcon(QtWidgets.QMessageBox.Critical)
             msg.setWindowTitle("NO DATA")
             msg.setText("No data has been loaded into the reader. Please load a file to run the graph.")
             msg.exec_()
+
+
 
     def displayTree(self):
         tree = self.segmentor.getContourTree()
@@ -518,7 +555,7 @@ class Ui_MainWindow(object):
         else:
             self.viewerWidget.viewer.setInput3DData(reader.GetOutput())
             self.viewer3DWidget.viewer.setInput3DData(reader.GetOutput())
-            self.numpy_input_data = Converter.vtk2numpy(reader.GetOutput(), transpose=[2,1,0])
+            self.graph_numpy_input_data = Converter.vtk2numpy(reader.GetOutput(), transpose=[2,1,0])
             self.mainwindow.setStatusTip('Ready')
             self.spacing = reader.GetOutput().GetSpacing()
             self.origin = reader.GetOutput().GetOrigin()
