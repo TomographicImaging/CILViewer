@@ -302,13 +302,18 @@ class Ui_MainWindow(object):
 
     def updateGraph(self):
         # Set parameter values
-        val1 = float(self.isoValueEntry.text())
-        val2 = float(self.logTreeValueEntry.text())
+        isoVal = float(self.isoValueEntry.text())
+        logTreeVal = float(self.logTreeValueEntry.text())
         self.segmentor.collapsePriority = self.collapsePriorityValue.currentIndex()
-        self.segmentor.setIsoValuePercent(val1)
+
+        if self.isGlobalCheck.isChecked():
+            # Convert ISO value to decimal
+            self.segmentor.setIsoValuePercent(isoVal)
+        else:
+            self.segmentor.setLocalIsoValuePercent(isoVal)
 
         # Update tree
-        self.segmentor.updateTreeFromLogTreeSize(val2, self.isGlobalCheck.isChecked())
+        self.segmentor.updateTreeFromLogTreeSize(logTreeVal, self.isGlobalCheck.isChecked())
 
         # Display results
         self.displaySurfaces()
