@@ -69,15 +69,6 @@ class Ui_MainWindow(object):
 
         # Set numpy data array for graph
         self.numpy_input_data = None
-        self.annotationActor = False
-
-        # Add annotation for graph
-        self.cornerAnnotation = vtk.vtkCornerAnnotation()
-        self.cornerAnnotation.SetMaximumFontSize(12);
-        self.cornerAnnotation.PickableOff();
-        self.cornerAnnotation.VisibilityOff();
-        self.cornerAnnotation.GetTextProperty().ShadowOn();
-        self.cornerAnnotation.SetLayerNumber(1);
 
         # Dockable window flag
         self.hasDockableWindow = False
@@ -345,14 +336,9 @@ class Ui_MainWindow(object):
             msg.exec_()
 
     def displayTree(self):
-        print ("SOMETHING")
         tree = self.segmentor.getContourTree()
 
-        if not self.annotationActor:
-            self.graphWidget.viewer.GetRenderer().AddActor(self.cornerAnnotation)
-            self.cornerAnnotation.VisibilityOn()
-
-        self.cornerAnnotation.SetText(0, "Features: {}".format(len(tree)/2))
+        self.graphWidget.viewer.updateCornerAnnotation("featureAnnotation", "Features: {}".format(len(tree)/2))
 
         graph = vtk.vtkMutableDirectedGraph()
         X = vtk.vtkDoubleArray()
@@ -394,10 +380,13 @@ class Ui_MainWindow(object):
             v1 = graph.AddVertex()
             v2 = graph.AddVertex()
             graph.AddEdge(v1, v2)
-            X.InsertNextValue(v[0][0] / deltaX - minX)
-            X.InsertNextValue(v[1][0] / deltaX - minX)
-            Y.InsertNextValue(v[0][1] / deltaY - minY)
-            Y.InsertNextValue(v[1][1] / deltaY - minY)
+
+            # Insert XY as a % of max range
+            X.InsertNextValue((v[0][0] - minX)/deltaX )
+            X.InsertNextValue((v[1][0] - minX) / deltaX )
+
+            Y.InsertNextValue((v[0][1] - minY)/ deltaY)
+            Y.InsertNextValue((v[1][1] - minY)/ deltaY )
 
             weights.InsertNextValue(1.)
         print("Finished")  # Execution reaches here, error seems to be in cleanup upon closing
