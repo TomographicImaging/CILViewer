@@ -62,16 +62,75 @@ def generate_data():
     return g
 
 
+class GraphInteractorStyle(vtk.vtkInteractorStyleRubberBand2D):
+
+    def __init__(self, callback):
+        vtk.vtkInteractorStyleRubberBand2D.__init__(self)
+        self._viewer = callback
+
+        self.AddObserver("MouseMoveEvent", self.OnMouseMoveEvent, 1.0)
+
+    def GetEventPosition(self):
+        return self.GetInteractor().GetEventPosition()
+
+    def GetRenderer(self):
+        return self._viewer.GetRenderer()
+
+    def Render(self):
+        self._viewer.Render()
+
+    def display2world(self, viewerposition):
+        vc = vtk.vtkCoordinate()
+        vc.SetCoordinateSystemToViewport()
+        vc.SetValue(viewerposition + (0.0,))
+
+        return vc.GetComputedWorldValue(self.GetRenderer())
+
+    def OnMouseMoveEvent(self, interactor, event):
+        position = interactor.GetEventPosition()
+        world_position = self.display2world(position)
+        level = world_position[1]*100
+
+        # Don't display values outside the graph scope
+        if level <0:
+            level = 0
+        if level > 100:
+            level = 100
+
+        # Create the label
+        point_label = "Level: {:.1f} %".format(level)
+
+        # Set the label and push change
+        self._viewer.updateCornerAnnotation('pointAnnotation', point_label)
+        self.Render()
+
+
+
 class UndirectedGraph(vtkGraphLayoutView):
+
+    annotations = {
+        "featureAnnotation": 0,
+        "pointAnnotation": 2
+    }
 
     def __init__(self, renWin=None, iren=None):
         super().__init__()
 
         if renWin:
-            self.SetRenderWindow(renWin)
+            self.renWin = renWin
+        else:
+            self.renWin = vtk.vtkRenderWindow()
         if iren:
-            self.SetInteractor(iren)
+            self.iren = iren
+        else:
+            self.iren = vtk.vtkRenderWindowInteractor()
 
+        self.SetRenderWindow(self.renWin)
+        self.SetInteractor(self.iren)
+
+        # Set Interactor
+        self.style = GraphInteractorStyle(self)
+        self.iren.SetInteractorStyle(self.style)
 
         # Create layout strategy
         layoutStrategy = vtk.vtkAssignCoordinatesLayoutStrategy()
@@ -82,11 +141,38 @@ class UndirectedGraph(vtkGraphLayoutView):
         self.SetVertexLabelVisibility(True)
         self.SetEdgeLabelVisibility(True)
 
+        # Create corner annotations
+        self.featureAnnotation = self.createCornerAnnotation()
+        self.pointAnnotation = self.createCornerAnnotation()
+
     def update(self, input_data):
         self.AddRepresentationFromInput(input_data)
         self.SetEdgeLabelArrayName("Weights")
         self.ResetCamera()
         self.Render()
+
+    def createCornerAnnotation(self):
+        cornerAnnotation = vtk.vtkCornerAnnotation()
+        cornerAnnotation.SetMaximumFontSize(12);
+        cornerAnnotation.PickableOff();
+        cornerAnnotation.VisibilityOff();
+        cornerAnnotation.GetTextProperty().ShadowOn();
+        # cornerAnnotation.SetLayerNumber(1);
+        self.GetRenderer().AddActor(cornerAnnotation)
+
+        return cornerAnnotation
+
+    def updateCornerAnnotation(self, target_annotation, label):
+
+        annotation = getattr(self, target_annotation)
+
+        # Make sure the annotation is visible
+        if not annotation.GetVisibility():
+            annotation.VisibilityOn()
+
+        # Get the correct corner
+        corner_index = self.annotations[target_annotation]
+        annotation.SetText(corner_index, label)
 
     def run(self, input_data):
         self.update(input_data)
