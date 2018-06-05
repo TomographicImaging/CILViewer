@@ -452,6 +452,7 @@ class Ui_MainWindow(object):
 
         # associate the points to triangles
         triangle = vtk.vtkTriangle()
+        trianglePointIds = triangle.GetPointIds()
 
         # put all triangles in an array
         triangles = vtk.vtkCellArray()
@@ -492,7 +493,7 @@ class Ui_MainWindow(object):
 
                 # The id of the vertex of the triangle (0,1,2) is linked to
                 # the id of the points in the list, so in facts we just link id-to-id
-                triangle.GetPointIds().SetId(isTriangle, point_count)
+                trianglePointIds.SetId(isTriangle, point_count)
                 isTriangle += 1
                 point_count += 1
 
