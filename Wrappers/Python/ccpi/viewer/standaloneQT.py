@@ -7,6 +7,7 @@ from ccpi.viewer.CILViewer2D import Converter
 from natsort import natsorted
 import imghdr
 
+
 class ErrorObserver:
 
    def __init__(self):
@@ -127,7 +128,7 @@ class Window(QMainWindow):
                     return
 
             # Have passed basic test, can attempt to load
-            numpy_image = Converter.tiffStack2numpy(filenames=filenames)
+            numpy_image = Converter.tiffStack2numpyEnforceBounds(filenames=filenames)
             reader = Converter.numpy2vtkImporter(numpy_image)
             reader.Update()
 

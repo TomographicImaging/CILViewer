@@ -6,7 +6,10 @@ package:
 build:
   preserve_egg_dir: False
   script_env:
-    - CIL_VERSION   
+    - CIL_VERSION
+
+  entry_points:
+    - CILViewerLaunch = ccpi.viewer.standaloneQT:main
 #  number: 0
   
 requirements:
