@@ -19,7 +19,9 @@ from vtk.util import numpy_support , vtkImageImportFromArray
 from enum import Enum
 import os
 import math
+
 from PIL import Image
+
 
 SLICE_ORIENTATION_XY = 2 # Z
 SLICE_ORIENTATION_XZ = 1 # Y
@@ -202,6 +204,7 @@ class Converter():
             output_array[i] = img_arr[0::sampleRate[1],0::sampleRate[2]].copy()
 
         return output_array.transpose([2,1,0])
+
 
     @staticmethod
     def _tiffStack2numpy(filenames,
