@@ -74,7 +74,7 @@ try:
     import vtk.qt
 except ImportError:
     pass
-try
+try:
     QVTKRWIBase = vtk.qt.QVTKRWIBase
 except AttributeError:
     pass

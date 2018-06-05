@@ -65,6 +65,18 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
     def SetKeyCode(self, keycode):
         self.GetInteractor().SetKeyCode(keycode)
 
+    def GetControlKey(self):
+        return self.GetInteractor().GetControlKey()
+
+    def GetShiftKey(self):
+        return self.GetInteractor().GetShiftKey()
+
+    def GetAltKey(self):
+        return self.GetInteractor().GetAltKey()
+
+    def GetEventPosition(self):
+        return self.GetInteractor().GetEventPosition()
+
     def GetActiveCamera(self):
         return self._viewer.ren.GetActiveCamera()
 
@@ -82,6 +94,11 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
                 self.UpdatePipeline()
 
     def keyPress(self, interactor, event):
+
+        ctrl = interactor.GetControlKey()
+        shift = interactor.GetAltKey()
+        alt = interactor.GetShiftKey()
+
         if interactor.GetKeyCode() == "x":
 
             self.SetSliceOrientation( SLICE_ORIENTATION_YZ )
@@ -99,6 +116,16 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
             self.SetSliceOrientation(SLICE_ORIENTATION_XY)
             self.SetActiveSlice(int(self.GetDimensions()[2] / 2))
             self.UpdatePipeline(resetcamera=True)
+
+        elif ctrl and not (alt and shift):
+            # CREATE ROI
+            position = interactor.GetEventPosition()
+            print ("3D VIEWER MOUSE POSITION", position)
+
+
+        elif alt and not (shift and ctrl):
+            # DELETE ROI
+            print ("DELETE ROI")
 
         else:
             print("Unhandled event %s" % interactor.GetKeyCode())
