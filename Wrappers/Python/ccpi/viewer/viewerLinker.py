@@ -210,7 +210,7 @@ class ViewerLinkObserver():
                 shouldPassEvent = False
 
         # WindowLevel
-        if (((event == "LeftButtonPressEvent") and
+        if (((event == "RightButtonPressEvent") and
              interactor.GetAltKey() == 1 and
              interactor.GetControlKey() == 0 and
              interactor.GetShiftKey() == 0) or
@@ -221,9 +221,20 @@ class ViewerLinkObserver():
                 shouldPassEvent = False
             else:
                 # Set current window/level
-                if (event == "LeftButtonPressEvent"):
-                    self.targetVtkViewer.SetColorWindow(self.sourceViewer.getColorWindow())
-                    self.targetVtkViewer.SetColorLevel(self.sourceViewer.getColorLevel())
+                window = self.sourceViewer.getColourWindow()
+                level = self.sourceViewer.getColourLevel()
+                self.targetVtkViewer.setColourWindowLevel(window, level)
+
+        # Update window level on mouse move
+        if (event == "MouseMoveEvent" and
+            self.targetVtkViewer.event.isActive("WINDOW_LEVEL_EVENT")):
+
+            if not self.linkWindowLevel:
+                shouldPassEvent = False
+            else:
+                window = self.sourceViewer.getColourWindow()
+                level = self.sourceViewer.getColourLevel()
+                self.targetVtkViewer.setColourWindowLevel(window, level)
 
         # Slice
         if (event == "MouseWheelForwardEvent" or

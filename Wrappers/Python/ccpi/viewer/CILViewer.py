@@ -23,6 +23,39 @@ SLICE_ORIENTATION_XZ = 1 # Y
 SLICE_ORIENTATION_YZ = 0 # X
 
 
+class ViewerEventManager():
+
+    def __init__(self):
+        # If all values are false it signifies no event
+        self.events = {
+            "PICK_EVENT": False,                # left  mouse
+            "WINDOW_LEVEL_EVENT": False,        # alt + right mouse + move
+            "ZOOM_EVENT": False,                # shift + right mouse + move
+            "PAN_EVENT": False,                 # ctrl + right mouse + move
+            "CREATE_ROI_EVENT": False,          # ctrl + left mouse
+            "DELETE_ROI_EVENT": False,          # alt + left mouse
+            "SHOW_LINE_PROFILE_EVENT": False    # l
+        }
+
+    def __str__(self):
+        return str(self.events)
+
+    def On(self, event):
+        self.events[event] = True
+
+    def Off(self, event):
+        self.events[event] = False
+
+    def setAllInactive(self):
+        self.events = {x:False for x in self.events}
+
+    def isActive(self, event):
+        return self.events[event]
+
+    def isAllInactive(self):
+        """Returns True if all events are inactive"""
+        return all(not x for x in self.events.values())
+
 class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
 
     def __init__(self, callback):
@@ -31,6 +64,8 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
         self.AddObserver('MouseWheelForwardEvent', self.mouseInteraction, 1.0)
         self.AddObserver('MouseWheelBackwardEvent', self.mouseInteraction, 1.0)
         self.AddObserver('KeyPressEvent', self.keyPress, 1.0)
+        self.AddObserver('RightButtonPressEvent', self.OnRightMousePress, 1.0)
+        self.AddObserver('RightButtonReleaseEvent', self.OnRightMouseRelease, 1.0)
 
     def GetSliceOrientation(self):
         return self._viewer.sliceOrientation
@@ -80,6 +115,15 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
     def GetActiveCamera(self):
         return self._viewer.ren.GetActiveCamera()
 
+    def SetEventActive(self, event):
+        self._viewer.event.On(event)
+
+    def SetEventInactive(self, event):
+        self._viewer.event.Off(event)
+
+    def GetViewerEvent(self, event):
+        return self._viewer.event.isActive(event)
+
     def mouseInteraction(self, interactor, event):
         if event == 'MouseWheelForwardEvent':
             maxSlice = self.GetDimensions()[self.GetSliceOrientation()]
@@ -92,6 +136,17 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
             if (self.GetActiveSlice() - 1 > minSlice):
                 self.SetActiveSlice(self.GetActiveSlice() -1)
                 self.UpdatePipeline()
+
+    def OnRightMousePress(self, interactor, event):
+        ctrl = interactor.GetControlKey()
+        alt = interactor.GetAltKey()
+        shift = interactor.GetShiftKey
+
+        if alt and not (ctrl and shift):
+            self.SetEventActive("WINDOW_LEVEL_EVENT")
+
+    def OnRightMouseRelease(self, interactor, event):
+        self.SetEventInactive("WINDOW_LEVEL_EVENT")
 
     def keyPress(self, interactor, event):
 
@@ -161,6 +216,9 @@ class CILViewer():
         self.wl = vtk.vtkImageMapToWindowLevelColors()
         self.ia = vtk.vtkImageHistogramStatistics()
         self.sliceActorNo = 0
+
+        # Viewer Event manager
+        self.event = ViewerEventManager()
 
         # create a renderwindowinteractor
         self.style = CILInteractorStyle(self)
@@ -314,7 +372,6 @@ class CILViewer():
 
         self.voi.Update()
 
-        self.wl = vtk.vtkImageMapToWindowLevelColors()
         self.ia.SetInputData(self.voi.GetOutput())
         self.ia.SetAutoRangePercentiles(1.0, 99.)
         self.ia.Update()
@@ -394,3 +451,14 @@ class CILViewer():
     def setInterpolateOff(self):
         self.sliceActor.SetInterpolate(False)
         self.renWin.Render()
+
+    def setColourWindowLevel(self, window, level):
+        self.wl.SetWindow(window)
+        self.wl.SetLevel(level)
+        self.wl.Update()
+        self.sliceActor.SetInputData(self.wl.GetOutput())
+        self.sliceActor.Update()
+        self.ren.Render()
+        self.renWin.Render()
+
+
