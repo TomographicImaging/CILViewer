@@ -27,6 +27,9 @@ import ccpi.viewer.viewerLinker as vlink
 from ccpi.segmentation.SimpleflexSegmentor import SimpleflexSegmentor
 import numpy
 
+import sys, traceback
+
+
 class ErrorObserver:
 
    def __init__(self):
@@ -46,6 +49,64 @@ class ErrorObserver:
    def ErrorMessage(self):
        return self.__ErrorMessage
 
+class Worker(QtCore.QRunnable):
+    """
+    Worker thread
+
+    Inherits from QRunnable to handle worker thread setup, signals and wrapup.
+
+    :param callback: The function callback to run on this worker thread. Supplied
+                     args/kwargs will be pass to the runner.
+    :type callback: function
+    :param args: Arguments to pass to the callback function
+    :param kwargs: Keyword arguments to pass to the callback function
+
+    """
+    def __init__(self, fn, *args, **kwargs):
+        super(Worker, self).__init__()
+
+        self.fn = fn
+        self.args = args
+        self.kwargs = kwargs
+        self.signals = WorkerSignals()
+
+        # Add progress callback to kwargs
+        self.kwargs['progress_callback'] = self.signals.progress
+
+    @QtCore.pyqtSlot()
+    def run(self):
+        try:
+            result = self.fn(*self.args, **self.kwargs)
+        except:
+            traceback.print_exc()
+            exctype, value = sys.exc_info()[:2]
+            self.signals.error.emit((exctype, value, traceback.format_exc()))
+        else:
+            self.signals.result.emit(result)
+        finally:
+            self.signals.finished.emit()
+
+class WorkerSignals(QtCore.QObject):
+    """
+    Defines signals available when running a worker thread
+    Supported Signals:
+    finished
+        No Data
+
+    error
+        `tuple` (exctype, value, traceback.format_exc() )
+
+    result
+        `object` data returned from processing, anything
+
+    progress
+        `int` indicating % progress
+    """
+
+    finished = QtCore.pyqtSignal()
+    error = QtCore.pyqtSignal(tuple)
+    result = QtCore.pyqtSignal(object)
+    progress = QtCore.pyqtSignal(int)
 
 def sentenceCase(string):
     if string:
@@ -124,7 +185,15 @@ class Ui_MainWindow(object):
 
         self.toolbar()
 
+        # Add threading
+        self.threadpool = QtCore.QThreadPool()
         self.e = ErrorObserver()
+
+        # Add progress bar
+        self.progressBar = QtWidgets.QProgressBar()
+        self.progressBar.setMaximumWidth(250)
+        self.progressBar.hide()
+        self.statusbar.addPermanentWidget(self.progressBar)
 
 
     def toolbar(self):
@@ -243,7 +312,7 @@ class Ui_MainWindow(object):
         self.graphStart = QtWidgets.QPushButton(self.graphParamsGroupBox)
         self.graphStart.setObjectName("graphStart")
         self.graphStart.setText("Generate Graph")
-        self.graphStart.clicked.connect(self.generateGraph)
+        self.graphStart.clicked.connect(self.generateGraphTrigger)
         self.graphWidgetFL.setWidget(0, QtWidgets.QFormLayout.SpanningRole, self.graphStart)
         self.treeWidgetInitialElements.append(self.graphStart)
 
@@ -289,7 +358,7 @@ class Ui_MainWindow(object):
 
         self.graphWidgetFL.setWidget(4, QtWidgets.QFormLayout.FieldRole, self.logTreeValueEntry)
 
-        # Add third field
+        # Add collapse priority field
         self.collapsePriorityLabel = QtWidgets.QLabel(self.graphParamsGroupBox)
         self.collapsePriorityLabel.setObjectName("fieldLabel_3")
         self.collapsePriorityLabel.setText("Collapse Priority")
@@ -311,10 +380,9 @@ class Ui_MainWindow(object):
         self.graphParamsSubmitButton = QtWidgets.QPushButton(self.graphParamsGroupBox)
         self.graphParamsSubmitButton.setObjectName("graphParamsSubmitButton")
         self.graphParamsSubmitButton.setText("Update")
-        self.graphParamsSubmitButton.clicked.connect(self.updateGraph)
+        self.graphParamsSubmitButton.clicked.connect(self.updateGraphTrigger)
         self.graphWidgetFL.setWidget(6, QtWidgets.QFormLayout.FieldRole, self.graphParamsSubmitButton)
         self.treeWidgetUpdateElements.append(self.graphParamsSubmitButton)
-
 
         # Add elements to layout
         self.graphWidgetVL.addWidget(self.graphParamsGroupBox)
@@ -328,7 +396,7 @@ class Ui_MainWindow(object):
                 element.setEnabled(False)
 
 
-    def updateGraph(self):
+    def updateGraph(self, progress_callback):
         # Set parameter values
         isoVal = float(self.isoValueEntry.text())
         logTreeVal = float(self.logTreeValueEntry.text())
@@ -342,38 +410,36 @@ class Ui_MainWindow(object):
 
         # Update tree
         self.segmentor.updateTreeFromLogTreeSize(logTreeVal, self.isGlobalCheck.isChecked())
+        progress_callback.emit(30)
 
         # Display results
-        self.displaySurfaces()
+        self.displaySurfaces(progress_callback)
         self.displayTree()
 
-    def generateGraph(self):
 
-        if self.graph_numpy_input_data is not None:
+    def generateGraph(self, progress_callback):
 
-            self.segmentor.setInputData(self.graph_numpy_input_data)
-            self.segmentor.calculateContourTree()
+        self.segmentor.setInputData(self.graph_numpy_input_data)
+        progress_callback.emit(5)
 
-            self.segmentor.setIsoValuePercent(float(self.isoValueEntry.text()))
-            self.segmentor.collapsePriority = self.collapsePriorityValue.currentIndex()
-            self.segmentor.updateTreeFromLogTreeSize(float(self.logTreeValueEntry.text()), self.isGlobalCheck.isChecked())
+        self.segmentor.calculateContourTree()
+        progress_callback.emit(25)
 
-            # Display results
-            self.displaySurfaces()
-            self.displayTree()
+        self.segmentor.setIsoValuePercent(float(self.isoValueEntry.text()))
+        self.segmentor.collapsePriority = self.collapsePriorityValue.currentIndex()
+        self.segmentor.updateTreeFromLogTreeSize(float(self.logTreeValueEntry.text()), self.isGlobalCheck.isChecked())
+        progress_callback.emit(30)
 
-            # Once the graph has generated allow editing of the values and disable the generate button
-            for element in self.treeWidgetUpdateElements:
-                element.setEnabled(True)
+        # Display results
+        self.displaySurfaces(progress_callback)
+        self.displayTree()
 
-            for element in self.treeWidgetInitialElements:
-                element.setEnabled(False)
-        else:
-            msg = QtWidgets.QMessageBox(self.mainwindow)
-            msg.setIcon(QtWidgets.QMessageBox.Critical)
-            msg.setWindowTitle("NO DATA")
-            msg.setText("No data has been loaded into the reader. Please load a file to run the graph.")
-            msg.exec_()
+        # Once the graph has generated allow editing of the values and disable the generate button
+        for element in self.treeWidgetUpdateElements:
+            element.setEnabled(True)
+
+        for element in self.treeWidgetInitialElements:
+            element.setEnabled(False)
 
 
 
@@ -444,7 +510,7 @@ class Ui_MainWindow(object):
 
         self.graphWidget.viewer.update(graph)
 
-    def displaySurfaces(self):
+    def displaySurfaces(self, progress_callback):
         #Display isosurfaces in 3D
         # Create the VTK output
         # Points coordinates structure
@@ -482,7 +548,10 @@ class Ui_MainWindow(object):
 
         surf_list = self.segmentor.getSurfaces()
 
-        for surf in surf_list:
+        # Calculate the increment for each of the surfaces
+        increment = 60.0/len(surf_list)
+
+        for n, surf in enumerate(surf_list,1):
             print("Image-to-world coordinate trasformation ... %d" % surface)
             for point in surf:
                 world_coord = numpy.dot(mTransform, point)
@@ -502,7 +571,8 @@ class Ui_MainWindow(object):
                     # insert the current triangle in the triangles array
                     triangles.InsertNextCell(triangle);
 
-        surface += 1
+            progress_callback.emit(int(n*increment + 30))
+            surface += 1
 
         # polydata object
         trianglePolyData = vtk.vtkPolyData()
@@ -511,6 +581,47 @@ class Ui_MainWindow(object):
 
         self.viewer3DWidget.viewer.hideActor(1, delete = True)
         self.viewer3DWidget.viewer.displayPolyData(trianglePolyData)
+
+    def updateProgressBar(self, value):
+        self.progressBar.setValue(value)
+
+    def completeProgressBar(self):
+        self.progressBar.setValue(100)
+        self.progressBar.hide()
+
+    def showProgressBar(self):
+        self.progressBar.setValue(0)
+        self.progressBar.show()
+
+    def generateGraphTrigger(self):
+
+        if self.graph_numpy_input_data is not None:
+            self.showProgressBar()
+
+            worker = Worker(self.generateGraph)
+            self.threadpool.start(worker)
+
+            # Progress bar signal handling
+            worker.signals.finished.connect(self.completeProgressBar)
+            worker.signals.progress.connect(self.updateProgressBar)
+
+        else:
+            msg = QtWidgets.QMessageBox(self.mainwindow)
+            msg.setIcon(QtWidgets.QMessageBox.Critical)
+            msg.setWindowTitle("NO DATA")
+            msg.setText("No data has been loaded into the reader. Please load a file to run the graph.")
+            msg.exec_()
+
+
+    def updateGraphTrigger(self):
+        self.showProgressBar()
+
+        worker = Worker(self.updateGraph)
+        self.threadpool.start(worker)
+
+        # Progress bar signal handling
+        worker.signals.finished.connect(self.completeProgressBar)
+        worker.signals.progress.connect(self.updateProgressBar)
 
     def openFile(self):
         fn = QtWidgets.QFileDialog.getOpenFileNames(self.mainwindow, 'Open File','../../../../../data')
