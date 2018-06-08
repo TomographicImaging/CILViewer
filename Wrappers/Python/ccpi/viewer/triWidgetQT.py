@@ -323,7 +323,7 @@ class Ui_MainWindow(object):
         self.mainwindow.addDockWidget(QtCore.Qt.RightDockWidgetArea, self.graphDockWidget)
 
         # Set update elements to disabled when first opening the window
-        if self.graph_numpy_input_data is None:
+        if self.segmentor.dimensions is None:
             for element in self.treeWidgetUpdateElements:
                 element.setEnabled(False)
 
