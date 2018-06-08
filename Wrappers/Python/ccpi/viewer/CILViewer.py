@@ -31,6 +31,8 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
         self.AddObserver('MouseWheelForwardEvent', self.mouseInteraction, 1.0)
         self.AddObserver('MouseWheelBackwardEvent', self.mouseInteraction, 1.0)
         self.AddObserver('KeyPressEvent', self.keyPress, 1.0)
+        self.AddObserver('LeftButtonPressEvent', self.OnLeftMouseClick)
+        self.AddObserver('LeftButtonReleaseEvent', self.OnLeftMouseRelease)
 
     def GetSliceOrientation(self):
         return self._viewer.sliceOrientation
@@ -80,6 +82,12 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
     def GetActiveCamera(self):
         return self._viewer.ren.GetActiveCamera()
 
+    def SetDecimalisation(self, value):
+        decimate = self._viewer.decimate
+        decimate.SetTargetReduction(value)
+        decimate.Update()
+
+
     def mouseInteraction(self, interactor, event):
         if event == 'MouseWheelForwardEvent':
             maxSlice = self.GetDimensions()[self.GetSliceOrientation()]
@@ -92,6 +100,14 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
             if (self.GetActiveSlice() - 1 > minSlice):
                 self.SetActiveSlice(self.GetActiveSlice() -1)
                 self.UpdatePipeline()
+
+    def OnLeftMouseClick(self, interactor, event):
+        self.SetDecimalisation(0.8)
+        self.OnLeftButtonDown()
+
+    def OnLeftMouseRelease(self, interactor, event):
+        self.SetDecimalisation(0.0)
+        self.OnLeftButtonUp()
 
     def keyPress(self, interactor, event):
 
@@ -167,6 +183,9 @@ class CILViewer():
         self.iren.SetInteractorStyle(self.style)
         self.iren.SetRenderWindow(self.renWin)
 
+        # Render decimation
+        self.decimate = vtk.vtkDecimatePro()
+
         self.ren.SetBackground(.1, .2, .4)
 
         self.actors = {}
@@ -194,12 +213,16 @@ class CILViewer():
 
     def createPolyDataActor(self, polydata):
         '''returns an actor for a given polydata'''
+
+        self.decimate.SetInputData(polydata)
+        self.decimate.SetTargetReduction(0.0)
+        self.decimate.Update()
+
         mapper = vtk.vtkPolyDataMapper()
         if vtk.VTK_MAJOR_VERSION <= 5:
             mapper.SetInput(polydata)
         else:
-            mapper.SetInputData(polydata)
-   
+            mapper.SetInputConnection(self.decimate.GetOutputPort())
         # actor
         actor = vtk.vtkActor()
         actor.SetMapper(mapper)
