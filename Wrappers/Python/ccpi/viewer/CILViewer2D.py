@@ -174,7 +174,14 @@ class Converter():
 
 
     @staticmethod
-    def pureTiff2Numpy(filenames, sampleRate=None, bounds=(512,512,512)):
+    def pureTiff2Numpy(filenames, sampleRate=None, bounds=(512,512,512), **kwargs):
+
+        # Check to see if there is a progress callback
+        if 'progress_callback' in kwargs.keys():
+            p_callback = kwargs['progress_callback']
+        else:
+            p_callback = None
+
         # Get array dimensions
         first_img = Image.open(filenames[0])
         first_arr = numpy.array(first_img)
@@ -198,11 +205,13 @@ class Converter():
 
         output_array = numpy.empty((len(subsampled_files), sub_shape[0], sub_shape[1]), order='F')
 
+        increment = 60.0/ len(subsampled_files)
         for i, file in enumerate(subsampled_files):
             img = Image.open(file)
             img_arr = numpy.array(img)
             output_array[i] = img_arr[0::sampleRate[1],0::sampleRate[2]].copy()
-
+            if p_callback:
+                p_callback.emit((i+1) * increment + 30)
         return output_array.transpose([2,1,0])
 
 

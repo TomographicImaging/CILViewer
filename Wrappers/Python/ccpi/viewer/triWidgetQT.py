@@ -30,6 +30,10 @@ import numpy
 import sys, traceback
 
 
+class ReadError(Exception):
+    """Raised when there is a problem reading the file into vtk"""
+
+
 class ErrorObserver:
 
    def __init__(self):
@@ -125,6 +129,8 @@ class Ui_MainWindow(object):
         MainWindow.setWindowTitle("CIL Viewer")
         MainWindow.resize(800, 600)
 
+        self.fn = None
+
         # Set linked state
         self.linked = True
 
@@ -202,7 +208,7 @@ class Ui_MainWindow(object):
 
         # define actions
         openAction = QtWidgets.QAction(self.mainwindow.style().standardIcon(QtWidgets.QStyle.SP_DirOpenIcon), 'Open file', self.mainwindow)
-        openAction.triggered.connect(self.openFile)
+        openAction.triggered.connect(self.openFileTrigger)
 
         saveAction = QtWidgets.QAction(self.mainwindow.style().standardIcon(QtWidgets.QStyle.SP_DialogSaveButton), 'Save current render as PNG', self.mainwindow)
         saveAction.triggered.connect(self.saveFile)
@@ -623,9 +629,23 @@ class Ui_MainWindow(object):
         worker.signals.finished.connect(self.completeProgressBar)
         worker.signals.progress.connect(self.updateProgressBar)
 
-    def openFile(self):
-        fn = QtWidgets.QFileDialog.getOpenFileNames(self.mainwindow, 'Open File','../../../../../data')
+    def openFileTrigger(self):
+        self.showProgressBar()
 
+        self.fn = QtWidgets.QFileDialog.getOpenFileNames(self.mainwindow, 'Open File','../../../../../data')
+
+        worker = Worker(self.openFile)
+        self.threadpool.start(worker)
+
+        # Progress bar signal handling
+        worker.signals.progress.connect(self.updateProgressBar)
+        worker.signals.finished.connect(self.completeProgressBar)
+        worker.signals.error.connect(self.displayFileErrorDialog)
+
+
+
+    def openFile(self, progress_callback):
+        fn = self.fn
         # If the user has pressed cancel, the first element of the tuple will be empty.
         # Quit the method cleanly
         if not fn[0]:
@@ -634,35 +654,37 @@ class Ui_MainWindow(object):
         # Single file selection
         if len(fn[0]) == 1:
             file = fn[0][0]
-
+            progress_callback.emit(30)
             reader = vtk.vtkMetaImageReader()
             reader.AddObserver("ErrorEvent", self.e)
             reader.SetFileName(file)
             reader.Update()
+            progress_callback.emit(90)
 
         # Multiple TIFF files selected
         else:
             # Make sure that the files are sorted 0 - end
             filenames = natsorted(fn[0])
+            increment = 30.0 / len(filenames)
+
 
             # Basic test for tiff images
-            for file in filenames:
+            for n,file in enumerate(filenames,1):
                 ftype = imghdr.what(file)
                 if ftype != 'tiff':
                     # A non-TIFF file has been loaded, present error message and exit method
-                    self.e('','','When reading multiple files, all files must TIFF formatted.')
-                    file = file
-                    self.mainwindow.displayFileErrorDialog(file)
-                    return
+                    self.e('','','Problem reading file: {}'.format(file))
+                    raise ReadError("File read error!")
+
+                progress_callback.emit(int(n * increment))
 
             # Have passed basic test, can attempt to load
-            # numpy_image = Converter.tiffStack2numpyEnforceBounds(filenames=filenames, bounds=(256,256,256))
-            numpy_image = Converter.pureTiff2Numpy(filenames=filenames, bounds=(256,246,256))
+            numpy_image = Converter.pureTiff2Numpy(filenames=filenames, bounds=(256,256,256), progress_callback=progress_callback)
             reader = Converter.numpy2vtkImporter(numpy_image)
             reader.Update()
 
         if self.e.ErrorOccurred():
-            self.mainwindow.displayFileErrorDialog(file)
+            raise ReadError()
 
         else:
             self.viewerWidget.viewer.setInput3DData(reader.GetOutput())
@@ -671,6 +693,14 @@ class Ui_MainWindow(object):
             self.mainwindow.setStatusTip('Ready')
             self.spacing = reader.GetOutput().GetSpacing()
             self.origin = reader.GetOutput().GetOrigin()
+
+            # After successfully opening file, reset the graph interface
+            if self.hasDockableWindow:
+                for element in self.treeWidgetInitialElements:
+                    element.setEnabled(True)
+
+                for element in self.treeWidgetUpdateElements:
+                    element.setEnabled(False)
 
     def saveFile(self):
         dialog = QtWidgets.QFileDialog(self.mainwindow)
@@ -685,11 +715,13 @@ class Ui_MainWindow(object):
     def close(self):
         QtWidgets.qApp.quit()
 
-    def displayFileErrorDialog(self, file):
+    def displayFileErrorDialog(self, tuple):
+        exception_type, exception_object, traceback = tuple
+
         msg = QtWidgets.QMessageBox(self.mainwindow)
         msg.setIcon(QtWidgets.QMessageBox.Critical)
         msg.setWindowTitle("READ ERROR")
-        msg.setText("Error reading file: ({filename})".format(filename=file))
+        msg.setText(repr(exception_object))
         msg.setDetailedText(self.e.ErrorMessage())
         msg.exec_()
 
