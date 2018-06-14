@@ -132,26 +132,24 @@ class UndirectedGraph(vtkGraphLayoutView):
         # Add observer to display level.
         self.iren.AddObserver("MouseMoveEvent", self.OnMouseMoveEvent, 1.)
 
-        # Create layout strategy
-        layoutStrategy = vtk.vtkAssignCoordinatesLayoutStrategy()
-        layoutStrategy.SetYCoordArrayName('Y')
-        layoutStrategy.SetXCoordArrayName('X')
-
-        self.SetLayoutStrategy(layoutStrategy)
-        self.SetVertexLabelVisibility(True)
-
-
         # Create corner annotations
         self.featureAnnotation = self.createCornerAnnotation()
         self.pointAnnotation = self.createCornerAnnotation()
 
 
-
     def update(self, input_data):
+
+        # Create layout strategy
+        layoutStrategy = vtk.vtkAssignCoordinatesLayoutStrategy()
+        layoutStrategy.SetYCoordArrayName('Y')
+        layoutStrategy.SetXCoordArrayName('X')
+
 
         self.AddRepresentationFromInput(input_data)
         self.SetVertexLabelArrayName("VertexID")
         self.SetVertexLabelVisibility(True)
+
+        self.SetLayoutStrategy(layoutStrategy)
 
         annotation_link = vtk.vtkAnnotationLink()
         annotation_link.AddObserver("AnnotationChangedEvent", self.select_callback)
