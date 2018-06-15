@@ -64,6 +64,9 @@ class Ui_MainWindow(object):
         MainWindow.setWindowTitle("CIL Viewer")
         MainWindow.resize(800, 600)
 
+        link_icon = QtGui.QIcon()
+        link_icon.addPixmap(QtGui.QPixmap('icons/link.png'), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+
         # Set linked state
         self.linked = True
 
@@ -74,31 +77,57 @@ class Ui_MainWindow(object):
         self.hasDockableWindow = False
 
         self.centralwidget = QtWidgets.QWidget(MainWindow)
-        self.centralwidget.setObjectName("centralwidget")
 
         # Central widget layout
-        self.horizontalLayout = QtWidgets.QHBoxLayout(self.centralwidget)
-        self.horizontalLayout.setObjectName("horizontalLayout")
+        self.main_widget_form_layout = QtWidgets.QGridLayout(self.centralwidget)
 
         # Add the 2D viewer widget
         self.viewerWidget = QVTKWidget(viewer=CILViewer2D, interactorStyle=vlink.Linked2DInteractorStyle)
-        self.horizontalLayout.addWidget(self.viewerWidget, 66)
+        self.centralwidget.setStyleSheet("background-color: rgb(25,51,101)")
 
-        # Create the vertical layout to handle the other displays
-        self.verticalLayout = QtWidgets.QVBoxLayout()
-        self.verticalLayout.setObjectName("verticalLayout")
+        self.linkButton2D = QtWidgets.QPushButton(self.viewerWidget)
+        self.linkButton2D.setIcon(link_icon)
+        self.linkButton2D.setGeometry(0, 0, 30, 30)
+        self.linkButton2D.setStyleSheet("background-color: whitesmoke")
+        self.linkButton2D.setToolTip("State: Linked. Toggle status of link between 2D and 3D viewers")
+
+        self.linkButton2D.clicked.connect(self.linkViewers)
+
+        self.main_widget_form_layout.addWidget(self.linkButton2D, 0,0,1,1)
+        self.main_widget_form_layout.addItem(QtWidgets.QSpacerItem(1,1,QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Maximum),0,1,1,1)
+        self.main_widget_form_layout.addWidget(self.viewerWidget,1,0,1,2)
 
         # Add the graph widget
         self.graphWidget = QVTKWidget(viewer=UndirectedGraph)
-        self.verticalLayout.addWidget(self.graphWidget)
-        # self.graphWidget.viewer.update(generate_data())
+
+        self.graphDock = QtWidgets.QDockWidget(MainWindow)
+        self.graphDock.setMinimumWidth(300)
+        self.graphDock.setWidget(self.graphWidget)
+
+        MainWindow.addDockWidget(QtCore.Qt.LeftDockWidgetArea, self.graphDock)
 
         # Add the 3D viewer widget
         self.viewer3DWidget = QVTKWidget(viewer=CILViewer, interactorStyle=vlink.Linked3DInteractorStyle)
-        self.verticalLayout.addWidget(self.viewer3DWidget)
 
-        # Add vertical layout to main layout
-        self.horizontalLayout.addLayout(self.verticalLayout, 33)
+        self.Dock3DContents = QtWidgets.QWidget()
+        self.Dock3DContents.setStyleSheet("background-color: rgb(25,51,101)")
+        f_layout3D = Qt.QFormLayout(self.Dock3DContents)
+
+        self.Dock3D = QtWidgets.QDockWidget(MainWindow)
+        self.Dock3D.setMinimumWidth(300)
+
+        self.linkButton3D = QtWidgets.QPushButton(self.viewer3DWidget)
+        self.linkButton3D.setIcon(link_icon)
+        self.linkButton3D.setGeometry(0,0,30,30)
+        self.linkButton3D.setStyleSheet("background-color: whitesmoke")
+        self.linkButton3D.setToolTip("State: Linked. Toggle status of link between 2D and 3D viewers")
+
+        self.linkButton3D.clicked.connect(self.linkViewers)
+
+        f_layout3D.addWidget(self.linkButton3D)
+        f_layout3D.addWidget(self.viewer3DWidget)
+        self.Dock3D.setWidget(self.Dock3DContents)
+        MainWindow.addDockWidget(QtCore.Qt.LeftDockWidgetArea, self.Dock3D)
 
         # Set central widget
         MainWindow.setCentralWidget(self.centralwidget)
@@ -126,6 +155,29 @@ class Ui_MainWindow(object):
 
         self.e = ErrorObserver()
 
+    def linkViewers(self):
+
+        link_icon = QtGui.QIcon()
+        link_icon.addPixmap(QtGui.QPixmap('icons/link.png'), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+
+        link_icon_broken = QtGui.QIcon()
+        link_icon_broken.addPixmap(QtGui.QPixmap('icons/broken_link.png'), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+
+        if self.linked:
+            self.link2D3D.disable()
+            self.linkButton3D.setIcon(link_icon_broken)
+            self.linkButton2D.setIcon(link_icon_broken)
+            self.linkButton3D.setToolTip("State: Un-linked. Toggle status of link between 2D and 3D viewers")
+            self.linkButton2D.setToolTip("State: Un-linked. Toggle status of link between 2D and 3D viewers")
+            self.linked = False
+
+        else:
+            self.link2D3D.enable()
+            self.linkButton3D.setIcon(link_icon)
+            self.linkButton2D.setIcon(link_icon)
+            self.linkButton3D.setToolTip("State: Linked. Toggle status of link between 2D and 3D viewers")
+            self.linkButton2D.setToolTip("State: Linked. Toggle status of link between 2D and 3D viewers")
+            self.linked = True
 
     def toolbar(self):
         # Initialise the toolbar
@@ -144,16 +196,19 @@ class Ui_MainWindow(object):
         connectGraphAction = QtWidgets.QAction(tree_icon, 'Set Graph Widget parameters', self.mainwindow)
         connectGraphAction.triggered.connect(self.createDockableWindow)
 
-        link_icon = QtGui.QIcon()
-        link_icon.addPixmap(QtGui.QPixmap('icons/link.png'),QtGui.QIcon.Normal, QtGui.QIcon.Off)
-        self.linkViewersAction = QtWidgets.QAction(link_icon,'Toggle link between 2D and 3D viewers', self.mainwindow)
-        self.linkViewersAction.triggered.connect(self.toggleLink)
+
+
+        anchor_icon = QtGui.QIcon()
+        anchor_icon.addPixmap(QtGui.QPixmap('icons/anchor.png'),QtGui.QIcon.Normal, QtGui.
+                            QIcon.Off)
+        anchorWidgetsAction = QtWidgets.QAction(anchor_icon, 'Dock/display tree and 3D viewer', self.mainwindow)
+        anchorWidgetsAction.triggered.connect(self.dockWidgets)
 
         # Add actions to toolbar
         self.toolbar.addAction(openAction)
         self.toolbar.addAction(saveAction)
         self.toolbar.addAction(connectGraphAction)
-        self.toolbar.addAction(self.linkViewersAction)
+        self.toolbar.addAction(anchorWidgetsAction)
 
     def linkedViewersSetup(self):
         self.link2D3D = vlink.ViewerLinker(self.viewerWidget.viewer, self.viewer3DWidget.viewer)
@@ -161,26 +216,6 @@ class Ui_MainWindow(object):
         self.link2D3D.setLinkZoom(False)
         self.link2D3D.setLinkWindowLevel(True)
         self.link2D3D.setLinkSlice(True)
-
-    def toggleLink(self):
-        link_icon = QtGui.QIcon()
-        link_icon.addPixmap(QtGui.QPixmap('icons/link.png'),QtGui.QIcon.Normal, QtGui.QIcon.Off)
-
-        link_icon_broken = QtGui.QIcon()
-        link_icon_broken.addPixmap(QtGui.QPixmap('icons/broken_link.png'),QtGui.QIcon.Normal, QtGui.QIcon.Off)
-
-        if self.linked:
-            self.link2D3D.disable()
-            self.linkViewersAction.setIcon(link_icon_broken)
-            self.linked = False
-
-        else:
-            self.link2D3D.enable()
-            self.linkViewersAction.setIcon(link_icon)
-            self.linked = True
-
-    # def closeEvent(self):
-    #     print ("Closing")
 
     def createDockableWindow(self):
 
@@ -327,6 +362,15 @@ class Ui_MainWindow(object):
             for element in self.treeWidgetUpdateElements:
                 element.setEnabled(False)
 
+    def dockWidgets(self):
+
+        self.Dock3D.show()
+        self.graphDock.show()
+        if self.graphDock.isFloating() or not self.graphDock.isVisible():
+            self.graphDock.setFloating(False)
+
+        if self.Dock3D.isFloating() or not self.Dock3D.isVisible():
+            self.Dock3D.setFloating(False)
 
     def updateGraph(self):
         # Set parameter values
