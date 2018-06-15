@@ -198,17 +198,17 @@ class Ui_MainWindow(object):
 
 
 
-        anchor_icon = QtGui.QIcon()
-        anchor_icon.addPixmap(QtGui.QPixmap('icons/anchor.png'),QtGui.QIcon.Normal, QtGui.
+        show_icon = QtGui.QIcon()
+        show_icon.addPixmap(QtGui.QPixmap('icons/show.png'),QtGui.QIcon.Normal, QtGui.
                             QIcon.Off)
-        anchorWidgetsAction = QtWidgets.QAction(anchor_icon, 'Dock/display tree and 3D viewer', self.mainwindow)
-        anchorWidgetsAction.triggered.connect(self.dockWidgets)
+        showWidgetsAction = QtWidgets.QAction(show_icon, 'Display tree and 3D viewer', self.mainwindow)
+        showWidgetsAction.triggered.connect(self.dockWidgets)
 
         # Add actions to toolbar
         self.toolbar.addAction(openAction)
         self.toolbar.addAction(saveAction)
         self.toolbar.addAction(connectGraphAction)
-        self.toolbar.addAction(anchorWidgetsAction)
+        self.toolbar.addAction(showWidgetsAction)
 
     def linkedViewersSetup(self):
         self.link2D3D = vlink.ViewerLinker(self.viewerWidget.viewer, self.viewer3DWidget.viewer)
@@ -350,7 +350,6 @@ class Ui_MainWindow(object):
         self.graphWidgetFL.setWidget(6, QtWidgets.QFormLayout.FieldRole, self.graphParamsSubmitButton)
         self.treeWidgetUpdateElements.append(self.graphParamsSubmitButton)
 
-
         # Add elements to layout
         self.graphWidgetVL.addWidget(self.graphParamsGroupBox)
         self.graphDockVL.addWidget(self.dockWidget)
@@ -366,11 +365,6 @@ class Ui_MainWindow(object):
 
         self.Dock3D.show()
         self.graphDock.show()
-        if self.graphDock.isFloating() or not self.graphDock.isVisible():
-            self.graphDock.setFloating(False)
-
-        if self.Dock3D.isFloating() or not self.Dock3D.isVisible():
-            self.Dock3D.setFloating(False)
 
     def updateGraph(self):
         # Set parameter values
