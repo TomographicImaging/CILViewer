@@ -306,8 +306,14 @@ class Ui_MainWindow(object):
         self.isGlobalCheck = QtWidgets.QCheckBox(self.graphParamsGroupBox)
         self.isGlobalCheck.setText("Global Iso")
         self.isGlobalCheck.setChecked(True)
-        self.graphWidgetFL.setWidget(3, QtWidgets.QFormLayout.FieldRole, self.isGlobalCheck)
+        self.graphWidgetFL.setWidget(3, QtWidgets.QFormLayout.LabelRole, self.isGlobalCheck)
         self.treeWidgetUpdateElements.append(self.isGlobalCheck)
+
+        # Add colour surfaces checkbox
+        self.surfaceColourCheck = QtWidgets.QCheckBox(self.graphParamsGroupBox)
+        self.surfaceColourCheck.setText("Colour Surfaces")
+        self.graphWidgetFL.setWidget(3,QtWidgets.QFormLayout.FieldRole, self.surfaceColourCheck)
+        self.treeWidgetUpdateElements.append(self.surfaceColourCheck)
 
         # Add Log Tree field
         self.logTreeValueLabel = QtWidgets.QLabel(self.graphParamsGroupBox)
@@ -494,6 +500,10 @@ class Ui_MainWindow(object):
 
         # put all triangles in an array
         triangles = vtk.vtkCellArray()
+
+        surface_data = vtk.vtkIntArray()
+        surface_data.SetNumberOfComponents(1)
+        surface_data.SetName("SurfaceId")
         isTriangle = 0
         nTriangle = 0
 
@@ -524,10 +534,13 @@ class Ui_MainWindow(object):
             print("Image-to-world coordinate trasformation ... %d" % surface)
             for point in surf:
                 world_coord = numpy.dot(mTransform, point)
-                xCoord = world_coord[0]
-                yCoord = world_coord[1]
-                zCoord = world_coord[2]
-                triangle_vertices.InsertNextPoint(xCoord, yCoord, zCoord);
+                # xCoord = world_coord[0]
+                # yCoord = world_coord[1]
+                # zCoord = world_coord[2]
+                # triangle_vertices.InsertNextPoint(xCoord, yCoord, zCoord)
+                triangle_vertices.InsertNextPoint(world_coord[0],
+                                                  world_coord[1],
+                                                  world_coord[2])
 
                 # The id of the vertex of the triangle (0,1,2) is linked to
                 # the id of the points in the list, so in facts we just link id-to-id
@@ -536,19 +549,52 @@ class Ui_MainWindow(object):
                 point_count += 1
 
                 if (isTriangle == 3):
-                    isTriangle = 0;
+                    isTriangle = 0
                     # insert the current triangle in the triangles array
-                    triangles.InsertNextCell(triangle);
+                    triangles.InsertNextCell(triangle)
+                    surface_data.InsertNextValue(surface)
 
-        surface += 1
+            surface += 1
 
         # polydata object
         trianglePolyData = vtk.vtkPolyData()
         trianglePolyData.SetPoints(triangle_vertices)
         trianglePolyData.SetPolys(triangles)
+        trianglePolyData.GetCellData().AddArray(surface_data)
 
         self.viewer3DWidget.viewer.hideActor(1, delete = True)
+
+        actors = self.viewer3DWidget.viewer.actors
+
         self.viewer3DWidget.viewer.displayPolyData(trianglePolyData)
+
+        if self.surfaceColourCheck.isChecked():
+            # Change the colour of the polydata actors
+            named_colours = vtk.vtkNamedColors()
+            all_colours = named_colours.GetColorNames().split('\n')
+            print (all_colours)
+
+            lut = vtk.vtkLookupTable()
+            lut.SetNumberOfTableValues(surface)
+            lut.Build()
+
+            for i in range(surface):
+                R,G,B = named_colours.GetColor3d(all_colours[i])
+                print (R,G,B)
+                lut.SetTableValue(i,R,G,B)
+
+            actors[1][0].GetMapper().SetLookupTable(lut)
+            actors[1][0].GetMapper().SetScalarRange(0, surface)
+            actors[1][0].GetMapper().SetScalarModeToUseCellFieldData()
+            actors[1][0].GetMapper().SelectColorArray('SurfaceId')
+            actors[1][0].GetMapper().Update()
+
+        self.viewer3DWidget.viewer.renWin.Render()
+
+
+
+
+
 
     def openFile(self):
         fn = QtWidgets.QFileDialog.getOpenFileNames(self.mainwindow, 'Open File','../../../../../data')
