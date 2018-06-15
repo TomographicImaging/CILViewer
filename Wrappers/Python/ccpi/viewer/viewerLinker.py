@@ -3,6 +3,9 @@ from ccpi.viewer.CILViewer import CILInteractorStyle as CIL3DInteractorStyle
 from ccpi.viewer.CILViewer2D import CILInteractorStyle as CIL2DInteractorStyle
 
 class Linked3DInteractorStyle(CIL3DInteractorStyle):
+    """
+    Add attributes and methods needed to link two viewer together to the interactor style
+    """
 
     def __init__(self, callback):
         CIL3DInteractorStyle.__init__(self,callback)
@@ -24,6 +27,9 @@ class Linked3DInteractorStyle(CIL3DInteractorStyle):
 
 
 class Linked2DInteractorStyle(CIL2DInteractorStyle):
+    """
+    Add attributes and methods needed to link two viewer together to the interactor style
+    """
 
     def __init__(self, callback):
         CIL2DInteractorStyle.__init__(self, callback)
@@ -64,6 +70,10 @@ class ViewerLinker():
         self.disable()
 
     def enable(self):
+        """
+        Enable the viewer link
+        """
+
         # Make sure the observers aren't added twice
         self.disable()
 
@@ -71,6 +81,9 @@ class ViewerLinker():
         self._observerFromId = self._viewer2.getInteractor().AddObserver("AnyEvent", self._from)
 
     def disable(self):
+        """
+        Disable the viewer link
+        """
         try:
             self._viewer1.getInteractor().RemoveObserver(self._observerToId)
             self._viewer2.getInteractor().RemoveObserver(self._observerFromId)
@@ -79,22 +92,47 @@ class ViewerLinker():
             pass
 
     def setLinkZoom(self, linkZoom):
+        """
+        Boolean flag to set zoom linkage
+        :param linkZoom: (boolean)
+        """
+
         self._to.linkZoom = linkZoom
         self._from.linkZoom = linkZoom
 
     def setLinkPan(self, linkPan):
+        """
+        Boolean flag to set pan linkage
+        :param linkPan: (boolean)
+        """
+
         self._to.linkPan = linkPan
         self._from.linkPan = linkPan
 
     def setLinkPick(self, linkPick):
+        """
+        Boolean flag to set pick linkage
+        :param linkPick: (boolean)
+        """
+
         self._to.linkPick = linkPick
         self._from.linkPick = linkPick
 
     def setLinkWindowLevel(self, linkWindowLevel):
+        """
+        Boolean flag to set window level linkage
+        :param linkWindowLevel: (boolean)
+        """
+
         self._to.linkWindowLevel = linkWindowLevel
         self._from.linkWindowLevel = linkWindowLevel
 
     def setLinkSlice(self, linkSlice):
+        """
+        Boolean flag to set slice linkage
+        :param linkSlice: (boolean)
+        """
+
         self._to.linkSlice = linkSlice
         self._from.linkSlice = linkSlice
 
@@ -210,7 +248,7 @@ class ViewerLinkObserver():
                 shouldPassEvent = False
 
         # WindowLevel
-        if (((event == "LeftButtonPressEvent") and
+        if (((event == "RightButtonPressEvent") and
              interactor.GetAltKey() == 1 and
              interactor.GetControlKey() == 0 and
              interactor.GetShiftKey() == 0) or
@@ -221,9 +259,20 @@ class ViewerLinkObserver():
                 shouldPassEvent = False
             else:
                 # Set current window/level
-                if (event == "LeftButtonPressEvent"):
-                    self.targetVtkViewer.SetColorWindow(self.sourceViewer.getColorWindow())
-                    self.targetVtkViewer.SetColorLevel(self.sourceViewer.getColorLevel())
+                window = self.sourceViewer.getColourWindow()
+                level = self.sourceViewer.getColourLevel()
+                self.targetVtkViewer.setColourWindowLevel(window, level)
+
+        # Update window level on mouse move
+        if (event == "MouseMoveEvent" and
+            self.targetVtkViewer.event.isActive("WINDOW_LEVEL_EVENT")):
+
+            if not self.linkWindowLevel:
+                shouldPassEvent = False
+            else:
+                window = self.sourceViewer.getColourWindow()
+                level = self.sourceViewer.getColourLevel()
+                self.targetVtkViewer.setColourWindowLevel(window, level)
 
         # Slice
         if (event == "MouseWheelForwardEvent" or

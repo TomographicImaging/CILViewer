@@ -755,7 +755,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
             window = 2*max(abs(level-cmin),abs(level-cmax))
 
             self.SetInitialLevel( level )
-            self.SetInitialWindow( window  )
+            self.SetInitialWindow( window )
 
             self.GetWindowLevel().SetLevel(self.GetInitialLevel())
             self.GetWindowLevel().SetWindow(self.GetInitialWindow())
@@ -847,7 +847,6 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
         self.SetEventInactive("DELETE_ROI_EVENT")
 
     def OnRightButtonPressEvent(self, interactor, event):
-        interactor = self._viewer.getInteractor()
 
         alt = interactor.GetAltKey()
         shift = interactor.GetShiftKey()
@@ -1930,5 +1929,11 @@ class CILViewer2D():
             self.crosshairsActor.VisibilityOff()
 
             self.renWin.Render()
+
+    def getColourWindow(self):
+        return self.wl.GetWindow()
+
+    def getColourLevel(self):
+        return self.wl.GetLevel()
 
 
