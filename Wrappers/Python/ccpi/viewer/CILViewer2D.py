@@ -175,6 +175,27 @@ class Converter():
 
     @staticmethod
     def pureTiff2Numpy(filenames, sampleRate=None, bounds=(512,512,512), **kwargs):
+        """
+        Takes a tiff stack and converts it into a 3D numpy array.
+
+        :param (list) filenames :
+            List of filenames to process.
+
+        :param (tuple) sampleRate :
+            Tuple of integers to sample by.
+            eg. (2,2,2) will take every second pixel in each direction. (x,y,z)
+
+        :param (tuple) bounds :
+            Tuple of integers to set the bounds for the size of the resulting array.
+            This is used to calculate sample rate. If sample rate is specified,
+            the function will make sure that the user supplies sample rate will fit within the bounds sepcified.
+
+        :param (any) kwargs :
+            Any additional keyword arguments.
+
+        :return (ndarray):
+            Numpy array containing the pixel values in 3D. (x,y,z)
+        """
 
         # Check to see if there is a progress callback
         if 'progress_callback' in kwargs.keys():
@@ -205,13 +226,19 @@ class Converter():
 
         output_array = numpy.empty((len(subsampled_files), sub_shape[0], sub_shape[1]), order='F')
 
+        # Calculate the increment based on number of files.
         increment = 60.0/ len(subsampled_files)
+
+        # Process the images
         for i, file in enumerate(subsampled_files):
             img = Image.open(file)
             img_arr = numpy.array(img)
             output_array[i] = img_arr[0::sampleRate[1],0::sampleRate[2]].copy()
+
+            # If the progress callback is available, send the progress signal.
             if p_callback:
                 p_callback.emit((i+1) * increment + 30)
+
         return output_array.transpose([2,1,0])
 
 
@@ -316,10 +343,14 @@ class Converter():
     def highest_tuple_element(user,calc):
         """
         Returns a tuple containing the maximum combination in elementwise comparison
-        :param (tuple)  user: User suppliec tuple
-        :param (tuple)  calc: Calculated tuple
+        :param (tuple)user:
+            User suppliec tuple
 
-        :return (tuple): Highest elementwise combination
+        :param (tuple) calc:
+            Calculated tuple
+
+        :return (tuple):
+            Highest elementwise combination
         """
 
         output = []

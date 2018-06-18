@@ -59,11 +59,15 @@ class Worker(QtCore.QRunnable):
 
     Inherits from QRunnable to handle worker thread setup, signals and wrapup.
 
-    :param callback: The function callback to run on this worker thread. Supplied
-                     args/kwargs will be pass to the runner.
-    :type callback: function
-    :param args: Arguments to pass to the callback function
-    :param kwargs: Keyword arguments to pass to the callback function
+    :param (function) callback:
+        The function callback to run on this worker thread. Supplied
+        args/kwargs will be pass to the runner.
+
+    :param args:
+        Arguments to pass to the callback function
+
+    :param kwargs:
+        Keyword arguments to pass to the callback function
 
     """
     def __init__(self, fn, *args, **kwargs):
@@ -79,6 +83,14 @@ class Worker(QtCore.QRunnable):
 
     @QtCore.pyqtSlot()
     def run(self):
+        """
+        Run the worker. Emits signals based on run state.
+        Signals:
+            - Error: Emitted when an exception is thrown in the workers function.
+            - Result: Emitted if function completes successfully. Contains the return value of the function.
+            - Finished: Emitted on completion of the worker thread.
+
+        """
         try:
             result = self.fn(*self.args, **self.kwargs)
         except:
@@ -125,16 +137,18 @@ def sentenceCase(string):
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         self.mainwindow = MainWindow
-        MainWindow.setObjectName("CIL Viewer")
         MainWindow.setWindowTitle("CIL Viewer")
         MainWindow.resize(800, 600)
 
-        link_icon = QtGui.QIcon()
-        link_icon.addPixmap(QtGui.QPixmap('icons/link.png'), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        # Contains response from open file dialog
         self.fn = None
 
         # Set linked state
         self.linked = True
+
+        # Create link icon for inital load state.
+        link_icon = QtGui.QIcon()
+        link_icon.addPixmap(QtGui.QPixmap('icons/link.png'), QtGui.QIcon.Normal, QtGui.QIcon.Off)
 
         # Set numpy data array for graph
         self.graph_numpy_input_data = None
@@ -211,7 +225,6 @@ class Ui_MainWindow(object):
 
         #Create status bar
         self.statusbar = QtWidgets.QStatusBar(MainWindow)
-        self.statusbar.setObjectName("statusbar")
         MainWindow.setStatusTip('Open file to begin visualisation...')
         MainWindow.setStatusBar(self.statusbar)
 
@@ -219,6 +232,7 @@ class Ui_MainWindow(object):
         self.linkedViewersSetup()
         self.link2D3D.enable()
 
+        # Create the toolbar
         self.toolbar()
 
         # Add threading
@@ -318,33 +332,26 @@ class Ui_MainWindow(object):
         self.segmentor = SimpleflexSegmentor()
 
         self.graphDockWidget = QtWidgets.QDockWidget(self.mainwindow)
-        self.graphDockWidget.setObjectName("dockWidget_3")
         self.graphDockWidgetContents = QtWidgets.QWidget()
-        self.graphDockWidgetContents.setObjectName("dockWidgetContents_3")
 
 
         # Add vertical layout to dock contents
         self.graphDockVL = QtWidgets.QVBoxLayout(self.graphDockWidgetContents)
         self.graphDockVL.setContentsMargins(0, 0, 0, 0)
-        self.graphDockVL.setObjectName("verticalLayout_3")
 
         # Create widget for dock contents
         self.dockWidget = QtWidgets.QWidget(self.graphDockWidgetContents)
-        self.dockWidget.setObjectName("widget")
 
         # Add vertical layout to dock widget
         self.graphWidgetVL = QtWidgets.QVBoxLayout(self.dockWidget)
         self.graphWidgetVL.setContentsMargins(0, 0, 0, 0)
-        self.graphWidgetVL.setObjectName("verticalLayout_3")
 
         # Add group box
         self.graphParamsGroupBox = QtWidgets.QGroupBox(self.dockWidget)
-        self.graphParamsGroupBox.setObjectName("groupBox")
         self.graphParamsGroupBox.setTitle("Graph Parameters")
 
         # Add form layout to group box
         self.graphWidgetFL = QtWidgets.QFormLayout(self.graphParamsGroupBox)
-        self.graphWidgetFL.setObjectName("formLayout_2")
 
         # Create validation rule for text entry
         validator = QtGui.QDoubleValidator()
@@ -352,7 +359,6 @@ class Ui_MainWindow(object):
 
         # Add button to run graphing function
         self.graphStart = QtWidgets.QPushButton(self.graphParamsGroupBox)
-        self.graphStart.setObjectName("graphStart")
         self.graphStart.setText("Generate Graph")
         self.graphStart.clicked.connect(self.generateGraphTrigger)
         self.graphWidgetFL.setWidget(0, QtWidgets.QFormLayout.SpanningRole, self.graphStart)
@@ -367,11 +373,9 @@ class Ui_MainWindow(object):
 
         # Add ISO Value field
         self.isoValueLabel = QtWidgets.QLabel(self.graphParamsGroupBox)
-        self.isoValueLabel.setObjectName("fieldLabel1")
         self.isoValueLabel.setText("Iso Value (%)")
         self.graphWidgetFL.setWidget(2, QtWidgets.QFormLayout.LabelRole, self.isoValueLabel)
         self.isoValueEntry= QtWidgets.QLineEdit(self.graphParamsGroupBox)
-        self.isoValueEntry.setObjectName("lineEdit_1")
         self.isoValueEntry.setValidator(validator)
         self.isoValueEntry.setText("35")
         self.graphWidgetFL.setWidget(2, QtWidgets.QFormLayout.FieldRole, self.isoValueEntry)
@@ -393,26 +397,21 @@ class Ui_MainWindow(object):
 
         # Add Log Tree field
         self.logTreeValueLabel = QtWidgets.QLabel(self.graphParamsGroupBox)
-        self.logTreeValueLabel.setObjectName("fieldLabel_2")
         self.logTreeValueLabel.setText("Log Tree Size")
         self.graphWidgetFL.setWidget(4, QtWidgets.QFormLayout.LabelRole, self.logTreeValueLabel)
         self.logTreeValueEntry = QtWidgets.QLineEdit(self.graphParamsGroupBox)
-        self.logTreeValueEntry.setObjectName("lineEdit_2")
         self.logTreeValueEntry.setValidator(validator)
         self.logTreeValueEntry.setText("0.34")
         self.treeWidgetUpdateElements.append(self.logTreeValueEntry)
         self.treeWidgetUpdateElements.append(self.logTreeValueLabel)
 
-
         self.graphWidgetFL.setWidget(4, QtWidgets.QFormLayout.FieldRole, self.logTreeValueEntry)
 
         # Add collapse priority field
         self.collapsePriorityLabel = QtWidgets.QLabel(self.graphParamsGroupBox)
-        self.collapsePriorityLabel.setObjectName("fieldLabel_3")
         self.collapsePriorityLabel.setText("Collapse Priority")
         self.graphWidgetFL.setWidget(5, QtWidgets.QFormLayout.LabelRole, self.collapsePriorityLabel)
         self.collapsePriorityValue = QtWidgets.QComboBox(self.graphParamsGroupBox)
-        self.collapsePriorityValue.setObjectName("comboBox")
         self.collapsePriorityValue.addItem("Height")
         self.collapsePriorityValue.addItem("Volume")
         self.collapsePriorityValue.addItem("Hypervolume")
@@ -421,12 +420,10 @@ class Ui_MainWindow(object):
         self.treeWidgetUpdateElements.append(self.collapsePriorityValue)
         self.treeWidgetUpdateElements.append(self.collapsePriorityLabel)
 
-
         self.graphWidgetFL.setWidget(5, QtWidgets.QFormLayout.FieldRole, self.collapsePriorityValue)
 
         # Add submit button
         self.graphParamsSubmitButton = QtWidgets.QPushButton(self.graphParamsGroupBox)
-        self.graphParamsSubmitButton.setObjectName("graphParamsSubmitButton")
         self.graphParamsSubmitButton.setText("Update")
         self.graphParamsSubmitButton.clicked.connect(self.updateGraphTrigger)
         self.graphWidgetFL.setWidget(6, QtWidgets.QFormLayout.FieldRole, self.graphParamsSubmitButton)
@@ -444,11 +441,23 @@ class Ui_MainWindow(object):
                 element.setEnabled(False)
 
     def dockWidgets(self):
+        """
+        The 3D viewer widget and graph widget are Dockable windows. Once closed, they are hidden.
+        This method makes them visible again.
+        """
 
         self.Dock3D.show()
         self.graphDock.show()
 
     def updateGraph(self, progress_callback):
+        """
+        Make updates to the graph based on user input.
+
+        :param (function) progress_callback:
+            Function to perform to emit progress signal.
+
+        """
+
         # Set parameter values
         isoVal = float(self.isoValueEntry.text())
         logTreeVal = float(self.logTreeValueEntry.text())
@@ -470,6 +479,13 @@ class Ui_MainWindow(object):
 
 
     def generateGraph(self, progress_callback):
+        """
+        Generates the initial graph and 3D surface render
+
+        :param (function) progress_callback:
+            Function to perform to emit progress signal.
+
+        """
 
         self.segmentor.setInputData(self.graph_numpy_input_data)
         progress_callback.emit(5)
@@ -563,8 +579,13 @@ class Ui_MainWindow(object):
         self.graphWidget.viewer.update(graph)
 
     def displaySurfaces(self, progress_callback):
-        #Display isosurfaces in 3D
-        # Create the VTK output
+        """
+        Create the VTK data structures and display a 3D surface based on the input image.
+
+        :param (function) progress_callback:
+            Function to emit progress signals
+        """
+
         # Points coordinates structure
         triangle_vertices = vtk.vtkPoints()
 
@@ -636,8 +657,6 @@ class Ui_MainWindow(object):
         trianglePolyData.SetPolys(triangles)
         trianglePolyData.GetCellData().AddArray(surface_data)
 
-        self.viewer3DWidget.viewer.hideActor(1, delete = True)
-
         actors = self.viewer3DWidget.viewer.actors
 
         self.viewer3DWidget.viewer.displayPolyData(trianglePolyData)
@@ -663,24 +682,34 @@ class Ui_MainWindow(object):
 
         self.viewer3DWidget.viewer.renWin.Render()
 
-
-
-
-
-
-
     def updateProgressBar(self, value):
+        """
+        Set progress bar percentage.
+
+        :param (int) value:
+            Integer value between 0-100.
+        """
+
         self.progressBar.setValue(value)
 
     def completeProgressBar(self):
+        """
+        Set the progress bar to 100% complete and hide
+        """
         self.progressBar.setValue(100)
         self.progressBar.hide()
 
     def showProgressBar(self):
+        """
+        Set the progress bar to 0% complete and show
+        """
         self.progressBar.setValue(0)
         self.progressBar.show()
 
     def generateGraphTrigger(self):
+        """
+        Trigger method to allow threading of long running process
+        """
 
         if self.graph_numpy_input_data is not None:
             self.showProgressBar()
@@ -701,6 +730,10 @@ class Ui_MainWindow(object):
 
 
     def updateGraphTrigger(self):
+        """
+        Trigger method to allow threading of long running process
+        """
+
         self.showProgressBar()
 
         worker = Worker(self.updateGraph)
@@ -711,6 +744,10 @@ class Ui_MainWindow(object):
         worker.signals.progress.connect(self.updateProgressBar)
 
     def openFileTrigger(self):
+        """
+        Trigger method to allow threading of long running process
+        """
+
         self.showProgressBar()
 
         self.fn = QtWidgets.QFileDialog.getOpenFileNames(self.mainwindow, 'Open File','../../../../../data')
@@ -724,8 +761,14 @@ class Ui_MainWindow(object):
         worker.signals.error.connect(self.displayFileErrorDialog)
 
 
-
     def openFile(self, progress_callback):
+        """
+        Open file(s) based on results from QFileDialog
+
+        :param (function) progress_callback:
+            Callback funtion to emit progress percentage.
+        """
+
         fn = self.fn
         # If the user has pressed cancel, the first element of the tuple will be empty.
         # Quit the method cleanly
@@ -779,9 +822,10 @@ class Ui_MainWindow(object):
             # Reset linked state
             self.linkViewers(force_linked=True)
 
-            # self.viewer3DWidget.viewer.hideActor(1,True)
+            # Reset graph if drawn
+            self.graphWidget.viewer.update(vtk.vtkMutableDirectedGraph())
 
-            # Reset graph panel
+            # Reset graph parameter panel
             if self.hasDockableWindow:
                 for element in self.treeWidgetInitialElements:
                     element.setEnabled(True)
