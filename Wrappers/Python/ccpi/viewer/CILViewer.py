@@ -289,14 +289,15 @@ class CILViewer():
         '''displays the given polydata'''
         
         self.ren.AddActor(actor)
-        
+        # self.actor3DRender = actor
+
         self.actors[len(self.actors)+1] = [actor, True]
         self.iren.Initialize()
         self.renWin.Render()
 
     def displayPolyData(self, polydata):
         self.setPolyDataActor(self.createPolyDataActor(polydata))
-        
+
     def hideActor(self, actorno, delete=False):
         '''Hides an actor identified by its number in the list of actors'''
         try:
@@ -306,6 +307,7 @@ class CILViewer():
 
             if delete:
                 self.actors = {}
+                self.renWin.Render()
 
         except KeyError as ke:
             print ("Warning Actor not present")
@@ -382,6 +384,10 @@ class CILViewer():
             self.img3D = shiftScaler.GetOutput()
 
     def installPipeline(self):
+        # Reset the viewer when loading a new data source
+        for actor in self.ren.GetActors():
+            self.ren.RemoveActor(actor)
+
         self.voi.SetInputData(self.img3D)
 
         extent = [ i for i in self.img3D.GetExtent()]

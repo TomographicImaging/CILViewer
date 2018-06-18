@@ -169,6 +169,7 @@ class Ui_MainWindow(object):
         self.graphDock = QtWidgets.QDockWidget(MainWindow)
         self.graphDock.setMinimumWidth(300)
         self.graphDock.setWidget(self.graphWidget)
+        self.graphDock.setWindowTitle("Graph View")
 
         MainWindow.addDockWidget(QtCore.Qt.LeftDockWidgetArea, self.graphDock)
 
@@ -181,6 +182,7 @@ class Ui_MainWindow(object):
 
         self.Dock3D = QtWidgets.QDockWidget(MainWindow)
         self.Dock3D.setMinimumWidth(300)
+        self.Dock3D.setWindowTitle("3D View")
 
         self.linkButton3D = QtWidgets.QPushButton(self.viewer3DWidget)
         self.linkButton3D.setIcon(link_icon)
@@ -229,7 +231,7 @@ class Ui_MainWindow(object):
         self.progressBar.hide()
         self.statusbar.addPermanentWidget(self.progressBar)
 
-    def linkViewers(self):
+    def linkViewers(self, force_linked=False):
 
         link_icon = QtGui.QIcon()
         link_icon.addPixmap(QtGui.QPixmap('icons/link.png'), QtGui.QIcon.Normal, QtGui.QIcon.Off)
@@ -237,7 +239,7 @@ class Ui_MainWindow(object):
         link_icon_broken = QtGui.QIcon()
         link_icon_broken.addPixmap(QtGui.QPixmap('icons/broken_link.png'), QtGui.QIcon.Normal, QtGui.QIcon.Off)
 
-        if self.linked:
+        if self.linked and not force_linked:
             self.link2D3D.disable()
             self.linkButton3D.setIcon(link_icon_broken)
             self.linkButton2D.setIcon(link_icon_broken)
@@ -651,7 +653,6 @@ class Ui_MainWindow(object):
 
             for i in range(surface):
                 R,G,B = named_colours.GetColor3d(all_colours[i])
-                print (R,G,B)
                 lut.SetTableValue(i,R,G,B)
 
             actors[1][0].GetMapper().SetLookupTable(lut)
@@ -774,7 +775,13 @@ class Ui_MainWindow(object):
             self.spacing = reader.GetOutput().GetSpacing()
             self.origin = reader.GetOutput().GetOrigin()
 
-            # After successfully opening file, reset the graph interface
+            ### After successfully opening file, reset the interface ###
+            # Reset linked state
+            self.linkViewers(force_linked=True)
+
+            # self.viewer3DWidget.viewer.hideActor(1,True)
+
+            # Reset graph panel
             if self.hasDockableWindow:
                 for element in self.treeWidgetInitialElements:
                     element.setEnabled(True)
