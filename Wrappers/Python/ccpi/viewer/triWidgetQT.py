@@ -657,9 +657,10 @@ class Ui_MainWindow(object):
         trianglePolyData.SetPolys(triangles)
         trianglePolyData.GetCellData().AddArray(surface_data)
 
-        actors = self.viewer3DWidget.viewer.actors
 
         self.viewer3DWidget.viewer.displayPolyData(trianglePolyData)
+
+        actors = self.viewer3DWidget.viewer.actors
 
         if self.surfaceColourCheck.isChecked():
             # Change the colour of the polydata actors
@@ -673,6 +674,7 @@ class Ui_MainWindow(object):
             for i in range(surface):
                 R,G,B = named_colours.GetColor3d(all_colours[i])
                 lut.SetTableValue(i,R,G,B)
+
 
             actors[1][0].GetMapper().SetLookupTable(lut)
             actors[1][0].GetMapper().SetScalarRange(0, surface)

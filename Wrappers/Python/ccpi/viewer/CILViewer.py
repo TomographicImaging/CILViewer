@@ -287,9 +287,9 @@ class CILViewer():
 
     def setPolyDataActor(self, actor):
         '''displays the given polydata'''
-        
+
+        self.hideActor(1,delete=True)
         self.ren.AddActor(actor)
-        # self.actor3DRender = actor
 
         self.actors[len(self.actors)+1] = [actor, True]
         self.iren.Initialize()
