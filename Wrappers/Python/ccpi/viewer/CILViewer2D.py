@@ -1146,11 +1146,8 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
         x,y = interactor.GetEventPosition()
         x0,y0 = interactor.GetInitialEventPosition()
 
-        ic = self.display2imageCoordinate((x,y))
-        ic0 = self.display2imageCoordinate((x0,y0))
-
-        dx = 1 * ( ic[0] - ic0[0] )
-        dy = 1 * ( ic[1] - ic0[1] )
+        dx = (x - x0)/2
+        dy = (y - y0)/2
 
         camera = self.GetActiveCamera()
         newposition = [i for i in self.GetInitialCameraPosition()]
