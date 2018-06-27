@@ -198,7 +198,8 @@ class Converter():
         """
 
         # Check to see if there is a progress callback
-        if 'progress_callback' in kwargs.keys():
+        if 'progress_callback' in kwargs.keys() and kwargs['progress_callback']:
+
             p_callback = kwargs['progress_callback']
         else:
             p_callback = None

@@ -771,7 +771,7 @@ class Ui_MainWindow(object):
         worker.signals.error.connect(self.displayFileErrorDialog)
 
 
-    def openFile(self, progress_callback, **kwargs):
+    def openFile(self, progress_callback=None, **kwargs):
         """
         Open file(s) based on results from QFileDialog
 
@@ -784,7 +784,6 @@ class Ui_MainWindow(object):
         else:
             fn = ([kwargs['filename']],)
 
-        fn = self.fn
         # If the user has pressed cancel, the first element of the tuple will be empty.
         # Quit the method cleanly
         if not fn[0]:
@@ -793,12 +792,14 @@ class Ui_MainWindow(object):
         # Single file selection
         if len(fn[0]) == 1:
             file = fn[0][0]
-            progress_callback.emit(30)
+            if progress_callback:
+                progress_callback.emit(30)
             reader = vtk.vtkMetaImageReader()
             reader.AddObserver("ErrorEvent", self.e)
             reader.SetFileName(file)
             reader.Update()
-            progress_callback.emit(90)
+            if progress_callback:
+                progress_callback.emit(90)
 
         # Multiple TIFF files selected
         else:
@@ -814,8 +815,8 @@ class Ui_MainWindow(object):
                     # A non-TIFF file has been loaded, present error message and exit method
                     self.e('','','Problem reading file: {}'.format(file))
                     raise ReadError("File read error!")
-
-                progress_callback.emit(int(n * increment))
+                if progress_callback:
+                    progress_callback.emit(int(n * increment))
 
             # Have passed basic test, can attempt to load
             numpy_image = Converter.pureTiff2Numpy(filenames=filenames, bounds=(256,256,256), progress_callback=progress_callback)
@@ -875,8 +876,9 @@ class Ui_MainWindow(object):
 def main():
     import sys
     import argparse
+
     parser = argparse.ArgumentParser(description="Data viewer")
-    parser.add_argument('--dev', action='store_true', dest='development')
+    parser.add_argument('--dev', dest='development', help='Specify file to open')
     args= parser.parse_args()
     print (args.development)
 
@@ -886,9 +888,10 @@ def main():
     ui.setupUi(MainWindow)
     MainWindow.show()
     if args.development:
-        ui.openFile(filename='../../../../../data/head.mha')
+        ui.openFile(filename=args.development)
         ui.createDockableWindow()
-        ui.generateGraph()
+        ui.generateGraphTrigger()
+
     sys.exit(app.exec_())
 
 if __name__ == "__main__":
