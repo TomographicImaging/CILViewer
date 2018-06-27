@@ -816,6 +816,9 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
                 self.SetEventActive("SHOW_LINE_PROFILE_EVENT")
                 self.DisplayLineProfile(interactor, event, True)
 
+        elif interactor.GetKeyCode() == 'h':
+            self.DisplayHelp()
+
         else :
             #print ("Unhandled event %s" % (interactor.GetKeyCode(), )))
             pass
@@ -1122,6 +1125,67 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
         elif self.GetViewerEvent("SHOW_LINE_PROFILE_EVENT"):
             self.DisplayLineProfile(interactor, event, True)
 
+    def DisplayHelp(self):
+        help_actor = self._viewer.helpActor
+        slice_actor = self._viewer.sliceActor
+
+        if help_actor.GetVisibility():
+            help_actor.VisibilityOff()
+            slice_actor.VisibilityOn()
+            self.Render()
+            return
+
+        font_size = 24
+
+        # Create the text mappers and the associated Actor2Ds.
+
+        # The font and text properties (except justification) are the same for
+        # each multi line mapper. Let's create a common text property object
+        multiLineTextProp = vtk.vtkTextProperty()
+        multiLineTextProp.SetFontSize(font_size)
+        multiLineTextProp.SetFontFamilyToArial()
+        multiLineTextProp.BoldOn()
+        multiLineTextProp.ItalicOn()
+        multiLineTextProp.ShadowOn()
+        multiLineTextProp.SetLineSpacing(1.3)
+
+        # The text is on multiple lines and center-justified (both horizontal and
+        # vertical).
+        textMapperC = vtk.vtkTextMapper()
+        textMapperC.SetInput("Mouse Interactions:\n"
+                             "\n"
+                             "  - Slice: Mouse Scroll\n"
+                             "  - Quick Slice: Shift + Mouse Scroll\n"
+                             "  - Pick: Left Click\n"
+                             "  - Zoom: Shift + Right Mouse + Move Up/Down\n"
+                             "  - Pan: Ctrl + Right Mouse + Move\n"
+                             "  - Adjust Window: Alt+ Right Mouse + Move Up/Down\n"
+                             "  - Adjust Level: Alt + Right Mouse + Move Left/Right\n"
+                             "  Region of Interest (ROI):\n"
+                             "      - Create: Ctrl + Left Click\n"
+                             "      - Delete: Alt + Left Click\n"
+                             "      - Resize: Click + Drag handles\n"
+                             "      - Translate: Middle Mouse + Move within ROI\n"
+                             "\n"
+                             "Keyboard Interactions:\n"
+                             "\n"
+                             "  - Auto Window/Level: A\n"
+                             "  - Profile: L\n"
+                             "  - Save Current Image: S\n"
+                             "  - YZ Plane: X\n"
+                             "  - XZ Plane: Y\n"
+                             "  - XY Plane: Z\n"
+                             )
+        tprop = textMapperC.GetTextProperty()
+        tprop.ShallowCopy(multiLineTextProp)
+        tprop.SetJustificationToLeft()
+        tprop.SetVerticalJustificationToCentered()
+        tprop.SetColor(0, 1, 0)
+
+        help_actor.SetMapper(textMapperC)
+        help_actor.VisibilityOn()
+        slice_actor.VisibilityOff()
+        self.Render()
 
     def HandleZoomEvent(self, interactor, event):
         camera = self.GetActiveCamera()
@@ -1409,6 +1473,13 @@ class CILViewer2D():
         self.ia = vtk.vtkImageHistogramStatistics()
         self.sliceActorNo = 0
 
+        # Help text
+        self.helpActor = vtk.vtkActor2D()
+        self.helpActor.GetPositionCoordinate().SetCoordinateSystemToNormalizedDisplay()
+        self.helpActor.GetPositionCoordinate().SetValue(0.1, 0.5)
+        self.helpActor.VisibilityOff()
+        self.ren.AddActor(self.helpActor)
+
         #initial Window/Level
         self.InitialLevel = 0
         self.InitialWindow = 0
@@ -1417,12 +1488,6 @@ class CILViewer2D():
         self.event = ViewerEventManager()
 
         # ROI Widget
-        # self.ROIWidget = vtk.vtkBorderWidget()
-        # self.ROIWidget.SetInteractor(self.iren)
-        # self.ROIWidget.CreateDefaultRepresentation()
-        # self.ROIWidget.GetBorderRepresentation().GetBorderProperty().SetColor(0,1,0)
-        # self.ROIWidget.AddObserver(vtk.vtkWidgetEvent.Select, self.style.OnROIModifiedEvent, 1.0)
-
         self.ROIWidget = vtk.vtkBoxWidget()
         self.ROIWidget.SetInteractor(self.iren)
         self.ROIWidget.HandlesOn()
@@ -1432,7 +1497,6 @@ class CILViewer2D():
         self.ROIWidget.OutlineCursorWiresOff()
         self.ROIWidget.SetPlaceFactor(1)
 
-        # self.ROIWidget.SetInputConnection(self.img3D.GetOutput())
         self.ROIWidget.AddObserver(vtk.vtkWidgetEvent.Select, self.style.OnROIModifiedEvent, 1.0)
 
         # edge points of the ROI

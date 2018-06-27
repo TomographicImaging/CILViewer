@@ -94,7 +94,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
         self._viewer.ren.SetActiveCamera(camera)
 
     def Render(self):
-        self._viewer.ren.Render()
+        self._viewer.renWin.Render()
 
     def GetKeyCode(self):
         return self.GetInteractor().GetKeyCode()
@@ -130,6 +130,12 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
 
     def GetViewerEvent(self, event):
         return self._viewer.event.isActive(event)
+
+    def HideActor(self, actorno, delete=False):
+        self._viewer.hideActor(actorno, delete)
+
+    def ShowActor(self, actorno):
+        self._viewer.showActor(actorno)
 
     def mouseInteraction(self, interactor, event):
         if event == 'MouseWheelForwardEvent':
@@ -196,8 +202,66 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
             # DELETE ROI
             print ("DELETE ROI")
 
+        elif interactor.GetKeyCode() == "h":
+            self.DisplayHelp()
+
         else:
             print("Unhandled event %s" % interactor.GetKeyCode())
+
+    def DisplayHelp(self):
+        help_actor = self._viewer.helpActor
+        slice_actor = self._viewer.sliceActor
+
+
+        if help_actor.GetVisibility():
+            help_actor.VisibilityOff()
+            slice_actor.VisibilityOn()
+            self.ShowActor(1)
+            self.Render()
+            return
+
+        font_size = 24
+
+        # Create the text mappers and the associated Actor2Ds.
+
+        # The font and text properties (except justification) are the same for
+        # each multi line mapper. Let's create a common text property object
+        multiLineTextProp = vtk.vtkTextProperty()
+        multiLineTextProp.SetFontSize(font_size)
+        multiLineTextProp.SetFontFamilyToArial()
+        multiLineTextProp.BoldOn()
+        multiLineTextProp.ItalicOn()
+        multiLineTextProp.ShadowOn()
+        multiLineTextProp.SetLineSpacing(1.3)
+
+        # The text is on multiple lines and center-justified (both horizontal and
+        # vertical).
+        textMapperC = vtk.vtkTextMapper()
+        textMapperC.SetInput("Mouse Interactions:\n"
+                             "\n"
+                             "  - Slice: Mouse Scroll\n"
+                             "  - Pan: Ctrl + Right Mouse + Move\n"
+                             "  - Adjust Camera: Left Mouse + Move\n"
+                             "  - Rotate: Ctrl + Left Mouse + Move"
+                             "\n"
+                             "Keyboard Interactions:\n"
+                             "\n"
+                             "  - YZ Plane: X\n"
+                             "  - XZ Plane: Y\n"
+                             "  - XY Plane: Z\n"
+                             )
+        tprop = textMapperC.GetTextProperty()
+        tprop.ShallowCopy(multiLineTextProp)
+        tprop.SetJustificationToLeft()
+        tprop.SetVerticalJustificationToCentered()
+        tprop.SetColor(0, 1, 0)
+
+        help_actor.SetMapper(textMapperC)
+        help_actor.VisibilityOn()
+        slice_actor.VisibilityOff()
+        self.HideActor(1)
+
+        self.Render()
 
 class CILViewer():
     '''Simple 3D Viewer based on VTK classes'''
@@ -245,6 +309,13 @@ class CILViewer():
         self.ren.SetBackground(.1, .2, .4)
 
         self.actors = {}
+
+        # Help text
+        self.helpActor = vtk.vtkActor2D()
+        self.helpActor.GetPositionCoordinate().SetCoordinateSystemToNormalizedDisplay()
+        self.helpActor.GetPositionCoordinate().SetValue(0.1, 0.5)
+        self.helpActor.VisibilityOff()
+        self.ren.AddActor(self.helpActor)
         
         self.iren.Initialize()
 
