@@ -529,6 +529,10 @@ class Ui_MainWindow(object):
         weights.SetNumberOfComponents(1)
         weights.SetName("Weights")
 
+        vertex_id = vtk.vtkDoubleArray()
+        vertex_id.SetNumberOfComponents(1)
+        vertex_id.SetName("VertexID")
+
         print("creating graph")
         # Adding to graph now
         N = int(len(tree) / 2)
@@ -536,6 +540,7 @@ class Ui_MainWindow(object):
         # normalise the values in Y
         # transpose tree
         treeT = list(zip(*tree))
+
         maxY = max(treeT[1])
         minY = min(treeT[1])
         deltaY = maxY - minY
@@ -565,11 +570,14 @@ class Ui_MainWindow(object):
             Y.InsertNextValue((v[1][1] - minY)/ deltaY )
 
             weights.InsertNextValue(1.)
+            vertex_id.InsertNextValue(2*i)
+            vertex_id.InsertNextValue(2*i+1)
         print("Finished")  # Execution reaches here, error seems to be in cleanup upon closing
 
         graph.GetVertexData().AddArray(X)
         graph.GetVertexData().AddArray(Y)
         graph.GetEdgeData().AddArray(weights)
+        graph.GetVertexData().AddArray(vertex_id)
 
         print("Added Data")
         layoutStrategy = vtk.vtkAssignCoordinatesLayoutStrategy()
@@ -763,13 +771,18 @@ class Ui_MainWindow(object):
         worker.signals.error.connect(self.displayFileErrorDialog)
 
 
-    def openFile(self, progress_callback):
+    def openFile(self, progress_callback, **kwargs):
         """
         Open file(s) based on results from QFileDialog
 
         :param (function) progress_callback:
             Callback funtion to emit progress percentage.
         """
+
+        if 'filename' not in kwargs.keys():
+            fn = self.fn
+        else:
+            fn = ([kwargs['filename']],)
 
         fn = self.fn
         # If the user has pressed cancel, the first element of the tuple will be empty.
@@ -861,11 +874,21 @@ class Ui_MainWindow(object):
 
 def main():
     import sys
+    import argparse
+    parser = argparse.ArgumentParser(description="Data viewer")
+    parser.add_argument('--dev', action='store_true', dest='development')
+    args= parser.parse_args()
+    print (args.development)
+
     app = QtWidgets.QApplication(sys.argv)
     MainWindow = QtWidgets.QMainWindow()
     ui = Ui_MainWindow()
     ui.setupUi(MainWindow)
     MainWindow.show()
+    if args.development:
+        ui.openFile(filename='../../../../../data/head.mha')
+        ui.createDockableWindow()
+        ui.generateGraph()
     sys.exit(app.exec_())
 
 if __name__ == "__main__":
