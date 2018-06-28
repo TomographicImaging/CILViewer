@@ -20,6 +20,9 @@ from enum import Enum
 import os
 import math
 
+from PIL import Image
+
+
 SLICE_ORIENTATION_XY = 2 # Z
 SLICE_ORIENTATION_XZ = 1 # Y
 SLICE_ORIENTATION_YZ = 0 # X
@@ -65,7 +68,7 @@ class Converter():
         dims = imgdata.GetDimensions()
         print ("vtk2numpy: VTKImageData dims {0}".format(dims))
 
-        old = True
+        old = False
         if old:
             dims = (dims[2],dims[1],dims[0])
             data3d = numpy.reshape(img_data, dims, order='C')
@@ -169,6 +172,77 @@ class Converter():
                                           darkField=darkField)
 
 
+
+    @staticmethod
+    def pureTiff2Numpy(filenames, sampleRate=None, bounds=(512,512,512), **kwargs):
+        """
+        Takes a tiff stack and converts it into a 3D numpy array.
+
+        :param (list) filenames :
+            List of filenames to process.
+
+        :param (tuple) sampleRate :
+            Tuple of integers to sample by.
+            eg. (2,2,2) will take every second pixel in each direction. (x,y,z)
+
+        :param (tuple) bounds :
+            Tuple of integers to set the bounds for the size of the resulting array.
+            This is used to calculate sample rate. If sample rate is specified,
+            the function will make sure that the user supplies sample rate will fit within the bounds sepcified.
+
+        :param (any) kwargs :
+            Any additional keyword arguments.
+
+        :return (ndarray):
+            Numpy array containing the pixel values in 3D. (x,y,z)
+        """
+
+        # Check to see if there is a progress callback
+        if 'progress_callback' in kwargs.keys() and kwargs['progress_callback']:
+
+            p_callback = kwargs['progress_callback']
+        else:
+            p_callback = None
+
+        # Get array dimensions
+        first_img = Image.open(filenames[0])
+        first_arr = numpy.array(first_img)
+        shape = first_arr.shape
+
+        # Calculate sample rate
+        sample_rate = tuple(
+            map(lambda x, y: int(math.ceil(float(x) / y)), [len(filenames), shape[0], shape[1]], bounds)
+        )
+
+        # If a user has defined resample rate, check to see which has higher factor and keep that
+        if sampleRate is not None:
+            sampleRate = Converter.highest_tuple_element(sampleRate, sample_rate)
+        else:
+            sampleRate = sample_rate
+
+        # Get size of new numpy array based on sample rate
+        subsampled_arr = first_arr[0::sampleRate[1], 0::sampleRate[2]]
+        sub_shape = subsampled_arr.shape
+        subsampled_files = filenames[::sampleRate[0]]
+
+        output_array = numpy.empty((len(subsampled_files), sub_shape[0], sub_shape[1]), order='F')
+
+        # Calculate the increment based on number of files.
+        increment = 60.0/ len(subsampled_files)
+
+        # Process the images
+        for i, file in enumerate(subsampled_files):
+            img = Image.open(file)
+            img_arr = numpy.array(img)
+            output_array[i] = img_arr[0::sampleRate[1],0::sampleRate[2]].copy()
+
+            # If the progress callback is available, send the progress signal.
+            if p_callback:
+                p_callback.emit((i+1) * increment + 30)
+
+        return output_array.transpose([2,1,0])
+
+
     @staticmethod
     def _tiffStack2numpy(filenames,
                         extent = None , sampleRate = None ,\
@@ -270,10 +344,14 @@ class Converter():
     def highest_tuple_element(user,calc):
         """
         Returns a tuple containing the maximum combination in elementwise comparison
-        :param (tuple)  user: User suppliec tuple
-        :param (tuple)  calc: Calculated tuple
+        :param (tuple)user:
+            User suppliec tuple
 
-        :return (tuple): Highest elementwise combination
+        :param (tuple) calc:
+            Calculated tuple
+
+        :return (tuple):
+            Highest elementwise combination
         """
 
         output = []
@@ -648,27 +726,6 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
 
     def OnKeyPress(self, interactor, event):
 
-        # print ("Pressed key %s" % interactor.GetKeyCode())
-        # Slice Orientation
-        if interactor.GetKeyCode() == "X":
-            # slice on the other orientation
-
-            self.SetSliceOrientation ( SLICE_ORIENTATION_YZ )
-            self.SetActiveSlice( int(self.GetDimensions()[0] / 2) )
-            self.UpdatePipeline(True)
-
-        elif interactor.GetKeyCode() == "Y":
-            # slice on the other orientation
-            self.SetSliceOrientation (  SLICE_ORIENTATION_XZ )
-            self.SetActiveSlice ( int(self.GetInputData().GetDimensions()[1] / 2) )
-            self.UpdatePipeline(True)
-
-        elif interactor.GetKeyCode() == "Z":
-            # slice on the other orientation
-            self.SetSliceOrientation (  SLICE_ORIENTATION_XY )
-            self.SetActiveSlice ( int(self.GetInputData().GetDimensions()[2] / 2) )
-            self.UpdatePipeline(True)
-
         if interactor.GetKeyCode() == "x":
             # Change the camera view point
             camera = vtk.vtkCamera()
@@ -680,9 +737,10 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
             camera.SetPosition(newposition)
             camera.SetViewUp(0,0,1) # Orig
             self.SetActiveCamera(camera)
-            self.Render()
-            interactor.SetKeyCode("X")
-            self.OnKeyPress(interactor, event)
+
+            self.SetSliceOrientation ( SLICE_ORIENTATION_YZ )
+            self.SetActiveSlice( int(self.GetDimensions()[0] / 2) )
+            self.UpdatePipeline(True)
 
         elif interactor.GetKeyCode() == "y":
              # Change the camera view point
@@ -697,11 +755,10 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
             newposition[1] = -newposition[1]
             camera.SetPosition(newposition)
             camera.SetViewUp(0,0,1) # Orig
-            # camera.SetViewUp(0,0,1)
             self.SetActiveCamera(camera)
-            self.Render()
-            interactor.SetKeyCode("Y")
-            self.OnKeyPress(interactor, event)
+            self.SetSliceOrientation(SLICE_ORIENTATION_XZ)
+            self.SetActiveSlice(int(self.GetInputData().GetDimensions()[1] / 2))
+            self.UpdatePipeline(True)
 
         elif interactor.GetKeyCode() == "z":
              # Change the camera view point
@@ -715,9 +772,9 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
             camera.SetViewUp(0,1,0)
             self.SetActiveCamera(camera)
             self.ResetCamera()
-            self.Render()
-            interactor.SetKeyCode("Z")
-            self.OnKeyPress(interactor, event)
+            self.SetSliceOrientation(SLICE_ORIENTATION_XY)
+            self.SetActiveSlice(int(self.GetInputData().GetDimensions()[2] / 2))
+            self.UpdatePipeline(True)
 
         elif interactor.GetKeyCode() == "a":
             # reset color/window
@@ -730,7 +787,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
             window = 2*max(abs(level-cmin),abs(level-cmax))
 
             self.SetInitialLevel( level )
-            self.SetInitialWindow( window  )
+            self.SetInitialWindow( window )
 
             self.GetWindowLevel().SetLevel(self.GetInitialLevel())
             self.GetWindowLevel().SetWindow(self.GetInitialWindow())
@@ -759,13 +816,16 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
                 self.SetEventActive("SHOW_LINE_PROFILE_EVENT")
                 self.DisplayLineProfile(interactor, event, True)
 
+        elif interactor.GetKeyCode() == 'h':
+            self.DisplayHelp()
+
         else :
             #print ("Unhandled event %s" % (interactor.GetKeyCode(), )))
             pass
 
     def OnLeftButtonPressEvent(self, interactor, event):
         # print ("INTERACTOR", interactor)
-        # interactor = self._viewer.GetInteractor()
+        # interactor = self._viewer.getInteractor()
 
         alt = interactor.GetAltKey()
         shift = interactor.GetShiftKey()
@@ -808,7 +868,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
             self._viewer.displayHistogram = False
 
     def OnLeftButtonReleaseEvent(self, interactor, event):
-        interactor = self._viewer.GetInteractor()
+        interactor = self._viewer.getInteractor()
 
         if self.GetViewerEvent("CREATE_ROI_EVENT"):
             self.OnROIModifiedEvent(interactor, event)
@@ -822,7 +882,6 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
         self.SetEventInactive("DELETE_ROI_EVENT")
 
     def OnRightButtonPressEvent(self, interactor, event):
-        interactor = self._viewer.GetInteractor()
 
         alt = interactor.GetAltKey()
         shift = interactor.GetShiftKey()
@@ -833,16 +892,16 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
 
         if alt and not (ctrl and shift):
             self.SetEventActive("WINDOW_LEVEL_EVENT")
-            self.log ("Event %s is WINDOW_LEVEL_EVENT" % (event))
+            self.log("Event %s is WINDOW_LEVEL_EVENT" % (event))
             self.HandleWindowLevel(interactor, event)
         elif shift and not (ctrl and alt):
             self.SetEventActive("ZOOM_EVENT")
             self.SetInitialCameraPosition( self.GetActiveCamera().GetPosition())
-            self.log ("Event %s is ZOOM_EVENT" % (event))
+            self.log("Event %s is ZOOM_EVENT" % (event))
         elif ctrl and not (shift and alt):
             self.SetEventActive("PAN_EVENT")
-            self.SetInitialCameraPosition ( self.GetActiveCamera().GetPosition() )
-            self.log ("Event %s is PAN_EVENT" % (event))
+            self.SetInitialCameraPosition( self.GetActiveCamera().GetPosition() )
+            self.log("Event %s is PAN_EVENT" % (event))
 
     def OnRightButtonReleaseEvent(self, interactor, event):
         self.log (event)
@@ -1066,6 +1125,67 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
         elif self.GetViewerEvent("SHOW_LINE_PROFILE_EVENT"):
             self.DisplayLineProfile(interactor, event, True)
 
+    def DisplayHelp(self):
+        help_actor = self._viewer.helpActor
+        slice_actor = self._viewer.sliceActor
+
+        if help_actor.GetVisibility():
+            help_actor.VisibilityOff()
+            slice_actor.VisibilityOn()
+            self.Render()
+            return
+
+        font_size = 24
+
+        # Create the text mappers and the associated Actor2Ds.
+
+        # The font and text properties (except justification) are the same for
+        # each multi line mapper. Let's create a common text property object
+        multiLineTextProp = vtk.vtkTextProperty()
+        multiLineTextProp.SetFontSize(font_size)
+        multiLineTextProp.SetFontFamilyToArial()
+        multiLineTextProp.BoldOn()
+        multiLineTextProp.ItalicOn()
+        multiLineTextProp.ShadowOn()
+        multiLineTextProp.SetLineSpacing(1.3)
+
+        # The text is on multiple lines and center-justified (both horizontal and
+        # vertical).
+        textMapperC = vtk.vtkTextMapper()
+        textMapperC.SetInput("Mouse Interactions:\n"
+                             "\n"
+                             "  - Slice: Mouse Scroll\n"
+                             "  - Quick Slice: Shift + Mouse Scroll\n"
+                             "  - Pick: Left Click\n"
+                             "  - Zoom: Shift + Right Mouse + Move Up/Down\n"
+                             "  - Pan: Ctrl + Right Mouse + Move\n"
+                             "  - Adjust Window: Alt+ Right Mouse + Move Up/Down\n"
+                             "  - Adjust Level: Alt + Right Mouse + Move Left/Right\n"
+                             "  Region of Interest (ROI):\n"
+                             "      - Create: Ctrl + Left Click\n"
+                             "      - Delete: Alt + Left Click\n"
+                             "      - Resize: Click + Drag handles\n"
+                             "      - Translate: Middle Mouse + Move within ROI\n"
+                             "\n"
+                             "Keyboard Interactions:\n"
+                             "\n"
+                             "  - Auto Window/Level: A\n"
+                             "  - Profile: L\n"
+                             "  - Save Current Image: S\n"
+                             "  - YZ Plane: X\n"
+                             "  - XZ Plane: Y\n"
+                             "  - XY Plane: Z\n"
+                             )
+        tprop = textMapperC.GetTextProperty()
+        tprop.ShallowCopy(multiLineTextProp)
+        tprop.SetJustificationToLeft()
+        tprop.SetVerticalJustificationToCentered()
+        tprop.SetColor(0, 1, 0)
+
+        help_actor.SetMapper(textMapperC)
+        help_actor.VisibilityOn()
+        slice_actor.VisibilityOff()
+        self.Render()
 
     def HandleZoomEvent(self, interactor, event):
         camera = self.GetActiveCamera()
@@ -1091,11 +1211,8 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
         x,y = interactor.GetEventPosition()
         x0,y0 = interactor.GetInitialEventPosition()
 
-        ic = self.display2imageCoordinate((x,y))
-        ic0 = self.display2imageCoordinate((x0,y0))
-
-        dx = 1 * ( ic[0] - ic0[0] )
-        dy = 1 * ( ic[1] - ic0[1] )
+        dx = (x - x0)/2
+        dy = (y - y0)/2
 
         camera = self.GetActiveCamera()
         newposition = [i for i in self.GetInitialCameraPosition()]
@@ -1356,6 +1473,13 @@ class CILViewer2D():
         self.ia = vtk.vtkImageHistogramStatistics()
         self.sliceActorNo = 0
 
+        # Help text
+        self.helpActor = vtk.vtkActor2D()
+        self.helpActor.GetPositionCoordinate().SetCoordinateSystemToNormalizedDisplay()
+        self.helpActor.GetPositionCoordinate().SetValue(0.1, 0.5)
+        self.helpActor.VisibilityOff()
+        self.ren.AddActor(self.helpActor)
+
         #initial Window/Level
         self.InitialLevel = 0
         self.InitialWindow = 0
@@ -1364,12 +1488,6 @@ class CILViewer2D():
         self.event = ViewerEventManager()
 
         # ROI Widget
-        # self.ROIWidget = vtk.vtkBorderWidget()
-        # self.ROIWidget.SetInteractor(self.iren)
-        # self.ROIWidget.CreateDefaultRepresentation()
-        # self.ROIWidget.GetBorderRepresentation().GetBorderProperty().SetColor(0,1,0)
-        # self.ROIWidget.AddObserver(vtk.vtkWidgetEvent.Select, self.style.OnROIModifiedEvent, 1.0)
-
         self.ROIWidget = vtk.vtkBoxWidget()
         self.ROIWidget.SetInteractor(self.iren)
         self.ROIWidget.HandlesOn()
@@ -1379,7 +1497,6 @@ class CILViewer2D():
         self.ROIWidget.OutlineCursorWiresOff()
         self.ROIWidget.SetPlaceFactor(1)
 
-        # self.ROIWidget.SetInputConnection(self.img3D.GetOutput())
         self.ROIWidget.AddObserver(vtk.vtkWidgetEvent.Select, self.style.OnROIModifiedEvent, 1.0)
 
         # edge points of the ROI
@@ -1472,7 +1589,7 @@ class CILViewer2D():
         self.horizLine = vtk.vtkLine()
         self.vertLine = vtk.vtkLine()
         self.crosshairsActor = vtk.vtkActor()
-        self.GetRenderer().AddActor(self.crosshairsActor)
+        self.getRenderer().AddActor(self.crosshairsActor)
 
         # rescale input image
         # contains (scale, shift)
@@ -1483,10 +1600,10 @@ class CILViewer2D():
         if self.debug:
             print(msg)
 
-    def GetInteractor(self):
+    def getInteractor(self):
         return self.iren
 
-    def GetRenderer(self):
+    def getRenderer(self):
         return self.ren
 
     def setInput3DData(self, imageData):
@@ -1632,7 +1749,7 @@ class CILViewer2D():
         self.ren.ResetCameraClippingRange()
 
         # adjust camera focal point
-        camera = self.GetRenderer().GetActiveCamera()
+        camera = self.getRenderer().GetActiveCamera()
         fp = list (camera.GetFocalPoint())
         fp[self.sliceOrientation] = self.sliceno
         camera.SetFocalPoint(fp)
@@ -1776,8 +1893,8 @@ class CILViewer2D():
 
     def setSliceOrientation(self, axis):
         if axis in ['x','y','z']:
-            self.GetInteractor().SetKeyCode(axis)
-            self.style.OnKeyPress(self.GetInteractor(), "KeyPressEvent")
+            self.getInteractor().SetKeyCode(axis)
+            self.style.OnKeyPress(self.getInteractor(), "KeyPressEvent")
 
     def updateLinePlot(self, imagecoordinate, display):
 
@@ -1852,7 +1969,7 @@ class CILViewer2D():
             if self.linePlot == 0:
                 self.linePlotActor.AddDataSetInputConnection(self.lineVOIX.GetOutputPort())
                 self.linePlotActor.AddDataSetInputConnection(self.lineVOIY.GetOutputPort())
-                self.GetRenderer().AddActor(self.linePlotActor)
+                self.getRenderer().AddActor(self.linePlotActor)
                 self.linePlot = 1
 
 
@@ -1905,5 +2022,11 @@ class CILViewer2D():
             self.crosshairsActor.VisibilityOff()
 
             self.renWin.Render()
+
+    def getColourWindow(self):
+        return self.wl.GetWindow()
+
+    def getColourLevel(self):
+        return self.wl.GetLevel()
 
 

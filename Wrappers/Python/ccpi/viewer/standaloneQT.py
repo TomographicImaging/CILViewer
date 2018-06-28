@@ -65,7 +65,7 @@ class Window(QMainWindow):
         self.frame = QFrame()
         self.vl = QVBoxLayout()
         self.vtkWidget = QVTKCILViewer(self.frame)
-        self.iren = self.vtkWidget.GetInteractor()
+        self.iren = self.vtkWidget.getInteractor()
         self.vl.addWidget(self.vtkWidget)
 
         self.frame.setLayout(self.vl)
@@ -74,7 +74,7 @@ class Window(QMainWindow):
         self.toolbar()
 
         self.statusBar()
-        self.setStatusTip('Open file to begin visualiser...')
+        self.setStatusTip('Open file to begin visualisation...')
 
         self.show()
 
@@ -96,7 +96,7 @@ class Window(QMainWindow):
 
 
     def openFile(self):
-        fn = QFileDialog.getOpenFileNames(self, 'Open File','../../../../../data')
+        fn = QFileDialog.getOpenFileNames(self, 'Open File')
 
         # If the user has pressed cancel, the first element of the tuple will be empty.
         # Quit the method cleanly
@@ -163,6 +163,12 @@ class Window(QMainWindow):
     def close(self):
         qApp.quit()
 
-App = QApplication(sys.argv)
-gui = Window()
-sys.exit(App.exec())
+
+def main():
+
+    App = QApplication(sys.argv)
+    gui = Window()
+    sys.exit(App.exec())
+
+if __name__=="__main__":
+    main()

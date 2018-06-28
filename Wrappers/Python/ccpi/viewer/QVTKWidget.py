@@ -131,8 +131,6 @@ elif PyQtImpl == "PySide":
 else:
     raise ImportError("Unknown PyQt implementation " + repr(PyQtImpl))
 
-from ccpi.viewer.CILViewer2D import CILViewer2D , Converter, CILInteractorStyle
-
 
 # Define types for base class, based on string
 if QVTKRWIBase == "QWidget":
@@ -142,7 +140,7 @@ elif QVTKRWIBase == "QGLWidget":
 else:
     raise ImportError("Unknown base class for QVTKRenderWindowInteractor " + QVTKRWIBase)
 
-class QVTKCILViewer(QVTKRWIBaseClass):
+class QVTKWidget(QVTKRWIBaseClass):
 
     """ A QVTKRenderWindowInteractor for Python and Qt.  Uses a
     vtkGenericRenderWindowInteractor to handle the interactions.  Use
@@ -305,8 +303,18 @@ class QVTKCILViewer(QVTKRWIBaseClass):
             self._Iren = vtk.vtkRenderWindowInteractor()
             self._Iren.SetRenderWindow(self._RenderWindow)
 
-        self.viewer = CILViewer2D(renWin = self._RenderWindow,
+        try:
+            self.viewer = kwargs['viewer'](renWin = self._RenderWindow,
                                   iren = self._Iren)
+
+        except KeyError:
+            raise KeyError("Viewer class not provided. Submit an uninstantiated viewer class object"
+                           "using 'viewer' keyword")
+
+        if 'interactorStyle' in kwargs.keys():
+            self.viewer.style = kwargs['interactorStyle'](self.viewer)
+            self.viewer.iren.SetInteractorStyle(self.viewer.style)
+
 
         # do all the necessary qt setup
         self.setAttribute(Qt.WA_OpaquePaintEvent)
