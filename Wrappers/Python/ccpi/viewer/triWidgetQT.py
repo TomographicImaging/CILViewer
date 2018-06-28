@@ -760,7 +760,7 @@ class Ui_MainWindow(object):
 
         self.showProgressBar()
 
-        self.fn = QtWidgets.QFileDialog.getOpenFileNames(self.mainwindow, 'Open File','../../../../../data')
+        self.fn = QtWidgets.QFileDialog.getOpenFileNames(self.mainwindow, 'Open File')
 
         worker = Worker(self.openFile)
         self.threadpool.start(worker)

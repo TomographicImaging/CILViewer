@@ -96,7 +96,7 @@ class Window(QMainWindow):
 
 
     def openFile(self):
-        fn = QFileDialog.getOpenFileNames(self, 'Open File','../../../../../data')
+        fn = QFileDialog.getOpenFileNames(self, 'Open File')
 
         # If the user has pressed cancel, the first element of the tuple will be empty.
         # Quit the method cleanly
