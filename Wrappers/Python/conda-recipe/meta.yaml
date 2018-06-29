@@ -8,10 +8,6 @@ build:
   script_env:
     - CIL_VERSION
 
-  entry_points:
-    - CILViewerLaunch = ccpi.viewer.standaloneQT:main
-    - triViewerLaunch = ccpi.viewer.triWidgetQT:main
-
 #  number: 0
   
 requirements:
@@ -23,8 +19,6 @@ requirements:
     - python
     - numpy
     - vtk
-    - natsort
-    - pyqt
 
 
 	
