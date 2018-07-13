@@ -18,7 +18,6 @@ import vtk
 import numpy
 import math
 from vtk.util import numpy_support
-
 SLICE_ORIENTATION_XY = 2 # Z
 SLICE_ORIENTATION_XZ = 1 # Y
 SLICE_ORIENTATION_YZ = 0 # X
@@ -560,4 +559,55 @@ class CILViewer():
         self.ren.Render()
         self.renWin.Render()
 
-
+    def createAnimation(self, viewer, FrameCount=10, 
+                        InitialCameraPosition=None, FocalPoint=None, 
+                        ClippingRange=None, AngleRange = 360, ViewUp = None):
+        if InitialCameraPosition is None:
+            InitialCameraPosition = viewer.getCamera().GetPosition()
+        if FocalPoint is None:
+            FocalPoint = viewer.getCamera().GetFocalPoint()
+        if ClippingRange is None:
+            ClippingRange = (0,500)
+        if ViewUp is None:
+            ViewUp = (0,0,1)
+        if FrameCount is None:
+            FrameCount = 100
+        #Setting locked values for camera position
+        locX = InitialCameraPosition[0]
+        locY = InitialCameraPosition[1]
+        locZ = InitialCameraPosition[2]
+        
+        #Setting camera position
+        viewer.getCamera().SetPosition(InitialCameraPosition)
+        viewer.getCamera().SetFocalPoint(FocalPoint)
+        
+        #Setting camera viewup 
+        viewer.getCamera().SetViewUp(ViewUp)
+        
+        #Set camera clipping range
+        viewer.getCamera().SetClippingRange(ClippingRange)
+        
+        #Defining distance from camera to focal point
+        r = numpy.sqrt(((InitialCameraPosition[2]-FocalPoint[2])**2)
+        +(InitialCameraPosition[1]-FocalPoint[1])**2)
+        print('Radius (distance from camera to focal point): {}'.format(r))
+        
+        camera = vtk.vtkCamera()
+        camera.SetPosition(InitialCameraPosition)
+        camera.SetFocalPoint(FocalPoint)
+        camera.SetViewUp(ViewUp)
+        viewer.getRenderer().SetActiveCamera(camera)
+        
+       
+        #Animating the camera
+        for x in range(FrameCount):
+            angle = ((numpy.pi)*2/100)*x
+            NewLocationX = r*(numpy.sin(angle))+FocalPoint[0]
+            NewLocationY = r*(numpy.cos(angle))+FocalPoint[1]
+            NewLocationZ  = r*(numpy.cos(angle))+FocalPoint[2]
+            NewLocation = (NewLocationX, NewLocationY, locZ)
+            viewer.getCamera().SetPosition(NewLocation)
+            
+            #Rendering and saving the render
+            viewer.getRenderer().Render()
+            viewer.saveRender('test_{}'.format(x))
