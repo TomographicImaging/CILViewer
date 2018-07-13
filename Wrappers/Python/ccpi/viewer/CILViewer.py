@@ -598,16 +598,16 @@ class CILViewer():
         camera.SetViewUp(ViewUp)
         viewer.getRenderer().SetActiveCamera(camera)
         
-        if CreateAnimation == True:
-            #Animating the camera
-            for x in range(FrameCount):
-                angle = ((numpy.pi)*2/100)*x
-                NewLocationX = r*(numpy.sin(angle))+FocalPoint[0]
-                NewLocationY = r*(numpy.cos(angle))+FocalPoint[1]
-                NewLocationZ  = r*(numpy.cos(angle))+FocalPoint[2]
-                NewLocation = (NewLocationX, NewLocationY, locZ)
-                viewer.getCamera().SetPosition(NewLocation)
-                
-                #Rendering and saving the render
-                viewer.getRenderer().Render()
-                viewer.saveRender('test_{}'.format(x))
+       
+        #Animating the camera
+        for x in range(FrameCount):
+            angle = ((numpy.pi)*2/100)*x
+            NewLocationX = r*(numpy.sin(angle))+FocalPoint[0]
+            NewLocationY = r*(numpy.cos(angle))+FocalPoint[1]
+            NewLocationZ  = r*(numpy.cos(angle))+FocalPoint[2]
+            NewLocation = (NewLocationX, NewLocationY, locZ)
+            viewer.getCamera().SetPosition(NewLocation)
+            
+            #Rendering and saving the render
+            viewer.getRenderer().Render()
+            viewer.saveRender('test_{}'.format(x))
