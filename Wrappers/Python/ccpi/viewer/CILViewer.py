@@ -16,8 +16,7 @@
    
 import vtk
 import numpy
-import math
-from vtk.util import numpy_support
+import os
 
 SLICE_ORIENTATION_XY = 2 # Z
 SLICE_ORIENTATION_XZ = 1 # Y
@@ -205,6 +204,10 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
 
         elif interactor.GetKeyCode() == "h":
             self.DisplayHelp()
+            
+        elif interactor.GetKeyCode() == "s":
+            filename = "current_render"
+            self.SaveRender(filename)
 
         else:
             print("Unhandled event %s" % interactor.GetKeyCode())
@@ -263,6 +266,8 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
         self.HideActor(1)
 
         self.Render()
+    def SaveRender(self, filename):
+        self._viewer.saveRender(filename)
 
 class CILViewer():
     '''Simple 3D Viewer based on VTK classes'''
@@ -457,8 +462,16 @@ class CILViewer():
 
     def installPipeline(self):
         # Reset the viewer when loading a new data source
-        for actor in self.ren.GetActors():
-            self.ren.RemoveActor(actor)
+        try:
+            N = self.ren.GetActors().GetNumberOfItems()
+            i = 0
+            while i < N:
+                actor = self.ren.GetActors().GetNextActor()
+                self.ren.RemoveActor(actor)
+                i += 1
+        except TypeError as te:
+            print (te)
+            print (self.ren.GetActors())
 
         self.voi.SetInputData(self.img3D)
 
@@ -559,5 +572,26 @@ class CILViewer():
         self.sliceActor.Update()
         self.ren.Render()
         self.renWin.Render()
+        
+    def saveRender(self, filename, renWin=None):
+        '''Save the render window to PNG file'''
+        # screenshot code:
+        w2if = vtk.vtkWindowToImageFilter()
+        if renWin == None:
+            renWin = self.renWin
+        w2if.SetInput(renWin)
+        w2if.Update()
+
+        # Check if user has supplied an extension
+        extn = os.path.splitext(filename)[1]
+        if extn.lower() == '.png':
+                saveFilename = filename
+        else:
+            saveFilename = filename+'.png'
+
+        writer = vtk.vtkPNGWriter()
+        writer.SetFileName(saveFilename)
+        writer.SetInputConnection(w2if.GetOutputPort())
+        writer.Write()
 
 
