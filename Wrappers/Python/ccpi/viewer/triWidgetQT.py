@@ -244,6 +244,10 @@ class Ui_MainWindow(object):
         self.progressBar.setMaximumWidth(250)
         self.progressBar.hide()
         self.statusbar.addPermanentWidget(self.progressBar)
+        
+        self.err = vtk.vtkFileOutputWindow()
+        self.err.SetFileName("error.log")
+        vtk.vtkOutputWindow.SetInstance(self.err)
 
     def linkViewers(self, force_linked=False):
 
@@ -512,6 +516,7 @@ class Ui_MainWindow(object):
 
 
     def displayTree(self):
+        print ("displayTree")
         tree = self.segmentor.getContourTree()
 
         self.graphWidget.viewer.updateCornerAnnotation("featureAnnotation", "Features: {}".format(len(tree)/2))
@@ -800,6 +805,7 @@ class Ui_MainWindow(object):
             reader.Update()
             if progress_callback:
                 progress_callback.emit(90)
+                self.mainwindow.setStatusTip('File Read: {}'.format(reader.GetOutput().GetExtent()))
 
         # Multiple TIFF files selected
         else:
@@ -828,11 +834,27 @@ class Ui_MainWindow(object):
 
         else:
             self.viewerWidget.viewer.setInput3DData(reader.GetOutput())
+            if progress_callback:
+                progress_callback.emit(91)
+            self.mainwindow.setStatusTip('display 2D')
+            if progress_callback:
+                progress_callback.emit(92)
             self.viewer3DWidget.viewer.setInput3DData(reader.GetOutput())
+            if progress_callback:
+                progress_callback.emit(93)
             self.graph_numpy_input_data = Converter.vtk2numpy(reader.GetOutput(), transpose=[2,1,0])
+            if progress_callback:
+                progress_callback.emit(94)
+            self.mainwindow.setStatusTip('convert to numpy')
             self.mainwindow.setStatusTip('Ready')
+            if progress_callback:
+                progress_callback.emit(95)
             self.spacing = reader.GetOutput().GetSpacing()
+            if progress_callback:
+                progress_callback.emit(96)
             self.origin = reader.GetOutput().GetOrigin()
+            if progress_callback:
+                progress_callback.emit(97)
 
             ### After successfully opening file, reset the interface ###
             # Reset linked state
@@ -848,6 +870,8 @@ class Ui_MainWindow(object):
 
                 for element in self.treeWidgetUpdateElements:
                     element.setEnabled(False)
+                    
+        print ("finished openFile")
 
     def saveFile(self):
         dialog = QtWidgets.QFileDialog(self.mainwindow)
