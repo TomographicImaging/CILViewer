@@ -66,8 +66,8 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
         self.AddObserver('KeyPressEvent', self.keyPress, 1.0)
         self.AddObserver('LeftButtonPressEvent', self.OnLeftMouseClick)
         self.AddObserver('LeftButtonReleaseEvent', self.OnLeftMouseRelease)
-        self.AddObserver('RightButtonPressEvent', self.OnRightMousePress, 1.0)
-        self.AddObserver('RightButtonReleaseEvent', self.OnRightMouseRelease, 1.0)
+        #self.AddObserver('RightButtonPressEvent', self.OnRightMousePress, -0.5)
+        #self.AddObserver('RightButtonReleaseEvent', self.OnRightMouseRelease, -0.5)
 
     def GetSliceOrientation(self):
         return self._viewer.sliceOrientation
@@ -120,7 +120,8 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
     def SetDecimalisation(self, value):
         decimate = self._viewer.decimate
         decimate.SetTargetReduction(value)
-        decimate.Update()
+        if not decimate.GetInput() is None:
+            decimate.Update()
 
     def SetEventActive(self, event):
         self._viewer.event.On(event)
@@ -160,13 +161,22 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
     def OnRightMousePress(self, interactor, event):
         ctrl = interactor.GetControlKey()
         alt = interactor.GetAltKey()
-        shift = interactor.GetShiftKey
-
+        shift = interactor.GetShiftKey()
+        print (alt, ctrl,shift)
         if alt and not (ctrl and shift):
             self.SetEventActive("WINDOW_LEVEL_EVENT")
+        if not (alt and ctrl and shift):
+            self.SetEventActive("ZOOM_EVENT")
 
     def OnRightMouseRelease(self, interactor, event):
-        self.SetEventInactive("WINDOW_LEVEL_EVENT")
+        ctrl = interactor.GetControlKey()
+        alt = interactor.GetAltKey()
+        shift = interactor.GetShiftKey()
+        print (alt, ctrl,shift)
+        if alt and not (ctrl and shift):
+            self.SetEventInactive("WINDOW_LEVEL_EVENT")
+        if not (alt and ctrl and shift):
+            self.SetEventInactive("ZOOM_EVENT")
 
     def keyPress(self, interactor, event):
 
