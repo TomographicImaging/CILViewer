@@ -6,6 +6,7 @@ from ccpi.viewer.QVTKCILViewer import QVTKCILViewer
 from ccpi.viewer.CILViewer2D import Converter
 from natsort import natsorted
 import imghdr
+import os
 
 
 class ErrorObserver:
@@ -128,8 +129,20 @@ class Window(QMainWindow):
                     return
 
             # Have passed basic test, can attempt to load
-            numpy_image = Converter.tiffStack2numpyEnforceBounds(filenames=filenames)
-            reader = Converter.numpy2vtkImporter(numpy_image)
+            #numpy_image = Converter.tiffStack2numpyEnforceBounds(filenames=filenames)
+            #reader = Converter.numpy2vtkImporter(numpy_image)
+            #reader.Update()
+            reader = vtk.vtkTIFFReader()
+            sa = vtk.vtkStringArray()
+            #i = 0
+            #while (i < 1054):
+            for fname in filenames:
+                #fname = os.path.join(directory,"8bit-1%04d.tif" % i)
+                i = sa.InsertNextValue(fname)
+                
+            print ("read {} files".format( i ))
+            
+            reader.SetFileNames(sa)
             reader.Update()
 
         if self.e.ErrorOccurred():
@@ -165,7 +178,10 @@ class Window(QMainWindow):
 
 
 def main():
-
+    err = vtk.vtkFileOutputWindow()
+    err.SetFileName("viewer.log")
+    vtk.vtkOutputWindow.SetInstance(err)
+    
     App = QApplication(sys.argv)
     gui = Window()
     sys.exit(App.exec())
