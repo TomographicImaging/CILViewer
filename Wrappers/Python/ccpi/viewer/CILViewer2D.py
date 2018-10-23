@@ -38,12 +38,12 @@ class Converter():
 
     # Utility functions to transform numpy arrays to vtkImageData and viceversa
     @staticmethod
-    def numpy2vtkImporter(nparray, spacing=(1.,1.,1.), origin=(0,0,0)):
+    def numpy2vtkImporter(nparray, spacing=(1.,1.,1.), origin=(0,0,0), transpose=[2,1,0]):
         '''Creates a vtkImageImportFromArray object and returns it.
         
         It handles the different axis order from numpy to VTK'''
         importer = vtkImageImportFromArray.vtkImageImportFromArray()
-        importer.SetArray(numpy.transpose(nparray, [2,1,0]).copy())
+        importer.SetArray(numpy.transpose(nparray, transpose).copy())
         importer.SetDataSpacing(spacing)
         importer.SetDataOrigin(origin)
         return importer
