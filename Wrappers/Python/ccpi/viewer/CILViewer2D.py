@@ -998,7 +998,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
         return vc.GetComputedDoubleDisplayValue(self.GetRenderer())
 
 
-    def display2imageCoordinate(self, viewerposition):
+    def display2imageCoordinate(self, viewerposition, subvoxel = False):
         """
         Convert display coordinates into image coordinates and add the pixel value
 
@@ -1020,6 +1020,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
         if (pickPosition != [0,0,0]):
 
             imagePosition = self.world2imageCoordinate(pickPosition)
+            imagePositionF = self.world2imageCoordinateFloat(pickPosition)
             extent = self._viewer.img3D.GetExtent()
             
             # make sure the pick is on the image
@@ -1043,6 +1044,12 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
                 # pix = orig * scale + shift
                 # orig = (-shift + pix) / scale
                 pixelValue = (-shift + pixelValue) / scale
+                
+            if subvoxel:
+                for i in range(3):
+                    if not i == self.GetSliceOrientation():
+                        imagePosition[i] = imagePositionF[i]
+                
             return (
                 self.validateValue(imagePosition[0], 'x'),
                 self.validateValue(imagePosition[1], 'y'),
@@ -1073,7 +1080,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
         """
         Convert from the world or global coordinates to image coordinates
         :param world_coordinates: (x,y,z)
-        :return: (x,y,z) in image coorindates eg. slice index
+        :return: rounded to next integer (x,y,z) in image coorindates eg. slice index
         """
 
         dims = self.GetInputData().GetDimensions()
@@ -1082,6 +1089,20 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
         orig = self.GetInputData().GetOrigin()
 
         return [round(world_coordinates[i] / spac[i] + orig[i]) for i in range(3)]
+    
+    def world2imageCoordinateFloat(self, world_coordinates):
+        """
+        Convert from the world or global coordinates to image coordinates
+        :param world_coordinates: (x,y,z)
+        :return: float (x,y,z) in image coorindates eg. slice index
+        """
+
+        dims = self.GetInputData().GetDimensions()
+        self.log(dims)
+        spac = self.GetInputData().GetSpacing()
+        orig = self.GetInputData().GetOrigin()
+
+        return [world_coordinates[i] / spac[i] + orig[i] for i in range(3)]
 
     def image2world(self, image_coordinates):
 
