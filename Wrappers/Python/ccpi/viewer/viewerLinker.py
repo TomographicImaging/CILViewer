@@ -1,4 +1,5 @@
-
+# code largely copied from https://sourceforge.net/p/pyve/code/ci/master/tree/PyVE/components/viewer.py
+# MIT licensed
 from ccpi.viewer.CILViewer import CILInteractorStyle as CIL3DInteractorStyle
 from ccpi.viewer.CILViewer2D import CILInteractorStyle as CIL2DInteractorStyle
 
