@@ -609,7 +609,8 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
         else:
             return value
 
-
+       
+        
     def InitialiseBox(self, clickPosition):
         """
         Set the initial values for the box borders
@@ -819,7 +820,6 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
 
         elif interactor.GetKeyCode() == 'h':
             self.DisplayHelp()
-
         else :
             #print ("Unhandled event %s" % (interactor.GetKeyCode(), )))
             pass
@@ -1412,8 +1412,10 @@ class CILViewer2D():
         self.ROIWidget.GetOutlineProperty().SetColor(0,1,0)
         self.ROIWidget.OutlineCursorWiresOff()
         self.ROIWidget.SetPlaceFactor(1)
+        self.ROIWidget.KeyPressActivationOff()
 
-        self.ROIWidget.AddObserver(vtk.vtkWidgetEvent.Select, self.style.OnROIModifiedEvent, 1.0)
+        self.ROIWidget.AddObserver(vtk.vtkWidgetEvent.Select,
+                                   self.style.OnROIModifiedEvent, 1.0)
 
         # edge points of the ROI
         self.ROI = ()
@@ -1452,6 +1454,7 @@ class CILViewer2D():
         self.cursorActor.SetLayerNumber(1)
         self.cursorMapper.SetInputData(self.cursor.GetOutput())
         self.cursorActor.SetMapper(self.cursorMapper)
+        self.getRenderer().AddActor(self.cursorActor)
 
         # Zoom
         self.InitialCameraPosition = ()
@@ -1510,6 +1513,31 @@ class CILViewer2D():
         # rescale input image
         # contains (scale, shift)
         self.rescale = [ False , (1,0) ]
+        
+        # ImageTracer
+        self.imageTracer = vtk.vtkImageTracerWidget()
+        # set Interactor
+        self.imageTracer.SetInteractor(self.iren)
+        self.imageTracer.SetCaptureRadius(1.5)
+        self.imageTracer.GetLineProperty().SetColor(0.8, 0.8, 1.0)
+        self.imageTracer.GetLineProperty().SetLineWidth(3.0)
+        self.imageTracer.GetHandleProperty().SetColor(0.4, 0.4, 1.0)
+        self.imageTracer.GetSelectedHandleProperty().SetColor(1.0, 1.0, 1.0)
+        # Set the size of the glyph handle
+        self.imageTracer.GetGlyphSource().SetScale(2.0)
+        # Set the initial rotation of the glyph if desired.  The default glyph
+        # set internally by the widget is a '+' so rotating 45 deg. gives a 'x'
+        self.imageTracer.GetGlyphSource().SetRotationAngle(45.0)
+        self.imageTracer.GetGlyphSource().Modified()
+        self.imageTracer.ProjectToPlaneOn()
+        # Set key press activation on
+        self.imageTracer.KeyPressActivationOn()
+        # Use 't' to activate image tracer
+        self.imageTracer.SetKeyPressActivationValue('t')
+        
+        
+        # Set autoclose to on
+        self.imageTracer.AutoCloseOn()
 
 
     def log(self, msg):
@@ -1589,11 +1617,32 @@ class CILViewer2D():
                    extent[4], extent[5])
         self.sliceActor.Update()
 
-        self.updateCornerAnnotation("Slice %d/%d" % (self.sliceno + 1 , self.img3D.GetDimensions()[self.sliceOrientation]))
+        self.updateCornerAnnotation("Slice %d/%d" % (self.sliceno, self.img3D.GetDimensions()[self.sliceOrientation]-1))
 
         if self.displayHistogram:
             self.updateROIHistogram()
-
+        try:
+            if not self.img3D is None:
+                print ("self.img3D" , self.img3D)
+                # The image actor has an input.
+    
+                # Set the ROI widget's projection normal to the current orientation
+                self.imageTracer.SetProjectionNormal(self.sliceOrientation)
+                # Set the Tracer widget's position along the current projection normal,
+                # which should be the same location as the current slice. 
+                self.imageTracer.SetProjectionPosition(
+                        self.GetActiveSlice() * \
+                         self.img3D.GetSpacing()[self.sliceOrientation] - \
+                         self.img3D.GetPoint(0)[self.sliceOrientation] )
+                         #self.img3D.GetOrigin()[self.sliceOrientation] )
+                         
+    # this->input->GetPoint(0)[this->SliceOrientation] + (this->Slice * this->input->GetSpacing()[this->SliceOrientation]));
+            
+                self.imageTracer.SetViewProp(self.sliceActor);
+            else:
+                print ("self.img3D None")
+        except Exception as ge:
+            print (ge)
         self.AdjustCamera(resetcamera)
 
         self.renWin.Render()
@@ -1656,7 +1705,10 @@ class CILViewer2D():
 
         self.ren.AddViewProp(self.cursorActor)
         self.cursorActor.VisibilityOn()
-
+        
+                 
+        self.imageTracer.SetViewProp(self.sliceActor);
+        
         self.iren.Initialize()
         self.renWin.Render()
         #self.iren.Start()
