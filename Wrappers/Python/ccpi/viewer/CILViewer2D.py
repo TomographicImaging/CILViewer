@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-#   Copyright 2017 Edoardo Pasca
+#   Copyright 2017 - 2019 Edoardo Pasca
 #   Copyright 2018 Richard Smith
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,12 +16,13 @@
 
 import vtk
 import numpy
-from vtk.util import numpy_support , vtkImageImportFromArray
-from enum import Enum
 import os
 import math
 
-from PIL import Image
+
+from ccpi.viewer.utils import Converter
+from ccpi.viewer.utils import cilClipPolyDataBetweenPlanes
+from ccpi.viewer.utils import cilNumpyMETAImageWriter
 
 
 SLICE_ORIENTATION_XY = 2 # Z
@@ -32,338 +33,7 @@ CONTROL_KEY = 8
 SHIFT_KEY = 4
 ALT_KEY = -128
 
-
-# Converter class
-class Converter():
-
-    # Utility functions to transform numpy arrays to vtkImageData and viceversa
-    @staticmethod
-    def numpy2vtkImporter(nparray, spacing=(1.,1.,1.), origin=(0,0,0), transpose=[2,1,0]):
-        '''Creates a vtkImageImportFromArray object and returns it.
-        
-        It handles the different axis order from numpy to VTK'''
-        importer = vtkImageImportFromArray.vtkImageImportFromArray()
-        importer.SetArray(numpy.transpose(nparray, transpose).copy())
-        importer.SetDataSpacing(spacing)
-        importer.SetDataOrigin(origin)
-        return importer
-
-    @staticmethod
-    def vtk2numpy(imgdata, transpose=[0,1,2]):
-        '''Converts the VTK data to 3D numpy array
-
-        Points in a VTK ImageData have indices as X-Y-Z (FORTRAN-contiguos)
-        index = x + dimX * y + z * dimX * dimY,
-        meaning that the slicing a VTK ImageData is easy in the Z axis
-
-        Points in Numpy have indices as Z-Y-X (C-contiguous)
-        index = z + dimZ * y + x * dimZ * dimY
-        meaning that the slicing of a numpy array is easy on the X axis
-
-        The function imgdata.GetPointData().GetScalars() returns a pointer to a
-        vtk<TYPE>Array where the data is stored as X-Y-Z.
-        '''
-        img_data = numpy_support.vtk_to_numpy(
-                imgdata.GetPointData().GetScalars())
-
-        dims = imgdata.GetDimensions()
-        print ("vtk2numpy: VTKImageData dims {0}".format(dims))
-
-        old = False
-        if old:
-            dims = (dims[2],dims[1],dims[0])
-            data3d = numpy.reshape(img_data, dims, order='C')
-            data3d = numpy.ascontiguousarray(data3d)
-        else:
-            data3d = numpy.ascontiguousarray(
-                numpy.reshape(img_data, dims, order='F')
-                )
-            data3d = numpy.transpose(data3d, [2,1,0])
-        if transpose == [0,1,2]:
-            return data3d
-        else:
-            return numpy.transpose(data3d, transpose).copy()
-
-
-    @staticmethod
-    def tiffStack2numpy(filename=None, indices=None,
-                        extent = None , sampleRate = None ,
-                        flatField = None, darkField = None
-                        , filenames= None, tiffOrientation=1):
-        '''Converts a stack of TIFF files to numpy array.
-        
-        filename must contain the whole path. The filename is supposed to be named and
-        have a suffix with the ordinal file number, i.e. /path/to/projection_%03d.tif
-        
-        indices are the suffix, generally an increasing number
-        
-        Optionally extracts only a selection of the 2D images and (optionally)
-        normalizes.
-        '''
-        if filename is not None and indices is not None:
-            filenames = [ filename % num for num in indices]
-        return Converter._tiffStack2numpy(filenames=filenames, extent=extent,
-                                         sampleRate=sampleRate,
-                                         flatField=flatField,
-                                         darkField=darkField)
-    @staticmethod
-    def tiffStack2numpyEnforceBounds(filename=None, indices=None,
-                        extent = None , sampleRate = None ,
-                        flatField = None, darkField = None
-                        , filenames= None, tiffOrientation=1, bounds=(512,512,512)):
-        """
-        Converts a stack of TIFF files to numpy array. This is constrained to a 512x512x512 cube
-
-        filename must contain the whole path. The filename is supposed to be named and
-        have a suffix with the ordinal file number, i.e. /path/to/projection_%03d.tif
-
-        indices are the suffix, generally an increasing number
-
-        Optionally extracts only a selection of the 2D images and (optionally)
-        normalizes.
-
-        :param (string) filename:   full path prefix
-        :param (list)   indices:    Indices to append to path for file selection
-        :param (tuple)  extent:     Allows option to select a subset
-        :param (tuple)  sampleRate: Allows downsampling to reduce data load on visualiser
-        :param          flatField:  --
-        :param          darkField:  --
-        :param (list)   filenames:  Filenames for processing
-        :param (int)    tiffOrientation: --
-        :param (tuple)  bounds:     Maximum size of display cube (x,y,z)
-
-        :return (numpy.ndarray): Image data as a numpy array
-        """
-
-        if filename is not None and indices is not None:
-            filenames = [filename % num for num in indices]
-
-        # Get number of files as an index value
-        file_index = len(filenames) - 1
-
-        # Get the xy extent of the first image in the list
-        if extent is None:
-            reader = vtk.vtkTIFFReader()
-            reader.SetFileName(filenames[0])
-            reader.SetOrientationType(tiffOrientation)
-            reader.Update()
-            img_ext = reader.GetOutput().GetExtent()
-
-            stack_extent =  img_ext[0:5] + (file_index,)
-            size = stack_extent[1::2]
-        else:
-            size = extent[1::2]
-
-        # Calculate re-sample rate
-        sample_rate = tuple(map(lambda x,y: math.ceil(float(x)/y), size, bounds))
-
-        # If a user has defined resample rate, check to see which has higher factor and keep that
-        if sampleRate is not None:
-            sampleRate = Converter.highest_tuple_element(sampleRate, sample_rate)
-        else:
-            sampleRate = sample_rate
-
-        # Re-sample input filelist
-        list_sample_index = sampleRate[2]
-        filenames = filenames[::list_sample_index]
-
-        return Converter._tiffStack2numpy(filenames=filenames, extent=extent,
-                                          sampleRate=sampleRate,
-                                          flatField=flatField,
-                                          darkField=darkField)
-
-
-
-    @staticmethod
-    def pureTiff2Numpy(filenames, sampleRate=None, bounds=(512,512,512), **kwargs):
-        """
-        Takes a tiff stack and converts it into a 3D numpy array.
-
-        :param (list) filenames :
-            List of filenames to process.
-
-        :param (tuple) sampleRate :
-            Tuple of integers to sample by.
-            eg. (2,2,2) will take every second pixel in each direction. (x,y,z)
-
-        :param (tuple) bounds :
-            Tuple of integers to set the bounds for the size of the resulting array.
-            This is used to calculate sample rate. If sample rate is specified,
-            the function will make sure that the user supplies sample rate will fit within the bounds sepcified.
-
-        :param (any) kwargs :
-            Any additional keyword arguments.
-
-        :return (ndarray):
-            Numpy array containing the pixel values in 3D. (x,y,z)
-        """
-
-        # Check to see if there is a progress callback
-        if 'progress_callback' in kwargs.keys() and kwargs['progress_callback']:
-
-            p_callback = kwargs['progress_callback']
-        else:
-            p_callback = None
-
-        # Get array dimensions
-        first_img = Image.open(filenames[0])
-        first_arr = numpy.array(first_img)
-        shape = first_arr.shape
-
-        # Calculate sample rate
-        sample_rate = tuple(
-            map(lambda x, y: int(math.ceil(float(x) / y)), [len(filenames), shape[0], shape[1]], bounds)
-        )
-
-        # If a user has defined resample rate, check to see which has higher factor and keep that
-        if sampleRate is not None:
-            sampleRate = Converter.highest_tuple_element(sampleRate, sample_rate)
-        else:
-            sampleRate = sample_rate
-
-        # Get size of new numpy array based on sample rate
-        subsampled_arr = first_arr[0::sampleRate[1], 0::sampleRate[2]]
-        sub_shape = subsampled_arr.shape
-        subsampled_files = filenames[::sampleRate[0]]
-
-        output_array = numpy.empty((len(subsampled_files), sub_shape[0], sub_shape[1]), order='F')
-
-        # Calculate the increment based on number of files.
-        increment = 60.0/ len(subsampled_files)
-
-        # Process the images
-        for i, file in enumerate(subsampled_files):
-            img = Image.open(file)
-            img_arr = numpy.array(img)
-            output_array[i] = img_arr[0::sampleRate[1],0::sampleRate[2]].copy()
-
-            # If the progress callback is available, send the progress signal.
-            if p_callback:
-                p_callback.emit((i+1) * increment + 30)
-
-        return output_array.transpose([2,1,0])
-
-
-    @staticmethod
-    def _tiffStack2numpy(filenames,
-                        extent = None , sampleRate = None ,\
-                        flatField = None, darkField = None, tiffOrientation=1):
-        '''Converts a stack of TIFF files to numpy array.
-        
-        filename must contain the whole path. The filename is supposed to be named and
-        have a suffix with the ordinal file number, i.e. /path/to/projection_%03d.tif
-        
-        indices are the suffix, generally an increasing number
-        
-        Optionally extracts only a selection of the 2D images and (optionally)
-        normalizes.
-        '''
-
-        stack = vtk.vtkImageData()
-        reader = vtk.vtkTIFFReader()
-        voi = vtk.vtkExtractVOI()
-
-        stack_image = numpy.asarray([])
-        nreduced = len(filenames)
-
-        for num in range(len(filenames)):
-
-
-            #fn = filename % indices[num]
-            fn = filenames[num]
-            print ("resampling %s" % ( fn ) )
-            reader.SetFileName(fn)
-            reader.SetOrientationType(tiffOrientation)
-            reader.Update()
-            print (reader.GetOutput().GetScalarTypeAsString())
-            if num == 0:
-
-                # Extent
-                if extent is None:
-                    sliced = reader.GetOutput().GetExtent()
-                    stack.SetExtent(sliced[0],sliced[1], sliced[2],sliced[3], 0, nreduced-1)
-
-                    if sampleRate is not None:
-                        voi.SetSampleRate(sampleRate)
-                        ext = numpy.asarray([(sliced[2*i+1] - sliced[2*i])/sampleRate[i] for i in range(3)], dtype=int)
-                        stack.SetExtent(0, ext[0], 0, ext[1], 0, nreduced - 1)
-                else:
-                    sliced = extent
-                    voi.SetVOI(extent)
-
-                    # Sample Rate
-                    if sampleRate is not None:
-                        voi.SetSampleRate(sampleRate)
-                        ext = numpy.asarray([(sliced[2*i+1] - sliced[2*i])/sampleRate[i] for i in range(3)], dtype=int)
-                        # print ("ext {0}".format(ext))
-                        stack.SetExtent(0, ext[0] , 0, ext[1], 0, nreduced-1)
-                    else:
-                         stack.SetExtent(0, sliced[1] - sliced[0], 0, sliced[3]-sliced[2], 0, nreduced-1)
-
-                # Flatfield
-                if (flatField != None and darkField != None):
-                    stack.AllocateScalars(vtk.VTK_FLOAT, 1)
-                else:
-                    stack.AllocateScalars(reader.GetOutput().GetScalarType(), 1)
-
-
-
-                print ("Image Size: %d" % ((sliced[1]+1)*(sliced[3]+1) ))
-                stack_image = Converter.vtk2numpy(stack)
-                print ("Stack shape %s" % str(numpy.shape(stack_image)))
-
-            if extent is not None or sampleRate is not None :
-                voi.SetInputData(reader.GetOutput())
-                voi.Update()
-                img = voi.GetOutput()
-            else:
-                img = reader.GetOutput()
-
-            theSlice = Converter.vtk2numpy(img)[0]
-            if darkField != None and flatField != None:
-                print("Try to normalize")
-                #if numpy.shape(darkField) == numpy.shape(flatField) and numpy.shape(flatField) == numpy.shape(theSlice):
-                theSlice = Converter.normalize(theSlice, darkField, flatField, 0.01)
-                print (theSlice.dtype)
-
-
-            print ("Slice shape %s" % str(numpy.shape(theSlice)))
-            stack_image[num] = theSlice.copy()
-
-        return stack_image
-
-    @staticmethod
-    def normalize(projection, dark, flat, def_val=0):
-        a = (projection - dark)
-        b = (flat-dark)
-        with numpy.errstate(divide='ignore', invalid='ignore'):
-            c = numpy.true_divide( a, b )
-            c[ ~ numpy.isfinite( c )] = def_val  # set to not zero if 0/0
-        return c
-
-    @staticmethod
-    def highest_tuple_element(user,calc):
-        """
-        Returns a tuple containing the maximum combination in elementwise comparison
-        :param (tuple)user:
-            User suppliec tuple
-
-        :param (tuple) calc:
-            Calculated tuple
-
-        :return (tuple):
-            Highest elementwise combination
-        """
-
-        output = []
-        for u, c in zip(user,calc):
-            if u > c:
-                output.append(u)
-            else:
-                output.append(c)
-
-        return tuple(output)
-
+SLICE_ACTOR = 'slice_actor'
 
 
 
@@ -1538,6 +1208,9 @@ class CILViewer2D():
         
         # Set autoclose to on
         self.imageTracer.AutoCloseOn()
+        
+        self.actors = {}
+        
 
 
     def log(self, msg):
@@ -1551,9 +1224,12 @@ class CILViewer2D():
         return self.ren
 
     def setInput3DData(self, imageData):
+        '''alias of setInputData, kept for backward compatibility'''
+        return self.setInputData()
+    def setInputData(self, imageData):
         self.img3D = imageData
         self.installPipeline()
-
+        
     def setInputAsNumpy(self, numpyarray,  origin=(0,0,0), spacing=(1.,1.,1.),
                         rescale=True, dtype=vtk.VTK_UNSIGNED_SHORT):
 
@@ -1697,6 +1373,7 @@ class CILViewer2D():
                    extent[4], extent[5])
         self.sliceActor.Update()
         self.sliceActor.SetInterpolate(False)
+        # actors are added directly to the renderer
         self.ren.AddActor(self.sliceActor)
         self.ren.ResetCamera()
         self.ren.Render()
@@ -1996,5 +1673,30 @@ class CILViewer2D():
 
     def getColourLevel(self):
         return self.wl.GetLevel()
+    
+    def AddActor(self, actor, name=None):
+        present_actors = self.ren.GetActors()
+        if name is None:
+            name = 'actor_{}'.format(present_actors.GetNumberOfItems()+1)
+        
+        if self.actors[SLICE_ACTOR] != 0:
+            actors = {}
+            if len(self.actors) != present_actors.GetNumberOfItems():
+                raise ValueError('Wrong number of actors')
+                
+            for i in range(present_actors.GetNumberOfItems()):
+                actors[self.actors] = present_actors.GetNextActor() 
+                self.ren.RemoveActor(actors[-1][1])
+            
+            # add all actors again. First the SLICE_ACTOR
+            self.ren.AddActor()
+        else:
+            self.ren.AddActor(actor)
+            self.actors[name] = self.ren.GetActors().GetNumberOfItems()
+            
+        
+        
+        
+            
 
 
