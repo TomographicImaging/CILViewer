@@ -41,9 +41,6 @@ CURSOR_ACTOR = 'cursor_actor'
 CROSSHAIR_ACTOR = 'crosshair_actor'
 LINEPLOT_ACTOR = 'lineplot_actor'
 
-
-
-
 class ViewerEventManager():
 
     def __init__(self):

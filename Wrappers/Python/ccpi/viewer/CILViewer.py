@@ -172,6 +172,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
         ctrl = interactor.GetControlKey()
         alt = interactor.GetAltKey()
         shift = interactor.GetShiftKey()
+
         # print (alt, ctrl,shift)
         if alt and not (ctrl and shift):
             self.SetEventInactive("WINDOW_LEVEL_EVENT")
@@ -590,6 +591,3 @@ class CILViewer():
         writer.SetFileName(saveFilename)
         writer.SetInputConnection(w2if.GetOutputPort())
         writer.Write()
-
-
-
