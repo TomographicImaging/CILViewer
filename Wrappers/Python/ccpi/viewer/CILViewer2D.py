@@ -531,8 +531,8 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
     def SetDisplayHistogram(self, display):
         if display:
             if (self._viewer.displayHistogram == 0):
-                #self.GetRenderer().AddActor(self._viewer.histogramPlotActor)
-                self.AddActor(self._viewer.histogramPlotActor, HISTOGRAM_ACTOR)
+                self.GetRenderer().AddActor(self._viewer.histogramPlotActor)
+                #self.AddActor(self._viewer.histogramPlotActor, HISTOGRAM_ACTOR)
                 self.firstHistogram = 1
                 self.Render()
 
@@ -1189,9 +1189,9 @@ class CILViewer2D():
         # crosshair lines for X Y slices
         self.horizLine = vtk.vtkLine()
         self.vertLine = vtk.vtkLine()
-        # self.crosshairsActor = vtk.vtkActor()
+        self.crosshairsActor = vtk.vtkActor()
         # self.getRenderer().AddActor(self.crosshairsActor)
-        # self.AddActor(self.crosshairsActor, CROSSHAIR_ACTOR)
+        self.AddActor(self.crosshairsActor, CROSSHAIR_ACTOR)
 
         # rescale input image
         # contains (scale, shift)
@@ -1426,11 +1426,15 @@ class CILViewer2D():
             lut = vtk.vtkLookupTable()
             
             self.lut2 = lut
+            lut.SetNumberOfColors(7)
             lut.SetHueRange(0,256)
             lut.SetSaturationRange(1, 1)
             lut.SetValueRange(1, 1)
             lut.SetAlphaRange(0,0.5)
             lut.Build()
+            
+            
+
             cov = vtk.vtkImageMapToColors()
             self.image2map = cov
             cov.SetInputConnection(self.voi2.GetOutputPort())
@@ -1756,10 +1760,3 @@ class CILViewer2D():
         
         self.ren.AddActor(actor)
         self.actors.append(name)
-            
-        
-        
-        
-            
-
-
