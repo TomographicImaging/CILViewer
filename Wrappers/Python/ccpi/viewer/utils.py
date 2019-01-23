@@ -700,7 +700,6 @@ class cilRegularPointCloudToPolyData(VTKPythonAlgorithmBase):
             x0 = x[idx]
         return x0
 
-
 class cilMaskPolyData(VTKPythonAlgorithmBase):
     '''vtkAlgorithm to crop a vtkPolyData with a Mask
 
@@ -1063,7 +1062,7 @@ if __name__ == '__main__':
 
 
     if False:
-        from ccpi.viewer.CILViewer2D import CILViewer2D, Converter
+        from ccpi.viewer.CILViewer2D import CILViewer2D
         v = CILViewer2D()
         v.setInput3DData(reader.GetOutput())
         v.startRenderLoop()
