@@ -12,7 +12,7 @@ build:
     - CILViewerLaunch = ccpi.viewer.standaloneQT:main
     - triViewerLaunch = ccpi.viewer.triWidgetQT:main
 
-#  number: 0
+  number: 1
   
 requirements:
   build:

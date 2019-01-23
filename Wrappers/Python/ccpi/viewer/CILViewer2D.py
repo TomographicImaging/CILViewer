@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-#   Copyright 2017 Edoardo Pasca
+#   Copyright 2017 - 2019 Edoardo Pasca
 #   Copyright 2018 Richard Smith
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,12 +16,13 @@
 
 import vtk
 import numpy
-from vtk.util import numpy_support , vtkImageImportFromArray
-from enum import Enum
 import os
 import math
 
-from PIL import Image
+
+from ccpi.viewer.utils import Converter
+from ccpi.viewer.utils import cilClipPolyDataBetweenPlanes
+from ccpi.viewer.utils import cilNumpyMETAImageWriter
 
 
 SLICE_ORIENTATION_XY = 2 # Z
@@ -32,341 +33,13 @@ CONTROL_KEY = 8
 SHIFT_KEY = 4
 ALT_KEY = -128
 
-
-# Converter class
-class Converter():
-
-    # Utility functions to transform numpy arrays to vtkImageData and viceversa
-    @staticmethod
-    def numpy2vtkImporter(nparray, spacing=(1.,1.,1.), origin=(0,0,0), transpose=[2,1,0]):
-        '''Creates a vtkImageImportFromArray object and returns it.
-        
-        It handles the different axis order from numpy to VTK'''
-        importer = vtkImageImportFromArray.vtkImageImportFromArray()
-        importer.SetArray(numpy.transpose(nparray, transpose).copy())
-        importer.SetDataSpacing(spacing)
-        importer.SetDataOrigin(origin)
-        return importer
-
-    @staticmethod
-    def vtk2numpy(imgdata, transpose=[0,1,2]):
-        '''Converts the VTK data to 3D numpy array
-
-        Points in a VTK ImageData have indices as X-Y-Z (FORTRAN-contiguos)
-        index = x + dimX * y + z * dimX * dimY,
-        meaning that the slicing a VTK ImageData is easy in the Z axis
-
-        Points in Numpy have indices as Z-Y-X (C-contiguous)
-        index = z + dimZ * y + x * dimZ * dimY
-        meaning that the slicing of a numpy array is easy on the X axis
-
-        The function imgdata.GetPointData().GetScalars() returns a pointer to a
-        vtk<TYPE>Array where the data is stored as X-Y-Z.
-        '''
-        img_data = numpy_support.vtk_to_numpy(
-                imgdata.GetPointData().GetScalars())
-
-        dims = imgdata.GetDimensions()
-        print ("vtk2numpy: VTKImageData dims {0}".format(dims))
-
-        old = False
-        if old:
-            dims = (dims[2],dims[1],dims[0])
-            data3d = numpy.reshape(img_data, dims, order='C')
-            data3d = numpy.ascontiguousarray(data3d)
-        else:
-            data3d = numpy.ascontiguousarray(
-                numpy.reshape(img_data, dims, order='F')
-                )
-            data3d = numpy.transpose(data3d, [2,1,0])
-        if transpose == [0,1,2]:
-            return data3d
-        else:
-            return numpy.transpose(data3d, transpose).copy()
-
-
-    @staticmethod
-    def tiffStack2numpy(filename=None, indices=None,
-                        extent = None , sampleRate = None ,
-                        flatField = None, darkField = None
-                        , filenames= None, tiffOrientation=1):
-        '''Converts a stack of TIFF files to numpy array.
-        
-        filename must contain the whole path. The filename is supposed to be named and
-        have a suffix with the ordinal file number, i.e. /path/to/projection_%03d.tif
-        
-        indices are the suffix, generally an increasing number
-        
-        Optionally extracts only a selection of the 2D images and (optionally)
-        normalizes.
-        '''
-        if filename is not None and indices is not None:
-            filenames = [ filename % num for num in indices]
-        return Converter._tiffStack2numpy(filenames=filenames, extent=extent,
-                                         sampleRate=sampleRate,
-                                         flatField=flatField,
-                                         darkField=darkField)
-    @staticmethod
-    def tiffStack2numpyEnforceBounds(filename=None, indices=None,
-                        extent = None , sampleRate = None ,
-                        flatField = None, darkField = None
-                        , filenames= None, tiffOrientation=1, bounds=(512,512,512)):
-        """
-        Converts a stack of TIFF files to numpy array. This is constrained to a 512x512x512 cube
-
-        filename must contain the whole path. The filename is supposed to be named and
-        have a suffix with the ordinal file number, i.e. /path/to/projection_%03d.tif
-
-        indices are the suffix, generally an increasing number
-
-        Optionally extracts only a selection of the 2D images and (optionally)
-        normalizes.
-
-        :param (string) filename:   full path prefix
-        :param (list)   indices:    Indices to append to path for file selection
-        :param (tuple)  extent:     Allows option to select a subset
-        :param (tuple)  sampleRate: Allows downsampling to reduce data load on visualiser
-        :param          flatField:  --
-        :param          darkField:  --
-        :param (list)   filenames:  Filenames for processing
-        :param (int)    tiffOrientation: --
-        :param (tuple)  bounds:     Maximum size of display cube (x,y,z)
-
-        :return (numpy.ndarray): Image data as a numpy array
-        """
-
-        if filename is not None and indices is not None:
-            filenames = [filename % num for num in indices]
-
-        # Get number of files as an index value
-        file_index = len(filenames) - 1
-
-        # Get the xy extent of the first image in the list
-        if extent is None:
-            reader = vtk.vtkTIFFReader()
-            reader.SetFileName(filenames[0])
-            reader.SetOrientationType(tiffOrientation)
-            reader.Update()
-            img_ext = reader.GetOutput().GetExtent()
-
-            stack_extent =  img_ext[0:5] + (file_index,)
-            size = stack_extent[1::2]
-        else:
-            size = extent[1::2]
-
-        # Calculate re-sample rate
-        sample_rate = tuple(map(lambda x,y: math.ceil(float(x)/y), size, bounds))
-
-        # If a user has defined resample rate, check to see which has higher factor and keep that
-        if sampleRate is not None:
-            sampleRate = Converter.highest_tuple_element(sampleRate, sample_rate)
-        else:
-            sampleRate = sample_rate
-
-        # Re-sample input filelist
-        list_sample_index = sampleRate[2]
-        filenames = filenames[::list_sample_index]
-
-        return Converter._tiffStack2numpy(filenames=filenames, extent=extent,
-                                          sampleRate=sampleRate,
-                                          flatField=flatField,
-                                          darkField=darkField)
-
-
-
-    @staticmethod
-    def pureTiff2Numpy(filenames, sampleRate=None, bounds=(512,512,512), **kwargs):
-        """
-        Takes a tiff stack and converts it into a 3D numpy array.
-
-        :param (list) filenames :
-            List of filenames to process.
-
-        :param (tuple) sampleRate :
-            Tuple of integers to sample by.
-            eg. (2,2,2) will take every second pixel in each direction. (x,y,z)
-
-        :param (tuple) bounds :
-            Tuple of integers to set the bounds for the size of the resulting array.
-            This is used to calculate sample rate. If sample rate is specified,
-            the function will make sure that the user supplies sample rate will fit within the bounds sepcified.
-
-        :param (any) kwargs :
-            Any additional keyword arguments.
-
-        :return (ndarray):
-            Numpy array containing the pixel values in 3D. (x,y,z)
-        """
-
-        # Check to see if there is a progress callback
-        if 'progress_callback' in kwargs.keys() and kwargs['progress_callback']:
-
-            p_callback = kwargs['progress_callback']
-        else:
-            p_callback = None
-
-        # Get array dimensions
-        first_img = Image.open(filenames[0])
-        first_arr = numpy.array(first_img)
-        shape = first_arr.shape
-
-        # Calculate sample rate
-        sample_rate = tuple(
-            map(lambda x, y: int(math.ceil(float(x) / y)), [len(filenames), shape[0], shape[1]], bounds)
-        )
-
-        # If a user has defined resample rate, check to see which has higher factor and keep that
-        if sampleRate is not None:
-            sampleRate = Converter.highest_tuple_element(sampleRate, sample_rate)
-        else:
-            sampleRate = sample_rate
-
-        # Get size of new numpy array based on sample rate
-        subsampled_arr = first_arr[0::sampleRate[1], 0::sampleRate[2]]
-        sub_shape = subsampled_arr.shape
-        subsampled_files = filenames[::sampleRate[0]]
-
-        output_array = numpy.empty((len(subsampled_files), sub_shape[0], sub_shape[1]), order='F')
-
-        # Calculate the increment based on number of files.
-        increment = 60.0/ len(subsampled_files)
-
-        # Process the images
-        for i, file in enumerate(subsampled_files):
-            img = Image.open(file)
-            img_arr = numpy.array(img)
-            output_array[i] = img_arr[0::sampleRate[1],0::sampleRate[2]].copy()
-
-            # If the progress callback is available, send the progress signal.
-            if p_callback:
-                p_callback.emit((i+1) * increment + 30)
-
-        return output_array.transpose([2,1,0])
-
-
-    @staticmethod
-    def _tiffStack2numpy(filenames,
-                        extent = None , sampleRate = None ,\
-                        flatField = None, darkField = None, tiffOrientation=1):
-        '''Converts a stack of TIFF files to numpy array.
-        
-        filename must contain the whole path. The filename is supposed to be named and
-        have a suffix with the ordinal file number, i.e. /path/to/projection_%03d.tif
-        
-        indices are the suffix, generally an increasing number
-        
-        Optionally extracts only a selection of the 2D images and (optionally)
-        normalizes.
-        '''
-
-        stack = vtk.vtkImageData()
-        reader = vtk.vtkTIFFReader()
-        voi = vtk.vtkExtractVOI()
-
-        stack_image = numpy.asarray([])
-        nreduced = len(filenames)
-
-        for num in range(len(filenames)):
-
-
-            #fn = filename % indices[num]
-            fn = filenames[num]
-            print ("resampling %s" % ( fn ) )
-            reader.SetFileName(fn)
-            reader.SetOrientationType(tiffOrientation)
-            reader.Update()
-            print (reader.GetOutput().GetScalarTypeAsString())
-            if num == 0:
-
-                # Extent
-                if extent is None:
-                    sliced = reader.GetOutput().GetExtent()
-                    stack.SetExtent(sliced[0],sliced[1], sliced[2],sliced[3], 0, nreduced-1)
-
-                    if sampleRate is not None:
-                        voi.SetSampleRate(sampleRate)
-                        ext = numpy.asarray([(sliced[2*i+1] - sliced[2*i])/sampleRate[i] for i in range(3)], dtype=int)
-                        stack.SetExtent(0, ext[0], 0, ext[1], 0, nreduced - 1)
-                else:
-                    sliced = extent
-                    voi.SetVOI(extent)
-
-                    # Sample Rate
-                    if sampleRate is not None:
-                        voi.SetSampleRate(sampleRate)
-                        ext = numpy.asarray([(sliced[2*i+1] - sliced[2*i])/sampleRate[i] for i in range(3)], dtype=int)
-                        # print ("ext {0}".format(ext))
-                        stack.SetExtent(0, ext[0] , 0, ext[1], 0, nreduced-1)
-                    else:
-                         stack.SetExtent(0, sliced[1] - sliced[0], 0, sliced[3]-sliced[2], 0, nreduced-1)
-
-                # Flatfield
-                if (flatField != None and darkField != None):
-                    stack.AllocateScalars(vtk.VTK_FLOAT, 1)
-                else:
-                    stack.AllocateScalars(reader.GetOutput().GetScalarType(), 1)
-
-
-
-                print ("Image Size: %d" % ((sliced[1]+1)*(sliced[3]+1) ))
-                stack_image = Converter.vtk2numpy(stack)
-                print ("Stack shape %s" % str(numpy.shape(stack_image)))
-
-            if extent is not None or sampleRate is not None :
-                voi.SetInputData(reader.GetOutput())
-                voi.Update()
-                img = voi.GetOutput()
-            else:
-                img = reader.GetOutput()
-
-            theSlice = Converter.vtk2numpy(img)[0]
-            if darkField != None and flatField != None:
-                print("Try to normalize")
-                #if numpy.shape(darkField) == numpy.shape(flatField) and numpy.shape(flatField) == numpy.shape(theSlice):
-                theSlice = Converter.normalize(theSlice, darkField, flatField, 0.01)
-                print (theSlice.dtype)
-
-
-            print ("Slice shape %s" % str(numpy.shape(theSlice)))
-            stack_image[num] = theSlice.copy()
-
-        return stack_image
-
-    @staticmethod
-    def normalize(projection, dark, flat, def_val=0):
-        a = (projection - dark)
-        b = (flat-dark)
-        with numpy.errstate(divide='ignore', invalid='ignore'):
-            c = numpy.true_divide( a, b )
-            c[ ~ numpy.isfinite( c )] = def_val  # set to not zero if 0/0
-        return c
-
-    @staticmethod
-    def highest_tuple_element(user,calc):
-        """
-        Returns a tuple containing the maximum combination in elementwise comparison
-        :param (tuple)user:
-            User suppliec tuple
-
-        :param (tuple) calc:
-            Calculated tuple
-
-        :return (tuple):
-            Highest elementwise combination
-        """
-
-        output = []
-        for u, c in zip(user,calc):
-            if u > c:
-                output.append(u)
-            else:
-                output.append(c)
-
-        return tuple(output)
-
-
-
-
+SLICE_ACTOR = 'slice_actor'
+OVERLAY_ACTOR = 'overlay_actor'
+HISTOGRAM_ACTOR = 'histogram_actor'
+HELP_ACTOR = 'help_actor'
+CURSOR_ACTOR = 'cursor_actor'
+CROSSHAIR_ACTOR = 'crosshair_actor'
+LINEPLOT_ACTOR = 'lineplot_actor'
 
 class ViewerEventManager():
 
@@ -609,7 +282,8 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
         else:
             return value
 
-
+       
+        
     def InitialiseBox(self, clickPosition):
         """
         Set the initial values for the box borders
@@ -819,7 +493,6 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
 
         elif interactor.GetKeyCode() == 'h':
             self.DisplayHelp()
-
         else :
             #print ("Unhandled event %s" % (interactor.GetKeyCode(), )))
             pass
@@ -858,7 +531,8 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
     def SetDisplayHistogram(self, display):
         if display:
             if (self._viewer.displayHistogram == 0):
-                self.GetRenderer().AddActor(self._viewer.histogramPlotActor)
+                #self.GetRenderer().AddActor(self._viewer.histogramPlotActor)
+                self.AddActor(self._viewer.histogramPlotActor, HISTOGRAM_ACTOR)
                 self.firstHistogram = 1
                 self.Render()
 
@@ -998,7 +672,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
         return vc.GetComputedDoubleDisplayValue(self.GetRenderer())
 
 
-    def display2imageCoordinate(self, viewerposition):
+    def display2imageCoordinate(self, viewerposition, subvoxel = False):
         """
         Convert display coordinates into image coordinates and add the pixel value
 
@@ -1020,6 +694,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
         if (pickPosition != [0,0,0]):
 
             imagePosition = self.world2imageCoordinate(pickPosition)
+            imagePositionF = self.world2imageCoordinateFloat(pickPosition)
             extent = self._viewer.img3D.GetExtent()
             
             # make sure the pick is on the image
@@ -1043,6 +718,12 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
                 # pix = orig * scale + shift
                 # orig = (-shift + pix) / scale
                 pixelValue = (-shift + pixelValue) / scale
+                
+            if subvoxel:
+                for i in range(3):
+                    if not i == self.GetSliceOrientation():
+                        imagePosition[i] = imagePositionF[i]
+                
             return (
                 self.validateValue(imagePosition[0], 'x'),
                 self.validateValue(imagePosition[1], 'y'),
@@ -1073,7 +754,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
         """
         Convert from the world or global coordinates to image coordinates
         :param world_coordinates: (x,y,z)
-        :return: (x,y,z) in image coorindates eg. slice index
+        :return: rounded to next integer (x,y,z) in image coorindates eg. slice index
         """
 
         dims = self.GetInputData().GetDimensions()
@@ -1082,6 +763,20 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
         orig = self.GetInputData().GetOrigin()
 
         return [round(world_coordinates[i] / spac[i] + orig[i]) for i in range(3)]
+    
+    def world2imageCoordinateFloat(self, world_coordinates):
+        """
+        Convert from the world or global coordinates to image coordinates
+        :param world_coordinates: (x,y,z)
+        :return: float (x,y,z) in image coorindates eg. slice index
+        """
+
+        dims = self.GetInputData().GetDimensions()
+        self.log(dims)
+        spac = self.GetInputData().GetSpacing()
+        orig = self.GetInputData().GetOrigin()
+
+        return [world_coordinates[i] / spac[i] + orig[i] for i in range(3)]
 
     def image2world(self, image_coordinates):
 
@@ -1338,7 +1033,8 @@ class CILViewer2D():
             self.iren = vtk.vtkRenderWindowInteractor()
         else:
             self.iren = iren
-
+        # holder for list of actors    
+        self.actors = []
         self.debug = debug
 
         self.renWin.SetSize(dimx,dimy)
@@ -1356,11 +1052,10 @@ class CILViewer2D():
         self.camera.ParallelProjectionOn()
         self.ren.SetActiveCamera(self.camera)
 
-        # data
+        # data (input 1)
         self.img3D = None
         self.sliceno = 0
         self.sliceOrientation = SLICE_ORIENTATION_XY
-
         #Actors
         self.sliceActor = vtk.vtkImageActor()
         self.voi = vtk.vtkExtractVOI()
@@ -1368,12 +1063,19 @@ class CILViewer2D():
         self.ia = vtk.vtkImageHistogramStatistics()
         self.sliceActorNo = 0
 
+        # input 2
+        self.image2 = None
+        self.voi2 = vtk.vtkExtractVOI()
+        self.sliceActor2 = vtk.vtkImageActor()
+
+        
         # Help text
         self.helpActor = vtk.vtkActor2D()
         self.helpActor.GetPositionCoordinate().SetCoordinateSystemToNormalizedDisplay()
         self.helpActor.GetPositionCoordinate().SetValue(0.1, 0.5)
         self.helpActor.VisibilityOff()
-        self.ren.AddActor(self.helpActor)
+        # self.ren.AddActor(self.helpActor)
+        self.AddActor(self.helpActor, HELP_ACTOR)
 
         #initial Window/Level
         self.InitialLevel = 0
@@ -1391,8 +1093,10 @@ class CILViewer2D():
         self.ROIWidget.GetOutlineProperty().SetColor(0,1,0)
         self.ROIWidget.OutlineCursorWiresOff()
         self.ROIWidget.SetPlaceFactor(1)
+        self.ROIWidget.KeyPressActivationOff()
 
-        self.ROIWidget.AddObserver(vtk.vtkWidgetEvent.Select, self.style.OnROIModifiedEvent, 1.0)
+        self.ROIWidget.AddObserver(vtk.vtkWidgetEvent.Select,
+                                   self.style.OnROIModifiedEvent, 1.0)
 
         # edge points of the ROI
         self.ROI = ()
@@ -1431,6 +1135,8 @@ class CILViewer2D():
         self.cursorActor.SetLayerNumber(1)
         self.cursorMapper.SetInputData(self.cursor.GetOutput())
         self.cursorActor.SetMapper(self.cursorMapper)
+        # self.getRenderer().AddActor(self.cursorActor)
+        self.AddActor(self.cursorActor, CURSOR_ACTOR)
 
         # Zoom
         self.InitialCameraPosition = ()
@@ -1483,12 +1189,38 @@ class CILViewer2D():
         # crosshair lines for X Y slices
         self.horizLine = vtk.vtkLine()
         self.vertLine = vtk.vtkLine()
-        self.crosshairsActor = vtk.vtkActor()
-        self.getRenderer().AddActor(self.crosshairsActor)
+        # self.crosshairsActor = vtk.vtkActor()
+        # self.getRenderer().AddActor(self.crosshairsActor)
+        # self.AddActor(self.crosshairsActor, CROSSHAIR_ACTOR)
 
         # rescale input image
         # contains (scale, shift)
         self.rescale = [ False , (1,0) ]
+        
+        # ImageTracer
+        self.imageTracer = vtk.vtkImageTracerWidget()
+        # set Interactor
+        self.imageTracer.SetInteractor(self.iren)
+        self.imageTracer.SetCaptureRadius(1.5)
+        self.imageTracer.GetLineProperty().SetColor(0.8, 0.8, 1.0)
+        self.imageTracer.GetLineProperty().SetLineWidth(3.0)
+        self.imageTracer.GetHandleProperty().SetColor(0.4, 0.4, 1.0)
+        self.imageTracer.GetSelectedHandleProperty().SetColor(1.0, 1.0, 1.0)
+        # Set the size of the glyph handle
+        self.imageTracer.GetGlyphSource().SetScale(2.0)
+        # Set the initial rotation of the glyph if desired.  The default glyph
+        # set internally by the widget is a '+' so rotating 45 deg. gives a 'x'
+        self.imageTracer.GetGlyphSource().SetRotationAngle(45.0)
+        self.imageTracer.GetGlyphSource().Modified()
+        self.imageTracer.ProjectToPlaneOn()
+        # Set key press activation on
+        self.imageTracer.KeyPressActivationOn()
+        # Use 't' to activate image tracer
+        self.imageTracer.SetKeyPressActivationValue('t')
+        
+        
+        # Set autoclose to on
+        self.imageTracer.AutoCloseOn()
 
 
     def log(self, msg):
@@ -1502,9 +1234,17 @@ class CILViewer2D():
         return self.ren
 
     def setInput3DData(self, imageData):
+        '''alias of setInputData, kept for backward compatibility'''
+        return self.setInputData(imageData)
+    def setInputData(self, imageData):
         self.img3D = imageData
         self.installPipeline()
-
+    def setInputData2 (self, imageData):
+        self.image2 = imageData
+        # TODO resample on image1
+        print ("setInputData2")
+        self.installPipeline2()
+        
     def setInputAsNumpy(self, numpyarray,  origin=(0,0,0), spacing=(1.,1.,1.),
                         rescale=True, dtype=vtk.VTK_UNSIGNED_SHORT):
 
@@ -1568,11 +1308,39 @@ class CILViewer2D():
                    extent[4], extent[5])
         self.sliceActor.Update()
 
-        self.updateCornerAnnotation("Slice %d/%d" % (self.sliceno + 1 , self.img3D.GetDimensions()[self.sliceOrientation]))
+        if self.image2 is not None:
+            self.voi2.SetVOI(self.voi.GetVOI())
+            self.sliceActor2.SetDisplayExtent(extent[0], extent[1],
+                   extent[2], extent[3],
+                   extent[4], extent[5])
+            self.sliceActor2.Update()
+            
+        self.updateCornerAnnotation("Slice %d/%d" % (self.sliceno, self.img3D.GetDimensions()[self.sliceOrientation]-1))
 
         if self.displayHistogram:
             self.updateROIHistogram()
-
+        try:
+            if not self.img3D is None:
+                # print ("self.img3D" , self.img3D)
+                # The image actor has an input.
+    
+                # Set the ROI widget's projection normal to the current orientation
+                self.imageTracer.SetProjectionNormal(self.sliceOrientation)
+                # Set the Tracer widget's position along the current projection normal,
+                # which should be the same location as the current slice. 
+                self.imageTracer.SetProjectionPosition(
+                        self.GetActiveSlice() * \
+                         self.img3D.GetSpacing()[self.sliceOrientation] - \
+                         self.img3D.GetPoint(0)[self.sliceOrientation] )
+                         #self.img3D.GetOrigin()[self.sliceOrientation] )
+                         
+    # this->input->GetPoint(0)[this->SliceOrientation] + (this->Slice * this->input->GetSpacing()[this->SliceOrientation]));
+            
+                self.imageTracer.SetViewProp(self.sliceActor);
+            else:
+                print ("self.img3D None")
+        except Exception as ge:
+            print (ge)
         self.AdjustCamera(resetcamera)
 
         self.renWin.Render()
@@ -1627,7 +1395,11 @@ class CILViewer2D():
                    extent[4], extent[5])
         self.sliceActor.Update()
         self.sliceActor.SetInterpolate(False)
-        self.ren.AddActor(self.sliceActor)
+        # actors are added directly to the renderer
+        # self.ren.AddActor(self.sliceActor)
+        self.AddActor(self.sliceActor, SLICE_ACTOR)
+        
+        
         self.ren.ResetCamera()
         self.ren.Render()
 
@@ -1635,9 +1407,49 @@ class CILViewer2D():
 
         self.ren.AddViewProp(self.cursorActor)
         self.cursorActor.VisibilityOn()
-
+        
+                 
+        self.imageTracer.SetViewProp(self.sliceActor);
+        
         self.iren.Initialize()
         self.renWin.Render()
+        #self.iren.Start()
+    def installPipeline2(self):
+        '''Slices a 3D volume and then creates an actor to be rendered'''
+
+        if self.image2 is not None:
+            print ("installPipeline2")
+            # render image2
+            self.voi2.SetVOI(self.voi.GetVOI())
+            self.voi2.SetInputData(self.image2)
+            self.voi2.Update()
+            lut = vtk.vtkLookupTable()
+            
+            self.lut2 = lut
+            lut.SetHueRange(0,256)
+            lut.SetSaturationRange(1, 1)
+            lut.SetValueRange(1, 1)
+            lut.SetAlphaRange(0,0.5)
+            lut.Build()
+            cov = vtk.vtkImageMapToColors()
+            self.image2map = cov
+            cov.SetInputConnection(self.voi2.GetOutputPort())
+            cov.SetLookupTable(lut)
+            cov.Update()
+            self.sliceActor2.GetMapper().SetInputConnection(cov.GetOutputPort())
+            self.sliceActor2.SetDisplayExtent(self.sliceActor.GetDisplayExtent())
+            self.sliceActor2.Update()
+            self.AddActor(self.sliceActor2, OVERLAY_ACTOR)
+            self.ren.ResetCamera()
+            self.ren.Render()
+    
+            self.AdjustCamera()
+    
+            self.iren.Initialize()
+            self.renWin.Render()
+        else:
+            print ("installPipeline2 no data")
+            
         #self.iren.Start()
 
     def AdjustCamera(self, resetcamera = False):
@@ -1864,7 +1676,8 @@ class CILViewer2D():
             if self.linePlot == 0:
                 self.linePlotActor.AddDataSetInputConnection(self.lineVOIX.GetOutputPort())
                 self.linePlotActor.AddDataSetInputConnection(self.lineVOIY.GetOutputPort())
-                self.getRenderer().AddActor(self.linePlotActor)
+                # self.getRenderer().AddActor(self.linePlotActor)
+                self.AddActor(self.linePlotActor, LINEPLOT_ACTOR)
                 self.linePlot = 1
 
 
@@ -1923,5 +1736,30 @@ class CILViewer2D():
 
     def getColourLevel(self):
         return self.wl.GetLevel()
+    
+    def AddActor(self, actor, name=None):
+        '''self.log("Calling AddActor " + name)
+        present_actors = self.ren.GetActors()
+        present_actors.InitTraversal()
+        self.log("Currently present actors {}".format(present_actors))
+    
+        for i in range(present_actors.GetNumberOfItems()):
+            nextActor = present_actors.GetNextActor()
+            self.log("{} {} Visibility {}".format(i, nextActor, nextActor.GetVisibility() ))
+            self.log("ClassName"+ str( nextActor.GetClassName()))
+            
+            
+        if name is None:
+            name = 'actor_{}'.format(present_actors.GetNumberOfItems()+1)
+        '''
+        
+        
+        self.ren.AddActor(actor)
+        self.actors.append(name)
+            
+        
+        
+        
+            
 
 
