@@ -34,6 +34,12 @@ SHIFT_KEY = 4
 ALT_KEY = -128
 
 SLICE_ACTOR = 'slice_actor'
+OVERLAY_ACTOR = 'overlay_actor'
+HISTOGRAM_ACTOR = 'histogram_actor'
+HELP_ACTOR = 'help_actor'
+CURSOR_ACTOR = 'cursor_actor'
+CROSSHAIR_ACTOR = 'crosshair_actor'
+LINEPLOT_ACTOR = 'lineplot_actor'
 
 
 
@@ -528,7 +534,8 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
     def SetDisplayHistogram(self, display):
         if display:
             if (self._viewer.displayHistogram == 0):
-                self.GetRenderer().AddActor(self._viewer.histogramPlotActor)
+                #self.GetRenderer().AddActor(self._viewer.histogramPlotActor)
+                self.AddActor(self._viewer.histogramPlotActor, HISTOGRAM_ACTOR)
                 self.firstHistogram = 1
                 self.Render()
 
@@ -1029,7 +1036,8 @@ class CILViewer2D():
             self.iren = vtk.vtkRenderWindowInteractor()
         else:
             self.iren = iren
-
+        # holder for list of actors    
+        self.actors = []
         self.debug = debug
 
         self.renWin.SetSize(dimx,dimy)
@@ -1047,11 +1055,10 @@ class CILViewer2D():
         self.camera.ParallelProjectionOn()
         self.ren.SetActiveCamera(self.camera)
 
-        # data
+        # data (input 1)
         self.img3D = None
         self.sliceno = 0
         self.sliceOrientation = SLICE_ORIENTATION_XY
-
         #Actors
         self.sliceActor = vtk.vtkImageActor()
         self.voi = vtk.vtkExtractVOI()
@@ -1059,12 +1066,19 @@ class CILViewer2D():
         self.ia = vtk.vtkImageHistogramStatistics()
         self.sliceActorNo = 0
 
+        # input 2
+        self.image2 = None
+        self.voi2 = vtk.vtkExtractVOI()
+        self.sliceActor2 = vtk.vtkImageActor()
+
+        
         # Help text
         self.helpActor = vtk.vtkActor2D()
         self.helpActor.GetPositionCoordinate().SetCoordinateSystemToNormalizedDisplay()
         self.helpActor.GetPositionCoordinate().SetValue(0.1, 0.5)
         self.helpActor.VisibilityOff()
-        self.ren.AddActor(self.helpActor)
+        # self.ren.AddActor(self.helpActor)
+        self.AddActor(self.helpActor, HELP_ACTOR)
 
         #initial Window/Level
         self.InitialLevel = 0
@@ -1124,7 +1138,8 @@ class CILViewer2D():
         self.cursorActor.SetLayerNumber(1)
         self.cursorMapper.SetInputData(self.cursor.GetOutput())
         self.cursorActor.SetMapper(self.cursorMapper)
-        self.getRenderer().AddActor(self.cursorActor)
+        # self.getRenderer().AddActor(self.cursorActor)
+        self.AddActor(self.cursorActor, CURSOR_ACTOR)
 
         # Zoom
         self.InitialCameraPosition = ()
@@ -1177,8 +1192,9 @@ class CILViewer2D():
         # crosshair lines for X Y slices
         self.horizLine = vtk.vtkLine()
         self.vertLine = vtk.vtkLine()
-        self.crosshairsActor = vtk.vtkActor()
-        self.getRenderer().AddActor(self.crosshairsActor)
+        # self.crosshairsActor = vtk.vtkActor()
+        # self.getRenderer().AddActor(self.crosshairsActor)
+        # self.AddActor(self.crosshairsActor, CROSSHAIR_ACTOR)
 
         # rescale input image
         # contains (scale, shift)
@@ -1208,9 +1224,6 @@ class CILViewer2D():
         
         # Set autoclose to on
         self.imageTracer.AutoCloseOn()
-        
-        self.actors = {}
-        
 
 
     def log(self, msg):
@@ -1225,10 +1238,15 @@ class CILViewer2D():
 
     def setInput3DData(self, imageData):
         '''alias of setInputData, kept for backward compatibility'''
-        return self.setInputData()
+        return self.setInputData(imageData)
     def setInputData(self, imageData):
         self.img3D = imageData
         self.installPipeline()
+    def setInputData2 (self, imageData):
+        self.image2 = imageData
+        # TODO resample on image1
+        print ("setInputData2")
+        self.installPipeline2()
         
     def setInputAsNumpy(self, numpyarray,  origin=(0,0,0), spacing=(1.,1.,1.),
                         rescale=True, dtype=vtk.VTK_UNSIGNED_SHORT):
@@ -1293,13 +1311,20 @@ class CILViewer2D():
                    extent[4], extent[5])
         self.sliceActor.Update()
 
+        if self.image2 is not None:
+            self.voi2.SetVOI(self.voi.GetVOI())
+            self.sliceActor2.SetDisplayExtent(extent[0], extent[1],
+                   extent[2], extent[3],
+                   extent[4], extent[5])
+            self.sliceActor2.Update()
+            
         self.updateCornerAnnotation("Slice %d/%d" % (self.sliceno, self.img3D.GetDimensions()[self.sliceOrientation]-1))
 
         if self.displayHistogram:
             self.updateROIHistogram()
         try:
             if not self.img3D is None:
-                print ("self.img3D" , self.img3D)
+                # print ("self.img3D" , self.img3D)
                 # The image actor has an input.
     
                 # Set the ROI widget's projection normal to the current orientation
@@ -1374,7 +1399,10 @@ class CILViewer2D():
         self.sliceActor.Update()
         self.sliceActor.SetInterpolate(False)
         # actors are added directly to the renderer
-        self.ren.AddActor(self.sliceActor)
+        # self.ren.AddActor(self.sliceActor)
+        self.AddActor(self.sliceActor, SLICE_ACTOR)
+        
+        
         self.ren.ResetCamera()
         self.ren.Render()
 
@@ -1388,6 +1416,43 @@ class CILViewer2D():
         
         self.iren.Initialize()
         self.renWin.Render()
+        #self.iren.Start()
+    def installPipeline2(self):
+        '''Slices a 3D volume and then creates an actor to be rendered'''
+
+        if self.image2 is not None:
+            print ("installPipeline2")
+            # render image2
+            self.voi2.SetVOI(self.voi.GetVOI())
+            self.voi2.SetInputData(self.image2)
+            self.voi2.Update()
+            lut = vtk.vtkLookupTable()
+            
+            self.lut2 = lut
+            lut.SetHueRange(0,256)
+            lut.SetSaturationRange(1, 1)
+            lut.SetValueRange(1, 1)
+            lut.SetAlphaRange(0,0.5)
+            lut.Build()
+            cov = vtk.vtkImageMapToColors()
+            self.image2map = cov
+            cov.SetInputConnection(self.voi2.GetOutputPort())
+            cov.SetLookupTable(lut)
+            cov.Update()
+            self.sliceActor2.GetMapper().SetInputConnection(cov.GetOutputPort())
+            self.sliceActor2.SetDisplayExtent(self.sliceActor.GetDisplayExtent())
+            self.sliceActor2.Update()
+            self.AddActor(self.sliceActor2, OVERLAY_ACTOR)
+            self.ren.ResetCamera()
+            self.ren.Render()
+    
+            self.AdjustCamera()
+    
+            self.iren.Initialize()
+            self.renWin.Render()
+        else:
+            print ("installPipeline2 no data")
+            
         #self.iren.Start()
 
     def AdjustCamera(self, resetcamera = False):
@@ -1614,7 +1679,8 @@ class CILViewer2D():
             if self.linePlot == 0:
                 self.linePlotActor.AddDataSetInputConnection(self.lineVOIX.GetOutputPort())
                 self.linePlotActor.AddDataSetInputConnection(self.lineVOIY.GetOutputPort())
-                self.getRenderer().AddActor(self.linePlotActor)
+                # self.getRenderer().AddActor(self.linePlotActor)
+                self.AddActor(self.linePlotActor, LINEPLOT_ACTOR)
                 self.linePlot = 1
 
 
@@ -1675,24 +1741,24 @@ class CILViewer2D():
         return self.wl.GetLevel()
     
     def AddActor(self, actor, name=None):
+        '''self.log("Calling AddActor " + name)
         present_actors = self.ren.GetActors()
+        present_actors.InitTraversal()
+        self.log("Currently present actors {}".format(present_actors))
+    
+        for i in range(present_actors.GetNumberOfItems()):
+            nextActor = present_actors.GetNextActor()
+            self.log("{} {} Visibility {}".format(i, nextActor, nextActor.GetVisibility() ))
+            self.log("ClassName"+ str( nextActor.GetClassName()))
+            
+            
         if name is None:
             name = 'actor_{}'.format(present_actors.GetNumberOfItems()+1)
+        '''
         
-        if self.actors[SLICE_ACTOR] != 0:
-            actors = {}
-            if len(self.actors) != present_actors.GetNumberOfItems():
-                raise ValueError('Wrong number of actors')
-                
-            for i in range(present_actors.GetNumberOfItems()):
-                actors[self.actors] = present_actors.GetNextActor() 
-                self.ren.RemoveActor(actors[-1][1])
-            
-            # add all actors again. First the SLICE_ACTOR
-            self.ren.AddActor()
-        else:
-            self.ren.AddActor(actor)
-            self.actors[name] = self.ren.GetActors().GetNumberOfItems()
+        
+        self.ren.AddActor(actor)
+        self.actors.append(name)
             
         
         
