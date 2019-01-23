@@ -141,7 +141,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
     def mouseInteraction(self, interactor, event):
         if event == 'MouseWheelForwardEvent':
             maxSlice = self.GetDimensions()[self.GetSliceOrientation()]
-            print (self.GetActiveSlice())
+            # print (self.GetActiveSlice())
             if (self.GetActiveSlice() + 1 < maxSlice):
                 self.SetActiveSlice(self.GetActiveSlice() + 1)
                 self.UpdatePipeline()
@@ -162,7 +162,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
         ctrl = interactor.GetControlKey()
         alt = interactor.GetAltKey()
         shift = interactor.GetShiftKey()
-        print (alt, ctrl,shift)
+        # print (alt, ctrl,shift)
         if alt and not (ctrl and shift):
             self.SetEventActive("WINDOW_LEVEL_EVENT")
         if not (alt and ctrl and shift):
@@ -172,7 +172,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
         ctrl = interactor.GetControlKey()
         alt = interactor.GetAltKey()
         shift = interactor.GetShiftKey()
-        print (alt, ctrl,shift)
+        # print (alt, ctrl,shift)
         if alt and not (ctrl and shift):
             self.SetEventInactive("WINDOW_LEVEL_EVENT")
         if not (alt and ctrl and shift):
@@ -417,19 +417,6 @@ class CILViewer():
         '''Adds an actor to the render'''
         return self.showActor(0, actor)
             
-    def saveRender(self, filename, renWin=None):
-        '''Save the render window to PNG file'''
-        # screenshot code:
-        w2if = vtk.vtkWindowToImageFilter()
-        if renWin == None:
-            renWin = self.renWin
-        w2if.SetInput(renWin)
-        w2if.Update()
-         
-        writer = vtk.vtkPNGWriter()
-        writer.SetFileName("%s.png" % (filename))
-        writer.SetInputConnection(w2if.GetOutputPort())
-        writer.Write()
 
     def startRenderLoop(self):
         self.iren.Start()
@@ -603,5 +590,6 @@ class CILViewer():
         writer.SetFileName(saveFilename)
         writer.SetInputConnection(w2if.GetOutputPort())
         writer.Write()
+
 
 
