@@ -16,18 +16,17 @@ build:
   
 requirements:
   build:
-    - python
+    - python 
     - setuptools
  
   run:
+    - {{ pin_compatible('numpy', max_pin='x.x') }}
     - python
     - numpy
-    - vtk
+    - vtk ==7.0.0
     - natsort
     - pyqt
 
-
-	
 about:
   home: http://www.ccpi.ac.uk
   license:  Apache v.2.0 license
