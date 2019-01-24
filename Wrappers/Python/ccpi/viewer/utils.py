@@ -26,7 +26,7 @@ import numpy
 import vtk
 from vtk.util.vtkAlgorithm import VTKPythonAlgorithmBase
 from vtk.util import numpy_support , vtkImageImportFromArray
-from PIL import Image
+
 # Converter class
 class Converter():
 
@@ -180,78 +180,6 @@ class Converter():
                                           sampleRate=sampleRate,
                                           flatField=flatField,
                                           darkField=darkField)
-
-
-
-    @staticmethod
-    def pureTiff2Numpy(filenames, sampleRate=None, bounds=(512,512,512), **kwargs):
-        """
-        Takes a tiff stack and converts it into a 3D numpy array.
-
-        :param (list) filenames :
-            List of filenames to process.
-
-        :param (tuple) sampleRate :
-            Tuple of integers to sample by.
-            eg. (2,2,2) will take every second pixel in each direction. (x,y,z)
-
-        :param (tuple) bounds :
-            Tuple of integers to set the bounds for the size of the resulting array.
-            This is used to calculate sample rate. If sample rate is specified,
-            the function will make sure that the user supplies sample rate will fit within the bounds sepcified.
-
-        :param (any) kwargs :
-            Any additional keyword arguments.
-
-        :return (ndarray):
-            Numpy array containing the pixel values in 3D. (x,y,z)
-        """
-
-        # Check to see if there is a progress callback
-        if 'progress_callback' in kwargs.keys() and kwargs['progress_callback']:
-
-            p_callback = kwargs['progress_callback']
-        else:
-            p_callback = None
-
-        # Get array dimensions
-        first_img = Image.open(filenames[0])
-        first_arr = numpy.array(first_img)
-        shape = first_arr.shape
-
-        # Calculate sample rate
-        sample_rate = tuple(
-            map(lambda x, y: int(math.ceil(float(x) / y)), [len(filenames), shape[0], shape[1]], bounds)
-        )
-
-        # If a user has defined resample rate, check to see which has higher factor and keep that
-        if sampleRate is not None:
-            sampleRate = Converter.highest_tuple_element(sampleRate, sample_rate)
-        else:
-            sampleRate = sample_rate
-
-        # Get size of new numpy array based on sample rate
-        subsampled_arr = first_arr[0::sampleRate[1], 0::sampleRate[2]]
-        sub_shape = subsampled_arr.shape
-        subsampled_files = filenames[::sampleRate[0]]
-
-        output_array = numpy.empty((len(subsampled_files), sub_shape[0], sub_shape[1]), order='F')
-
-        # Calculate the increment based on number of files.
-        increment = 60.0/ len(subsampled_files)
-
-        # Process the images
-        for i, file in enumerate(subsampled_files):
-            img = Image.open(file)
-            img_arr = numpy.array(img)
-            output_array[i] = img_arr[0::sampleRate[1],0::sampleRate[2]].copy()
-
-            # If the progress callback is available, send the progress signal.
-            if p_callback:
-                p_callback.emit((i+1) * increment + 30)
-
-        return output_array.transpose([2,1,0])
-
 
     @staticmethod
     def _tiffStack2numpy(filenames,
