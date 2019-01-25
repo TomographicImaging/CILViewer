@@ -3,7 +3,7 @@ from PyQt5 import QtGui, QtCore
 from PyQt5.QtWidgets import *
 import vtk
 from ccpi.viewer.QVTKCILViewer import QVTKCILViewer
-from ccpi.viewer.CILViewer2D import Converter
+from ccpi.viewer.utils import Converter
 from natsort import natsorted
 import imghdr
 import os
