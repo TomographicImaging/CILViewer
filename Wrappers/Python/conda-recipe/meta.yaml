@@ -12,7 +12,7 @@ build:
     - CILViewerLaunch = ccpi.viewer.standaloneQT:main
     - triViewerLaunch = ccpi.viewer.triWidgetQT:main
 
-  number: 1
+  number: 2
   
 requirements:
   build:
@@ -27,7 +27,7 @@ requirements:
     - numpy
     - vtk ==7.0.0
     - natsort
-    - pyqt
+    - pyqt >=5.6
 
 about:
   home: http://www.ccpi.ac.uk
