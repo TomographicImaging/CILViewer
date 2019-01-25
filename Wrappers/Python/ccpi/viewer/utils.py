@@ -440,6 +440,9 @@ class cilRegularPointCloudToPolyData(VTKPythonAlgorithmBase):
         image_data = vtk.vtkDataSet.GetData(inInfo[0])
         pointPolyData = vtk.vtkPolyData.GetData(outInfo)
 
+        # reset
+        self.__Points = vtk.vtkPoints()
+        self.__Vertices = vtk.vtkCellArray()
         # print ("orientation", orientation)
         dimensionality = self.GetDimensionality()
         # print ("dimensionality", dimensionality)
@@ -665,12 +668,17 @@ class cilMaskPolyData(VTKPythonAlgorithmBase):
         in_points = vtk.vtkDataSet.GetData(inInfo[0])
         mask = vtk.vtkDataSet.GetData(inInfo[1])
         out_points = vtk.vtkPoints()
+        
+        # this implementation is slightly more efficient
+        spac = mask.GetSpacing()
+        orig = mask.GetOrigin()
         for i in range(in_points.GetNumberOfPoints()):
             pp = in_points.GetPoint(i)
 
             # get the point in image coordinate
 
-            ic = self.world2imageCoordinate(pp, mask)
+            # ic = self.world2imageCoordinate(pp, mask)
+            ic = [int(pp[i] / spac[i] + orig[i]) for i in range(3)]
             i = 0
             outside = False
             while i < len(ic):
@@ -685,7 +693,7 @@ class cilMaskPolyData(VTKPythonAlgorithmBase):
                                                       int(ic[2]), 0)
 
                 if int(mm) == int(self.GetMaskValue()):
-                    print ("value of point {} {}".format(mm, ic))
+                    # print ("value of point {} {}".format(mm, ic))
                     out_points.InsertNextPoint(*pp)
                     self.point_in_mask += 1
 
@@ -1003,9 +1011,9 @@ if __name__ == '__main__':
         #print ("value check", v1,v2)
         is_same = a.shape == reader.GetOutput().GetDimensions()
 
-        for x in range(a.shape[0]):
+        for z in range(a.shape[2]):
             for y in range(a.shape[1]):
-                for z in range(a.shape[2]):
+                for x in range(a.shape[0]):
                     v1 = a[x][y][z]
                     v2 = numpy.uint8(reader.GetOutput().GetScalarComponentAsFloat(x,y,z,0))
                     # print ("value check {} {} {},".format((x,y,z) ,v1,v2))
