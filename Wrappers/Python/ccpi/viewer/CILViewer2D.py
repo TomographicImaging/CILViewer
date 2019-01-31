@@ -1427,9 +1427,9 @@ class CILViewer2D():
             
             self.lut2 = lut
             lut.SetNumberOfColors(7)
-            lut.SetHueRange(0,256)
+            lut.SetHueRange(.4,.6)
             lut.SetSaturationRange(1, 1)
-            lut.SetValueRange(1, 1)
+            lut.SetValueRange(0.7, 0.7)
             lut.SetAlphaRange(0,0.5)
             lut.Build()
             

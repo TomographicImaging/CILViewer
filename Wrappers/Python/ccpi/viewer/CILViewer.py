@@ -506,6 +506,7 @@ class CILViewer():
         self.sliceActor.SetDisplayExtent(extent[0], extent[1],
                                          extent[2], extent[3],
                                          extent[4], extent[5])
+        self.sliceActor.GetProperty().SetOpacity(0.99)
         self.sliceActor.Update()
         self.sliceActor.SetInterpolate(False)
         self.ren.AddActor(self.sliceActor)
@@ -536,6 +537,7 @@ class CILViewer():
         self.sliceActor.SetDisplayExtent(extent[0], extent[1],
                                     extent[2], extent[3],
                                     extent[4], extent[5])
+        self.sliceActor.GetProperty().SetOpacity(0.99)
         self.sliceActor.Update()
 
         no = self.showActor(self.sliceActorNo, self.sliceActor)
