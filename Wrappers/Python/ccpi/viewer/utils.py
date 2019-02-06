@@ -873,7 +873,7 @@ class cilNumpyMETAImageWriter(object):
             self.Modified()
         
 
-def WriteNumpyAsMETAImage(array, filename, spacing=(1.,1.,1.)):
+def WriteNumpyAsMETAImage(array, filename, spacing=(1.,1.,1.), origin=(0.,0.,0.)):
     '''Writes a NumPy array and a METAImage text header so that the npy file can be used as data file'''
     # save the data as numpy
     datafname = os.path.abspath(filename) + '.npy'
@@ -916,6 +916,7 @@ def WriteNumpyAsMETAImage(array, filename, spacing=(1.,1.,1.)):
     header += 'DimSize = {} {} {}\n'.format(array.shape[0], array.shape[1], array.shape[2])
     header += 'ElementType = {}\n'.format(ar_type)
     header += 'ElementSpacing = {} {} {}\n'.format(spacing[0], spacing[1], spacing[2])
+    header += 'Position = {} {} {}\n'.format(origin[0], origin[1], origin[2])
     # MSB (aka big-endian)
     descr = npyhdr['description']
     MSB = 'True' if descr['descr'][0] == '>' else 'False'
