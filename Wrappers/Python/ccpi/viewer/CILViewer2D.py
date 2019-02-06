@@ -493,6 +493,63 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
 
         elif interactor.GetKeyCode() == 'h':
             self.DisplayHelp()
+        elif interactor.GetKeyCode() == 'w':
+            # get mouse location
+            x,y = interactor.GetEventPosition()
+            ic = self.display2imageCoordinate((x,y))
+            whole_extent = self._viewer.img3D.GetExtent()
+            extent = [ ic[0]-10, ic[0]+10, ic[1]-10, ic[1]+10]
+
+            orientation = self._viewer.sliceOrientation
+
+            extent.insert(orientation * 2, self._viewer.sliceno)
+            extent.insert(orientation * 2 + 1, self._viewer.sliceno)
+
+            if extent[0] < whole_extent[0]:
+                extent[0] = whole_extent[0]
+            if extent[1] > whole_extent[1]:
+                extent[1] = whole_extent[1]
+            if extent[2] < whole_extent[2]:
+                extent[2] = whole_extent[2]
+            if extent[3] > whole_extent[3]:
+                extent[3] = whole_extent[3]
+            if extent[4] < whole_extent[4]:
+                extent[4] = whole_extent[4]
+            if extent[5] > whole_extent[5]:
+                extent[5] = whole_extent[5]
+
+            print (extent)
+            self._viewer.voicursor.SetInputData(self._viewer.img3D)
+            self._viewer.voicursor.SetVOI(extent[0], extent[1],
+                       extent[2], extent[3],
+                       extent[4], extent[5])
+
+            self._viewer.voicursor.Update()
+            # set window/level for current slices
+
+            self._viewer.iacursor.SetInputConnection(self._viewer.voicursor.GetOutputPort())
+            self._viewer.iacursor.SetAutoRangePercentiles(1.0,99.)
+            self._viewer.iacursor.Update()
+            # reset color/window
+            cmin, cmax = self._viewer.iacursor.GetAutoRange()
+
+            # probably the level could be the median of the image within
+            # the percintiles
+            level = self._viewer.iacursor.GetMedian()
+            # accommodates all values between the level an the percentiles
+            window = 2*max(abs(level-cmin),abs(level-cmax))
+
+            self.SetInitialLevel( level )
+            self.SetInitialWindow( window )
+
+            self.GetWindowLevel().SetLevel(self.GetInitialLevel())
+            self.GetWindowLevel().SetWindow(self.GetInitialWindow())
+
+            self.GetWindowLevel().Update()
+
+            self.UpdateSliceActor()
+            self.AdjustCamera()
+            self.Render()
         else :
             #print ("Unhandled event %s" % (interactor.GetKeyCode(), )))
             pass
@@ -1061,6 +1118,8 @@ class CILViewer2D():
         self.voi = vtk.vtkExtractVOI()
         self.wl = vtk.vtkImageMapToWindowLevelColors()
         self.ia = vtk.vtkImageHistogramStatistics()
+        self.iacursor = vtk.vtkImageHistogramStatistics()
+        self.voicursor = vtk.vtkExtractVOI()
         self.sliceActorNo = 0
 
         # input 2
@@ -1237,6 +1296,7 @@ class CILViewer2D():
         '''alias of setInputData, kept for backward compatibility'''
         return self.setInputData(imageData)
     def setInputData(self, imageData):
+        self.log("setInputData")
         self.img3D = imageData
         self.installPipeline()
     def setInputData2 (self, imageData):
@@ -1348,7 +1408,8 @@ class CILViewer2D():
 
     def installPipeline(self):
         '''Slices a 3D volume and then creates an actor to be rendered'''
-
+        
+        self.log("installPipeline")
         self.ren.AddViewProp(self.cornerAnnotation)
 
         self.voi.SetInputData(self.img3D)
@@ -1416,9 +1477,8 @@ class CILViewer2D():
         #self.iren.Start()
     def installPipeline2(self):
         '''Slices a 3D volume and then creates an actor to be rendered'''
-
+        self.log("installPipeline2")
         if self.image2 is not None:
-            print ("installPipeline2")
             # render image2
             self.voi2.SetVOI(self.voi.GetVOI())
             self.voi2.SetInputData(self.image2)
