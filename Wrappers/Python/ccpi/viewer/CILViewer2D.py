@@ -494,17 +494,24 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
         elif interactor.GetKeyCode() == 'h':
             self.DisplayHelp()
         elif interactor.GetKeyCode() == 'w':
-            # get mouse location
             x,y = interactor.GetEventPosition()
+            print (x,y)
             ic = self.display2imageCoordinate((x,y))
+            print (ic)
             whole_extent = self._viewer.img3D.GetExtent()
-            extent = [ ic[0]-10, ic[0]+10, ic[1]-10, ic[1]+10]
-
+            around = 20
+            extent = [ ic[0]-around, ic[0]+around, 
+                       ic[1]-around, ic[1]+around, 
+                       ic[2]-around, ic[2]+around]
+            
+            
             orientation = self._viewer.sliceOrientation
-
-            extent.insert(orientation * 2, self._viewer.sliceno)
-            extent.insert(orientation * 2 + 1, self._viewer.sliceno)
-
+            
+            extent[orientation * 2] = self._viewer.sliceno
+            extent[orientation * 2 + 1] = self._viewer.sliceno
+            
+            print (extent)
+            print (whole_extent)
             if extent[0] < whole_extent[0]:
                 extent[0] = whole_extent[0]
             if extent[1] > whole_extent[1]:
@@ -519,14 +526,17 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
                 extent[5] = whole_extent[5]
 
             print (extent)
+            # get mouse location
+            
             self._viewer.voicursor.SetInputData(self._viewer.img3D)
             self._viewer.voicursor.SetVOI(extent[0], extent[1],
                        extent[2], extent[3],
                        extent[4], extent[5])
-
+    
             self._viewer.voicursor.Update()
             # set window/level for current slices
-
+    
+    
             self._viewer.iacursor.SetInputConnection(self._viewer.voicursor.GetOutputPort())
             self._viewer.iacursor.SetAutoRangePercentiles(1.0,99.)
             self._viewer.iacursor.Update()
@@ -551,8 +561,8 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
             self.AdjustCamera()
             self.Render()
         else :
-            #print ("Unhandled event %s" % (interactor.GetKeyCode(), )))
-            pass
+            self.log("Unhandled event %s" % (interactor.GetKeyCode()))
+            
 
     def OnLeftButtonPressEvent(self, interactor, event):
         # print ("INTERACTOR", interactor)
@@ -767,7 +777,9 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
                 imagePosition[2] = extent[4]
             if imagePosition[2] > extent[5]:
                 imagePosition[2] = extent[5]
-                
+            
+            self.log("imagePosition pre validate {}".format(imagePosition))
+            
             pixelValue = self.GetInputData().GetScalarComponentAsDouble(
                     imagePosition[0], imagePosition[1], imagePosition[2], 0)
             if self._viewer.rescale[0]:
@@ -819,7 +831,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
         spac = self.GetInputData().GetSpacing()
         orig = self.GetInputData().GetOrigin()
 
-        return [round(world_coordinates[i] / spac[i] + orig[i]) for i in range(3)]
+        return [int(world_coordinates[i] / spac[i] - orig[i]) for i in range(3)]
     
     def world2imageCoordinateFloat(self, world_coordinates):
         """
