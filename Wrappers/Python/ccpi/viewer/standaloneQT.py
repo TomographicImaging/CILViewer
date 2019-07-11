@@ -490,7 +490,7 @@ def main():
     
     App = QApplication(sys.argv)
     gui = Window()
-    sys.exit(App.exec())
+    sys.exit(App.exec_())
 
 if __name__=="__main__":
     main()
