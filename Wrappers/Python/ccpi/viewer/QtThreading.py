@@ -10,7 +10,7 @@ Created on Wed Feb  6 11:10:36 2019
 from PyQt5 import QtCore
 import traceback
 import sys
-from PyQt5.QtCore import QtThreadPool
+from PyQt5.QtCore import QThreadPool
 
 class Worker(QtCore.QRunnable):
     """
@@ -82,3 +82,22 @@ class WorkerSignals(QtCore.QObject):
     error = QtCore.pyqtSignal(tuple)
     result = QtCore.pyqtSignal(object)
     progress = QtCore.pyqtSignal(int)
+
+class ErrorObserver:
+
+   def __init__(self):
+       self.__ErrorOccurred = False
+       self.__ErrorMessage = None
+       self.CallDataType = 'string0'
+
+   def __call__(self, obj, event, message):
+       self.__ErrorOccurred = True
+       self.__ErrorMessage = message
+
+   def ErrorOccurred(self):
+       occ = self.__ErrorOccurred
+       self.__ErrorOccurred = False
+       return occ
+
+   def ErrorMessage(self):
+       return self.__ErrorMessage
