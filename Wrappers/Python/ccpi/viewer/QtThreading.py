@@ -10,6 +10,7 @@ Created on Wed Feb  6 11:10:36 2019
 from PyQt5 import QtCore
 import traceback
 import sys
+from PyQt5.QtCore import QtThreadPool
 
 class Worker(QtCore.QRunnable):
     """
