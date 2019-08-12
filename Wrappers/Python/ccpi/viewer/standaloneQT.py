@@ -1,12 +1,53 @@
 import sys
-from PyQt5 import QtGui, QtCore
+from PyQt5 import QtGui, QtCore, QtWidgets
 from PyQt5.QtWidgets import *
 import vtk
-from ccpi.viewer.QVTKCILViewer import QVTKCILViewer
+#from ccpi.viewer.QVTKCILViewer import QVTKCILViewer
+from ccpi.viewer.QVTKWidget import QVTKWidget
+from vtk.qt.QVTKRenderWindowInteractor import QVTKRenderWindowInteractor
+from ccpi.viewer.CILViewer2D import CILViewer2D
 from ccpi.viewer.utils import Converter
 from natsort import natsorted
 import imghdr
 import os
+
+class QVTKWidget2(QtWidgets.QFrame):
+    '''A QFrame to embed in Qt application containing a VTK Render Window
+    
+    All the interaction is passed from Qt to VTK.
+
+    :param viewer: The viewer you want to embed in Qt: CILViewer2D or CILViewer
+    :param interactorStyle: The interactor style for the Viewer. 
+    '''
+    def __init__(self, viewer, **kwargs):
+        '''Creator. Creates an instance of a QFrame and of a CILViewer
+        
+        The viewer is placed in the QFrame inside a QVBoxLayout. 
+        The viewer is accessible as member 'viewer'
+        '''
+        super(QtWidgets.QFrame, self).__init__()
+        self.vl = QtWidgets.QVBoxLayout()
+        self.vtkWidget = QVTKRenderWindowInteractor(self)
+        self.vl.addWidget(self.vtkWidget)
+ 
+        self.ren = vtk.vtkRenderer()
+        self.vtkWidget.GetRenderWindow().AddRenderer(self.ren)
+        self.iren = self.vtkWidget.GetRenderWindow().GetInteractor()
+        self.viewer = viewer(renWin = self.vtkWidget.GetRenderWindow(),
+                                iren = self.iren, 
+                                ren = self.ren)
+        # except KeyError:
+        #     raise KeyError("Viewer class not provided. Submit an uninstantiated viewer class object"
+        #                    "using 'viewer' keyword")
+        
+        
+
+        if 'interactorStyle' in kwargs.keys():
+            self.viewer.style = kwargs['interactorStyle'](self.viewer)
+            self.viewer.iren.SetInteractorStyle(self.viewer.style)
+        
+        self.setLayout(self.vl)
+    
 
 def generateMetaImageHeader(datafname, typecode, shape, isFortran, isBigEndian, 
                         header_size=0, spacing=(1,1,1), origin=(0,0,0)):
@@ -117,14 +158,10 @@ class Window(QMainWindow):
         fileMenu.addAction(openAction)
         fileMenu.addAction(closeAction)
 
-        self.frame = QFrame()
-        self.vl = QVBoxLayout()
-        self.vtkWidget = QVTKCILViewer(self.frame)
-        self.iren = self.vtkWidget.getInteractor()
-        self.vl.addWidget(self.vtkWidget)
-
-        self.frame.setLayout(self.vl)
-        self.setCentralWidget(self.frame)
+        # a QFrame with a CILViewer inside
+        self.vtkWidget = QVTKWidget(viewer=CILViewer2D)
+        
+        self.setCentralWidget(self.vtkWidget)
 
         self.toolbar()
 
