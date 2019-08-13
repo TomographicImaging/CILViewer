@@ -1,9 +1,12 @@
 
 from PyQt5 import QtWidgets
 import vtk
-from vtk.qt.QVTKRenderWindowInteractor import QVTKRenderWindowInteractor
+import sys
+import vtk
+from PyQt5 import QtCore, QtWidgets
+from ccpi.viewer.QCILRenderWindowInteractor import QCILRenderWindowInteractor
 
-class QVTKWidget(QtWidgets.QFrame):
+class QCILViewerWidget(QtWidgets.QFrame):
     '''A QFrame to embed in Qt application containing a VTK Render Window
     
     All the interaction is passed from Qt to VTK.
@@ -11,7 +14,7 @@ class QVTKWidget(QtWidgets.QFrame):
     :param viewer: The viewer you want to embed in Qt: CILViewer2D or CILViewer
     :param interactorStyle: The interactor style for the Viewer. 
     '''
-    def __init__(self, viewer, **kwargs):
+    def __init__(self, parent=None, **kwargs):
         '''Creator. Creates an instance of a QFrame and of a CILViewer
         
         The viewer is placed in the QFrame inside a QVBoxLayout. 
@@ -19,18 +22,26 @@ class QVTKWidget(QtWidgets.QFrame):
         '''
         super(QtWidgets.QFrame, self).__init__()
         self.vl = QtWidgets.QVBoxLayout()
-        self.vtkWidget = QVTKRenderWindowInteractor(self)
+        #self.vtkWidget = QVTKRenderWindowInteractor(self)
+        self.vtkWidget = QCILRenderWindowInteractor(self)
         self.vl.addWidget(self.vtkWidget)
  
-        self.ren = vtk.vtkRenderer()
+        if 'renderer' in kwargs.keys():
+            self.ren = kwargs['renderer']
+        else:
+            self.ren = vtk.vtkRenderer()
         self.vtkWidget.GetRenderWindow().AddRenderer(self.ren)
         self.iren = self.vtkWidget.GetRenderWindow().GetInteractor()
-        self.viewer = viewer(renWin = self.vtkWidget.GetRenderWindow(),
-                                iren = self.iren, 
-                                ren = self.ren)
-        # except KeyError:
-        #     raise KeyError("Viewer class not provided. Submit an uninstantiated viewer class object"
-        #                    "using 'viewer' keyword")
+        try:
+            dimx, dimy = kwargs.get('shape', (600,600))
+            self.viewer = kwargs['viewer'](renWin = self.vtkWidget.GetRenderWindow(),
+                                           iren = self.iren, 
+                                           ren = self.ren,
+                                           dimx=dimx,
+                                           dimy=dimy)
+        except KeyError:
+            raise KeyError("Viewer class not provided. Submit an uninstantiated viewer class object"
+                           "using 'viewer' keyword")
         
         
 
@@ -39,4 +50,5 @@ class QVTKWidget(QtWidgets.QFrame):
             self.viewer.iren.SetInteractorStyle(self.viewer.style)
         
         self.setLayout(self.vl)
-    
+        self.adjustSize()
+
