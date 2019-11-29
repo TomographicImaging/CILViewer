@@ -495,6 +495,7 @@ class QVTKWidget(QVTKRWIBaseClass):
         ctrl, shift = self._GetCtrlShift(ev)
         self._Iren.SetEventInformationFlipY(ev.x(), ev.y(),
                                             ctrl, shift, chr(0), 0, None)
+        self._Iren.SetAltKey(alt)
         self._Iren.MouseMoveEvent()
 
     def keyPressEvent(self, ev):
