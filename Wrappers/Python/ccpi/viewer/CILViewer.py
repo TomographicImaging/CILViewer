@@ -283,22 +283,25 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
 class CILViewer():
     '''Simple 3D Viewer based on VTK classes'''
     
-    def __init__(self, dimx=600,dimy=600, renWin=None, iren=None):
+    def __init__(self, dimx=600,dimy=600, renWin=None, iren=None, ren=None):
         '''creates the rendering pipeline'''
 
         # Handle arguments
-        if renWin:
+        if renWin is not None:
             self.renWin = renWin
         else:
             self.renWin = vtk.vtkRenderWindow()
 
-        if iren:
+        if iren is not None:
             self.iren = iren
         else:
             self.iren = vtk.vtkRenderWindowInteractor()
         
         # create a rendering window and renderer
-        self.ren = vtk.vtkRenderer()
+        if ren is not None: 
+            self.ren = ren
+        else:
+            self.ren = vtk.vtkRenderer()
         self.renWin.SetSize(dimx,dimy)
         self.renWin.AddRenderer(self.ren)
 
@@ -425,6 +428,10 @@ class CILViewer():
     def setInput3DData(self, imageData):
         self.img3D = imageData
         self.installPipeline()
+        
+    def setInputData(self, imageData):
+        '''alias of setInput3DData'''
+        return self.setInput3DData(imageData)
 
     def setInputAsNumpy(self, numpyarray):
         if (len(numpy.shape(numpyarray)) == 3):

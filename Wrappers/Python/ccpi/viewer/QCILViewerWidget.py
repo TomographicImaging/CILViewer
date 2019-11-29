@@ -20,12 +20,20 @@ class QCILViewerWidget(QtWidgets.QFrame):
         The viewer is placed in the QFrame inside a QVBoxLayout. 
         The viewer is accessible as member 'viewer'
         '''
+        
         super(QtWidgets.QFrame, self).__init__()
+        # currently the size of the frame is set by stretching to the whole 
+        # area in the main window. A resize of the MainWindow triggers a resize of 
+        # the QFrame to occupy the whole area available.
+
+        dimx, dimy = kwargs.get('shape', (600,600))
+        # self.resize(dimx, dimy)
+
         self.vl = QtWidgets.QVBoxLayout()
         #self.vtkWidget = QVTKRenderWindowInteractor(self)
         self.vtkWidget = QCILRenderWindowInteractor(self)
         self.vl.addWidget(self.vtkWidget)
- 
+        
         if 'renderer' in kwargs.keys():
             self.ren = kwargs['renderer']
         else:
@@ -33,12 +41,14 @@ class QCILViewerWidget(QtWidgets.QFrame):
         self.vtkWidget.GetRenderWindow().AddRenderer(self.ren)
         self.iren = self.vtkWidget.GetRenderWindow().GetInteractor()
         try:
-            dimx, dimy = kwargs.get('shape', (600,600))
+            
+            print ("provided viewer class ", kwargs['viewer'])
             self.viewer = kwargs['viewer'](renWin = self.vtkWidget.GetRenderWindow(),
                                            iren = self.iren, 
                                            ren = self.ren,
                                            dimx=dimx,
-                                           dimy=dimy)
+                                           dimy=dimy
+                                           )
         except KeyError:
             raise KeyError("Viewer class not provided. Submit an uninstantiated viewer class object"
                            "using 'viewer' keyword")
