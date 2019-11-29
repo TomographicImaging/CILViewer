@@ -3,70 +3,19 @@ import vtk
 from PyQt5 import QtCore, QtWidgets
 from vtk.qt.QVTKRenderWindowInteractor import QVTKRenderWindowInteractor
 from ccpi.viewer.QCILRenderWindowInteractor import QCILRenderWindowInteractor
-from ccpi.viewer.CILViewer2D import CILViewer2D
-from ccpi.viewer.CILViewer import CILViewer
+from ccpi.viewer import viewer2D, viewer3D
 from ccpi.viewer.QCILViewerWidget import QCILViewerWidget
+# Import linking class to join 2D and 3D viewers
+import ccpi.viewer.viewerLinker as vlink
 
-# class QVTKWidget2(QtWidgets.QFrame):
-#     def __init__(self, parent=None, **kwargs):
-#         super(QtWidgets.QFrame, self).__init__()
-#         self.vl = QtWidgets.QVBoxLayout()
-#         #self.vtkWidget = QVTKRenderWindowInteractor(self)
-#         self.vtkWidget = QCILRenderWindowInteractor(self)
-#         self.vl.addWidget(self.vtkWidget)
- 
-#         if 'renderer' in kwargs.keys():
-#             self.ren = kwargs['renderer']
-#         else:
-#             self.ren = vtk.vtkRenderer()
-#         self.vtkWidget.GetRenderWindow().AddRenderer(self.ren)
-#         self.iren = self.vtkWidget.GetRenderWindow().GetInteractor()
-#         try:
-#             dimx, dimy = kwargs.get('shape', (600,600))
-#             self.viewer = kwargs['viewer'](renWin = self.vtkWidget.GetRenderWindow(),
-#                                            iren = self.iren, 
-#                                            ren = self.ren,
-#                                            dimx=dimx,
-#                                            dimy=dimy)
-#         except KeyError:
-#             raise KeyError("Viewer class not provided. Submit an uninstantiated viewer class object"
-#                            "using 'viewer' keyword")
-        
-        
-
-#         if 'interactorStyle' in kwargs.keys():
-#             self.viewer.style = kwargs['interactorStyle'](self.viewer)
-#             self.viewer.iren.SetInteractorStyle(self.viewer.style)
-        
-#         self.setLayout(self.vl)
-#         self.adjustSize()
-
-# class MainWindow2(QtWidgets.QMainWindow):
- 
-#     def __init__(self, parent = None):
-#         QtWidgets.QMainWindow.__init__(self, parent)
- 
-#         self.frame = QVTKWidget2(viewer=CILViewer2D, size=(800,400))
-        
-        
-#         reader = vtk.vtkMetaImageReader()
-#         reader.SetFileName('head.mha')
-#         reader.Update()
-        
-#         self.frame.viewer.setInputData(reader.GetOutput())
-        
-#         self.setCentralWidget(self.frame)
- 
-#         self.show()
-#         # self.iren.Initialize()
 
 class MainWindow3(QtWidgets.QMainWindow):
 
     def __init__(self, parent = None):
         QtWidgets.QMainWindow.__init__(self, parent)
-        self.resize(800,600)
+        #self.resize(800,600)
         
-        self.frame = QCILViewerWidget(viewer=CILViewer, shape=(600,600))
+        self.frame = QCILViewerWidget(viewer=viewer3D, shape=(600,600))
                 
         reader = vtk.vtkMetaImageReader()
         reader.SetFileName('head.mha')
@@ -78,59 +27,52 @@ class MainWindow3(QtWidgets.QMainWindow):
     
         self.show()
         
-# class MainWindow(QtWidgets.QMainWindow):
+class TwoViewers(QtWidgets.QMainWindow):
 
-#     def __init__(self, parent = None):
-#         QtWidgets.QMainWindow.__init__(self, parent)
-    
-#         self.frame = QtWidgets.QFrame()
-    
-#         self.vl = QtWidgets.QVBoxLayout()
-#         # if one wants to pass a renderer he/she has to define it here
-#         self.ren = vtk.vtkRenderer()
-#         self.vtkWidget = QVTKRenderWindowInteractor(self.frame, renderer=self.ren)
-#         # otherwise it's created by the QVTKRenderWindowInteractor
-#         # self.vtkWidget = QVTKRenderWindowInteractor(self.frame)
-#         # access the renderer in the QVTKRenderWindowInteractor
-#         # self.ren = self.vtkWidget.ren
-#         self.vl.addWidget(self.vtkWidget)
+    def __init__(self, parent = None):
+        QtWidgets.QMainWindow.__init__(self, parent)
+        #self.resize(800,600)
         
-#         self.iren = self.vtkWidget.GetRenderWindow().GetInteractor()
+        self.frame1 = QCILViewerWidget(viewer=viewer2D, shape=(600,600),
+              interactorStyle=vlink.Linked2DInteractorStyle)
+        self.frame2 = QCILViewerWidget(viewer=viewer3D, shape=(600,600),
+              interactorStyle=vlink.Linked3DInteractorStyle)
+                
+        reader = vtk.vtkMetaImageReader()
+        reader.SetFileName('head.mha')
+        reader.Update()
+        
+        self.frame1.viewer.setInputData(reader.GetOutput())
+        self.frame2.viewer.setInputData(reader.GetOutput())
+        
+        # Initially link viewers
+        self.linkedViewersSetup()
+        self.link2D3D.enable()
 
-#         viewer = CILViewer2D(ren = self.ren, renWin = self.vtkWidget.GetRenderWindow(), iren = self.iren)
-#         self.viewer = viewer
+        layout = QtWidgets.QBoxLayout(QtWidgets.QBoxLayout.LeftToRight)
+        layout.addWidget(self.frame1)
+        layout.addWidget(self.frame2)
         
-#         reader = vtk.vtkMetaImageReader()
-#         reader.SetFileName('head.mha')
-#         reader.Update()
-#         viewer.setInputData(reader.GetOutput())
-#         # # Create source
-#         # source = vtk.vtkSphereSource()
-#         # source.SetCenter(0, 0, 0)
-#         # source.SetRadius(5.0)
-    
-#         # # Create a mapper
-#         # mapper = vtk.vtkPolyDataMapper()
-#         # mapper.SetInputConnection(source.GetOutputPort())
-    
-#         # # Create an actor
-#         # actor = vtk.vtkActor()
-#         # actor.SetMapper(mapper)
-    
-#         # self.ren.AddActor(actor)
-    
-#         # self.ren.ResetCamera()
-    
-#         self.frame.setLayout(self.vl)
-#         self.setCentralWidget(self.frame)
-    
-#         self.show()
-#         # self.iren.Initialize()
+        cw = QtWidgets.QWidget()
+        cw.setLayout(layout)
+        self.setCentralWidget(cw)
+        self.central_widget = cw
+        self.show()
+
+    def linkedViewersSetup(self):
+        v2d = self.frame1.viewer
+        v3d = self.frame2.viewer
+        self.link2D3D = vlink.ViewerLinker(v2d, v3d)
+        self.link2D3D.setLinkPan(False)
+        self.link2D3D.setLinkZoom(False)
+        self.link2D3D.setLinkWindowLevel(True)
+        self.link2D3D.setLinkSlice(True)
 
 if __name__ == "__main__":
  
     app = QtWidgets.QApplication(sys.argv)
  
-    window = MainWindow3()
+    #window = MainWindow3()
+    window = TwoViewers()
  
     sys.exit(app.exec_())

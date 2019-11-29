@@ -41,7 +41,7 @@ CURSOR_ACTOR = 'cursor_actor'
 CROSSHAIR_ACTOR = 'crosshair_actor'
 LINEPLOT_ACTOR = 'lineplot_actor'
 
-class ViewerEventManager():
+class ViewerEventManager(object):
 
     def __init__(self):
         # If all values are false it signifies no event
