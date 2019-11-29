@@ -300,7 +300,7 @@ class QVTKWidget(QVTKRWIBaseClass):
         try:
             self._Iren = kwargs['iren']
         except KeyError:
-            self._Iren = vtk.vtkRenderWindowInteractor()
+            self._Iren = vtk.vtkGenericRenderWindowInteractor()
             self._Iren.SetRenderWindow(self._RenderWindow)
 
         try:
