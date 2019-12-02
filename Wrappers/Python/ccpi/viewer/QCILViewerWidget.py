@@ -5,6 +5,7 @@ import sys
 import vtk
 from PyQt5 import QtCore, QtWidgets
 from ccpi.viewer.QCILRenderWindowInteractor import QCILRenderWindowInteractor
+from ccpi.viewer import viewer2D
 
 class QCILViewerWidget(QtWidgets.QFrame):
     '''A QFrame to embed in Qt application containing a VTK Render Window
@@ -62,3 +63,21 @@ class QCILViewerWidget(QtWidgets.QFrame):
         self.setLayout(self.vl)
         self.adjustSize()
 
+class QCILDockableWidget(QtWidgets.QDockWidget):
+
+    def __init__(self, parent=None, **kwargs):
+        viewer = kwargs.get('viewer', viewer2D)
+        shape = kwargs.get('shape', (600,600))
+        title = kwargs.get('title', "3D View")
+
+
+        super(QCILDockableWidget, self).__init__(parent)
+        
+        
+
+        self.frame = QCILViewerWidget(parent, **kwargs)
+        self.viewer = self.frame.viewer
+
+        self.setWindowTitle(title)
+        
+        self.setWidget(self.frame)
