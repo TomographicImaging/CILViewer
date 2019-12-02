@@ -17,44 +17,15 @@
 import vtk
 import numpy
 import os
+#from ccpi.viewer import ViewerEventManager
+from ccpi.viewer.CILViewer2D import ViewerEventManager
 
-SLICE_ORIENTATION_XY = 2 # Z
-SLICE_ORIENTATION_XZ = 1 # Y
-SLICE_ORIENTATION_YZ = 0 # X
+from ccpi.viewer.CILViewer2D import SLICE_ORIENTATION_XY, SLICE_ORIENTATION_XZ, \
+   SLICE_ORIENTATION_YZ, CONTROL_KEY, SHIFT_KEY, ALT_KEY, SLICE_ACTOR, \
+   OVERLAY_ACTOR, HISTOGRAM_ACTOR, HELP_ACTOR, CURSOR_ACTOR, CROSSHAIR_ACTOR,\
+   LINEPLOT_ACTOR
 
 
-class ViewerEventManager():
-
-    def __init__(self):
-        # If all values are false it signifies no event
-        self.events = {
-            "PICK_EVENT": False,                # left  mouse
-            "WINDOW_LEVEL_EVENT": False,        # alt + right mouse + move
-            "ZOOM_EVENT": False,                # shift + right mouse + move
-            "PAN_EVENT": False,                 # ctrl + right mouse + move
-            "CREATE_ROI_EVENT": False,          # ctrl + left mouse
-            "DELETE_ROI_EVENT": False,          # alt + left mouse
-            "SHOW_LINE_PROFILE_EVENT": False    # l
-        }
-
-    def __str__(self):
-        return str(self.events)
-
-    def On(self, event):
-        self.events[event] = True
-
-    def Off(self, event):
-        self.events[event] = False
-
-    def setAllInactive(self):
-        self.events = {x:False for x in self.events}
-
-    def isActive(self, event):
-        return self.events[event]
-
-    def isAllInactive(self):
-        """Returns True if all events are inactive"""
-        return all(not x for x in self.events.values())
 
 class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
 
@@ -283,22 +254,25 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
 class CILViewer():
     '''Simple 3D Viewer based on VTK classes'''
     
-    def __init__(self, dimx=600,dimy=600, renWin=None, iren=None):
+    def __init__(self, dimx=600,dimy=600, renWin=None, iren=None, ren=None):
         '''creates the rendering pipeline'''
 
         # Handle arguments
-        if renWin:
+        if renWin is not None:
             self.renWin = renWin
         else:
             self.renWin = vtk.vtkRenderWindow()
 
-        if iren:
+        if iren is not None:
             self.iren = iren
         else:
             self.iren = vtk.vtkRenderWindowInteractor()
         
         # create a rendering window and renderer
-        self.ren = vtk.vtkRenderer()
+        if ren is not None: 
+            self.ren = ren
+        else:
+            self.ren = vtk.vtkRenderer()
         self.renWin.SetSize(dimx,dimy)
         self.renWin.AddRenderer(self.ren)
 
@@ -425,6 +399,10 @@ class CILViewer():
     def setInput3DData(self, imageData):
         self.img3D = imageData
         self.installPipeline()
+
+    def setInputData(self, imageData):
+        '''alias of setInput3DData'''
+        return self.setInput3DData(imageData)
 
     def setInputAsNumpy(self, numpyarray):
         if (len(numpy.shape(numpyarray)) == 3):

@@ -41,7 +41,7 @@ CURSOR_ACTOR = 'cursor_actor'
 CROSSHAIR_ACTOR = 'crosshair_actor'
 LINEPLOT_ACTOR = 'lineplot_actor'
 
-class ViewerEventManager():
+class ViewerEventManager(object):
 
     def __init__(self):
         # If all values are false it signifies no event
@@ -1069,6 +1069,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
         position = interactor.GetEventPosition()
 
         vox = self.display2imageCoordinate(position)
+        self.last_picked_voxel = vox
         # print ("Pixel %d,%d,%d Value %f" % vox )
         self._viewer.cornerAnnotation.VisibilityOn()
         self.UpdateCornerAnnotation("[%d,%d,%d] : %.2g" % vox , 0)
@@ -1679,6 +1680,15 @@ class CILViewer2D():
             self.getInteractor().SetKeyCode(axis)
             self.style.OnKeyPress(self.getInteractor(), "KeyPressEvent")
 
+    def setColourWindowLevel(self, window, level):
+        self.wl.SetWindow(window)
+        self.wl.SetLevel(level)
+        self.wl.Update()
+        self.sliceActor.SetInputData(self.wl.GetOutput())
+        self.sliceActor.Update()
+        self.ren.Render()
+        self.renWin.Render()
+
     def updateLinePlot(self, imagecoordinate, display):
 
         self.displayLinePlot = display
@@ -1832,3 +1842,4 @@ class CILViewer2D():
         
         self.ren.AddActor(actor)
         self.actors.append(name)
+    

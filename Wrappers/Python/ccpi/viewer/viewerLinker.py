@@ -16,6 +16,9 @@ class Linked3DInteractorStyle(CIL3DInteractorStyle):
 
     def SetLinkedInteractor(self, iren):
         self.LinkedInteractor = iren
+    
+    def GetLinkedInteractor(self):
+        return self.LinkedInteractor
 
     def GetLinkedEvent(self):
         return self.LinkedEvent
@@ -40,6 +43,9 @@ class Linked2DInteractorStyle(CIL2DInteractorStyle):
 
     def SetLinkedInteractor(self, iren):
         self.LinkedInteractor = iren
+
+    def GetLinkedInteractor(self):
+        return self.LinkedInteractor
 
     def GetLinkedEvent(self):
         return self.LinkedEvent
@@ -243,11 +249,21 @@ class ViewerLinkObserver():
              interactor.GetControlKey() == 0 and
              interactor.GetShiftKey() == 0) or
                 state == 1025):
-            # Check if picking is linked
-            if (not self.linkPick):
-                # Not linked
+            if isinstance(sourceInteractorStyle, Linked3DInteractorStyle):
                 shouldPassEvent = False
-
+            else:
+                # Check if picking is linked
+                if (not self.linkPick):
+                    # Not linked
+                    shouldPassEvent = False
+                else:
+                    # Set current slice to the picked voxel
+                    # get pick position
+                    pick_position = sourceInteractorStyle.last_picked_voxel
+                    sliceno = pick_position[self.targetViewer.sliceOrientation]
+                    targetInteractorStyle.SetActiveSlice(sliceno)
+                    targetInteractorStyle.UpdatePipeline(True)
+                
         # WindowLevel
         if (((event == "RightButtonPressEvent") and
              interactor.GetAltKey() == 1 and
@@ -266,7 +282,7 @@ class ViewerLinkObserver():
 
         # Update window level on mouse move
         if (event == "MouseMoveEvent" and
-            self.targetVtkViewer.event.isActive("WINDOW_LEVEL_EVENT")):
+            self.sourceViewer.event.isActive("WINDOW_LEVEL_EVENT")):
 
             if not self.linkWindowLevel:
                 shouldPassEvent = False
@@ -288,6 +304,12 @@ class ViewerLinkObserver():
                         self.targetVtkViewer.GetSliceOrientation()):
                     shouldPassEvent = False
 
+        # KeyPress
+        if (event == "KeyPressEvent" or
+                state == 1026):
+
+            shouldPassEvent = False
+            
         # Check if event should be passed
         if (shouldPassEvent):
             # Pass event
@@ -323,7 +345,7 @@ class ViewerLinkObserver():
         self.targetInteractor.SetRepeatCount(interactor.GetRepeatCount())
         self.targetInteractor.SetKeySym(interactor.GetKeySym())
 
-        # print (self.targetInteractor.GetInteractorStyle())
+        # print (type(self.targetInteractor.GetInteractorStyle()))
         # Mark the event as linked
         self.targetInteractor.GetInteractorStyle().LinkedEventOn()
 
