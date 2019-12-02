@@ -249,17 +249,20 @@ class ViewerLinkObserver():
              interactor.GetControlKey() == 0 and
              interactor.GetShiftKey() == 0) or
                 state == 1025):
-            # Check if picking is linked
-            if (not self.linkPick):
-                # Not linked
+            if isinstance(sourceInteractorStyle, Linked3DInteractorStyle):
                 shouldPassEvent = False
             else:
-                # Set current slice to the picked voxel
-                # get pick position
-                pick_position = sourceInteractorStyle.last_picked_voxel
-                sliceno = pick_position[self.targetViewer.sliceOrientation]
-                targetInteractorStyle.SetActiveSlice(sliceno)
-                targetInteractorStyle.UpdatePipeline(True)
+                # Check if picking is linked
+                if (not self.linkPick):
+                    # Not linked
+                    shouldPassEvent = False
+                else:
+                    # Set current slice to the picked voxel
+                    # get pick position
+                    pick_position = sourceInteractorStyle.last_picked_voxel
+                    sliceno = pick_position[self.targetViewer.sliceOrientation]
+                    targetInteractorStyle.SetActiveSlice(sliceno)
+                    targetInteractorStyle.UpdatePipeline(True)
                 
         # WindowLevel
         if (((event == "RightButtonPressEvent") and
@@ -304,7 +307,8 @@ class ViewerLinkObserver():
         # KeyPress
         if (event == "KeyPressEvent" or
                 state == 1026):
-                shouldPassEvent = False
+
+            shouldPassEvent = False
             
         # Check if event should be passed
         if (shouldPassEvent):
