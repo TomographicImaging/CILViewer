@@ -508,7 +508,9 @@ class CILViewer():
         self.volume_property.SetInterpolationTypeToLinear()
 
         self.ren.AddVolume(self.volume)
+        self.volume_colormap_limits = (cmin, cmax)
         
+
 
     def installSliceActorPipeline(self):
         self.voi.SetInputData(self.img3D)
@@ -577,9 +579,27 @@ class CILViewer():
         no = self.showActor(self.sliceActorNo, self.sliceActor)
         self.sliceActorNo = no
 
+        self.updateVolumePipeline()
+
         self.adjustCamera(resetcamera)
 
         self.renWin.Render()
+
+    def updateVolumePipeline(self):
+        cmin , cmax = self.volume_colormap_limits
+        viridis = colormaps.CILColorMaps.get_color_transfer_function('viridis', (cmin,cmax))
+
+        x = numpy.linspace(self.ia.GetMinimum(), self.ia.GetMaximum(), num=255)
+        scaling = 0.1
+        opacity = colormaps.CILColorMaps.get_opacity_transfer_function(x, 
+          colormaps.relu, cmin, cmax, scaling)
+        self.volume_property.SetColor(viridis)
+        self.volume_property.SetScalarOpacity(opacity)
+        
+
+    def setVolumeColorLevelWindow(self, cmin, cmax):
+        self.volume_colormap_limits = (cmin, cmax)
+        self.updatePipeline()
 
     def adjustCamera(self, resetcamera= False):
 
