@@ -82,7 +82,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
         self.callback = callback
         self._viewer = callback
         priority = 1.0
-        self.debug = True
+        self.debug = False
 
         self.AddObserver("MouseWheelForwardEvent" , self.OnMouseWheelForward , priority)
         self.AddObserver("MouseWheelBackwardEvent" , self.OnMouseWheelBackward, priority)
@@ -1219,7 +1219,7 @@ class CILViewer2D():
         self.roiIA = vtk.vtkImageAccumulate()
         self.roiVOI = vtk.vtkExtractVOI()
         self.histogramPlotActor = vtk.vtkXYPlotActor()
-        self.histogramPlotActor.ExchangeAxesOff();
+        self.histogramPlotActor.ExchangeAxesOff()
         self.histogramPlotActor.SetXLabelFormat( "%g" )
         self.histogramPlotActor.SetXLabelFormat( "%g" )
         self.histogramPlotActor.SetAdjustXLabels(3)

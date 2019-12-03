@@ -152,7 +152,7 @@ class ViewerLinkObserver():
     This class passes events from a source viewer to a target. The user
     can pass it as an observer to the interactor of a viewer like this:
 
-    linker = PyveViewerLinker(someViewer, someOtherViewer)
+    linker = ViewerLinker(someViewer, someOtherViewer)
     someOtherViewer.getInteractor().AddObserver("AnyEvent", linker)
 
     It would be nice to listen to the vtkPyveInteractorStyle class, instead
