@@ -133,13 +133,13 @@ class FourLinkedViewersDockableWidget(QtWidgets.QMainWindow):
         
         # create the dockable widgets with the viewer inside
         self.v00 = QCILDockableWidget(viewer=viewer2D, shape=(600,600), 
-           title="X", interactorStyle=vlink.Linked2DInteractorStyle, debug=False)
+           title="X", interactorStyle=vlink.Linked2DInteractorStyle)
         self.v01 = QCILDockableWidget(viewer=viewer2D, shape=(600,600), 
-           title="Y", interactorStyle=vlink.Linked2DInteractorStyle, debug=False)
+           title="Y", interactorStyle=vlink.Linked2DInteractorStyle)
         self.v10 = QCILDockableWidget(viewer=viewer2D, shape=(600,600), 
-           title="Z", interactorStyle=vlink.Linked2DInteractorStyle, debug=False)
+           title="Z", interactorStyle=vlink.Linked2DInteractorStyle)
         self.v11 = QCILDockableWidget(viewer=viewer3D, shape=(600,600), 
-           title="3D", interactorStyle=vlink.Linked3DInteractorStyle, debug=True)
+           title="3D", interactorStyle=vlink.Linked3DInteractorStyle)
                 
         # Create the viewer linkers 
         viewerLinkers = self.linkedViewersSetup(self.v00, self.v01, self.v10)
@@ -168,18 +168,18 @@ class FourLinkedViewersDockableWidget(QtWidgets.QMainWindow):
         self.addDockWidget(QtCore.Qt.RightDockWidgetArea, self.v10, QtCore.Qt.Vertical)
         self.addDockWidget(QtCore.Qt.RightDockWidgetArea, self.v11, QtCore.Qt.Vertical)
 
-        # self.rs = QRangeSlider()
+        self.rs = QRangeSlider()
 
-        # cmin = self.v00.viewer.ia.GetMinimum()
-        # cmax = self.v00.viewer.ia.GetMaximum()
-        # self.rs.setRange(cmin,cmax)
-        # self.rs.setMin(cmin)
-        # self.rs.setMax(cmax)
+        cmin = self.v00.viewer.ia.GetMinimum()
+        cmax = self.v00.viewer.ia.GetMaximum()
+        self.rs.setRange(cmin,cmax)
+        self.rs.setMin(cmin)
+        self.rs.setMax(cmax)
 
-        # self.rs.endValueChanged.connect(self.updateVolumeRender)
-        # self.rs.startValueChanged.connect(self.updateVolumeRender)
+        self.rs.endValueChanged.connect(self.updateVolumeRender)
+        self.rs.startValueChanged.connect(self.updateVolumeRender)
 
-        # self.v11.frame.vl.addWidget(self.rs)
+        self.v11.frame.vl.addWidget(self.rs)
 
         self.show()
 
