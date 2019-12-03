@@ -31,8 +31,8 @@ if  cil_version == '':
 setup(
     name="ccpi-viewer",
     version=cil_version,
-    packages=['ccpi','ccpi.viewer'],
-	 install_requires=['numpy','vtk'],
+    packages=['ccpi','ccpi.viewer', 'ccpi.viewer.utils'],
+	install_requires=['numpy','vtk'],
 
     # Project uses reStructuredText, so ensure that the docutils get
     # installed or upgraded on the target machine

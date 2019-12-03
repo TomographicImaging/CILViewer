@@ -25,7 +25,7 @@ from ccpi.viewer.CILViewer2D import SLICE_ORIENTATION_XY, SLICE_ORIENTATION_XZ, 
    OVERLAY_ACTOR, HISTOGRAM_ACTOR, HELP_ACTOR, CURSOR_ACTOR, CROSSHAIR_ACTOR,\
    LINEPLOT_ACTOR
 
-
+from ccpi.viewer.utils import colormaps
 
 class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
 
@@ -307,6 +307,23 @@ class CILViewer():
         self.helpActor.GetPositionCoordinate().SetValue(0.1, 0.5)
         self.helpActor.VisibilityOff()
         self.ren.AddActor(self.helpActor)
+
+
+        # volume render
+        volumeMapper = vtk.vtkSmartVolumeMapper()
+        #volumeMapper = vtk.vtkFixedPointVolumeRayCastMapper()
+        self.volume_mapper = volumeMapper
+
+        volumeProperty = vtk.vtkVolumeProperty()
+        self.volume_property = volumeProperty
+
+        
+        # The volume holds the mapper and the property and
+        # can be used to position/orient the volume.
+        volume = vtk.vtkVolume()
+        volume.SetMapper(volumeMapper)
+        volume.SetProperty(volumeProperty)
+        self.volume = volume
         
         self.iren.Initialize()
 
@@ -449,6 +466,51 @@ class CILViewer():
             print (te)
             print (self.ren.GetActors())
 
+        self.installSliceActorPipeline()
+        self.installVolumeRenderActorPipeline()
+
+        self.ren.ResetCamera()
+        self.ren.Render()
+
+        self.adjustCamera()
+
+        self.iren.Initialize()
+        self.renWin.Render()
+
+    def installVolumeRenderActorPipeline(self):
+        
+        self.volume_mapper.SetInputData(self.img3D)
+
+        ia = vtk.vtkImageHistogramStatistics()
+        ia.SetInputData(self.img3D)
+        ia.SetAutoRangePercentiles(90.,99.)
+        ia.Update()
+        
+        cmin, cmax = ia.GetAutoRange()
+        print ("viewer: cmin cmax", cmin, cmax)
+        # cmin, cmax = (1000,2000)
+        # probably the level could be the median of the image within
+        # the percentiles 
+        median = ia.GetMedian()
+        # accomodates all values between the level an the percentiles
+        #window = 2*max(abs(median-cmin),abs(median-cmax))
+        window = cmax - cmin
+        viridis = colormaps.CILColorMaps.get_color_transfer_function('viridis', (cmin,cmax))
+
+        x = numpy.linspace(ia.GetMinimum(), ia.GetMaximum(), num=255)
+        scaling = 0.1
+        opacity = colormaps.CILColorMaps.get_opacity_transfer_function(x, 
+          colormaps.relu, cmin, cmax, scaling)
+
+        self.volume_property.SetColor(viridis)
+        self.volume_property.SetScalarOpacity(opacity)
+        self.volume_property.ShadeOn()
+        self.volume_property.SetInterpolationTypeToLinear()
+
+        self.ren.AddVolume(self.volume)
+        
+
+    def installSliceActorPipeline(self):
         self.voi.SetInputData(self.img3D)
 
         extent = [ i for i in self.img3D.GetExtent()]
@@ -488,13 +550,7 @@ class CILViewer():
         self.sliceActor.Update()
         self.sliceActor.SetInterpolate(False)
         self.ren.AddActor(self.sliceActor)
-        self.ren.ResetCamera()
-        self.ren.Render()
-
-        self.adjustCamera()
-
-        self.iren.Initialize()
-        self.renWin.Render()
+        
 
     def updatePipeline(self, resetcamera = False):
         self.hideActor(self.sliceActorNo)
