@@ -556,15 +556,16 @@ class CILViewer():
     def installHistogramPlotPipeline(self):
         #use 255 bins
 
-        self.iah.SetInputData(self.img3D)
-        delta = self.iah.GetMax()[0] - self.iah.GetMin()[0]
-        nbins = 255
-        self.iah.SetComponentSpacing(delta/nbins,0,0)
-        self.iah.SetComponentExtent(0,nbins,0,0,0,0 )
-        self.iah.Update()
+        # self.iah.SetInputData(self.img3D)
+        # delta = self.iah.GetMax()[0] - self.iah.GetMin()[0]
+        # nbins = 255
+        # self.iah.SetComponentSpacing(delta/nbins,0,0)
+        # self.iah.SetComponentExtent(0,nbins,0,0,0,0 )
+        # self.iah.Update()
 
-        self.linePlotActor.AddDataSetInputConnection(self.iah.GetOutputPort())
-        self.ren.AddActor(self.linePlotActor)
+        # self.linePlotActor.AddDataSetInputConnection(self.iah.GetOutputPort())
+        # self.ren.AddActor(self.linePlotActor)
+        pass
 
     def updateHistogramPlot(self):
         pass
