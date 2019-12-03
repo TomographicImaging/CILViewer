@@ -187,10 +187,24 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
         elif interactor.GetKeyCode() == "h":
             self.DisplayHelp()
             
-        elif interactor.GetKeyCode() == "s":
+        elif interactor.GetKeyCode() == "r":
             filename = "current_render"
             self.SaveRender(filename)
-
+        elif interactor.GetKeyCode() == "v":
+            # toggle visibility of the volume render
+            if self._viewer.volume.GetVisibility():
+                self._viewer.volume.VisibilityOff()
+            else:
+                self._viewer.volume.VisibilityOn()
+            self._viewer.updatePipeline()
+        elif interactor.GetKeyCode() == "s":
+            # toggle visibility of the slice 
+            
+            if self._viewer.sliceActor.GetVisibility():
+                self._viewer.sliceActor.VisibilityOff()
+            else:
+                self._viewer.sliceActor.VisibilityOn()
+            self._viewer.updatePipeline()
         else:
             print("Unhandled event %s" % interactor.GetKeyCode())
 
@@ -232,9 +246,12 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
                              "\n"
                              "Keyboard Interactions:\n"
                              "\n"
-                             "  - YZ Plane: X\n"
-                             "  - XZ Plane: Y\n"
-                             "  - XY Plane: Z\n"
+                             "  - YZ Plane: x\n"
+                             "  - XZ Plane: y\n"
+                             "  - XY Plane: z\n"
+                             "  - Save render to current_render.png: r\n"
+                             "  - Toggle visibility of volume render: v\n"
+                             "  - Toggle visibility of slice: s\n"
                              )
         tprop = textMapperC.GetTextProperty()
         tprop.ShallowCopy(multiLineTextProp)
