@@ -341,32 +341,6 @@ class CILViewer():
         volume.SetMapper(volumeMapper)
         volume.SetProperty(volumeProperty)
         self.volume = volume
-
-
-        # an actor for XY plots
-        self.linePlotActor = vtk.vtkXYPlotActor()
-        self.linePlotActor.ExchangeAxesOff()
-        self.linePlotActor.SetXTitle( "" )
-        self.linePlotActor.SetYTitle( "" )
-        self.linePlotActor.SetXLabelFormat( "%.0f" )
-        self.linePlotActor.SetYLabelFormat( "%.0f" )
-        #self.linePlotActor.SetAdjustXLabels(3)
-        #self.linePlotActor.SetXTitle( "Level" )
-        #self.linePlotActor.SetYTitle( "N" )
-        self.linePlotActor.SetXValuesToValue()
-        # histogram plot
-        self.linePlotActor.SetPlotColor(0, (1,0,0.5) )
-        # plot the limits
-        self.linePlotActor.SetPlotColor(1, (1,1,0) )
-        self.linePlotActor.SetPlotColor(2, (1,1,0) )
-
-        self.linePlotActor.SetPosition(0,0.1)
-        self.linePlotActor.SetPosition2(1,0.4)
-
-        # Makes sure that x axis only goes as far as the number of pixels in the image
-        self.linePlotActor.SetAdjustXLabels(0)
-
-        self.iah = vtk.vtkImageAccumulate()
         
         self.iren.Initialize()
 
@@ -552,23 +526,6 @@ class CILViewer():
 
         self.ren.AddVolume(self.volume)
         self.volume_colormap_limits = (cmin, cmax)
-        
-    def installHistogramPlotPipeline(self):
-        #use 255 bins
-
-        # self.iah.SetInputData(self.img3D)
-        # delta = self.iah.GetMax()[0] - self.iah.GetMin()[0]
-        # nbins = 255
-        # self.iah.SetComponentSpacing(delta/nbins,0,0)
-        # self.iah.SetComponentExtent(0,nbins,0,0,0,0 )
-        # self.iah.Update()
-
-        # self.linePlotActor.AddDataSetInputConnection(self.iah.GetOutputPort())
-        # self.ren.AddActor(self.linePlotActor)
-        pass
-
-    def updateHistogramPlot(self):
-        pass
 
     def installSliceActorPipeline(self):
         self.voi.SetInputData(self.img3D)
