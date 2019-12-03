@@ -48,7 +48,8 @@ class QCILViewerWidget(QtWidgets.QFrame):
                                            iren = self.iren, 
                                            ren = self.ren,
                                            dimx=dimx,
-                                           dimy=dimy
+                                           dimy=dimy,
+                                           debug=kwargs.get('debug', False)
                                            )
         except KeyError:
             raise KeyError("Viewer class not provided. Submit an uninstantiated viewer class object"

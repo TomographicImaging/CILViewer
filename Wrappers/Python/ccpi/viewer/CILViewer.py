@@ -35,10 +35,13 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
         self.AddObserver('MouseWheelForwardEvent', self.mouseInteraction, 1.0)
         self.AddObserver('MouseWheelBackwardEvent', self.mouseInteraction, 1.0)
         self.AddObserver('KeyPressEvent', self.keyPress, 1.0)
-        self.AddObserver('LeftButtonPressEvent', self.OnLeftMouseClick)
-        self.AddObserver('LeftButtonReleaseEvent', self.OnLeftMouseRelease)
-        #self.AddObserver('RightButtonPressEvent', self.OnRightMousePress, -0.5)
-        #self.AddObserver('RightButtonReleaseEvent', self.OnRightMouseRelease, -0.5)
+        self.AddObserver('LeftButtonPressEvent', self.OnLeftMouseClick, 0.3)
+        self.AddObserver('LeftButtonReleaseEvent', self.OnLeftMouseRelease,0.3)
+        self.AddObserver('RightButtonPressEvent', self.OnRightMousePress)
+        self.AddObserver('RightButtonReleaseEvent', self.OnRightMouseRelease)
+        self.AddObserver('MouseMoveEvent', self.OnMouseMoveEvent, 1.)
+
+        self.InitialEventPosition = (0,0)
 
     def GetSliceOrientation(self):
         return self._viewer.sliceOrientation
@@ -133,9 +136,12 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
         ctrl = interactor.GetControlKey()
         alt = interactor.GetAltKey()
         shift = interactor.GetShiftKey()
-        # print (alt, ctrl,shift)
+        print (alt, ctrl,shift)
         if alt and not (ctrl and shift):
+            self._viewer.linePlotActor.VisibilityOn()
+            self.SetInitialEventPosition(interactor.GetEventPosition())
             self.SetEventActive("WINDOW_LEVEL_EVENT")
+            self.HandleWindowLevel(interactor, event)
         if not (alt and ctrl and shift):
             self.SetEventActive("ZOOM_EVENT")
 
@@ -147,6 +153,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
         # print (alt, ctrl,shift)
         if alt and not (ctrl and shift):
             self.SetEventInactive("WINDOW_LEVEL_EVENT")
+            self._viewer.linePlotActor.VisibilityOff()
         if not (alt and ctrl and shift):
             self.SetEventInactive("ZOOM_EVENT")
 
@@ -268,13 +275,88 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
     def SaveRender(self, filename):
         self._viewer.saveRender(filename)
 
+    def HandleWindowLevel(self, interactor, event):
+        
+        self._viewer.linePlotActor.VisibilityOn()
+        dx,dy = interactor.GetDeltaEventPosition()
+        #self.log ("Event delta %d %d" % (dx,dy))
+        size = self.GetRenderWindow().GetSize()
+        print ("Event delta %d %d" % (dx,dy))
+        dx = 1 * dx / size[0]
+        dy = 1 * dy / size[1]
+        print ("Event delta %d %d" % (dx,dy))
+        if hasattr(self, 'InitialWindow'):
+            window = self.InitialWindow
+        else:
+            window = self._viewer.wl.GetWindow()
+        if hasattr(self, 'InitialLevel'):
+            level = self.InitialLevel
+        else:
+            level = self._viewer.wl.GetLevel()
+
+        if abs(window) > 0.01:
+            dx = dx * window
+        else:
+            dx = dx * (lambda x: -0.01 if x <0 else 0.01)(window)
+
+        if abs(level) > 0.01:
+            dy = dy * level
+        else:
+            dy = dy * (lambda x: -0.01 if x <0 else 0.01)(level)
+
+
+        # Abs so that direction does not flip
+
+        if window < 0.0:
+            dx = -1*dx
+        if level < 0.0:
+            dy = -1*dy
+        print (dx,dy)
+        # Compute new window level
+        newWindow = window + dx
+        newLevel  = level + dy
+
+        # Stay away from zero and really small numbers
+        if abs(newWindow) < 0.01:
+            newWindow = 0.01 * (lambda x: -1 if x <0 else 1)(newWindow)
+
+        if abs(newLevel) < 0.01:
+            newLevel = 0.01 * (lambda x: -1 if x <0 else 1)(newLevel)
+
+        # change volume render opacity
+        
+        self._viewer.volume_colormap_limits = (newLevel - newWindow/2, newLevel+ newWindow/2)
+        self._viewer.updatePipeline()
+        #self._viewer.wl.SetWindow(newWindow)
+        self.InitialWindow = newWindow
+        #self._viewer.wl.SetLevel(newLevel)
+        self.InitialLevel = newLevel
+        self.log("current w {} l {}".format(newLevel, newWindow))
+    def log(self, msg):
+        return self._viewer.log(msg)
+    def GetDeltaEventPosition(self):
+        x,y = self.GetInteractor().GetEventPosition()
+        return (x - self.InitialEventPosition[0] , y - self.InitialEventPosition[1])
+    def GetInteractor(self):
+        # TODO place in parent class
+        return self._viewer.iren
+    def SetInitialEventPosition(self, xy):
+        self.InitialEventPosition = xy
+    def GetRenderWindow(self):
+        return self._viewer.getRenderWindow()
+    def OnMouseMoveEvent(self, interactor, event):
+
+        if self.GetViewerEvent("WINDOW_LEVEL_EVENT"):
+            self.HandleWindowLevel(interactor, event)
+
 class CILViewer():
     '''Simple 3D Viewer based on VTK classes'''
     
-    def __init__(self, dimx=600,dimy=600, renWin=None, iren=None, ren=None):
+    def __init__(self, dimx=600,dimy=600, renWin=None, iren=None, ren=None, debug=True):
         '''creates the rendering pipeline'''
 
         # Handle arguments
+        self.debug = debug
         if renWin is not None:
             self.renWin = renWin
         else:
@@ -341,6 +423,33 @@ class CILViewer():
         volume.SetMapper(volumeMapper)
         volume.SetProperty(volumeProperty)
         self.volume = volume
+
+
+        # an actor for XY plots
+        self.linePlotActorInstalled = 0
+        self.linePlotActor = vtk.vtkXYPlotActor()
+        self.linePlotActor.ExchangeAxesOff()
+        self.linePlotActor.SetXTitle( "" )
+        self.linePlotActor.SetYTitle( "" )
+        self.linePlotActor.SetXLabelFormat( "%.0f" )
+        self.linePlotActor.SetYLabelFormat( "%.0f" )
+        #self.linePlotActor.SetAdjustXLabels(3)
+        #self.linePlotActor.SetXTitle( "Level" )
+        #self.linePlotActor.SetYTitle( "N" )
+        self.linePlotActor.SetXValuesToValue()
+        # histogram plot
+        self.linePlotActor.SetPlotColor(0, (1,0,0.5) )
+        # plot the limits
+        self.linePlotActor.SetPlotColor(1, (1,1,0) )
+        self.linePlotActor.SetPlotColor(2, (1,1,0) )
+
+        self.linePlotActor.SetPosition(0,0.1)
+        self.linePlotActor.SetPosition2(1,0.4)
+
+        # Makes sure that x axis only goes as far as the number of pixels in the image
+        self.linePlotActor.SetAdjustXLabels(0)
+
+        self.iah = vtk.vtkImageAccumulate()
         
         self.iren.Initialize()
 
@@ -485,6 +594,7 @@ class CILViewer():
 
         self.installSliceActorPipeline()
         self.installVolumeRenderActorPipeline()
+        self.installHistogramPlotPipeline()
 
         self.ren.ResetCamera()
         self.ren.Render()
@@ -527,6 +637,19 @@ class CILViewer():
         self.ren.AddVolume(self.volume)
         self.volume_colormap_limits = (cmin, cmax)
         
+    def installHistogramPlotPipeline(self):
+        #use 255 bins
+
+        self.iah.SetInputData(self.img3D)
+        delta = self.iah.GetMax()[0] - self.iah.GetMin()[0]
+        nbins = 255
+        self.iah.SetComponentSpacing(delta/nbins,0,0)
+        self.iah.SetComponentExtent(0,nbins,0,0,0,0 )
+        self.iah.Update()
+
+        self.linePlotActor.AddDataSetInputConnection(self.iah.GetOutputPort())
+        self.linePlotActor.VisibilityOff()
+        self.ren.AddActor(self.linePlotActor)
 
 
     def installSliceActorPipeline(self):
@@ -664,3 +787,7 @@ class CILViewer():
         writer.SetFileName(saveFilename)
         writer.SetInputConnection(w2if.GetOutputPort())
         writer.Write()
+    
+    def log(self, msg):
+        if self.debug:
+            print(msg)

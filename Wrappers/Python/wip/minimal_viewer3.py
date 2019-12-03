@@ -133,13 +133,13 @@ class FourLinkedViewersDockableWidget(QtWidgets.QMainWindow):
         
         # create the dockable widgets with the viewer inside
         self.v00 = QCILDockableWidget(viewer=viewer2D, shape=(600,600), 
-           title="X", interactorStyle=vlink.Linked2DInteractorStyle)
+           title="X", interactorStyle=vlink.Linked2DInteractorStyle, debug=False)
         self.v01 = QCILDockableWidget(viewer=viewer2D, shape=(600,600), 
-           title="Y", interactorStyle=vlink.Linked2DInteractorStyle)
+           title="Y", interactorStyle=vlink.Linked2DInteractorStyle, debug=False)
         self.v10 = QCILDockableWidget(viewer=viewer2D, shape=(600,600), 
-           title="Z", interactorStyle=vlink.Linked2DInteractorStyle)
+           title="Z", interactorStyle=vlink.Linked2DInteractorStyle, debug=False)
         self.v11 = QCILDockableWidget(viewer=viewer3D, shape=(600,600), 
-           title="3D", interactorStyle=vlink.Linked3DInteractorStyle)
+           title="3D", interactorStyle=vlink.Linked3DInteractorStyle, debug=True)
                 
         # Create the viewer linkers 
         viewerLinkers = self.linkedViewersSetup(self.v00, self.v01, self.v10)
@@ -168,61 +168,26 @@ class FourLinkedViewersDockableWidget(QtWidgets.QMainWindow):
         self.addDockWidget(QtCore.Qt.RightDockWidgetArea, self.v10, QtCore.Qt.Vertical)
         self.addDockWidget(QtCore.Qt.RightDockWidgetArea, self.v11, QtCore.Qt.Vertical)
 
+        # self.rs = QRangeSlider()
 
-        
-        ia = vtk.vtkImageHistogramStatistics()
-        ia.SetInputConnection(reader.GetOutputPort())
-        ia.SetAutoRangePercentiles(10.,89.)
-        ia.Update()
-        
-        cmin, cmax = ia.GetAutoRange()
-        # cmin, cmax = (1000,2000)
-        # probably the level could be the median of the image within
-        # the percentiles 
-        median = ia.GetMedian()
-        # accomodates all values between the level an the percentiles
-        #window = 2*max(abs(median-cmin),abs(median-cmax))
-        window = cmax - cmin
-        viridis = colormaps.CILColorMaps.get_color_map('viridis', (cmin,cmax))
-        
-        # window is = FWTM of the distribution
-        sigma = window / 4.29
-        
-        opacity = vtk.vtkPiecewiseFunction()
-        N = 20
-        for i in range(N):
-            level = cmin + (cmax - cmin) * i / (N-1)
-            #g = 0.1 * gaussian(level, sigma, cmax/2+cmin/2)
-            g = logistic (level, 0.2, sigma, cmax/2+cmin/2)
-            print (level, cmin, cmax, median, window, g)
-            opacity.AddPoint(level, g )
+        # cmin = self.v00.viewer.ia.GetMinimum()
+        # cmax = self.v00.viewer.ia.GetMaximum()
+        # self.rs.setRange(cmin,cmax)
+        # self.rs.setMin(cmin)
+        # self.rs.setMax(cmax)
 
-        volumeMapper = vtk.vtkSmartVolumeMapper()
-        #volumeMapper = vtk.vtkFixedPointVolumeRayCastMapper()
-        #volumeMapper.SetBlendModeToComposite()
-        volumeMapper.SetInputConnection(reader.GetOutputPort())
+        # self.rs.endValueChanged.connect(self.updateVolumeRender)
+        # self.rs.startValueChanged.connect(self.updateVolumeRender)
 
-        volumeProperty = vtk.vtkVolumeProperty()
-        volumeProperty.SetColor(viridis)
-        volumeProperty.SetScalarOpacity(opacity)
-        volumeProperty.ShadeOn()
-        volumeProperty.SetInterpolationTypeToLinear()
-
-        
-        # The volume holds the mapper and the property and
-        # can be used to position/orient the volume.
-        volume = vtk.vtkVolume()
-        volume.SetMapper(volumeMapper)
-        volume.SetProperty(volumeProperty)
-
-        self.v11.viewer.getRenderer().AddVolume(volume)
-
-        self.rs = QRangeSlider()
-        self.rs.setRange(0,100)
-        self.v11.frame.vl.addWidget(self.rs)
+        # self.v11.frame.vl.addWidget(self.rs)
 
         self.show()
 
+    def updateVolumeRender(self):
+
+        self.v11.viewer.updateHistogramPlot()
+        self.v11.viewer.setVolumeColorLevelWindow(*self.rs.getRange())
+        # self.v11.viewer.linePlotActor.VisibilityOff()
 
     def linkedViewersSetup(self, *args):
         linked = [viewer for viewer in args]
