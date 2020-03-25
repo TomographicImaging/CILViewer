@@ -951,11 +951,12 @@ def parseNpyHeader(filename):
         # print ("header_len", HEADER_LEN, type(HEADER_LEN))
         descr = ''
         i = 0
-    with open(filename, 'r') as f:
+    with open(filename, 'rb') as f:
         f.seek(6+2 + HEADER_LEN_SIZE)
 
         while i < HEADER_LEN:
             c = f.read(1)
+            c = c.decode("utf-8")
             #print (c)
             descr += c
             i += 1
