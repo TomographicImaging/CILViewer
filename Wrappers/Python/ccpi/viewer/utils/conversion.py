@@ -41,6 +41,30 @@ class Converter():
         importer.SetDataSpacing(spacing)
         importer.SetDataOrigin(origin)
         return importer
+    
+    @staticmethod
+    def numpy2vtkImage(nparray, origin=(0,0,0)):
+        shape=numpy.shape(nparray)
+        if(nparray.flags["FNC"]):
+            order = "F"
+            i=0
+            k=2
+        else:
+            order = "C"
+            i=2
+            k=0
+
+        nparray = nparray.ravel(order)
+        vtkarray = numpy_support.numpy_to_vtk(num_array=nparray, deep=0, array_type=numpy_support.get_vtk_array_type(nparray.dtype))
+        vtkarray.SetName('vtkarray')
+
+        img_data = vtk.vtkImageData()
+        img_data.GetPointData().AddArray(vtkarray)
+        img_data.SetExtent(0,shape[i]-1,0,shape[1]-1,0,shape[k]-1)
+        img_data.GetPointData().SetActiveScalars('vtkarray')
+        img_data.SetOrigin(origin)
+
+        return img_data
 
     @staticmethod
     def vtk2numpy(imgdata, transpose=[0,1,2]):
