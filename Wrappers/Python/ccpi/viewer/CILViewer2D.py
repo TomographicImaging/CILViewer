@@ -410,7 +410,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
             newposition = [i for i in self.GetActiveCamera().GetFocalPoint()]
             newposition[SLICE_ORIENTATION_YZ] = numpy.sqrt(newposition[SLICE_ORIENTATION_XY] ** 2 + newposition[SLICE_ORIENTATION_XZ] ** 2)
             camera.SetPosition(newposition)
-            camera.SetViewUp(0,0,1) # Orig
+            camera.SetViewUp(0,1,0)
             self.SetActiveCamera(camera)
 
             self.SetSliceOrientation ( SLICE_ORIENTATION_YZ )
@@ -425,11 +425,10 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
             camera.SetViewUp(self.GetActiveCamera().GetViewUp())
             newposition = [i for i in self.GetActiveCamera().GetFocalPoint()]
             newposition[SLICE_ORIENTATION_XZ] = numpy.sqrt(newposition[SLICE_ORIENTATION_XY] ** 2 + newposition[SLICE_ORIENTATION_YZ] ** 2)
-
-            # Invert Y position to ensure graph axis are consistent with expectation.
-            newposition[1] = -newposition[1]
+            
             camera.SetPosition(newposition)
             camera.SetViewUp(0,0,1) # Orig
+            camera.Azimuth(180) #Rotate camera around the  ViewUp vector to view image from the other side
             self.SetActiveCamera(camera)
             self.SetSliceOrientation(SLICE_ORIENTATION_XZ)
             self.SetActiveSlice(int(self.GetInputData().GetDimensions()[1] / 2))
