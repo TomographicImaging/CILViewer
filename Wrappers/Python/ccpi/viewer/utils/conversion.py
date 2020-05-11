@@ -539,13 +539,13 @@ class cilRegularPointCloudToPolyData(VTKPythonAlgorithmBase):
                 b = (n_b / max_b) * image_spacing[0] * image_dimensions[0]- image_origin[0] #+ int(image_dimensions[0] * density[0] * .7)
                 c = (n_c / max_c) * image_spacing[1] * image_dimensions[1]- image_origin[1] #+ int(image_dimensions[1] * density[1] * .7)
 
-                if self.GetOrientation() == SLICE_ORIENTATION_YZ:
+                if self.GetOrientation() == 0: #YZ
                     vtkPointCloud.InsertNextPoint( a, b, c)
                     
-                elif self.GetOrientation() ==SLICE_ORIENTATION_XZ:
+                elif self.GetOrientation() == 1: #XZ
                     vtkPointCloud.InsertNextPoint( b, a, c)
 
-                elif self.GetOrientation() == SLICE_ORIENTATION_XY:
+                elif self.GetOrientation() == 2: #XY
                     vtkPointCloud.InsertNextPoint( b, c, a)
 
                 n_c += 1
