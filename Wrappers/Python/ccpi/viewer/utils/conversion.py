@@ -67,7 +67,7 @@ class Converter():
         return img_data
 
     @staticmethod
-    def vtk2numpy(imgdata, transpose=[0,1,2]):
+    def vtk2numpy(imgdata, order = None):
         '''Converts the VTK data to 3D numpy array
 
         Points in a VTK ImageData have indices as X-Y-Z (FORTRAN-contiguos)
@@ -87,20 +87,15 @@ class Converter():
         dims = imgdata.GetDimensions()
         print ("vtk2numpy: VTKImageData dims {0}".format(dims))
 
-        old = False
-        if old:
-            dims = (dims[2],dims[1],dims[0])
-            data3d = numpy.reshape(img_data, dims, order='C')
-            data3d = numpy.ascontiguousarray(data3d)
-        else:
-            data3d = numpy.ascontiguousarray(
-                numpy.reshape(img_data, dims, order='F')
-                )
-            data3d = numpy.transpose(data3d, [2,1,0])
-        if transpose == [0,1,2]:
-            return data3d
-        else:
-            return numpy.transpose(data3d, transpose).copy()
+        print("chosen order ", order)
+
+        img_data.shape = (dims[2],dims[1],dims[0])
+
+        if(order == 'F'):
+            img_data = numpy.transpose(img_data, [2,1,0])
+            img_data = numpy.asfortranarray(img_data)
+
+        return img_data
 
     @staticmethod
     def vtkTiffStack2numpy(filenames):
