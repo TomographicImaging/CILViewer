@@ -43,7 +43,7 @@ class Converter():
         return importer
     
     @staticmethod
-    def numpy2vtkImage(nparray, origin=(0,0,0)):
+    def numpy2vtkImage(nparray, spacing = (1.,1.,1.), origin=(0,0,0)):
         shape=numpy.shape(nparray)
         if(nparray.flags["FNC"]):
             order = "F"
@@ -63,6 +63,7 @@ class Converter():
         img_data.SetExtent(0,shape[i]-1,0,shape[1]-1,0,shape[k]-1)
         img_data.GetPointData().SetActiveScalars('vtkarray')
         img_data.SetOrigin(origin)
+        img_data.SetSpacing(spacing)
 
         return img_data
 
