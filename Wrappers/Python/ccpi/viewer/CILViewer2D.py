@@ -403,14 +403,23 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
 
         if interactor.GetKeyCode() == "x":
             # Change the camera view point
+
+            orientation = self.GetSliceOrientation()
+
             camera = vtk.vtkCamera()
             camera.ParallelProjectionOn()
             camera.SetFocalPoint(self.GetActiveCamera().GetFocalPoint())
+            camera.SetPosition(self.GetActiveCamera().GetPosition())
             camera.SetViewUp(self.GetActiveCamera().GetViewUp())
-            newposition = [i for i in self.GetActiveCamera().GetFocalPoint()]
-            newposition[SLICE_ORIENTATION_YZ] = numpy.sqrt(newposition[SLICE_ORIENTATION_XY] ** 2 + newposition[SLICE_ORIENTATION_XZ] ** 2)
-            camera.SetPosition(newposition)
-            camera.SetViewUp(0,1,0)
+
+            # Rotation of camera depends on current orientation:
+            if orientation == SLICE_ORIENTATION_XY:
+                camera.Azimuth(90)
+
+            elif  orientation == SLICE_ORIENTATION_XZ:
+                camera.Elevation(90)
+
+            camera.SetViewUp(0,0,1)
             self.SetActiveCamera(camera)
 
             self.SetSliceOrientation ( SLICE_ORIENTATION_YZ )
@@ -418,31 +427,47 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
             self.UpdatePipeline(True)
 
         elif interactor.GetKeyCode() == "y":
-             # Change the camera view point
+            # Change the camera view point
+
+            orientation = self.GetSliceOrientation()
+
             camera = vtk.vtkCamera()
             camera.ParallelProjectionOn()
             camera.SetFocalPoint(self.GetActiveCamera().GetFocalPoint())
+            camera.SetPosition(self.GetActiveCamera().GetPosition())
             camera.SetViewUp(self.GetActiveCamera().GetViewUp())
-            newposition = [i for i in self.GetActiveCamera().GetFocalPoint()]
-            newposition[SLICE_ORIENTATION_XZ] = numpy.sqrt(newposition[SLICE_ORIENTATION_XY] ** 2 + newposition[SLICE_ORIENTATION_YZ] ** 2)
-            
-            camera.SetPosition(newposition)
-            camera.SetViewUp(0,0,1) # Orig
-            camera.Azimuth(180) #Rotate camera around the  ViewUp vector to view image from the other side
+
+            # Rotation of camera depends on current orientation:
+            if orientation == SLICE_ORIENTATION_XY:
+                camera.Elevation(90)
+
+            elif orientation == SLICE_ORIENTATION_YZ:
+                camera.Azimuth(90)
+                
+            camera.SetViewUp(1,0,0)
             self.SetActiveCamera(camera)
             self.SetSliceOrientation(SLICE_ORIENTATION_XZ)
             self.SetActiveSlice(int(self.GetInputData().GetDimensions()[1] / 2))
             self.UpdatePipeline(True)
 
         elif interactor.GetKeyCode() == "z":
-             # Change the camera view point
+            # Change the camera view point
+
+            orientation = self.GetSliceOrientation()
+
             camera = vtk.vtkCamera()
             camera.ParallelProjectionOn()
+            camera.SetPosition(self.GetActiveCamera().GetPosition())
             camera.SetFocalPoint(self.GetActiveCamera().GetFocalPoint())
             camera.SetViewUp(self.GetActiveCamera().GetViewUp())
-            newposition = [i for i in self.GetActiveCamera().GetFocalPoint()]
-            newposition[SLICE_ORIENTATION_XY] = numpy.sqrt(newposition[SLICE_ORIENTATION_YZ] ** 2 + newposition[SLICE_ORIENTATION_XZ] ** 2)
-            camera.SetPosition(newposition)
+
+            # Rotation of camera depends on current orientation:
+            if orientation == SLICE_ORIENTATION_YZ:
+                camera.Elevation(90)
+
+            elif orientation == SLICE_ORIENTATION_XZ:
+                camera.Azimuth(90)
+                 
             camera.SetViewUp(0,1,0)
             self.SetActiveCamera(camera)
             self.ResetCamera()
