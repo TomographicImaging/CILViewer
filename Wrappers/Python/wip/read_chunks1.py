@@ -194,7 +194,8 @@ if __name__ == "__main__":
     slice_length = shape[1] * shape[0] * nbytes
 
 
-    
+    header_length = descr['header_length'] + start_slice * slice_length
+
     
     big_endian = 'True' if descr['description']['descr'][0] == '>' else 'False'
     #dimensions = descr['description']['shape']
