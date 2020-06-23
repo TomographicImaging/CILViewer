@@ -130,8 +130,8 @@ if __name__ == "__main__":
 
 
     # read in 50 slices
-    start_slice = 1255 
-    end_slice = 1260
+    # start_slice = 1255 
+    # end_slice = 1260
     readshape = descr['description']['shape']
     is_fortran = descr['description']['fortran_order']
     
@@ -161,49 +161,50 @@ if __name__ == "__main__":
 
     z_axis_magnification = (len(low_slice)-1)/shape[2]
     print ("z_axis_magnification", z_axis_magnification)
-    print ("xy_axis magnification", axis_magnification)
+    print ("xy_axis magnification", axis_magnification, int(axis_magnification * shape[0]), int(axis_magnification * shape[1]))
     
-    target_image_shape = (256,256, len(low_slice) -1)
+    target_image_shape = (int(axis_magnification * shape[0]), 
+                          int(axis_magnification * shape[1]), 
+                          len(low_slice) -1)
     print (target_image_shape)
-    # print (1520/5)
-
-    # # figure out what is the size on the easy slicing direction
-    # print (np.asarray(ndarray[0:50]).flags)
-    # # allocate image data
-    # output = np.empty((256,256,256), dtype=np.float32, order='F')
-    # scale_factor = np.power(total_size/max_size, 1/3)
-    # print ("scale_factor", scale_factor)
-
-    # print ("MMAP: ", np.asarray(ndarray[0:50]).shape)
     
-    resampler = vtk.vtkImageResample()
-    resampler.SetAxisMagnificationFactor(0, axis_magnification)
-    resampler.SetAxisMagnificationFactor(1, axis_magnification)
-    resampler.SetAxisMagnificationFactor(2, z_axis_magnification)
+    resampler = vtk.vtkImageReslice()
+    resampler.SetOutputExtent(0,target_image_shape[0],
+                              0,target_image_shape[1],
+                              0,0)
+    # resampler = vtk.vtkImageResample()
+    # resampler.SetAxisMagnificationFactor(0, axis_magnification)
+    # resampler.SetAxisMagnificationFactor(1, axis_magnification)
+    # resampler.SetAxisMagnificationFactor(2, z_axis_magnification)
 
+
+    print ("allocate vtkImageData")
     resampled_image = vtk.vtkImageData()
-    resampled_image.SetExtent(0,target_image_shape[0]-1,
-                              0,target_image_shape[1]-1,
-                              0,target_image_shape[2]-1)
+    resampled_image.SetExtent(0,target_image_shape[0],
+                              0,target_image_shape[1],
+                              0,target_image_shape[2])
     resampled_image.AllocateScalars(vtk.VTK_UNSIGNED_CHAR, 1)
 
+    # for i in range(target_image_shape[0]):
+    #     for j in range(target_image_shape[1]):
+    #         for k in range(target_image_shape[2]):
+    #             resampled_image.SetScalarComponentFromFloat(i,j,k,0,float(i))
 
 
-    shape[2] = end_slice - start_slice
+
+    #shape[2] = end_slice - start_slice
     # in bytes
     slice_length = shape[1] * shape[0] * nbytes
 
 
-    header_length = descr['header_length'] + start_slice * slice_length
+    
 
     
     big_endian = 'True' if descr['description']['descr'][0] == '>' else 'False'
     #dimensions = descr['description']['shape']
     header_filename = "header.mhd"
     
-    WriteMETAImageHeader(fname, header_filename, 
-                         typecode, 
-                         big_endian, header_length, tuple(shape), spacing=(1.,1.,1.), origin=(0.,0.,0.))
+    
 
 
     # print ("whole file ", ndarray.flags)
@@ -226,21 +227,57 @@ if __name__ == "__main__":
     # # ndarray = np.load(fname)
     # # v.setInputAsNumpy(ndarray)
 
-    reader = vtk.vtkMetaImageReader()
-    reader.SetFileName(header_filename)
-    reader.Update()
+    
+    #resampler.Update()
+    npresampled = Converter.vtk2numpy(resampled_image)
 
-    resampler.SetInputData(reader.GetOutput())
-    resampler.Update()
+    for i,el in enumerate(low_slice):
+        # goon = input("continue y/n")
+        # if goon != 'y':
+        #     break
+        end_slice = el
+        start_slice = end_slice - reduction_factor
+        if start_slice < 0:
+            continue
+        print (i, start_slice, end_slice)
+        header_length = descr['header_length'] + el * slice_length
+        shape[2] = end_slice - start_slice
+        WriteMETAImageHeader(fname, 
+                             header_filename, 
+                             typecode, 
+                             big_endian, 
+                             header_length, 
+                             tuple(shape), 
+                             spacing=(1.,1.,1.), 
+                             origin=(0.,0.,0.))
+        reader = vtk.vtkMetaImageReader()
+        reader.SetFileName(header_filename)
+        # reader.Update()
 
-    for i in range(10):
-        print (i)
-        extent = resampler.GetOutput().GetExtent()
-        print (extent)
-        resampled_image.CopyAndCastFrom(resampler.GetOutput(), 
-         resampler.GetOutput().GetExtent()[0], resampler.GetOutput().GetExtent()[1], 
-         resampler.GetOutput().GetExtent()[2], resampler.GetOutput().GetExtent()[3],
-         i,i)
+        #resampler.SetInputConnection(reader.GetOutputPort())
+        resampler.SetInputData(reader.GetOutput())
+        reader.SetFileName(header_filename)
+        reader.Update()
+        resampler.Update()
+        res_output = Converter.vtk2numpy(resampler.GetOutput())
+
+        
+        print ("reader extent" , reader.GetOutput().GetExtent())
+        print ("resampler extent" , resampler.GetOutput().GetExtent())
+        print ("resampled_image extent", resampled_image.GetExtent())
+
+        npresampled[i] = res_output[:]
+        extent = list(resampler.GetOutput().GetExtent())
+        
+        # extent[4] = i-1 if i-1>=0 else 0
+        # extent[4] = i
+        # extent[5] = extent[4]
+        # # print (extent)
+        # print (resampled_image.GetActualMemorySize())
+        # print (resampler.GetOutput().GetActualMemorySize())
+        # if i == 100:
+        #     resampled_image.CopyAndCastFrom( resampler.GetOutput(), extent )
+
 
     v = viewer2D()
     v.setInputData(resampled_image)
