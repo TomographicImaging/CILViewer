@@ -43,7 +43,7 @@ class Converter():
         return importer
     
     @staticmethod
-    def numpy2vtkImage(nparray, spacing = (1.,1.,1.), origin=(0,0,0)):
+    def numpy2vtkImage(nparray, spacing = (1.,1.,1.), origin=(0,0,0), deep=0):
         shape=numpy.shape(nparray)
         if(nparray.flags["FNC"]):
             order = "F"
@@ -55,7 +55,7 @@ class Converter():
             k=0
 
         nparray = nparray.ravel(order)
-        vtkarray = numpy_support.numpy_to_vtk(num_array=nparray, deep=0, array_type=numpy_support.get_vtk_array_type(nparray.dtype))
+        vtkarray = numpy_support.numpy_to_vtk(num_array=nparray, deep=deep, array_type=numpy_support.get_vtk_array_type(nparray.dtype))
         vtkarray.SetName('vtkarray')
 
         img_data = vtk.vtkImageData()
@@ -86,9 +86,9 @@ class Converter():
                 imgdata.GetPointData().GetScalars())
 
         dims = imgdata.GetDimensions()
-        print ("vtk2numpy: VTKImageData dims {0}".format(dims))
+        # print ("vtk2numpy: VTKImageData dims {0}".format(dims))
 
-        print("chosen order ", order)
+        # print("chosen order ", order)
 
         img_data.shape = (dims[2],dims[1],dims[0])
 
