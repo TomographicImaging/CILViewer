@@ -143,7 +143,7 @@ if __name__ == "__main__":
         
 
     total_size = shape[0] * shape[1] * shape[2]
-    axis_size = 512
+    axis_size = 256
     max_size = axis_size**3
     axis_magnification = np.power(max_size/total_size, 1/3)
     reduction_factor = np.int(1/axis_magnification)
@@ -191,37 +191,10 @@ if __name__ == "__main__":
     # in bytes
     slice_length = shape[1] * shape[0] * nbytes
 
-
-    
-
-    
     big_endian = 'True' if descr['description']['descr'][0] == '>' else 'False'
     #dimensions = descr['description']['shape']
     header_filename = "header.mhd"
     
-    
-
-
-    # print ("whole file ", ndarray.flags)
-    # ndarray = np.load(fname, mmap_mode="r")
-
-    
-
-    
-    # print ("load whole dataset")
-    # ndarray = np.load(fname, mmap_mode="r")
-    # print ("save as contiguous")
-    # np.save('contiguous.npy', np.ascontiguousarray(ndarray))
-    # print ("Done")
-    
-    # # nvtk = Converter.numpy2vtkImage(np.asarray(ndarray[start_slice:end_slice]), deep=1)
-    
-    # # print ("VTK: ", nvtk.GetDimensions())
-    # # v.setInputData(nvtk)
-
-    # # ndarray = np.load(fname)
-    # # v.setInputAsNumpy(ndarray)
-
     
     #resampler.Update()
     reader = vtk.vtkMetaImageReader()
@@ -234,7 +207,6 @@ if __name__ == "__main__":
     for i,el in tqdm(enumerate(low_slice)):
         end_slice = el
         start_slice = end_slice - reduction_factor
-        # print (i, start_slice, end_slice)
         header_length = descr['header_length'] + el * slice_length
         shape[2] = end_slice - start_slice
         WriteMETAImageHeader(fname, 
@@ -245,24 +217,23 @@ if __name__ == "__main__":
                              tuple(shape), 
                              spacing=(1.,1.,1.), 
                              origin=(0.,0.,0.))
-        reader.SetFileName(header_filename)
-        # reader.Update()
-
+        # reset the filename for the reader to force Update, otherwise it won't work
         reader.SetFileName('pippo')
         reader.SetFileName(header_filename)
         reader.Update()
-
+        # change the extent of the resampled image
         extent = (0,target_image_shape[0], 
                   0,target_image_shape[1],
                   i,i)
         resampler.SetOutputExtent(extent)
         resampler.Update()
+
+        ################# vtk way ####################
+        resampled_image.CopyAndCastFrom( resampler.GetOutput(), extent )
         
-        # numpy way
+        ################# numpy way ##################
         # res_output = Converter.vtk2numpy(resampler.GetOutput())
         # npresampled[i] = res_output[:]
-        # vtk way
-        resampled_image.CopyAndCastFrom( resampler.GetOutput(), extent )
 
     # big image is
     # not_resampled = np.load(fname)

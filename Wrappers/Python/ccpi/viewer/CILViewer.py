@@ -192,6 +192,8 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
             self.SaveRender(filename)
         elif interactor.GetKeyCode() == "v":
             # toggle visibility of the volume render
+            if not self._viewer.volume_render_initialised:
+                self._viewer.installVolumeRenderActorPipeline()
             if self._viewer.volume.GetVisibility():
                 self._viewer.volume.VisibilityOff()
             else:
@@ -341,6 +343,7 @@ class CILViewer():
         volume.SetMapper(volumeMapper)
         volume.SetProperty(volumeProperty)
         self.volume = volume
+        self.volume_render_initialised = False
         
         # axis orientation widget
         om = vtk.vtkAxesActor()
@@ -350,7 +353,7 @@ class CILViewer():
         ori.SetOrientationMarker(om)
         ori.SetViewport( 0.0, 0.0, 0.4, 0.4 )
         ori.SetEnabled(1)
-        ori.InteractiveOn()
+        ori.InteractiveOff()
         self.orientation_marker = ori
 
         self.iren.Initialize()
@@ -495,7 +498,7 @@ class CILViewer():
             print (self.ren.GetActors())
 
         self.installSliceActorPipeline()
-        self.installVolumeRenderActorPipeline()
+        # self.installVolumeRenderActorPipeline()
 
         self.ren.ResetCamera()
         self.ren.Render()
@@ -537,6 +540,7 @@ class CILViewer():
 
         self.ren.AddVolume(self.volume)
         self.volume_colormap_limits = (cmin, cmax)
+        self.volume_render_initialised = True
 
     def installSliceActorPipeline(self):
         self.voi.SetInputData(self.img3D)
@@ -612,15 +616,16 @@ class CILViewer():
         self.renWin.Render()
 
     def updateVolumePipeline(self):
-        cmin , cmax = self.volume_colormap_limits
-        viridis = colormaps.CILColorMaps.get_color_transfer_function('viridis', (cmin,cmax))
+        if self.volume_render_initialised and self.volume.GetVisibility():
+            cmin , cmax = self.volume_colormap_limits
+            viridis = colormaps.CILColorMaps.get_color_transfer_function('viridis', (cmin,cmax))
 
-        x = numpy.linspace(self.ia.GetMinimum(), self.ia.GetMaximum(), num=255)
-        scaling = 0.1
-        opacity = colormaps.CILColorMaps.get_opacity_transfer_function(x, 
-          colormaps.relu, cmin, cmax, scaling)
-        self.volume_property.SetColor(viridis)
-        self.volume_property.SetScalarOpacity(opacity)
+            x = numpy.linspace(self.ia.GetMinimum(), self.ia.GetMaximum(), num=255)
+            scaling = 0.1
+            opacity = colormaps.CILColorMaps.get_opacity_transfer_function(x, 
+            colormaps.relu, cmin, cmax, scaling)
+            self.volume_property.SetColor(viridis)
+            self.volume_property.SetScalarOpacity(opacity)
         
 
     def setVolumeColorLevelWindow(self, cmin, cmax):
