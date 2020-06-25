@@ -27,6 +27,11 @@ import vtk
 from vtk.util.vtkAlgorithm import VTKPythonAlgorithmBase
 from vtk.util import numpy_support , vtkImageImportFromArray
 
+import functools
+import tempfile
+import numpy as np
+
+
 # Converter class
 class Converter(object):
     # inspired by
@@ -1075,68 +1080,6 @@ def parseNpyHeader(filename):
             'description'  : eval(descr)}
 
 
-if __name__ == '__main__':
-    '''this represent a good base to perform a test for the numpy-metaimage writer'''
-    dimX = 128
-    dimY = 64
-    dimZ = 32
-    # a = numpy.zeros((dimX,dimY,dimZ), dtype=numpy.uint16)
-    a = numpy.random.randint(0,size=(dimX,dimY,dimZ),high=127,  dtype=numpy.uint16)
-    #for x in range(a.shape[0]):
-    #    for y in range(a.shape[1]):
-    #        for z in range(a.shape[2]):
-    #            a[x][y][z] = x + a.shape[0] * y + a.shape[0]*a.shape[1]*z
-    for z in range(a.shape[2]):
-        b = z * numpy.ones((a.shape[0],a.shape[1]), dtype=numpy.uint8)
-        a[:,:,z] = b.copy()
-
-    #arfn = os.path.abspath('C:/Users/ofn77899/Documents/Projects/CCPi/GitHub/CCPi-Simpleflex/data/head.npy')
-    arfn = 'test'
-    WriteNumpyAsMETAImage(a,arfn)
-    hdrdescr = parseNpyHeader(arfn+'.npy')
-
-    #a = numpy.load(arfn+'.npy')
-
-    #import matplotlib.pyplot as plt
-    #plt.imshow(a[10,:,:])
-    #plt.show()
-
-    reader = vtk.vtkMetaImageReader()
-    reader.SetFileName(arfn+'.mhd')
-    reader.Update()
-
-
-
-    if False:
-        from ccpi.viewer.CILViewer2D import CILViewer2D
-        v = CILViewer2D()
-        v.setInput3DData(reader.GetOutput())
-        v.startRenderLoop()
-    if False:
-        #x = 120
-        #y = 60
-        #z = 30
-        #v1 = a[x][y][z]
-        #v2 = numpy.uint8(reader.GetOutput().GetScalarComponentAsFloat(x,y,z,0))
-        #print ("value check", v1,v2)
-        is_same = a.shape == reader.GetOutput().GetDimensions()
-
-        for z in range(a.shape[2]):
-            for y in range(a.shape[1]):
-                for x in range(a.shape[0]):
-                    v1 = a[x][y][z]
-                    v2 = numpy.uint8(reader.GetOutput().GetScalarComponentAsFloat(x,y,z,0))
-                    # print ("value check {} {} {},".format((x,y,z) ,v1,v2))
-                    is_same = v1 == v2
-                    if not is_same:
-                        raise ValueError('arrays do not match', v1,v2,x,y,z)
-        print ('YEEE array match!')
-
-
-import functools
-import tempfile
-
-
 class cilBaseResampleReader(VTKPythonAlgorithmBase):
     '''vtkAlgorithm to load and resample a numpy file to an approximate memory footprint
 
@@ -1203,6 +1146,8 @@ class cilBaseResampleReader(VTKPythonAlgorithmBase):
         return self.__OutputVTKType
     def GetNumpyTypeCode(self):
         return self.__NumpyTypeCode
+    def GetFileName(self):
+        return self.__FileName
     
     def SetStoredArrayShape(self, value):
         if not isinstance (value , tuple):
@@ -1310,7 +1255,7 @@ class cilBaseResampleReader(VTKPythonAlgorithmBase):
                 start_slice = end_slice - slice_per_chunk
                 header_length = file_header_length + el * slice_length
                 shape[2] = end_slice - start_slice
-                cilNumpyMETAImageWriter.WriteMETAImageHeader(fname, 
+                cilNumpyMETAImageWriter.WriteMETAImageHeader(self.GetFileName(), 
                                     header_filename, 
                                     self.GetNumpyTypeCode(), 
                                     big_endian, 
@@ -1419,3 +1364,61 @@ class cilNumpyResampleReader(cilBaseResampleReader):
     def GetNumpyTypeCode(self):
         self.ReadNpyHeader()
         return self.__NumpyTypeCode
+if __name__ == '__main__':
+    '''this represent a good base to perform a test for the numpy-metaimage writer'''
+    dimX = 128
+    dimY = 64
+    dimZ = 32
+    # a = numpy.zeros((dimX,dimY,dimZ), dtype=numpy.uint16)
+    a = numpy.random.randint(0,size=(dimX,dimY,dimZ),high=127,  dtype=numpy.uint16)
+    #for x in range(a.shape[0]):
+    #    for y in range(a.shape[1]):
+    #        for z in range(a.shape[2]):
+    #            a[x][y][z] = x + a.shape[0] * y + a.shape[0]*a.shape[1]*z
+    for z in range(a.shape[2]):
+        b = z * numpy.ones((a.shape[0],a.shape[1]), dtype=numpy.uint8)
+        a[:,:,z] = b.copy()
+
+    #arfn = os.path.abspath('C:/Users/ofn77899/Documents/Projects/CCPi/GitHub/CCPi-Simpleflex/data/head.npy')
+    arfn = 'test'
+    WriteNumpyAsMETAImage(a,arfn)
+    hdrdescr = parseNpyHeader(arfn+'.npy')
+
+    #a = numpy.load(arfn+'.npy')
+
+    #import matplotlib.pyplot as plt
+    #plt.imshow(a[10,:,:])
+    #plt.show()
+
+    reader = vtk.vtkMetaImageReader()
+    reader.SetFileName(arfn+'.mhd')
+    reader.Update()
+
+
+
+    if False:
+        from ccpi.viewer.CILViewer2D import CILViewer2D
+        v = CILViewer2D()
+        v.setInput3DData(reader.GetOutput())
+        v.startRenderLoop()
+    if False:
+        #x = 120
+        #y = 60
+        #z = 30
+        #v1 = a[x][y][z]
+        #v2 = numpy.uint8(reader.GetOutput().GetScalarComponentAsFloat(x,y,z,0))
+        #print ("value check", v1,v2)
+        is_same = a.shape == reader.GetOutput().GetDimensions()
+
+        for z in range(a.shape[2]):
+            for y in range(a.shape[1]):
+                for x in range(a.shape[0]):
+                    v1 = a[x][y][z]
+                    v2 = numpy.uint8(reader.GetOutput().GetScalarComponentAsFloat(x,y,z,0))
+                    # print ("value check {} {} {},".format((x,y,z) ,v1,v2))
+                    is_same = v1 == v2
+                    if not is_same:
+                        raise ValueError('arrays do not match', v1,v2,x,y,z)
+        print ('YEEE array match!')
+
+
