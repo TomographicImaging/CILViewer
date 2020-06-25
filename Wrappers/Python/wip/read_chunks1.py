@@ -23,6 +23,8 @@ class cilNumpyResampleReader(VTKPythonAlgorithmBase):
         self.__FileHeaderLength = 0
         self.__BytesPerElement = 1
         self.__StoredArrayShape = None
+        self.__OutputVTKType = None
+        self.__NumpyTypeCode = None
 
 
         
@@ -56,12 +58,7 @@ class cilNumpyResampleReader(VTKPythonAlgorithmBase):
         '''output should be of vtkImageData type'''
         info.Set(vtk.vtkDataObject.DATA_TYPE_NAME(), "vtkImageData")
         return 1
-
-    
-
-    def RequestData(self, request, inInfo, outInfo):
-        outData = vtk.vtkImageData.GetData(outInfo)
-
+    def ReadNpyHeader(self):
         # extract info from the npy header
         descr = parseNpyHeader(self.GetFileName())
         # find the typecode of the data and the number of bytes per pixel
@@ -83,14 +80,57 @@ class cilNumpyResampleReader(VTKPythonAlgorithmBase):
         is_fortran = descr['description']['fortran_order']
         file_header_length = descr['header_length']
         
+        
+        self.__IsFortran = is_fortran
+        self.__BigEndian = big_endian
+        self.__FileHeaderLength = file_header_length
+        self.__BytesPerElement = nbytes
+        self.__StoredArrayShape = readshape
+        self.__OutputVTKType = Converter.numpy_dtype_char_to_vtkType[typecode]
+        self.__NumpyTypeCode = typecode
+        
+        self.Modified()
+
+        
+    def GetStoredArrayShape(self):
+        self.ReadNpyHeader()
+        return self.__StoredArrayShape
+    def GetFileHeaderLength(self):
+        self.ReadNpyHeader()
+        return self.__FileHeaderLength
+    def GetBytesPerElement(self):
+        self.ReadNpyHeader()
+        return self.__BytesPerElement
+    def GetBigEndian(self):
+        self.ReadNpyHeader()
+        return self.__BigEndian
+    def GetIsFortran(self):
+        self.ReadNpyHeader()
+        return self.__IsFortran
+    def GetOutputVTKType(self):
+        self.ReadNpyHeader()
+        return self.__OutputVTKType
+    def GetNumpyTypeCode(self):
+        self.ReadNpyHeader()
+        return self.__NumpyTypeCode
+
+    def RequestData(self, request, inInfo, outInfo):
+        outData = vtk.vtkImageData.GetData(outInfo)
+
+        # get basic info
+        nbytes = self.GetBytesPerElement()
+        big_endian = self.GetBigEndian()
+        readshape = self.GetStoredArrayShape()
+        file_header_length = self.GetFileHeaderLength()
+        is_fortran = self.GetIsFortran()
+        
         if is_fortran:
             shape = list(readshape)
         else:
             shape = list(readshape)[::-1]
 
         total_size = shape[0] * shape[1] * shape[2]
-        # axis_size = 256
-        # max_size = axis_size**3
+        
         # calculate the product of the elements of TargetShape
         max_size = functools.reduce (lambda x,y: x*y, self.GetTargetShape(),1)
         # scaling is going to be similar in every axis (xy the same, z possibly different)
@@ -98,13 +138,9 @@ class cilNumpyResampleReader(VTKPythonAlgorithmBase):
         slice_per_chunk = np.int(1/axis_magnification)
         
         # we will read in 5 slices at a time
-        low_slice = []
-        for i in range (0,shape[2], slice_per_chunk):
-            low_slice.append(
-                i
-                )
-
-        low_slice.append(shape[2] )
+        low_slice = [ i for i in range (0,shape[2], slice_per_chunk) ]
+        
+        low_slice.append( shape[2] )
         # print (low_slice)
         # print (len(low_slice))
 
@@ -130,7 +166,7 @@ class cilNumpyResampleReader(VTKPythonAlgorithmBase):
                                 0,target_image_shape[1],
                                 0,target_image_shape[2])
         resampled_image.SetSpacing(1/axis_magnification, 1/axis_magnification, 1/z_axis_magnification)
-        resampled_image.AllocateScalars(Converter.numpy_dtype_char_to_vtkType[typecode], 1)
+        resampled_image.AllocateScalars(self.GetOutputVTKType(), 1)
     
         # slice size in bytes
         slice_length = shape[1] * shape[0] * nbytes
@@ -153,7 +189,7 @@ class cilNumpyResampleReader(VTKPythonAlgorithmBase):
                 shape[2] = end_slice - start_slice
                 cilNumpyMETAImageWriter.WriteMETAImageHeader(fname, 
                                     header_filename, 
-                                    typecode, 
+                                    self.GetNumpyTypeCode(), 
                                     big_endian, 
                                     header_length, 
                                     tuple(shape), 
