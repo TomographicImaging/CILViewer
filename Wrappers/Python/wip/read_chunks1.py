@@ -6,9 +6,10 @@ from ccpi.viewer.utils.conversion import Converter, parseNpyHeader, cilNumpyMETA
 from tqdm import tqdm
 from vtk.util.vtkAlgorithm import VTKPythonAlgorithmBase
 import functools
+import tempfile
 
 
-class cilNumpyLoadAndResampler(VTKPythonAlgorithmBase):
+class cilNumpyResampleReader(VTKPythonAlgorithmBase):
     '''vtkAlgorithm to load and resample a numpy file to an approximate memory footprint
 
     
@@ -17,7 +18,14 @@ class cilNumpyLoadAndResampler(VTKPythonAlgorithmBase):
         VTKPythonAlgorithmBase.__init__(self, nInputPorts=0, nOutputPorts=1)
         self.__FileName = 1
         self.__TargetShape = (256,256,256)
+        self.__IsFortran = False
+        self.__BigEndian = False
+        self.__FileHeaderLength = 0
+        self.__BytesPerElement = 1
+        self.__StoredArrayShape = None
 
+
+        
     def SetFileName(self, value):
         '''Sets the value at which the mask is active'''
         if not os.path.exists(value):
@@ -40,9 +48,6 @@ class cilNumpyLoadAndResampler(VTKPythonAlgorithmBase):
     def GetTargetShape(self):
         return self.__TargetShape
 
-
-
-
     def FillInputPortInformation(self, port, info):
         '''This is a reader so no input'''
         return 1
@@ -52,10 +57,12 @@ class cilNumpyLoadAndResampler(VTKPythonAlgorithmBase):
         info.Set(vtk.vtkDataObject.DATA_TYPE_NAME(), "vtkImageData")
         return 1
 
+    
+
     def RequestData(self, request, inInfo, outInfo):
         outData = vtk.vtkImageData.GetData(outInfo)
 
-
+        # extract info from the npy header
         descr = parseNpyHeader(self.GetFileName())
         # find the typecode of the data and the number of bytes per pixel
         typecode = ''
@@ -66,14 +73,15 @@ class cilNumpyLoadAndResampler(VTKPythonAlgorithmBase):
                 typecode = np.dtype(t).char
                 # nbytes = type_to_bytes[typecode]
                 nbytes = Converter.numpy_dtype_char_to_bytes[typecode]
-                print ("Array TYPE: ", t, array_descr, typecode)            
+                # print ("Array TYPE: ", t, array_descr, typecode)            
                 break
         
-        print ("typecode", typecode)
-        print (descr)
-
+        # print ("typecode", typecode)
+        # print (descr)
+        big_endian = 'True' if descr['description']['descr'][0] == '>' else 'False'
         readshape = descr['description']['shape']
         is_fortran = descr['description']['fortran_order']
+        file_header_length = descr['header_length']
         
         if is_fortran:
             shape = list(readshape)
@@ -85,42 +93,37 @@ class cilNumpyLoadAndResampler(VTKPythonAlgorithmBase):
         # max_size = axis_size**3
         # calculate the product of the elements of TargetShape
         max_size = functools.reduce (lambda x,y: x*y, self.GetTargetShape(),1)
+        # scaling is going to be similar in every axis (xy the same, z possibly different)
         axis_magnification = np.power(max_size/total_size, 1/3)
-        reduction_factor = np.int(1/axis_magnification)
+        slice_per_chunk = np.int(1/axis_magnification)
         
         # we will read in 5 slices at a time
         low_slice = []
-        for i in range (0,shape[2], reduction_factor):
+        for i in range (0,shape[2], slice_per_chunk):
             low_slice.append(
                 i
                 )
 
         low_slice.append(shape[2] )
-        print (low_slice)
-        print (len(low_slice))
+        # print (low_slice)
+        # print (len(low_slice))
 
         z_axis_magnification = (len(low_slice)-1)/shape[2]
-        print ("z_axis_magnification", z_axis_magnification)
-        print ("xy_axis magnification", axis_magnification, int(axis_magnification * shape[0]), int(axis_magnification * shape[1]))
+        # print ("z_axis_magnification", z_axis_magnification)
+        # print ("xy_axis magnification", axis_magnification, int(axis_magnification * shape[0]), int(axis_magnification * shape[1]))
         
         target_image_shape = (int(axis_magnification * shape[0]), 
                             int(axis_magnification * shape[1]), 
                             len(low_slice) -1)
-        print (target_image_shape)
+        # print (target_image_shape)
 
         resampler = vtk.vtkImageReslice()
         resampler.SetOutputExtent(0,target_image_shape[0],
                                 0,target_image_shape[1],
                                 0,0)
         resampler.SetOutputSpacing(1/axis_magnification, 1/axis_magnification, 1/z_axis_magnification)
-        
-        # resampler = vtk.vtkImageResample()
-        # resampler.SetAxisMagnificationFactor(0, axis_magnification)
-        # resampler.SetAxisMagnificationFactor(1, axis_magnification)
-        # resampler.SetAxisMagnificationFactor(2, z_axis_magnification)
 
-
-        print ("allocate vtkImageData")
+        # print ("allocate vtkImageData")
         # resampled_image = vtk.vtkImageData()
         resampled_image = outData
         resampled_image.SetExtent(0,target_image_shape[0],
@@ -129,46 +132,52 @@ class cilNumpyLoadAndResampler(VTKPythonAlgorithmBase):
         resampled_image.SetSpacing(1/axis_magnification, 1/axis_magnification, 1/z_axis_magnification)
         resampled_image.AllocateScalars(Converter.numpy_dtype_char_to_vtkType[typecode], 1)
     
-        # in bytes
+        # slice size in bytes
         slice_length = shape[1] * shape[0] * nbytes
 
-        big_endian = 'True' if descr['description']['descr'][0] == '>' else 'False'
+        
         #dimensions = descr['description']['shape']
-        header_filename = "header.mhd"
+        tmpdir = tempfile.mkdtemp()
+        header_filename = os.path.join(tmpdir, "header.mhd")
         
-        
-        #resampler.Update()
-        reader = vtk.vtkMetaImageReader()
-        resampler.SetInputData(reader.GetOutput())
-            
-        for i,el in tqdm(enumerate(low_slice)):
-            end_slice = el
-            start_slice = end_slice - reduction_factor
-            header_length = descr['header_length'] + el * slice_length
-            shape[2] = end_slice - start_slice
-            cilNumpyMETAImageWriter.WriteMETAImageHeader(fname, 
-                                header_filename, 
-                                typecode, 
-                                big_endian, 
-                                header_length, 
-                                tuple(shape), 
-                                spacing=(1.,1.,1.), 
-                                origin=(0.,0.,0.))
-            # reset the filename for the reader to force Update, otherwise it won't work
-            reader.SetFileName('pippo')
+        try:
+            #resampler.Update()
+            reader = vtk.vtkMetaImageReader()
             reader.SetFileName(header_filename)
-            reader.Update()
-            # change the extent of the resampled image
-            extent = (0,target_image_shape[0], 
-                    0,target_image_shape[1],
-                    i,i)
-            resampler.SetOutputExtent(extent)
-            resampler.Update()
+            resampler.SetInputData(reader.GetOutput())
+            
+            for i,el in enumerate(low_slice):
+                end_slice = el
+                start_slice = end_slice - slice_per_chunk
+                header_length = file_header_length + el * slice_length
+                shape[2] = end_slice - start_slice
+                cilNumpyMETAImageWriter.WriteMETAImageHeader(fname, 
+                                    header_filename, 
+                                    typecode, 
+                                    big_endian, 
+                                    header_length, 
+                                    tuple(shape), 
+                                    spacing=(1.,1.,1.), 
+                                    origin=(0.,0.,0.))
+                # reset the filename for the reader to force Update, otherwise it won't work
+                #reader.SetFileName('pippo')
+                
+                reader.Modified()
+                reader.Update()
+                # change the extent of the resampled image
+                extent = (0,target_image_shape[0], 
+                        0,target_image_shape[1],
+                        i,i)
+                resampler.SetOutputExtent(extent)
+                resampler.Update()
 
-            ################# vtk way ####################
-            resampled_image.CopyAndCastFrom( resampler.GetOutput(), extent )
-            # npresampled = Converter.vtk2numpy(resampled_image)
-
+                ################# vtk way ####################
+                resampled_image.CopyAndCastFrom( resampler.GetOutput(), extent )
+                self.UpdateProgress(i/len(low_slice))
+                # npresampled = Converter.vtk2numpy(resampled_image)
+        finally:
+            os.remove(header_filename)
+            os.rmdir(tmpdir)
         return 1
 
     def GetOutput(self):
@@ -182,11 +191,16 @@ class cilNumpyLoadAndResampler(VTKPythonAlgorithmBase):
 if __name__ == "__main__":
     fname = os.path.abspath(r"D:\Documents\Dataset\CCPi\DVC\f000_crop\frame_000_f.npy")
     
-    reader = cilNumpyLoadAndResampler()
+    def progress(x,y):
+        print ("{:.0f}%".format(100*x.GetProgress()))
+
+    reader = cilNumpyResampleReader()
     reader.SetFileName(fname)
-    reader.SetTargetShape((256,256,256))
+    reader.SetTargetShape((512,512,512))
+    reader.AddObserver(vtk.vtkCommand.ProgressEvent, progress)
     reader.Update()
     resampled_image = reader.GetOutput()
+    print ("Spacing ", resampled_image.GetSpacing())
     
     v = viewer2D()
     v.setInputData(resampled_image)
