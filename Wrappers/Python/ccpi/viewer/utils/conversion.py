@@ -500,6 +500,7 @@ class cilRegularPointCloudToPolyData(VTKPythonAlgorithmBase):
         returns:
             vtkPoints
         '''
+
         vtkPointCloud = self.__Points
         image_spacing = list ( image_data.GetSpacing() )
         image_origin  = list ( image_data.GetOrigin() )
@@ -559,6 +560,7 @@ class cilRegularPointCloudToPolyData(VTKPythonAlgorithmBase):
             orientation: orientation of the slice onto which create the point cloud
             sliceno: the slice number in the orientation we are viewing. We must throw points on this slice.
            
+
         returns:
             vtkPoints
         '''
@@ -568,9 +570,9 @@ class cilRegularPointCloudToPolyData(VTKPythonAlgorithmBase):
         image_dimensions = list ( image_data.GetDimensions() )
 
         # the total number of points on X and Y axis
-        max_x = int(image_dimensions[0] / point_spacing[0] )
-        max_y = int(image_dimensions[1] / point_spacing[1] )
-        max_z = int(image_dimensions[2] / point_spacing[2] )
+        max_x = image_dimensions[0] / point_spacing[0]
+        max_y = image_dimensions[1] / point_spacing[1]
+        max_z = image_dimensions[2] / point_spacing[2]
 
         # print ("max: {} {} {}".format((max_x, max_y, max_z), image_dimensions, point_spacing))
         # print ("max_y: {} {} {}".format(max_y, image_dimensions, density))
@@ -586,7 +588,7 @@ class cilRegularPointCloudToPolyData(VTKPythonAlgorithmBase):
         if sliceno < point_spacing[orientation]:
             offset[orientation] = sliceno
         else:
-            offset[orientation] = sliceno - point_spacing[orientation]
+            offset[orientation] = sliceno % point_spacing[orientation]
         
         n_x=0
 
