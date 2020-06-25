@@ -9,13 +9,14 @@ import functools
 import tempfile
 
 
-class cilNumpyResampleReader(VTKPythonAlgorithmBase):
+class cilBaseResampleReader(VTKPythonAlgorithmBase):
     '''vtkAlgorithm to load and resample a numpy file to an approximate memory footprint
 
     
     '''
     def __init__(self):
         VTKPythonAlgorithmBase.__init__(self, nInputPorts=0, nOutputPorts=1)
+        
         self.__FileName = 1
         self.__TargetShape = (256,256,256)
         self.__IsFortran = False
@@ -58,61 +59,55 @@ class cilNumpyResampleReader(VTKPythonAlgorithmBase):
         '''output should be of vtkImageData type'''
         info.Set(vtk.vtkDataObject.DATA_TYPE_NAME(), "vtkImageData")
         return 1
-    def ReadNpyHeader(self):
-        # extract info from the npy header
-        descr = parseNpyHeader(self.GetFileName())
-        # find the typecode of the data and the number of bytes per pixel
-        typecode = ''
-        nbytes = 0
-        for t in [np.uint8, np.int8, np.int16, np.uint16, np.int32, np.uint32, np.float16, np.float32, np.float64]:
-            array_descr = descr['description']['descr'][1:]
-            if array_descr == np.dtype(t).descr[0][1][1:]:
-                typecode = np.dtype(t).char
-                # nbytes = type_to_bytes[typecode]
-                nbytes = Converter.numpy_dtype_char_to_bytes[typecode]
-                # print ("Array TYPE: ", t, array_descr, typecode)            
-                break
-        
-        # print ("typecode", typecode)
-        # print (descr)
-        big_endian = 'True' if descr['description']['descr'][0] == '>' else 'False'
-        readshape = descr['description']['shape']
-        is_fortran = descr['description']['fortran_order']
-        file_header_length = descr['header_length']
-        
-        
-        self.__IsFortran = is_fortran
-        self.__BigEndian = big_endian
-        self.__FileHeaderLength = file_header_length
-        self.__BytesPerElement = nbytes
-        self.__StoredArrayShape = readshape
-        self.__OutputVTKType = Converter.numpy_dtype_char_to_vtkType[typecode]
-        self.__NumpyTypeCode = typecode
-        
-        self.Modified()
-
+    
         
     def GetStoredArrayShape(self):
-        self.ReadNpyHeader()
         return self.__StoredArrayShape
     def GetFileHeaderLength(self):
-        self.ReadNpyHeader()
         return self.__FileHeaderLength
     def GetBytesPerElement(self):
-        self.ReadNpyHeader()
         return self.__BytesPerElement
     def GetBigEndian(self):
-        self.ReadNpyHeader()
         return self.__BigEndian
     def GetIsFortran(self):
-        self.ReadNpyHeader()
         return self.__IsFortran
     def GetOutputVTKType(self):
-        self.ReadNpyHeader()
         return self.__OutputVTKType
     def GetNumpyTypeCode(self):
-        self.ReadNpyHeader()
         return self.__NumpyTypeCode
+    
+    def SetStoredArrayShape(self, value):
+        if not isinstance (value , tuple):
+            raise ValueError('Expected tuple, got {}'.format(type(value)))
+        if len(value) != 3:
+            raise ValueError('Expected tuple of length 3, got {}'.format(len(value)))
+        self.__StoredArrayShape = value
+    def SetFileHeaderLength(self, value):
+        if not isinstance (value , int):
+            raise ValueError('Expected int, got {}'.format(type(value)))
+        self.__FileHeaderLength = value
+    def SetBytesPerElement(self, value):
+        if not isinstance (value , int):
+            raise ValueError('Expected int, got {}'.format(type(value)))
+        self.__BytesPerElement = value
+    def SetBigEndian(self, value):
+        if not isinstance (value , bool):
+            raise ValueError('Expected bool, got {}'.format(type(value)))
+        self.__BigEndian = value
+    def SetIsFortran(self, value):
+        if not isinstance (value , bool):
+            raise ValueError('Expected bool, got {}'.format(type(value)))
+        self.__IsFortran = value
+    def SetOutputVTKType(self, value):
+        if value not in [vtk.VTK_SIGNED_CHAR, vtk.VTK_UNSIGNED_CHAR,  vtk.VTK_SHORT,  vtk.VTK_UNSIGNED_SHORT,\
+                         vtk.VTK_INT, vtk.VTK_UNSIGNED_INT,  vtk.VTK_FLOAT, vtk.VTK_DOUBLE, vtk.VTK_FLOAT,  \
+                         vtk.VTK_DOUBLE]:
+            raise ValueError("Unexpected Type: got {}", value)
+        self.__OutputVTKType = value
+    def SetNumpyTypeCode(self, value):
+        if value not in ['b','B','h','H','i','I','f','d','F','D']:
+            raise ValueError("Unexpected Type: got {}", value)
+        self.__NumpyTypeCode = value
 
     def RequestData(self, request, inInfo, outInfo):
         outData = vtk.vtkImageData.GetData(outInfo)
@@ -219,8 +214,85 @@ class cilNumpyResampleReader(VTKPythonAlgorithmBase):
     def GetOutput(self):
         return self.GetOutputDataObject(0)
 
+class cilNumpyResampleReader(cilBaseResampleReader):
+    '''vtkAlgorithm to load and resample a numpy file to an approximate memory footprint
+
+    
+    '''
+    def __init__(self):
+        VTKPythonAlgorithmBase.__init__(self, nInputPorts=0, nOutputPorts=1)
+        super(cilNumpyResampleReader, self).__init__()
+        
+        self.__FileName = 1
+        self.__TargetShape = (256,256,256)
+        self.__IsFortran = False
+        self.__BigEndian = False
+        self.__FileHeaderLength = 0
+        self.__BytesPerElement = 1
+        self.__StoredArrayShape = None
+        self.__OutputVTKType = None
+        self.__NumpyTypeCode = None
 
 
+        
+    
+    def ReadNpyHeader(self):
+        # extract info from the npy header
+        descr = parseNpyHeader(self.GetFileName())
+        # find the typecode of the data and the number of bytes per pixel
+        typecode = ''
+        nbytes = 0
+        for t in [np.uint8, np.int8, np.int16, np.uint16, np.int32, np.uint32, np.float16, np.float32, np.float64]:
+            array_descr = descr['description']['descr'][1:]
+            if array_descr == np.dtype(t).descr[0][1][1:]:
+                typecode = np.dtype(t).char
+                # nbytes = type_to_bytes[typecode]
+                nbytes = Converter.numpy_dtype_char_to_bytes[typecode]
+                # print ("Array TYPE: ", t, array_descr, typecode)            
+                break
+        
+        # print ("typecode", typecode)
+        # print (descr)
+        big_endian = 'True' if descr['description']['descr'][0] == '>' else 'False'
+        readshape = descr['description']['shape']
+        is_fortran = descr['description']['fortran_order']
+        file_header_length = descr['header_length']
+        
+        
+        self.__IsFortran = is_fortran
+        self.__BigEndian = big_endian
+        self.__FileHeaderLength = file_header_length
+        self.__BytesPerElement = nbytes
+        self.__StoredArrayShape = readshape
+        self.__OutputVTKType = Converter.numpy_dtype_char_to_vtkType[typecode]
+        self.__NumpyTypeCode = typecode
+        
+        self.Modified()
+
+        
+    def GetStoredArrayShape(self):
+        self.ReadNpyHeader()
+        return self.__StoredArrayShape
+    def GetFileHeaderLength(self):
+        self.ReadNpyHeader()
+        return self.__FileHeaderLength
+    def GetBytesPerElement(self):
+        self.ReadNpyHeader()
+        return self.__BytesPerElement
+    def GetBigEndian(self):
+        self.ReadNpyHeader()
+        return self.__BigEndian
+    def GetIsFortran(self):
+        self.ReadNpyHeader()
+        return self.__IsFortran
+    def GetOutputVTKType(self):
+        self.ReadNpyHeader()
+        return self.__OutputVTKType
+    def GetNumpyTypeCode(self):
+        self.ReadNpyHeader()
+        return self.__NumpyTypeCode
+
+    
 
 
 
