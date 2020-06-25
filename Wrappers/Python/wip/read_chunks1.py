@@ -2,110 +2,9 @@ import numpy as np
 import vtk
 import os
 from ccpi.viewer import viewer2D
-from ccpi.viewer.utils.conversion import Converter
+from ccpi.viewer.utils.conversion import Converter, parseNpyHeader, cilNumpyMETAImageWriter
 from tqdm import tqdm
 
-def WriteMETAImageHeader(data_filename, header_filename, typecode, big_endian, header_length, shape, spacing=(1.,1.,1.), origin=(0.,0.,0.)):
-    '''Writes a NumPy array and a METAImage text header so that the npy file can be used as data file
-    
-    :param filename: name of the single file containing the data
-    :param typecode:
-    '''
-    
-
-    # inspired by
-    # https://github.com/vejmarie/vtk-7/blob/master/Wrapping/Python/vtk/util/vtkImageImportFromArray.py
-    # and metaTypes.h in VTK source code
-    __typeDict = {'b':'MET_CHAR',    # VTK_SIGNED_CHAR,     # int8
-                  'B':'MET_UCHAR',   # VTK_UNSIGNED_CHAR,   # uint8
-                  'h':'MET_SHORT',   # VTK_SHORT,           # int16
-                  'H':'MET_USHORT',  # VTK_UNSIGNED_SHORT,  # uint16
-                  'i':'MET_INT',     # VTK_INT,             # int32
-                  'I':'MET_UINT',    # VTK_UNSIGNED_INT,    # uint32
-                  'f':'MET_FLOAT',   # VTK_FLOAT,           # float32
-                  'd':'MET_DOUBLE',  # VTK_DOUBLE,          # float64
-                  'F':'MET_FLOAT',   # VTK_FLOAT,           # float32
-                  'D':'MET_DOUBLE'   # VTK_DOUBLE,          # float64
-          }
-
-    # typecode = array.dtype.char
-    # print ("typecode,",typecode)
-    ar_type = __typeDict[typecode]
-    # save header
-    # minimal header structure
-    # NDims = 3
-    # DimSize = 181 217 181
-    # ElementType = MET_UCHAR
-    # ElementSpacing = 1.0 1.0 1.0
-    # ElementByteOrderMSB = False
-    # ElementDataFile = brainweb1.raw
-    header = 'ObjectType = Image\n'
-    header = ''
-    header += 'NDims = {0}\n'.format(len(shape))
-    header += 'DimSize = {} {} {}\n'.format(shape[0], shape[1], shape[2])
-    header += 'ElementType = {}\n'.format(ar_type)
-    header += 'ElementSpacing = {} {} {}\n'.format(spacing[0], spacing[1], spacing[2])
-    header += 'Position = {} {} {}\n'.format(origin[0], origin[1], origin[2])
-    # MSB (aka big-endian)
-    # MSB = 'True' if descr['descr'][0] == '>' else 'False'
-    header += 'ElementByteOrderMSB = {}\n'.format(big_endian)
-
-    header += 'HeaderSize = {}\n'.format(header_length)
-    header += 'ElementDataFile = {}'.format(os.path.abspath(data_filename))
-
-    with open(header_filename , 'w') as hdr:
-        hdr.write(header)
-
-
-def parseNpyHeader(filename):
-    '''parses a npy file and returns a dictionary with version, header length and description
-
-    See https://www.numpy.org/devdocs/reference/generated/numpy.lib.format.html for details
-    of information included in the output.
-    '''
-    import struct
-    with open(filename, 'rb') as f:
-        c = f.read(6)
-        if not c == b"\x93NUMPY":
-            raise TypeError('File Type is not npy')
-        major = struct.unpack('@b', f.read(1))[0]
-        minor = struct.unpack('@b', f.read(1))[0]
-        if major == 1:
-            HEADER_LEN_SIZE = 2
-        elif major == 2:
-            HEADER_LEN_SIZE = 4
-
-        # print ('NumPy file version {}.{}'.format(major, minor))
-        HEADER_LEN = struct.unpack('<H', f.read(HEADER_LEN_SIZE))[0]
-        # print ("header_len", HEADER_LEN, type(HEADER_LEN))
-        descr = ''
-        i = 0
-    with open(filename, 'rb') as f:
-        f.seek(6+2 + HEADER_LEN_SIZE)
-
-        while i < HEADER_LEN:
-            c = f.read(1)
-            c = c.decode("utf-8")
-            #print (c)
-            descr += c
-            i += 1
-    return {'type': 'NUMPY',
-            'version_major':major,
-            'version_minor':minor,
-            'header_length':HEADER_LEN + 6 + 2 + HEADER_LEN_SIZE,
-            'description'  : eval(descr)}
-
-type_to_bytes = {'b':1,    # VTK_SIGNED_CHAR,     # int8
-                  'B':1,   # VTK_UNSIGNED_CHAR,   # uint8
-                  'h':2,   # VTK_SHORT,           # int16
-                  'H':2,  # VTK_UNSIGNED_SHORT,  # uint16
-                  'i':4,     # VTK_INT,             # int32
-                  'I':4,    # VTK_UNSIGNED_INT,    # uint32
-                  'f':4,   # VTK_FLOAT,           # float32
-                  'd':8,  # VTK_DOUBLE,          # float64
-                  'F':4,   # VTK_FLOAT,           # float32
-                  'D':8   # VTK_DOUBLE,          # float64
-          }
 
 if __name__ == "__main__":
     fname = os.path.abspath(r"D:\Documents\Dataset\CCPi\DVC\f000_crop\frame_000_f.npy")
@@ -120,7 +19,8 @@ if __name__ == "__main__":
         array_descr = descr['description']['descr'][1:]
         if array_descr == np.dtype(t).descr[0][1][1:]:
             typecode = np.dtype(t).char
-            nbytes = type_to_bytes[typecode]
+            # nbytes = type_to_bytes[typecode]
+            nbytes = Converter.numpy_dtype_char_to_bytes[typecode]
             print ("Array TYPE: ", t, array_descr, typecode)            
             break
     
@@ -199,17 +99,16 @@ if __name__ == "__main__":
     #resampler.Update()
     reader = vtk.vtkMetaImageReader()
     resampler.SetInputData(reader.GetOutput())
-    # resampler.SetInputConnection(reader.GetOutputPort())
         
            
-    npresampled = Converter.vtk2numpy(resampled_image)
+    # npresampled = Converter.vtk2numpy(resampled_image)
 
     for i,el in tqdm(enumerate(low_slice)):
         end_slice = el
         start_slice = end_slice - reduction_factor
         header_length = descr['header_length'] + el * slice_length
         shape[2] = end_slice - start_slice
-        WriteMETAImageHeader(fname, 
+        cilNumpyMETAImageWriter.WriteMETAImageHeader(fname, 
                              header_filename, 
                              typecode, 
                              big_endian, 

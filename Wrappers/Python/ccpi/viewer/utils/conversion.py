@@ -28,8 +28,43 @@ from vtk.util.vtkAlgorithm import VTKPythonAlgorithmBase
 from vtk.util import numpy_support , vtkImageImportFromArray
 
 # Converter class
-class Converter():
-
+class Converter(object):
+    # inspired by
+    # https://github.com/vejmarie/vtk-7/blob/master/Wrapping/Python/vtk/util/vtkImageImportFromArray.py
+    # and metaTypes.h in VTK source code
+    numpy_dtype_char_to_MetaImageType = {'b':'MET_CHAR',    # VTK_SIGNED_CHAR,     # int8
+                                         'B':'MET_UCHAR',   # VTK_UNSIGNED_CHAR,   # uint8
+                                         'h':'MET_SHORT',   # VTK_SHORT,           # int16
+                                         'H':'MET_USHORT',  # VTK_UNSIGNED_SHORT,  # uint16
+                                         'i':'MET_INT',     # VTK_INT,             # int32
+                                         'I':'MET_UINT',    # VTK_UNSIGNED_INT,    # uint32
+                                         'f':'MET_FLOAT',   # VTK_FLOAT,           # float32
+                                         'd':'MET_DOUBLE',  # VTK_DOUBLE,          # float64
+                                         'F':'MET_FLOAT',   # VTK_FLOAT,           # float32
+                                         'D':'MET_DOUBLE'   # VTK_DOUBLE,          # float64
+          }
+    numpy_dtype_char_to_bytes = {'b':1,    # VTK_SIGNED_CHAR,     # int8
+                                 'B':1,   # VTK_UNSIGNED_CHAR,   # uint8
+                                 'h':2,   # VTK_SHORT,           # int16
+                                 'H':2,  # VTK_UNSIGNED_SHORT,  # uint16
+                                 'i':4,     # VTK_INT,             # int32
+                                 'I':4,    # VTK_UNSIGNED_INT,    # uint32
+                                 'f':4,   # VTK_FLOAT,           # float32
+                                 'd':8,  # VTK_DOUBLE,          # float64
+                                 'F':4,   # VTK_FLOAT,           # float32
+                                 'D':8   # VTK_DOUBLE,          # float64
+    }
+    numpy_dtype_char_to_vtkType = {'b': vtk.VTK_SIGNED_CHAR,     # int8
+                                   'B': vtk.VTK_UNSIGNED_CHAR,   # uint8
+                                   'h': vtk.VTK_SHORT,           # int16
+                                   'H': vtk.VTK_UNSIGNED_SHORT,  # uint16
+                                   'i': vtk.VTK_INT,             # int32
+                                   'I': vtk.VTK_UNSIGNED_INT,    # uint32
+                                   'f': vtk.VTK_FLOAT,           # float32
+                                   'd': vtk.VTK_DOUBLE,          # float64
+                                   'F': vtk.VTK_FLOAT,           # float32
+                                   'D': vtk.VTK_DOUBLE           # float64
+    }
     # Utility functions to transform numpy arrays to vtkImageData and viceversa
     @staticmethod
     def numpy2vtkImporter(nparray, spacing=(1.,1.,1.), origin=(0,0,0), transpose=[2,1,0]):
@@ -902,62 +937,104 @@ class cilNumpyMETAImageWriter(object):
         if len(value) != len(self.__Array.shape):
             self.__Spacing = value
             self.Modified()
+    @staticmethod
+    def  WriteMETAImageHeader(data_filename, header_filename, typecode, big_endian, \
+                              header_length, shape, spacing=(1.,1.,1.), origin=(0.,0.,0.)):
+        '''Writes a NumPy array and a METAImage text header so that the npy file can be used as data file
+        
+        :param filename: name of the single file containing the data
+        :param typecode:
+        '''
         
 
+        
+        ar_type = Converter.numpy_dtype_char_to_MetaImageType[typecode]
+        # save header
+        # minimal header structure
+        # NDims = 3
+        # DimSize = 181 217 181
+        # ElementType = MET_UCHAR
+        # ElementSpacing = 1.0 1.0 1.0
+        # ElementByteOrderMSB = False
+        # ElementDataFile = brainweb1.raw
+        header = 'ObjectType = Image\n'
+        header = ''
+        header += 'NDims = {0}\n'.format(len(shape))
+        header += 'DimSize = {} {} {}\n'.format(shape[0], shape[1], shape[2])
+        header += 'ElementType = {}\n'.format(ar_type)
+        header += 'ElementSpacing = {} {} {}\n'.format(spacing[0], spacing[1], spacing[2])
+        header += 'Position = {} {} {}\n'.format(origin[0], origin[1], origin[2])
+        # MSB (aka big-endian)
+        # MSB = 'True' if descr['descr'][0] == '>' else 'False'
+        header += 'ElementByteOrderMSB = {}\n'.format(big_endian)
+
+        header += 'HeaderSize = {}\n'.format(header_length)
+        header += 'ElementDataFile = {}'.format(os.path.abspath(data_filename))
+
+        with open(header_filename , 'w') as hdr:
+            hdr.write(header)
+
+
+    @staticmethod
+    def WriteNumpyAsMETAImage(array, filename, spacing=(1.,1.,1.), origin=(0.,0.,0.)):
+        '''Writes a NumPy array and a METAImage text header so that the npy file can be used as data file'''
+        # save the data as numpy
+        datafname = os.path.abspath(filename) + '.npy'
+        hdrfname =  os.path.abspath(filename) + '.mhd'
+        if (numpy.isfortran(array)):
+            numpy.save(datafname, array)
+        else:
+            numpy.save(datafname, numpy.asfortranarray(array))
+        npyhdr = parseNpyHeader(datafname)
+
+        typecode = array.dtype.char
+        print ("typecode,",typecode)
+        #r_type = Converter.numpy_dtype_char_to_MetaImageType[typecode]
+        big_endian = 'True' if npyhdr['description']['descr'][0] == '>' else 'False'
+        readshape = descr['description']['shape']
+        is_fortran = descr['description']['fortran_order']
+        if is_fortran:
+            shape = list(readshape)
+        else:
+            shape = list(readshape)[::-1]
+        header_length = npyhdr['header_length']
+
+
+        cilNumpyMETAImageWriter.WriteMETAImageHeader(datafname, hdrfname, typecode, big_endian, \
+                                                     header_length, shape, spacing=spacing, origin=origin)
+        # # save header
+        # # minimal header structure
+        # # NDims = 3
+        # # DimSize = 181 217 181
+        # # ElementType = MET_UCHAR
+        # # ElementSpacing = 1.0 1.0 1.0
+        # # ElementByteOrderMSB = False
+        # # ElementDataFile = brainweb1.raw
+        # header = 'ObjectType = Image\n'
+        # header = ''
+        # header += 'NDims = {0}\n'.format(len(array.shape))
+        # header += 'DimSize = {} {} {}\n'.format(array.shape[0], array.shape[1], array.shape[2])
+        # header += 'ElementType = {}\n'.format(ar_type)
+        # header += 'ElementSpacing = {} {} {}\n'.format(spacing[0], spacing[1], spacing[2])
+        # header += 'Position = {} {} {}\n'.format(origin[0], origin[1], origin[2])
+        # # MSB (aka big-endian)
+        # descr = npyhdr['description']
+        # MSB = 'True' if descr['descr'][0] == '>' else 'False'
+        # header += 'ElementByteOrderMSB = {}\n'.format(MSB)
+
+        # header += 'HeaderSize = {}\n'.format(npyhdr['header_length'])
+        # header += 'ElementDataFile = {}'.format(os.path.basename(datafname))
+
+        # with open(hdrfname , 'w') as hdr:
+        #     hdr.write(header)
+
+
+
 def WriteNumpyAsMETAImage(array, filename, spacing=(1.,1.,1.), origin=(0.,0.,0.)):
-    '''Writes a NumPy array and a METAImage text header so that the npy file can be used as data file'''
-    # save the data as numpy
-    datafname = os.path.abspath(filename) + '.npy'
-    hdrfname =  os.path.abspath(filename) + '.mhd'
-    if (numpy.isfortran(array)):
-        numpy.save(datafname, array)
-    else:
-        numpy.save(datafname, numpy.asfortranarray(array))
-    npyhdr = parseNpyHeader(datafname)
-
-    # inspired by
-    # https://github.com/vejmarie/vtk-7/blob/master/Wrapping/Python/vtk/util/vtkImageImportFromArray.py
-    # and metaTypes.h in VTK source code
-    __typeDict = {'b':'MET_CHAR',    # VTK_SIGNED_CHAR,     # int8
-                  'B':'MET_UCHAR',   # VTK_UNSIGNED_CHAR,   # uint8
-                  'h':'MET_SHORT',   # VTK_SHORT,           # int16
-                  'H':'MET_USHORT',  # VTK_UNSIGNED_SHORT,  # uint16
-                  'i':'MET_INT',     # VTK_INT,             # int32
-                  'I':'MET_UINT',    # VTK_UNSIGNED_INT,    # uint32
-                  'f':'MET_FLOAT',   # VTK_FLOAT,           # float32
-                  'd':'MET_DOUBLE',  # VTK_DOUBLE,          # float64
-                  'F':'MET_FLOAT',   # VTK_FLOAT,           # float32
-                  'D':'MET_DOUBLE'   # VTK_DOUBLE,          # float64
-          }
-
-    typecode = array.dtype.char
-    print ("typecode,",typecode)
-    ar_type = __typeDict[typecode]
-    # save header
-    # minimal header structure
-    # NDims = 3
-    # DimSize = 181 217 181
-    # ElementType = MET_UCHAR
-    # ElementSpacing = 1.0 1.0 1.0
-    # ElementByteOrderMSB = False
-    # ElementDataFile = brainweb1.raw
-    header = 'ObjectType = Image\n'
-    header = ''
-    header += 'NDims = {0}\n'.format(len(array.shape))
-    header += 'DimSize = {} {} {}\n'.format(array.shape[0], array.shape[1], array.shape[2])
-    header += 'ElementType = {}\n'.format(ar_type)
-    header += 'ElementSpacing = {} {} {}\n'.format(spacing[0], spacing[1], spacing[2])
-    header += 'Position = {} {} {}\n'.format(origin[0], origin[1], origin[2])
-    # MSB (aka big-endian)
-    descr = npyhdr['description']
-    MSB = 'True' if descr['descr'][0] == '>' else 'False'
-    header += 'ElementByteOrderMSB = {}\n'.format(MSB)
-
-    header += 'HeaderSize = {}\n'.format(npyhdr['header_length'])
-    header += 'ElementDataFile = {}'.format(os.path.basename(datafname))
-
-    with open(hdrfname , 'w') as hdr:
-        hdr.write(header)
+    '''Writes a NumPy array and a METAImage text header so that the npy file can be used as data file
+    
+    same as cilNumpyMETAImageWriter.WriteNumpyAsMETAImage'''
+    return cilNumpyMETAImageWriter.WriteNumpyAsMETAImage(array, filename, spacing=spacing, origin=origin)
 
 def parseNpyHeader(filename):
     '''parses a npy file and returns a dictionary with version, header length and description
