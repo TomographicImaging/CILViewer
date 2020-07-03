@@ -43,7 +43,8 @@ class Converter():
         return importer
     
     @staticmethod
-    def numpy2vtkImage(nparray, spacing = (1.,1.,1.), origin=(0,0,0)):
+    def numpy2vtkImage(nparray, spacing = (1.,1.,1.), origin=(0,0,0), output=None):
+
         shape=numpy.shape(nparray)
         if(nparray.flags["FNC"]):
             order = "F"
@@ -58,7 +59,14 @@ class Converter():
         vtkarray = numpy_support.numpy_to_vtk(num_array=nparray, deep=0, array_type=numpy_support.get_vtk_array_type(nparray.dtype))
         vtkarray.SetName('vtkarray')
 
-        img_data = vtk.vtkImageData()
+        if output is None:
+            img_data = vtk.vtkImageData()
+        else:
+            if output.GetNumberOfPoints() > 0:
+                raise ValueError('Output variable must be an empty vtkImageData object.')
+            else:
+                img_data = output
+
         img_data.GetPointData().AddArray(vtkarray)
         img_data.SetExtent(0,shape[i]-1,0,shape[1]-1,0,shape[k]-1)
         img_data.GetPointData().SetActiveScalars('vtkarray')
