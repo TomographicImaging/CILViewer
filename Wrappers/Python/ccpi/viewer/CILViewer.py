@@ -170,7 +170,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
         elif interactor.GetKeyCode() == "y":
 
             self.SetSliceOrientation(SLICE_ORIENTATION_XZ)
-            self.SetActiveSlice(int(self.GetDimensions()[2] / 2))
+            self.SetActiveSlice(int(self.GetDimensions()[1] / 2))
             self.UpdatePipeline(resetcamera=True)
 
         elif interactor.GetKeyCode() == "z":
