@@ -116,14 +116,14 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
             advance = 10
 
         if event == 'MouseWheelForwardEvent':
-            maxSlice = self.GetDimensions()[self.GetSliceOrientation()]
+            maxSlice = self._viewer.img3D.GetExtent()[self.GetSliceOrientation()*2+1]
             # print (self.GetActiveSlice())
-            if (self.GetActiveSlice() + advance < maxSlice):
+            if (self.GetActiveSlice() + advance <= maxSlice):
                 self.SetActiveSlice(self.GetActiveSlice() + advance)
                 self.UpdatePipeline()
         else:
-            minSlice = 0
-            if (self.GetActiveSlice() - advance > minSlice):
+            minSlice = self._viewer.img3D.GetExtent()[self.GetSliceOrientation()*2]
+            if (self.GetActiveSlice() - advance >= minSlice):
                 self.SetActiveSlice(self.GetActiveSlice() - advance)
                 self.UpdatePipeline()
 
