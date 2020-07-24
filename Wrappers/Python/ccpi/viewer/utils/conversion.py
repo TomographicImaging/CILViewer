@@ -480,12 +480,12 @@ class cilRegularPointCloudToPolyData(VTKPythonAlgorithmBase):
         point_spacing = self.CalculatePointSpacing(overlap, mode=self.GetMode())
         # print ("point_spacing", point_spacing)
 
-        if dimensionality == 3:
-            self.CreatePoints3D(point_spacing, image_data)
-        else:
-            sliceno = self.GetSlice()
-            orientation = self.GetOrientation()
+        sliceno = self.GetSlice()
+        orientation = self.GetOrientation()
 
+        if dimensionality == 3:
+            self.CreatePoints3D(point_spacing, image_data, orientation, sliceno)
+        else:
             if image_data.GetDimensions()[orientation] < sliceno:
                 raise ValueError('Requested slice is outside the image.' , sliceno)
 
@@ -508,6 +508,7 @@ class cilRegularPointCloudToPolyData(VTKPythonAlgorithmBase):
         returns:
             vtkPoints
         '''
+
         vtkPointCloud = self.__Points
         image_spacing = list ( image_data.GetSpacing() )
         image_origin  = list ( image_data.GetOrigin() )
@@ -558,13 +559,15 @@ class cilRegularPointCloudToPolyData(VTKPythonAlgorithmBase):
 
         return 1
 
-    def CreatePoints3D(self, point_spacing , image_data ):
+    def CreatePoints3D(self, point_spacing , image_data, orientation, sliceno):
         '''creates a 3D point cloud on the image data on the selected orientation
 
         input:
             point_spacing: distance between points in voxels (list or tuple)
             image_data: vtkImageData onto project the pointcloud
             orientation: orientation of the slice onto which create the point cloud
+            sliceno: the slice number in the orientation we are viewing. We must throw points on this slice.
+           
 
         returns:
             vtkPoints
@@ -575,9 +578,9 @@ class cilRegularPointCloudToPolyData(VTKPythonAlgorithmBase):
         image_dimensions = list ( image_data.GetDimensions() )
 
         # the total number of points on X and Y axis
-        max_x = int(image_dimensions[0] / point_spacing[0] )
-        max_y = int(image_dimensions[1] / point_spacing[1] )
-        max_z = int(image_dimensions[2] / point_spacing[2] )
+        max_x = image_dimensions[0] / point_spacing[0]
+        max_y = image_dimensions[1] / point_spacing[1]
+        max_z = image_dimensions[2] / point_spacing[2]
 
         # print ("max: {} {} {}".format((max_x, max_y, max_z), image_dimensions, point_spacing))
         # print ("max_y: {} {} {}".format(max_y, image_dimensions, density))
@@ -586,19 +589,27 @@ class cilRegularPointCloudToPolyData(VTKPythonAlgorithmBase):
 
         # skip the offset in voxels
         # radius = self.GetSubVolumeRadiusInVoxel()
+
+        #Offset according to the orientation and slice no.
         offset = [0, 0, 0]
-        n_x = offset[0]
+
+        if sliceno < point_spacing[orientation]:
+            offset[orientation] = sliceno
+        else:
+            offset[orientation] = sliceno % point_spacing[orientation]
+        
+        n_x=0
 
         while n_x < max_x:
             # x axis
-            n_y = offset[1]
+            n_y = 0
             while n_y < max_y:
                 # y axis
-                n_z = offset[0]
+                n_z = 0
                 while n_z < max_z:
-                    x = (n_x / max_x) * image_spacing[0] * image_dimensions[0]- image_origin[0] #+ int(image_dimensions[0] * density[0] * .7)
-                    y = (n_y / max_y) * image_spacing[1] * image_dimensions[1]- image_origin[1] #+ int(image_dimensions[1] * density[1] * .7)
-                    z = (n_z / max_z) * image_spacing[2] * image_dimensions[2]- image_origin[2] #+ int(image_dimensions[1] * density[1] * .7)
+                    x = (n_x / max_x) * image_spacing[0] * image_dimensions[0]- image_origin[0] + offset[0] * image_spacing[0] #+ int(image_dimensions[0] * density[0] * .7)
+                    y = (n_y / max_y) * image_spacing[1] * image_dimensions[1]- image_origin[1] + offset[1] * image_spacing[1]#+ int(image_dimensions[1] * density[1] * .7)
+                    z = (n_z / max_z) * image_spacing[2] * image_dimensions[2]- image_origin[2] + offset[2] * image_spacing[2]#+ int(image_dimensions[1] * density[1] * .7)
 
                     vtkPointCloud.InsertNextPoint( x, y, z )
                     n_z += 1
