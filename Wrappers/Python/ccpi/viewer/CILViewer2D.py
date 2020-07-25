@@ -369,13 +369,13 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
 
     ############### Handle events
     def OnMouseWheelForward(self, interactor, event):
-        maxSlice = self.GetDimensions()[self.GetSliceOrientation()]
+        maxSlice = self.GetInputData().GetExtent()[self.GetSliceOrientation()*2+1]
         shift = interactor.GetShiftKey()
         advance = 1
         if shift:
             advance = 10
 
-        if (self.GetActiveSlice() + advance < maxSlice):
+        if (self.GetActiveSlice() + advance <= maxSlice):
             self.SetActiveSlice(self.GetActiveSlice() + advance)
 
             self.UpdatePipeline()
@@ -386,7 +386,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
             self.DisplayLineProfile(interactor, event, True)
 
     def OnMouseWheelBackward(self, interactor, event):
-        minSlice = 0
+        minSlice = self.GetInputData().GetExtent()[self.GetSliceOrientation()*2]
         shift = interactor.GetShiftKey()
         advance = 1
         if shift:

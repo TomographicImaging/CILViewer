@@ -142,6 +142,15 @@ class ViewerLinker():
 
         self._to.linkSlice = linkSlice
         self._from.linkSlice = linkSlice
+    
+    def setLinkOrientation(self, linkOrientation):
+        """
+        Boolean flag to set slice orientation linkage
+        :param linkOrientation: (boolean)
+        """
+
+        self._to.linkOrientation = linkOrientation
+        self._from.linkOrientation = linkOrientation
 
 
 #################################
@@ -182,6 +191,7 @@ class ViewerLinkObserver():
         self.linkPick = True
         self.linkWindowLevel = True
         self.linkSlice = True
+        self.linkOrientation = True
 
     def __call__(self, interactor, event):
         """
@@ -304,11 +314,10 @@ class ViewerLinkObserver():
                         self.targetVtkViewer.GetSliceOrientation()):
                     shouldPassEvent = False
 
-        # KeyPress
-        if (event == "KeyPressEvent" or
-                state == 1026):
-
-            shouldPassEvent = False
+        # KeyPress and orientation
+        if (event == "KeyPressEvent"  or state == 1026):
+                if ( not (self.linkOrientation and ( interactor.GetKeyCode() == "x" or interactor.GetKeyCode() == "y" or interactor.GetKeyCode() == "z"))):
+                    shouldPassEvent = False
             
         # Check if event should be passed
         if (shouldPassEvent):

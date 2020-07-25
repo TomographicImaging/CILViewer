@@ -110,16 +110,21 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
         self._viewer.showActor(actorno)
 
     def mouseInteraction(self, interactor, event):
+        shift = interactor.GetShiftKey()
+        advance = 1
+        if shift:
+            advance = 10
+
         if event == 'MouseWheelForwardEvent':
-            maxSlice = self.GetDimensions()[self.GetSliceOrientation()]
+            maxSlice = self._viewer.img3D.GetExtent()[self.GetSliceOrientation()*2+1]
             # print (self.GetActiveSlice())
-            if (self.GetActiveSlice() + 1 < maxSlice):
-                self.SetActiveSlice(self.GetActiveSlice() + 1)
+            if (self.GetActiveSlice() + advance <= maxSlice):
+                self.SetActiveSlice(self.GetActiveSlice() + advance)
                 self.UpdatePipeline()
         else:
-            minSlice = 0
-            if (self.GetActiveSlice() - 1 > minSlice):
-                self.SetActiveSlice(self.GetActiveSlice() -1)
+            minSlice = self._viewer.img3D.GetExtent()[self.GetSliceOrientation()*2]
+            if (self.GetActiveSlice() - advance >= minSlice):
+                self.SetActiveSlice(self.GetActiveSlice() - advance)
                 self.UpdatePipeline()
 
     def OnLeftMouseClick(self, interactor, event):
@@ -165,7 +170,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
         elif interactor.GetKeyCode() == "y":
 
             self.SetSliceOrientation(SLICE_ORIENTATION_XZ)
-            self.SetActiveSlice(int(self.GetDimensions()[2] / 2))
+            self.SetActiveSlice(int(self.GetDimensions()[1] / 2))
             self.UpdatePipeline(resetcamera=True)
 
         elif interactor.GetKeyCode() == "z":
