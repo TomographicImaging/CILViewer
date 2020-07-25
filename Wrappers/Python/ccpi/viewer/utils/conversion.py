@@ -1255,17 +1255,17 @@ class cilBaseResampleReader(VTKPythonAlgorithmBase):
                 start_slice = end_slice - slice_per_chunk
                 header_length = file_header_length + el * slice_length
                 shape[2] = end_slice - start_slice
-                cilNumpyMETAImageWriter.WriteMETAImageHeader(self.GetFileName(), 
-                                    header_filename, 
-                                    self.GetNumpyTypeCode(), 
-                                    big_endian, 
-                                    header_length, 
-                                    tuple(shape), 
-                                    spacing=(1.,1.,1.), 
-                                    origin=(0.,0.,0.))
-                # reset the filename for the reader to force Update, otherwise it won't work
-                #reader.SetFileName('pippo')
-                
+                cilNumpyMETAImageWriter.WriteMETAImageHeader(
+                    self.GetFileName(), 
+                    header_filename, 
+                    self.GetNumpyTypeCode(), 
+                    big_endian, 
+                    header_length, 
+                    tuple(shape), 
+                    spacing=(1.,1.,1.), 
+                    origin=(0.,0.,0.)
+                )
+                # force Update
                 reader.Modified()
                 reader.Update()
                 # change the extent of the resampled image
