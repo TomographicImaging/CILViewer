@@ -1026,31 +1026,7 @@ class cilNumpyMETAImageWriter(object):
 
         cilNumpyMETAImageWriter.WriteMETAImageHeader(datafname, hdrfname, typecode, big_endian, \
                                                      header_length, shape, spacing=spacing, origin=origin)
-        # # save header
-        # # minimal header structure
-        # # NDims = 3
-        # # DimSize = 181 217 181
-        # # ElementType = MET_UCHAR
-        # # ElementSpacing = 1.0 1.0 1.0
-        # # ElementByteOrderMSB = False
-        # # ElementDataFile = brainweb1.raw
-        # header = 'ObjectType = Image\n'
-        # header = ''
-        # header += 'NDims = {0}\n'.format(len(array.shape))
-        # header += 'DimSize = {} {} {}\n'.format(array.shape[0], array.shape[1], array.shape[2])
-        # header += 'ElementType = {}\n'.format(ar_type)
-        # header += 'ElementSpacing = {} {} {}\n'.format(spacing[0], spacing[1], spacing[2])
-        # header += 'Position = {} {} {}\n'.format(origin[0], origin[1], origin[2])
-        # # MSB (aka big-endian)
-        # descr = npyhdr['description']
-        # MSB = 'True' if descr['descr'][0] == '>' else 'False'
-        # header += 'ElementByteOrderMSB = {}\n'.format(MSB)
 
-        # header += 'HeaderSize = {}\n'.format(npyhdr['header_length'])
-        # header += 'ElementDataFile = {}'.format(os.path.basename(datafname))
-
-        # with open(hdrfname , 'w') as hdr:
-        #     hdr.write(header)
 
 
 
@@ -1078,9 +1054,7 @@ def parseNpyHeader(filename):
         elif major == 2:
             HEADER_LEN_SIZE = 4
 
-        # print ('NumPy file version {}.{}'.format(major, minor))
         HEADER_LEN = struct.unpack('<H', f.read(HEADER_LEN_SIZE))[0]
-        # print ("header_len", HEADER_LEN, type(HEADER_LEN))
         descr = ''
         i = 0
     with open(filename, 'rb') as f:
@@ -1089,7 +1063,6 @@ def parseNpyHeader(filename):
         while i < HEADER_LEN:
             c = f.read(1)
             c = c.decode("utf-8")
-            #print (c)
             descr += c
             i += 1
     return {'type': 'NUMPY',
@@ -1220,58 +1193,62 @@ class cilBaseResampleReader(VTKPythonAlgorithmBase):
         
         # calculate the product of the elements of TargetShape
         max_size = functools.reduce (lambda x,y: x*y, self.GetTargetShape(),1)
-        # scaling is going to be similar in every axis (xy the same, z possibly different)
-        axis_magnification = np.power(max_size/total_size, 1/3)
-        slice_per_chunk = np.int(1/axis_magnification)
+        # scaling is going to be similar in every axis 
+        # (xy the same, z possibly different)
+        xy_axes_magnification = np.power(max_size/total_size, 1/3)
+        slice_per_chunk = np.int(1/xy_axes_magnification)
         
-        # we will read in 5 slices at a time
-        low_slice = [ i for i in range (0,shape[2], slice_per_chunk) ]
-        
-        low_slice.append( shape[2] )
-        # print (low_slice)
-        # print (len(low_slice))
+        # indices of the first and last slice per chunck
+        # we will read in slice_per_chunk slices at a time
+        end_slice_in_chuncks = [ i for i in \
+            range (slice_per_chunk, shape[2], slice_per_chunk) ]
+        # append last slice
+        end_slice_in_chuncks.append( shape[2] )
+        num_chuncks = len(end_slice_in_chuncks)
 
-        z_axis_magnification = (len(low_slice)-1)/shape[2]
-        # print ("z_axis_magnification", z_axis_magnification)
-        # print ("xy_axis magnification", axis_magnification, int(axis_magnification * shape[0]), int(axis_magnification * shape[1]))
+        z_axis_magnification = num_chuncks / shape[2]
         
-        target_image_shape = (int(axis_magnification * shape[0]), 
-                            int(axis_magnification * shape[1]), 
-                            len(low_slice) -1)
-        # print (target_image_shape)
-
+        target_image_shape = (int(xy_axes_magnification * shape[0]), 
+                              int(xy_axes_magnification * shape[1]), 
+                              num_chuncks)
+        
         resampler = vtk.vtkImageReslice()
-        resampler.SetOutputExtent(0,target_image_shape[0],
-                                0,target_image_shape[1],
-                                0,0)
-        resampler.SetOutputSpacing(1/axis_magnification, 1/axis_magnification, 1/z_axis_magnification)
-
-        # print ("allocate vtkImageData")
-        # resampled_image = vtk.vtkImageData()
+        resampler.SetOutputExtent(0, target_image_shape[0],
+                                  0, target_image_shape[1],
+                                  0, 0)
+        resampler.SetOutputSpacing( 1 / xy_axes_magnification, 
+                                    1 / xy_axes_magnification, 
+                                    1 / z_axis_magnification)
+        # resampled data
         resampled_image = outData
-        resampled_image.SetExtent(0,target_image_shape[0],
-                                0,target_image_shape[1],
-                                0,target_image_shape[2])
-        resampled_image.SetSpacing(1/axis_magnification, 1/axis_magnification, 1/z_axis_magnification)
+        resampled_image.SetExtent(0, target_image_shape[0],
+                                  0, target_image_shape[1],
+                                  0, target_image_shape[2])
+
+        resampled_image.SetSpacing(1/xy_axes_magnification, 
+                                   1/xy_axes_magnification, 
+                                   1/z_axis_magnification)
         resampled_image.AllocateScalars(self.GetOutputVTKType(), 1)
     
         # slice size in bytes
         slice_length = shape[1] * shape[0] * nbytes
-
         
-        #dimensions = descr['description']['shape']
         tmpdir = tempfile.mkdtemp()
         header_filename = os.path.join(tmpdir, "header.mhd")
         
         try:
-            #resampler.Update()
+            # set up VTK pipeline
             reader = vtk.vtkMetaImageReader()
             reader.SetFileName(header_filename)
             resampler.SetInputData(reader.GetOutput())
             
-            for i,el in enumerate(low_slice):
+            # process each chunck
+            for i,el in enumerate(end_slice_in_chuncks):
                 end_slice = el
                 start_slice = end_slice - slice_per_chunk
+                if start_slice < 0:
+                    raise ValueError('{} ERROR: Start slice cannot be negative.'\
+                        .format(self.__class__.__name__))
                 header_length = file_header_length + el * slice_length
                 shape[2] = end_slice - start_slice
                 cilNumpyMETAImageWriter.WriteMETAImageHeader(
@@ -1296,11 +1273,11 @@ class cilBaseResampleReader(VTKPythonAlgorithmBase):
 
                 ################# vtk way ####################
                 resampled_image.CopyAndCastFrom( resampler.GetOutput(), extent )
-                self.UpdateProgress(i/len(low_slice))
-                # npresampled = Converter.vtk2numpy(resampled_image)
+                self.UpdateProgress( i / num_chuncks )
         finally:
             os.remove(header_filename)
             os.rmdir(tmpdir)
+        
         return 1
 
     def GetOutput(self):
@@ -1338,13 +1315,9 @@ class cilNumpyResampleReader(cilBaseResampleReader):
             array_descr = descr['description']['descr'][1:]
             if array_descr == np.dtype(t).descr[0][1][1:]:
                 typecode = np.dtype(t).char
-                # nbytes = type_to_bytes[typecode]
                 nbytes = Converter.numpy_dtype_char_to_bytes[typecode]
-                # print ("Array TYPE: ", t, array_descr, typecode)            
                 break
         
-        # print ("typecode", typecode)
-        # print (descr)
         big_endian = 'True' if descr['description']['descr'][0] == '>' else 'False'
         readshape = descr['description']['shape']
         is_fortran = descr['description']['fortran_order']
