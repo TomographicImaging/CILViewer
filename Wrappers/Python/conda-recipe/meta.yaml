@@ -1,12 +1,12 @@
 package:
   name: ccpi-viewer
-  version: 20.06.1
+  version: 20.07.0
 
 
 build:
   preserve_egg_dir: False
-  script_env:
-    - CIL_VERSION
+  # script_env:
+  #   - CIL_VERSION
 
   entry_points:
     - CILViewerLaunch = ccpi.viewer.standaloneQT:main
