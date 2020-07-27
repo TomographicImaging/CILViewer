@@ -584,6 +584,13 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
             self.UpdateSliceActor()
             self.AdjustCamera()
             self.Render()
+        elif interactor.GetKeyCode() == 't':
+            # tracing event is captured by widget
+            pass
+        elif interactor.GetKeyCode() == 'i':
+            # toggle interpolation of slice actor
+            is_interpolated = self._viewer.sliceActor.GetInterpolate()
+            self._viewer.sliceActor.SetInterpolate(not is_interpolated)
         else :
             self.log("Unhandled event %s" % (interactor.GetKeyCode()))
             
@@ -973,12 +980,16 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
                              "\n"
                              "Keyboard Interactions:\n"
                              "\n"
-                             "  - Auto Window/Level: A\n"
-                             "  - Profile: L\n"
-                             "  - Save Current Image: S\n"
-                             "  - YZ Plane: X\n"
-                             "  - XZ Plane: Y\n"
-                             "  - XY Plane: Z\n"
+                             "  - a: Whole image Auto Window/Level\n"
+                             "  - w: Region around cursor Auto Window/Level\n"
+                             "  - l: Line Profile at cursor\n"
+                             "  - s: Save Current Image\n"
+                             "  - x: YZ Plane\n"
+                             "  - y: XZ Plane\n"
+                             "  - z: XY Plane\n"
+                             "  - t: Tracing\n"
+                             "  - i: toggle interpolation of slice\n"
+                             "  - h: this help\n"
                              )
         tprop = textMapperC.GetTextProperty()
         tprop.ShallowCopy(multiLineTextProp)

@@ -27,9 +27,49 @@ import vtk
 from vtk.util.vtkAlgorithm import VTKPythonAlgorithmBase
 from vtk.util import numpy_support , vtkImageImportFromArray
 
-# Converter class
-class Converter():
+import functools
+import tempfile
+import numpy as np
 
+
+# Converter class
+class Converter(object):
+    # inspired by
+    # https://github.com/vejmarie/vtk-7/blob/master/Wrapping/Python/vtk/util/vtkImageImportFromArray.py
+    # and metaTypes.h in VTK source code
+    numpy_dtype_char_to_MetaImageType = {'b':'MET_CHAR',    # VTK_SIGNED_CHAR,     # int8
+                                         'B':'MET_UCHAR',   # VTK_UNSIGNED_CHAR,   # uint8
+                                         'h':'MET_SHORT',   # VTK_SHORT,           # int16
+                                         'H':'MET_USHORT',  # VTK_UNSIGNED_SHORT,  # uint16
+                                         'i':'MET_INT',     # VTK_INT,             # int32
+                                         'I':'MET_UINT',    # VTK_UNSIGNED_INT,    # uint32
+                                         'f':'MET_FLOAT',   # VTK_FLOAT,           # float32
+                                         'd':'MET_DOUBLE',  # VTK_DOUBLE,          # float64
+                                         'F':'MET_FLOAT',   # VTK_FLOAT,           # float32
+                                         'D':'MET_DOUBLE'   # VTK_DOUBLE,          # float64
+          }
+    numpy_dtype_char_to_bytes = {'b':1,    # VTK_SIGNED_CHAR,     # int8
+                                 'B':1,   # VTK_UNSIGNED_CHAR,   # uint8
+                                 'h':2,   # VTK_SHORT,           # int16
+                                 'H':2,  # VTK_UNSIGNED_SHORT,  # uint16
+                                 'i':4,     # VTK_INT,             # int32
+                                 'I':4,    # VTK_UNSIGNED_INT,    # uint32
+                                 'f':4,   # VTK_FLOAT,           # float32
+                                 'd':8,  # VTK_DOUBLE,          # float64
+                                 'F':4,   # VTK_FLOAT,           # float32
+                                 'D':8   # VTK_DOUBLE,          # float64
+    }
+    numpy_dtype_char_to_vtkType = {'b': vtk.VTK_SIGNED_CHAR,     # int8
+                                   'B': vtk.VTK_UNSIGNED_CHAR,   # uint8
+                                   'h': vtk.VTK_SHORT,           # int16
+                                   'H': vtk.VTK_UNSIGNED_SHORT,  # uint16
+                                   'i': vtk.VTK_INT,             # int32
+                                   'I': vtk.VTK_UNSIGNED_INT,    # uint32
+                                   'f': vtk.VTK_FLOAT,           # float32
+                                   'd': vtk.VTK_DOUBLE,          # float64
+                                   'F': vtk.VTK_FLOAT,           # float32
+                                   'D': vtk.VTK_DOUBLE           # float64
+    }
     # Utility functions to transform numpy arrays to vtkImageData and viceversa
     @staticmethod
     def numpy2vtkImporter(nparray, spacing=(1.,1.,1.), origin=(0,0,0), transpose=[2,1,0]):
@@ -43,7 +83,7 @@ class Converter():
         return importer
     
     @staticmethod
-    def numpy2vtkImage(nparray, spacing = (1.,1.,1.), origin=(0,0,0), output=None):
+    def numpy2vtkImage(nparray, spacing = (1.,1.,1.), origin=(0,0,0), deep=0, output=None):
 
         shape=numpy.shape(nparray)
         if(nparray.flags["FNC"]):
@@ -56,7 +96,7 @@ class Converter():
             k=0
 
         nparray = nparray.ravel(order)
-        vtkarray = numpy_support.numpy_to_vtk(num_array=nparray, deep=0, array_type=numpy_support.get_vtk_array_type(nparray.dtype))
+        vtkarray = numpy_support.numpy_to_vtk(num_array=nparray, deep=deep, array_type=numpy_support.get_vtk_array_type(nparray.dtype))
         vtkarray.SetName('vtkarray')
 
         if output is None:
@@ -94,9 +134,9 @@ class Converter():
                 imgdata.GetPointData().GetScalars())
 
         dims = imgdata.GetDimensions()
-        print ("vtk2numpy: VTKImageData dims {0}".format(dims))
+        # print ("vtk2numpy: VTKImageData dims {0}".format(dims))
 
-        print("chosen order ", order)
+        # print("chosen order ", order)
 
         img_data.shape = (dims[2],dims[1],dims[0])
 
@@ -921,62 +961,80 @@ class cilNumpyMETAImageWriter(object):
         if len(value) != len(self.__Array.shape):
             self.__Spacing = value
             self.Modified()
+    @staticmethod
+    def  WriteMETAImageHeader(data_filename, header_filename, typecode, big_endian, \
+                              header_length, shape, spacing=(1.,1.,1.), origin=(0.,0.,0.)):
+        '''Writes a NumPy array and a METAImage text header so that the npy file can be used as data file
+        
+        :param filename: name of the single file containing the data
+        :param typecode:
+        '''
         
 
+        
+        ar_type = Converter.numpy_dtype_char_to_MetaImageType[typecode]
+        # save header
+        # minimal header structure
+        # NDims = 3
+        # DimSize = 181 217 181
+        # ElementType = MET_UCHAR
+        # ElementSpacing = 1.0 1.0 1.0
+        # ElementByteOrderMSB = False
+        # ElementDataFile = brainweb1.raw
+        header = 'ObjectType = Image\n'
+        header = ''
+        header += 'NDims = {0}\n'.format(len(shape))
+        header += 'DimSize = {} {} {}\n'.format(shape[0], shape[1], shape[2])
+        header += 'ElementType = {}\n'.format(ar_type)
+        header += 'ElementSpacing = {} {} {}\n'.format(spacing[0], spacing[1], spacing[2])
+        header += 'Position = {} {} {}\n'.format(origin[0], origin[1], origin[2])
+        # MSB (aka big-endian)
+        # MSB = 'True' if descr['descr'][0] == '>' else 'False'
+        header += 'ElementByteOrderMSB = {}\n'.format(big_endian)
+
+        header += 'HeaderSize = {}\n'.format(header_length)
+        header += 'ElementDataFile = {}'.format(os.path.abspath(data_filename))
+
+        with open(header_filename , 'w') as hdr:
+            hdr.write(header)
+
+
+    @staticmethod
+    def WriteNumpyAsMETAImage(array, filename, spacing=(1.,1.,1.), origin=(0.,0.,0.)):
+        '''Writes a NumPy array and a METAImage text header so that the npy file can be used as data file'''
+        # save the data as numpy
+        datafname = os.path.abspath(filename) + '.npy'
+        hdrfname =  os.path.abspath(filename) + '.mhd'
+        if (numpy.isfortran(array)):
+            numpy.save(datafname, array)
+        else:
+            numpy.save(datafname, numpy.asfortranarray(array))
+        npyhdr = parseNpyHeader(datafname)
+
+        typecode = array.dtype.char
+        print ("typecode,",typecode)
+        #r_type = Converter.numpy_dtype_char_to_MetaImageType[typecode]
+        big_endian = 'True' if npyhdr['description']['descr'][0] == '>' else 'False'
+        readshape = descr['description']['shape']
+        is_fortran = descr['description']['fortran_order']
+        if is_fortran:
+            shape = list(readshape)
+        else:
+            shape = list(readshape)[::-1]
+        header_length = npyhdr['header_length']
+
+
+        cilNumpyMETAImageWriter.WriteMETAImageHeader(datafname, hdrfname, typecode, big_endian, \
+                                                     header_length, shape, spacing=spacing, origin=origin)
+
+
+
+
 def WriteNumpyAsMETAImage(array, filename, spacing=(1.,1.,1.), origin=(0.,0.,0.)):
-    '''Writes a NumPy array and a METAImage text header so that the npy file can be used as data file'''
-    # save the data as numpy
-    datafname = os.path.abspath(filename) + '.npy'
-    hdrfname =  os.path.abspath(filename) + '.mhd'
-    if (numpy.isfortran(array)):
-        numpy.save(datafname, array)
-    else:
-        numpy.save(datafname, numpy.asfortranarray(array))
-    npyhdr = parseNpyHeader(datafname)
-
-    # inspired by
-    # https://github.com/vejmarie/vtk-7/blob/master/Wrapping/Python/vtk/util/vtkImageImportFromArray.py
-    # and metaTypes.h in VTK source code
-    __typeDict = {'b':'MET_CHAR',    # VTK_SIGNED_CHAR,     # int8
-                  'B':'MET_UCHAR',   # VTK_UNSIGNED_CHAR,   # uint8
-                  'h':'MET_SHORT',   # VTK_SHORT,           # int16
-                  'H':'MET_USHORT',  # VTK_UNSIGNED_SHORT,  # uint16
-                  'i':'MET_INT',     # VTK_INT,             # int32
-                  'I':'MET_UINT',    # VTK_UNSIGNED_INT,    # uint32
-                  'f':'MET_FLOAT',   # VTK_FLOAT,           # float32
-                  'd':'MET_DOUBLE',  # VTK_DOUBLE,          # float64
-                  'F':'MET_FLOAT',   # VTK_FLOAT,           # float32
-                  'D':'MET_DOUBLE'   # VTK_DOUBLE,          # float64
-          }
-
-    typecode = array.dtype.char
-    print ("typecode,",typecode)
-    ar_type = __typeDict[typecode]
-    # save header
-    # minimal header structure
-    # NDims = 3
-    # DimSize = 181 217 181
-    # ElementType = MET_UCHAR
-    # ElementSpacing = 1.0 1.0 1.0
-    # ElementByteOrderMSB = False
-    # ElementDataFile = brainweb1.raw
-    header = 'ObjectType = Image\n'
-    header = ''
-    header += 'NDims = {0}\n'.format(len(array.shape))
-    header += 'DimSize = {} {} {}\n'.format(array.shape[0], array.shape[1], array.shape[2])
-    header += 'ElementType = {}\n'.format(ar_type)
-    header += 'ElementSpacing = {} {} {}\n'.format(spacing[0], spacing[1], spacing[2])
-    header += 'Position = {} {} {}\n'.format(origin[0], origin[1], origin[2])
-    # MSB (aka big-endian)
-    descr = npyhdr['description']
-    MSB = 'True' if descr['descr'][0] == '>' else 'False'
-    header += 'ElementByteOrderMSB = {}\n'.format(MSB)
-
-    header += 'HeaderSize = {}\n'.format(npyhdr['header_length'])
-    header += 'ElementDataFile = {}'.format(os.path.basename(datafname))
-
-    with open(hdrfname , 'w') as hdr:
-        hdr.write(header)
+    '''Writes a NumPy array and a METAImage text header so that the npy file can be used as data file
+    
+    same as cilNumpyMETAImageWriter.WriteNumpyAsMETAImage'''
+    return cilNumpyMETAImageWriter.WriteNumpyAsMETAImage(array, filename, spacing=spacing, origin=origin)
 
 def parseNpyHeader(filename):
     '''parses a npy file and returns a dictionary with version, header length and description
@@ -996,9 +1054,7 @@ def parseNpyHeader(filename):
         elif major == 2:
             HEADER_LEN_SIZE = 4
 
-        # print ('NumPy file version {}.{}'.format(major, minor))
         HEADER_LEN = struct.unpack('<H', f.read(HEADER_LEN_SIZE))[0]
-        # print ("header_len", HEADER_LEN, type(HEADER_LEN))
         descr = ''
         i = 0
     with open(filename, 'rb') as f:
@@ -1007,7 +1063,6 @@ def parseNpyHeader(filename):
         while i < HEADER_LEN:
             c = f.read(1)
             c = c.decode("utf-8")
-            #print (c)
             descr += c
             i += 1
     return {'type': 'NUMPY',
@@ -1017,6 +1072,290 @@ def parseNpyHeader(filename):
             'description'  : eval(descr)}
 
 
+class cilBaseResampleReader(VTKPythonAlgorithmBase):
+    '''vtkAlgorithm to load and resample a numpy file to an approximate memory footprint
+
+    
+    '''
+    def __init__(self):
+        VTKPythonAlgorithmBase.__init__(self, nInputPorts=0, nOutputPorts=1)
+        
+        self.__FileName = 1
+        self.__TargetShape = (256,256,256)
+        self.__IsFortran = False
+        self.__BigEndian = False
+        self.__FileHeaderLength = 0
+        self.__BytesPerElement = 1
+        self.__StoredArrayShape = None
+        self.__OutputVTKType = None
+        self.__NumpyTypeCode = None
+
+
+        
+    def SetFileName(self, value):
+        '''Sets the value at which the mask is active'''
+        if not os.path.exists(value):
+            raise ValueError('File does not exist!' , value)
+
+        if value != self.__FileName:
+            self.__FileName = value
+            self.Modified()
+
+    def GetFileName(self):
+        return self.__FileName
+    
+    def SetTargetShape(self, value):
+        if not isinstance (value, tuple):
+            raise ValueError('Expected a tuple. Got {}' , type(value))
+
+        if not value == self.__TargetShape:
+            self.__TargetShape = value
+            self.Modified()
+    def GetTargetShape(self):
+        return self.__TargetShape
+
+    def FillInputPortInformation(self, port, info):
+        '''This is a reader so no input'''
+        return 1
+
+    def FillOutputPortInformation(self, port, info):
+        '''output should be of vtkImageData type'''
+        info.Set(vtk.vtkDataObject.DATA_TYPE_NAME(), "vtkImageData")
+        return 1
+    
+        
+    def GetStoredArrayShape(self):
+        return self.__StoredArrayShape
+    def GetFileHeaderLength(self):
+        return self.__FileHeaderLength
+    def GetBytesPerElement(self):
+        return self.__BytesPerElement
+    def GetBigEndian(self):
+        return self.__BigEndian
+    def GetIsFortran(self):
+        return self.__IsFortran
+    def GetOutputVTKType(self):
+        return self.__OutputVTKType
+    def GetNumpyTypeCode(self):
+        return self.__NumpyTypeCode
+    def GetFileName(self):
+        return self.__FileName
+    
+    def SetStoredArrayShape(self, value):
+        if not isinstance (value , tuple):
+            raise ValueError('Expected tuple, got {}'.format(type(value)))
+        if len(value) != 3:
+            raise ValueError('Expected tuple of length 3, got {}'.format(len(value)))
+        self.__StoredArrayShape = value
+    def SetFileHeaderLength(self, value):
+        if not isinstance (value , int):
+            raise ValueError('Expected int, got {}'.format(type(value)))
+        self.__FileHeaderLength = value
+    def SetBytesPerElement(self, value):
+        if not isinstance (value , int):
+            raise ValueError('Expected int, got {}'.format(type(value)))
+        self.__BytesPerElement = value
+    def SetBigEndian(self, value):
+        if not isinstance (value , bool):
+            raise ValueError('Expected bool, got {}'.format(type(value)))
+        self.__BigEndian = value
+    def SetIsFortran(self, value):
+        if not isinstance (value , bool):
+            raise ValueError('Expected bool, got {}'.format(type(value)))
+        self.__IsFortran = value
+    def SetOutputVTKType(self, value):
+        if value not in [vtk.VTK_SIGNED_CHAR, vtk.VTK_UNSIGNED_CHAR,  vtk.VTK_SHORT,  vtk.VTK_UNSIGNED_SHORT,\
+                         vtk.VTK_INT, vtk.VTK_UNSIGNED_INT,  vtk.VTK_FLOAT, vtk.VTK_DOUBLE, vtk.VTK_FLOAT,  \
+                         vtk.VTK_DOUBLE]:
+            raise ValueError("Unexpected Type: got {}", value)
+        self.__OutputVTKType = value
+    def SetNumpyTypeCode(self, value):
+        if value not in ['b','B','h','H','i','I','f','d','F','D']:
+            raise ValueError("Unexpected Type: got {}", value)
+        self.__NumpyTypeCode = value
+
+    def RequestData(self, request, inInfo, outInfo):
+        outData = vtk.vtkImageData.GetData(outInfo)
+
+        # get basic info
+        nbytes = self.GetBytesPerElement()
+        big_endian = self.GetBigEndian()
+        readshape = self.GetStoredArrayShape()
+        file_header_length = self.GetFileHeaderLength()
+        is_fortran = self.GetIsFortran()
+        
+        if is_fortran:
+            shape = list(readshape)
+        else:
+            shape = list(readshape)[::-1]
+
+        total_size = shape[0] * shape[1] * shape[2]
+        
+        # calculate the product of the elements of TargetShape
+        max_size = functools.reduce (lambda x,y: x*y, self.GetTargetShape(),1)
+        # scaling is going to be similar in every axis 
+        # (xy the same, z possibly different)
+        xy_axes_magnification = np.power(max_size/total_size, 1/3)
+        slice_per_chunk = np.int(1/xy_axes_magnification)
+        
+        # indices of the first and last slice per chunck
+        # we will read in slice_per_chunk slices at a time
+        end_slice_in_chuncks = [ i for i in \
+            range (slice_per_chunk, shape[2], slice_per_chunk) ]
+        # append last slice
+        end_slice_in_chuncks.append( shape[2] )
+        num_chuncks = len(end_slice_in_chuncks)
+
+        z_axis_magnification = num_chuncks / shape[2]
+        
+        target_image_shape = (int(xy_axes_magnification * shape[0]), 
+                              int(xy_axes_magnification * shape[1]), 
+                              num_chuncks)
+        
+        resampler = vtk.vtkImageReslice()
+        resampler.SetOutputExtent(0, target_image_shape[0],
+                                  0, target_image_shape[1],
+                                  0, 0)
+        resampler.SetOutputSpacing( 1 / xy_axes_magnification, 
+                                    1 / xy_axes_magnification, 
+                                    1 / z_axis_magnification)
+        # resampled data
+        resampled_image = outData
+        resampled_image.SetExtent(0, target_image_shape[0],
+                                  0, target_image_shape[1],
+                                  0, target_image_shape[2])
+
+        resampled_image.SetSpacing(1/xy_axes_magnification, 
+                                   1/xy_axes_magnification, 
+                                   1/z_axis_magnification)
+        resampled_image.AllocateScalars(self.GetOutputVTKType(), 1)
+    
+        # slice size in bytes
+        slice_length = shape[1] * shape[0] * nbytes
+        
+        tmpdir = tempfile.mkdtemp()
+        header_filename = os.path.join(tmpdir, "header.mhd")
+        
+        try:
+            # set up VTK pipeline
+            reader = vtk.vtkMetaImageReader()
+            reader.SetFileName(header_filename)
+            resampler.SetInputData(reader.GetOutput())
+            
+            # process each chunck
+            for i,el in enumerate(end_slice_in_chuncks):
+                end_slice = el
+                start_slice = end_slice - slice_per_chunk
+                if start_slice < 0:
+                    raise ValueError('{} ERROR: Start slice cannot be negative.'\
+                        .format(self.__class__.__name__))
+                header_length = file_header_length + el * slice_length
+                shape[2] = end_slice - start_slice
+                cilNumpyMETAImageWriter.WriteMETAImageHeader(
+                    self.GetFileName(), 
+                    header_filename, 
+                    self.GetNumpyTypeCode(), 
+                    big_endian, 
+                    header_length, 
+                    tuple(shape), 
+                    spacing=(1.,1.,1.), 
+                    origin=(0.,0.,0.)
+                )
+                # force Update
+                reader.Modified()
+                reader.Update()
+                # change the extent of the resampled image
+                extent = (0,target_image_shape[0], 
+                        0,target_image_shape[1],
+                        i,i)
+                resampler.SetOutputExtent(extent)
+                resampler.Update()
+
+                ################# vtk way ####################
+                resampled_image.CopyAndCastFrom( resampler.GetOutput(), extent )
+                self.UpdateProgress( i / num_chuncks )
+        finally:
+            os.remove(header_filename)
+            os.rmdir(tmpdir)
+        
+        return 1
+
+    def GetOutput(self):
+        return self.GetOutputDataObject(0)
+
+class cilNumpyResampleReader(cilBaseResampleReader):
+    '''vtkAlgorithm to load and resample a numpy file to an approximate memory footprint
+
+    
+    '''
+    def __init__(self):
+        VTKPythonAlgorithmBase.__init__(self, nInputPorts=0, nOutputPorts=1)
+        super(cilNumpyResampleReader, self).__init__()
+        
+        self.__FileName = 1
+        self.__TargetShape = (256,256,256)
+        self.__IsFortran = False
+        self.__BigEndian = False
+        self.__FileHeaderLength = 0
+        self.__BytesPerElement = 1
+        self.__StoredArrayShape = None
+        self.__OutputVTKType = None
+        self.__NumpyTypeCode = None
+
+
+        
+    
+    def ReadNpyHeader(self):
+        # extract info from the npy header
+        descr = parseNpyHeader(self.GetFileName())
+        # find the typecode of the data and the number of bytes per pixel
+        typecode = ''
+        nbytes = 0
+        for t in [np.uint8, np.int8, np.int16, np.uint16, np.int32, np.uint32, np.float16, np.float32, np.float64]:
+            array_descr = descr['description']['descr'][1:]
+            if array_descr == np.dtype(t).descr[0][1][1:]:
+                typecode = np.dtype(t).char
+                nbytes = Converter.numpy_dtype_char_to_bytes[typecode]
+                break
+        
+        big_endian = 'True' if descr['description']['descr'][0] == '>' else 'False'
+        readshape = descr['description']['shape']
+        is_fortran = descr['description']['fortran_order']
+        file_header_length = descr['header_length']
+        
+        
+        self.__IsFortran = is_fortran
+        self.__BigEndian = big_endian
+        self.__FileHeaderLength = file_header_length
+        self.__BytesPerElement = nbytes
+        self.__StoredArrayShape = readshape
+        self.__OutputVTKType = Converter.numpy_dtype_char_to_vtkType[typecode]
+        self.__NumpyTypeCode = typecode
+        
+        self.Modified()
+
+        
+    def GetStoredArrayShape(self):
+        self.ReadNpyHeader()
+        return self.__StoredArrayShape
+    def GetFileHeaderLength(self):
+        self.ReadNpyHeader()
+        return self.__FileHeaderLength
+    def GetBytesPerElement(self):
+        self.ReadNpyHeader()
+        return self.__BytesPerElement
+    def GetBigEndian(self):
+        self.ReadNpyHeader()
+        return self.__BigEndian
+    def GetIsFortran(self):
+        self.ReadNpyHeader()
+        return self.__IsFortran
+    def GetOutputVTKType(self):
+        self.ReadNpyHeader()
+        return self.__OutputVTKType
+    def GetNumpyTypeCode(self):
+        self.ReadNpyHeader()
+        return self.__NumpyTypeCode
 if __name__ == '__main__':
     '''this represent a good base to perform a test for the numpy-metaimage writer'''
     dimX = 128
@@ -1073,4 +1412,5 @@ if __name__ == '__main__':
                     if not is_same:
                         raise ValueError('arrays do not match', v1,v2,x,y,z)
         print ('YEEE array match!')
+
 
