@@ -1381,13 +1381,13 @@ class cilBaseResampleReader(VTKPythonAlgorithmBase):
                 ################# vtk way ####################
                 resampled_image.CopyAndCastFrom( resampler.GetOutput(), extent )
                 self.UpdateProgress(i/ num_chuncks )
-                # npresampled = Converter.vtk2numpy(resampled_image)
+
         except Exception as e:
             print(e)
-            print("Exception")
         finally:
             os.remove(header_filename)
             os.rmdir(tmpdir)
+        
         return 1
 
     def GetOutput(self):
@@ -1413,8 +1413,8 @@ class cilNumpyResampleReader(cilBaseResampleReader):
         self.__NumpyTypeCode = None
 
 
-
-
+        
+    
     def ReadNpyHeader(self):
         # extract info from the npy header
         descr = parseNpyHeader(self.GetFileName())
@@ -1425,14 +1425,9 @@ class cilNumpyResampleReader(cilBaseResampleReader):
             array_descr = descr['description']['descr'][1:]
             if array_descr == np.dtype(t).descr[0][1][1:]:
                 typecode = np.dtype(t).char
-                # nbytes = type_to_bytes[typecode]
                 nbytes = Converter.numpy_dtype_char_to_bytes[typecode]
-                #print ("Array TYPE: ", t, array_descr, typecode)            
                 break
-
         
-        # print ("typecode", typecode)
-        # print (descr)
         big_endian = 'True' if descr['description']['descr'][0] == '>' else 'False'
         readshape = descr['description']['shape']
         is_fortran = descr['description']['fortran_order']
@@ -1566,6 +1561,394 @@ class cilMetaImageResampleReader(cilBaseResampleReader):
         return self.__MetaImageTypeCode
 
 
+class cilBaseCroppedReader(VTKPythonAlgorithmBase):
+    '''vtkAlgorithm to crop in  the z direction
+
+    
+    '''
+    def __init__(self):
+        VTKPythonAlgorithmBase.__init__(self, nInputPorts=0, nOutputPorts=1)
+        
+        self.__FileName = 1
+        self.__IsFortran = False
+        self.__BigEndian = False
+        self.__FileHeaderLength = 0
+        self.__BytesPerElement = 1
+        self.__StoredArrayShape = None
+        self.__OutputVTKType = None
+        self.__NumpyTypeCode = None
+        self.__MetaImageTypeCode = None
+        self.__TargetZExtent = (0,0)
+        self.__Origin = (0,0,0)
+
+
+        
+    def SetFileName(self, value):
+        '''Sets the value at which the mask is active'''
+        print("Set filename")
+        if not os.path.exists(value):
+            raise ValueError('File does not exist!' , value)
+
+        if value != self.__FileName:
+            self.__FileName = value
+            self.Modified()
+
+    def GetFileName(self):
+        print("Getting filename")
+        return self.__FileName
+    
+
+    def FillInputPortInformation(self, port, info):
+        '''This is a reader so no input'''
+        return 1
+
+    def FillOutputPortInformation(self, port, info):
+        '''output should be of vtkImageData type'''
+        info.Set(vtk.vtkDataObject.DATA_TYPE_NAME(), "vtkImageData")
+        return 1
+    
+        
+    def GetStoredArrayShape(self):
+        return self.__StoredArrayShape
+    def GetFileHeaderLength(self):
+        return self.__FileHeaderLength
+    def GetBytesPerElement(self):
+        return self.__BytesPerElement
+    def GetBigEndian(self):
+        return self.__BigEndian
+    def GetIsFortran(self):
+        return self.__IsFortran
+    def GetOutputVTKType(self):
+        return self.__OutputVTKType
+    def GetNumpyTypeCode(self):
+        return self.__NumpyTypeCode
+    def GetFileName(self):
+        return self.__FileName
+    
+    def SetStoredArrayShape(self, value):
+        if not isinstance (value , tuple):
+            raise ValueError('Expected tuple, got {}'.format(type(value)))
+        if len(value) != 3:
+            raise ValueError('Expected tuple of length 3, got {}'.format(len(value)))
+        self.__StoredArrayShape = value
+    def SetFileHeaderLength(self, value):
+        if not isinstance (value , int):
+            raise ValueError('Expected int, got {}'.format(type(value)))
+        self.__FileHeaderLength = value
+    def SetBytesPerElement(self, value):
+        if not isinstance (value , int):
+            raise ValueError('Expected int, got {}'.format(type(value)))
+        self.__BytesPerElement = value
+    def SetBigEndian(self, value):
+        if not isinstance (value , bool):
+            raise ValueError('Expected bool, got {}'.format(type(value)))
+        self.__BigEndian = value
+    def SetIsFortran(self, value):
+        if not isinstance (value , bool):
+            raise ValueError('Expected bool, got {}'.format(type(value)))
+        self.__IsFortran = value
+    def SetOutputVTKType(self, value):
+        if value not in [vtk.VTK_SIGNED_CHAR, vtk.VTK_UNSIGNED_CHAR,  vtk.VTK_SHORT,  vtk.VTK_UNSIGNED_SHORT,\
+                         vtk.VTK_INT, vtk.VTK_UNSIGNED_INT,  vtk.VTK_FLOAT, vtk.VTK_DOUBLE, vtk.VTK_FLOAT,  \
+                         vtk.VTK_DOUBLE]:
+            raise ValueError("Unexpected Type: got {}", value)
+        self.__OutputVTKType = value
+    def SetNumpyTypeCode(self, value):
+        if value not in ['b','B','h','H','i','I','f','d','F','D']:
+            raise ValueError("Unexpected Type: got {}", value)
+        self.__NumpyTypeCode = value
+        self.SetMetaImageTypeCode(Converter.numpy_dtype_char_to_MetaImageType[value])
+
+    def GetMetaImageTypeCode(self):
+        return self.__MetaImageTypeCode
+
+    def SetMetaImageTypeCode(self, value):
+        
+        self.__MetaImageTypeCode = value
+
+    def SetTargetZExtent(self, value):
+        if not isinstance (value, tuple):
+            raise ValueError('Expected a tuple. Got {}' , type(value))
+
+        if not value == self.__TargetZExtent:
+            self.__TargetZExtent = value
+            self.Modified()
+
+    
+    def GetTargetZExtent(self):
+        return self.__TargetZExtent
+
+    def SetOrigin(self, value):
+        if not isinstance (value, tuple):
+            raise ValueError('Expected a tuple. Got {}' , type(value))
+
+        if not value == self.__Origin:
+            self.__Origin = value
+            self.Modified()
+    
+    def GetOrigin(self):
+        return self.__Origin
+
+    def RequestData(self, request, inInfo, outInfo):
+        outData = vtk.vtkImageData.GetData(outInfo)
+
+        # get basic info
+        nbytes = self.GetBytesPerElement()
+        big_endian = self.GetBigEndian()
+        readshape = self.GetStoredArrayShape()
+        file_header_length = self.GetFileHeaderLength()
+        is_fortran = self.GetIsFortran()
+        
+        if is_fortran:
+            shape = list(readshape)
+        else:
+            shape = list(readshape)[::-1]
+
+
+        tmpdir = tempfile.mkdtemp()
+        header_filename = os.path.join(tmpdir, "header.mhd")
+        reader = vtk.vtkMetaImageReader()
+        reader.SetFileName(header_filename)
+
+
+        if self.GetTargetZExtent()[1] >= shape[2]: #in this case we don't need to resample
+            try:
+                print("Don't resample")
+
+                cilNumpyMETAImageWriter.WriteMETAImageHeader(self.GetFileName(), 
+                                        header_filename, 
+                                        self.GetMetaImageTypeCode(),#self.GetNumpyTypeCode(), 
+                                        big_endian, 
+                                        file_header_length, 
+                                        tuple(shape), 
+                                        spacing=(1.,1.,1.), #!! Don't we need to set?
+                                        origin=(0.,0.,0.)) #??
+                reader.Modified()
+                reader.Update()
+                outData.ShallowCopy(reader.GetOutput())
+                print("Finished")
+
+            finally:
+                print("Finally")
+                os.remove(header_filename)
+                os.rmdir(tmpdir)
+
+            return 1
+        
+        try:
+            header_length  = file_header_length + (self.GetTargetZExtent()[0]-1)* shape[1] * shape[0] * nbytes
+            shape[2] = self.GetTargetZExtent()[1]- self.GetTargetZExtent()[0] + 1
+
+            cilNumpyMETAImageWriter.WriteMETAImageHeader(self.GetFileName(), 
+                                header_filename, 
+                                self.GetMetaImageTypeCode(),#self.GetNumpyTypeCode(), 
+                                big_endian, 
+                                header_length, 
+                                tuple(shape), 
+                                spacing=(1.,1.,1.), 
+                                origin=(0.,0.,0.))
+            
+            reader.Modified()
+            reader.Update()
+            # Data = vtk.vtkImageData()
+            # print(self.GetStoredArrayShape())
+            # print(self.GetTargetZExtent())
+            # Data.SetDimensions(self.GetStoredArrayShape())
+            # print("Extent", Data.GetExtent())
+            # Data.SetSpacing(1,1,1)
+            # extent = (0, shape[0], 0, shape[1], self.GetTargetZExtent()[0], self.GetTargetZExtent()[1])
+            # print("New extent", Data.GetExtent())
+            # print("Inserted extent", extent)
+            # Data.CopyAndCastFrom(reader.GetOutput(), extent)
+            # outData.ShallowCopy(Data)
+
+            outData.ShallowCopy(reader.GetOutput())
+            outData.SetOrigin(self.GetOrigin())
+            
+            # 
+
+        except Exception as e:
+            print(e)
+            print("Exception")
+        finally:
+            os.remove(header_filename)
+            os.rmdir(tmpdir)
+        return 1
+
+    def GetOutput(self):
+        return self.GetOutputDataObject(0)
+
+class cilNumpyCroppedReader(cilBaseCroppedReader):
+    '''vtkAlgorithm to load and resample a numpy file to an approximate memory footprint
+
+    
+    '''
+    def __init__(self):
+        VTKPythonAlgorithmBase.__init__(self, nInputPorts=0, nOutputPorts=1)
+        super(cilNumpyCroppedReader, self).__init__()
+        
+        self.__FileName = 1
+        self.__TargetShape = (256,256,256)
+        self.__IsFortran = False
+        self.__BigEndian = False
+        self.__FileHeaderLength = 0
+        self.__BytesPerElement = 1
+        self.__StoredArrayShape = None
+        self.__OutputVTKType = None
+        self.__NumpyTypeCode = None
+
+        
+    
+    def ReadNpyHeader(self):
+        # extract info from the npy header
+        descr = parseNpyHeader(self.GetFileName())
+        # find the typecode of the data and the number of bytes per pixel
+        typecode = ''
+        nbytes = 0
+        for t in [np.uint8, np.int8, np.int16, np.uint16, np.int32, np.uint32, np.float16, np.float32, np.float64]:
+            array_descr = descr['description']['descr'][1:]
+            if array_descr == np.dtype(t).descr[0][1][1:]:
+                typecode = np.dtype(t).char
+                # nbytes = type_to_bytes[typecode]
+                nbytes = Converter.numpy_dtype_char_to_bytes[typecode]
+                #print ("Array TYPE: ", t, array_descr, typecode)            
+                break
+
+        
+        # print ("typecode", typecode)
+        # print (descr)
+        big_endian = 'True' if descr['description']['descr'][0] == '>' else 'False'
+        readshape = descr['description']['shape']
+        is_fortran = descr['description']['fortran_order']
+        file_header_length = descr['header_length']
+        
+        
+        self.__IsFortran = is_fortran
+        self.__BigEndian = big_endian
+        self.__FileHeaderLength = file_header_length
+        self.__BytesPerElement = nbytes
+        self.__StoredArrayShape = readshape
+        self.__OutputVTKType = Converter.numpy_dtype_char_to_vtkType[typecode]
+        self.__MetaImageTypeCode = Converter.numpy_dtype_char_to_MetaImageType[typecode]
+        self.SetNumpyTypeCode(typecode)
+        
+        self.Modified()
+
+        
+    def GetStoredArrayShape(self):
+        self.ReadNpyHeader()
+        return self.__StoredArrayShape
+    def GetFileHeaderLength(self):
+        self.ReadNpyHeader()
+        return self.__FileHeaderLength
+    def GetBytesPerElement(self):
+        self.ReadNpyHeader()
+        return self.__BytesPerElement
+    def GetBigEndian(self):
+        self.ReadNpyHeader()
+        return self.__BigEndian
+    def GetIsFortran(self):
+        self.ReadNpyHeader()
+        return self.__IsFortran
+    def GetOutputVTKType(self):
+        self.ReadNpyHeader()
+        return self.__OutputVTKType
+    def GetNumpyTypeCode(self):
+        self.ReadNpyHeader()
+        return self.__NumpyTypeCode
+
+class cilMetaImageCroppedReader(cilBaseCroppedReader):
+    '''vtkAlgorithm to load and resample a metaimage file to an approximate memory footprint
+
+    
+    '''
+    def __init__(self):
+        VTKPythonAlgorithmBase.__init__(self, nInputPorts=0, nOutputPorts=1)
+        super(cilMetaImageCroppedReader, self).__init__()
+        
+        self.__FileName = 1
+        self.__TargetShape = (512,512,512)
+        self.__IsFortran = False
+        self.__BigEndian = False
+        self.__FileHeaderLength = 0
+        self.__BytesPerElement = 1
+        self.__StoredArrayShape = None
+        self.__OutputVTKType = None
+        self.__MetaImageTypeCode = None
+
+    
+    def ReadMetaImageHeader(self):
+        
+        header_length = 0
+        with open(self.__FileName, 'rb') as f:
+                for line in f:
+                    header_length += len(line)
+                    line = str(line, encoding = 'utf-8').strip()
+                    if 'BinaryDataByteOrderMSB' in line:
+                        self.__BigEndian = str(line).split('= ')[-1]
+                        print(self.__BigEndian)
+                    elif 'DimSize'  in line:
+                        shape = line.split('= ')[-1].split(' ')[:3]
+                        shape[2].strip()
+                        for i in range(0,len(shape)):
+                            shape[i] = int(shape[i])
+                        
+                        self.__StoredArrayShape = shape
+                        print(self.__StoredArrayShape)
+                        print(self.__StoredArrayShape)
+                    elif 'ElementType' in line:
+                        typecode = line.split('= ')[-1]
+                        print(typecode)
+                        self.__MetaImageTypeCode = typecode
+                    elif 'ElementDataFile' in str(line):
+                        break
+        self.__FileHeaderLength = header_length
+        self.__IsFortran = True
+        self.__BytesPerElement = Converter.MetaImageType_to_bytes[self.__MetaImageTypeCode]
+        self.SetOutputVTKType(Converter.MetaImageType_to_vtkType[self.__MetaImageTypeCode])
+        print(self.GetOutputVTKType())
+        
+        # self.Modified()
+
+        
+    def GetStoredArrayShape(self):
+        #self.ReadMetaImageHeader()
+        return self.__StoredArrayShape
+    def GetFileHeaderLength(self):
+        #self.ReadMetaImageHeader()
+        return self.__FileHeaderLength
+    def GetBytesPerElement(self):
+        #self.ReadMetaImageHeader()
+        return self.__BytesPerElement
+    def GetBigEndian(self):
+        #self.ReadMetaImageHeader()
+        return self.__BigEndian
+    def GetIsFortran(self):
+        #self.ReadMetaImageHeader()
+        return self.__IsFortran
+
+    def SetFileName(self, value):
+        print("Setting filename")
+        if value != 'LOCAL': #in the case of an mha file, data is stored in the same file.
+            if not os.path.exists(value):
+                raise ValueError('File does not exist!' , value)
+
+        if value != self.__FileName:
+            self.__FileName = value
+            print(self.__FileName)
+            self.Modified()
+            self.ReadMetaImageHeader()
+    
+    def GetFileName(self):
+        return self.__FileName
+
+    def SetMetaImageTypeCode(self, value):
+        if value not in ['MET_CHAR',  'MET_UCHAR', 'MET_SHORT', 'MET_USHORT', 'MET_INT', 'MET_UINT', 'MET_FLOAT','MET_DOUBLE','MET_FLOAT','MET_DOUBLE']:
+            raise ValueError("Unexpected Type: got {}", value)
+        self.__MetaImageTypeCode = value
+
+    def GetMetaImageTypeCode(self):
+        return self.__MetaImageTypeCode
 if __name__ == '__main__':
     '''this represent a good base to perform a test for the numpy-metaimage writer'''
     dimX = 128
@@ -1622,5 +2005,6 @@ if __name__ == '__main__':
                     if not is_same:
                         raise ValueError('arrays do not match', v1,v2,x,y,z)
         print ('YEEE array match!')
+
 
 
