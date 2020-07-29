@@ -1302,19 +1302,19 @@ class cilBaseResampleReader(VTKPythonAlgorithmBase):
             xy_axes_magnification = np.power(max_size/total_size, 1/3)
             slice_per_chunk = np.int(1/xy_axes_magnification)
             
-            # indices of the first and last slice per chunck
+            # indices of the first and last slice per chunk
             # we will read in slice_per_chunk slices at a time
-            end_slice_in_chuncks = [ i for i in \
+            end_slice_in_chunks = [ i for i in \
                 range (slice_per_chunk, shape[2], slice_per_chunk) ]
             # append last slice
-            end_slice_in_chuncks.append( shape[2] )
-            num_chuncks = len(end_slice_in_chuncks)
+            end_slice_in_chunks.append( shape[2] )
+            num_chunks = len(end_slice_in_chunks)
 
-            z_axis_magnification = num_chuncks / shape[2]
+            z_axis_magnification = num_chunks / shape[2]
             
             target_image_shape = (int(xy_axes_magnification * shape[0]), 
                                 int(xy_axes_magnification * shape[1]), 
-                                num_chuncks)
+                                num_chunks)
 
             resampler = vtk.vtkImageReslice()
             resampler.SetOutputExtent(0, target_image_shape[0],
@@ -1349,7 +1349,7 @@ class cilBaseResampleReader(VTKPythonAlgorithmBase):
             resampler.SetInputData(reader.GetOutput())
 
             # process each chunk
-            for i,el in enumerate(end_slice_in_chuncks):
+            for i,el in enumerate(end_slice_in_chunks):
                 end_slice = el
                 start_slice = end_slice - slice_per_chunk
                 if start_slice < 0:
@@ -1380,7 +1380,7 @@ class cilBaseResampleReader(VTKPythonAlgorithmBase):
 
                 ################# vtk way ####################
                 resampled_image.CopyAndCastFrom( resampler.GetOutput(), extent )
-                self.UpdateProgress(i/ num_chuncks )
+                self.UpdateProgress(i/ num_chunks )
 
         except Exception as e:
             print(e)
@@ -2005,6 +2005,5 @@ if __name__ == '__main__':
                     if not is_same:
                         raise ValueError('arrays do not match', v1,v2,x,y,z)
         print ('YEEE array match!')
-
 
 
