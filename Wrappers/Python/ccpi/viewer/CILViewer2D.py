@@ -862,7 +862,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
         spac = self.GetInputData().GetSpacing()
         orig = self.GetInputData().GetOrigin()
 
-        return [int(world_coordinates[i] / spac[i] - orig[i]) for i in range(3)]
+        return [round(world_coordinates[i] / spac[i] - orig[i]) for i in range(3)]
     
     def world2imageCoordinateFloat(self, world_coordinates):
         """
@@ -1463,8 +1463,8 @@ class CILViewer2D():
         self.voi.SetInputData(self.img3D)
         #select one slice in Z
         extent = [ i for i in self.img3D.GetExtent()]
-        extent[self.sliceOrientation * 2] = self.sliceno
-        extent[self.sliceOrientation * 2 + 1] = self.sliceno
+        self.sliceno = round((extent[self.sliceOrientation * 2+1] + extent[self.sliceOrientation * 2])/2)
+        
         self.voi.SetVOI(extent[0], extent[1],
                    extent[2], extent[3],
                    extent[4], extent[5])
