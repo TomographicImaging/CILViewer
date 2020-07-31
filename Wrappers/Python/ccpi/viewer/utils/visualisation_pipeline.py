@@ -1,6 +1,8 @@
 import vtk
 from vtk.util.vtkAlgorithm import VTKPythonAlgorithmBase
-from vtk import vtkPolyData, vtkAlgorithmOutput
+from vtk import vtkPolyData, vtkAlgorithmOutput, vtkImageData
+
+from numbers import Integral, Number
 
 class cilClipPolyDataBetweenPlanes(VTKPythonAlgorithmBase):
     '''A vtkAlgorithm to clip a polydata between two planes
@@ -213,3 +215,98 @@ class cilPlaneClipper(object):
         except AttributeError as ae:
             print (ae)
             print ("No data to clip.")
+
+
+class cilMaskPolyData(VTKPythonAlgorithmBase):
+    '''vtkAlgorithm to crop a vtkPolyData with a Mask
+
+    This is really only meant for point clouds: see points2vertices function
+    '''
+    def __init__(self):
+        VTKPythonAlgorithmBase.__init__(self, nInputPorts=2, nOutputPorts=1)
+        self.__MaskValue = 1
+
+    def SetMaskValue(self, mask_value):
+        '''Sets the value at which the mask is active'''
+        if not isinstance(mask_value, Integral):
+            raise ValueError('Mask value must be an integer. Got' , mask_value)
+
+        if mask_value != self.__MaskValue:
+            self.__MaskValue = mask_value
+            self.Modified()
+
+    def GetMaskValue(self):
+        return self.__MaskValue
+
+    def FillInputPortInformation(self, port, info):
+        if port == 0:
+            info.Set(vtk.vtkAlgorithm.INPUT_REQUIRED_DATA_TYPE(), "vtkPolyData")
+        elif port == 1:
+            info.Set(vtk.vtkAlgorithm.INPUT_REQUIRED_DATA_TYPE(), "vtkImageData")
+        return 1
+
+    def FillOutputPortInformation(self, port, info):
+        info.Set(vtk.vtkDataObject.DATA_TYPE_NAME(), "vtkPolyData")
+        return 1
+
+    def RequestData(self, request, inInfo, outInfo):
+        self.point_in_mask = 0
+        in_points = vtk.vtkDataSet.GetData(inInfo[0])
+        mask = vtk.vtkDataSet.GetData(inInfo[1])
+        out_points = vtk.vtkPoints()
+        
+        # this implementation is slightly more efficient
+        spac = mask.GetSpacing()
+        orig = mask.GetOrigin()
+        for i in range(in_points.GetNumberOfPoints()):
+            pp = in_points.GetPoint(i)
+
+            # get the point in image coordinate
+
+            # ic = self.world2imageCoordinate(pp, mask)
+            ic = [int(pp[i] / spac[i] + orig[i]) for i in range(3)]
+            i = 0
+            outside = False
+            while i < len(ic):
+                outside = ic[i] < 0 or ic[i] >= mask.GetDimensions()[i]
+                if outside:
+                    break
+                i += 1
+
+            if not outside:
+                mm = mask.GetScalarComponentAsDouble(int(ic[0]),
+                                                      int(ic[1]),
+                                                      int(ic[2]), 0)
+
+                if int(mm) == int(self.GetMaskValue()):
+                    # print ("value of point {} {}".format(mm, ic))
+                    out_points.InsertNextPoint(*pp)
+                    self.point_in_mask += 1
+
+        vertices = self.points2vertices(out_points)
+        pointPolyData = vtk.vtkPolyData.GetData(outInfo)
+        pointPolyData.SetPoints(out_points)
+        pointPolyData.SetVerts(vertices)
+        print ("points in mask", self.point_in_mask)
+        return 1
+
+    def world2imageCoordinate(self, world_coordinates, imagedata):
+        """
+        Convert from the world or global coordinates to image coordinates
+        :param world_coordinates: (x,y,z)
+        :return: rounded to next integer (x,y,z) in image coorindates eg. slice index
+        """
+        # dims = imagedata.GetDimensions()
+        spac = imagedata.GetSpacing()
+        orig = imagedata.GetOrigin()
+
+        return [round(world_coordinates[i] / spac[i] + orig[i]) for i in range(3)]
+    def points2vertices(self, points):
+        '''returns a vtkCellArray from a vtkPoints'''
+
+        vertices = vtk.vtkCellArray()
+        for i in range(points.GetNumberOfPoints()):
+            vertices.InsertNextCell(1)
+            vertices.InsertCellPoint(i)
+            # print (points.GetPoint(i))
+        return vertices

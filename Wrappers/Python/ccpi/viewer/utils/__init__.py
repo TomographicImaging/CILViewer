@@ -1,6 +1,6 @@
-from .conversion import Converter, cilRegularPointCloudToPolyData, cilMaskPolyData,\
+from .conversion import Converter, cilRegularPointCloudToPolyData, \
                         cilNumpyMETAImageWriter,\
                         WriteNumpyAsMETAImage
 from .colormaps import *
 
-from .visualisation_pipeline import cilClipPolyDataBetweenPlanes, cilPlaneClipper
+from .visualisation_pipeline import cilClipPolyDataBetweenPlanes, cilPlaneClipper, cilMaskPolyData
