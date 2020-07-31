@@ -580,8 +580,8 @@ class cilRegularPointCloudToPolyData(VTKPythonAlgorithmBase):
         dim_a = image_dimensions.pop(orientation)
 
         # the total number of points on the axes of the plane
-        max_b = int(image_dimensions[0] / point_spacing[0] )
-        max_c = int(image_dimensions[1] / point_spacing[1] )
+        max_b = image_dimensions[0] * image_spacing[0] / point_spacing[0]
+        max_c = image_dimensions[1] * image_spacing [1]/ point_spacing[1]
 
         a = sliceno * spacing_a - origin_a
 
@@ -633,9 +633,9 @@ class cilRegularPointCloudToPolyData(VTKPythonAlgorithmBase):
         image_dimensions = list ( image_data.GetDimensions() )
 
         # the total number of points on X and Y axis
-        max_x = image_dimensions[0] / point_spacing[0]
-        max_y = image_dimensions[1] / point_spacing[1]
-        max_z = image_dimensions[2] / point_spacing[2]
+        max_x = image_dimensions[0] * image_spacing[0] / point_spacing[0]
+        max_y = image_dimensions[1] * image_spacing[1] / point_spacing[1]
+        max_z = image_dimensions[2] * image_spacing [2] / point_spacing[2]
 
         # print ("max: {} {} {}".format((max_x, max_y, max_z), image_dimensions, point_spacing))
         # print ("max_y: {} {} {}".format(max_y, image_dimensions, density))
