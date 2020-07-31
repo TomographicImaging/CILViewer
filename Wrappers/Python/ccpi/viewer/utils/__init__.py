@@ -1,4 +1,4 @@
-from .conversion import Converter, cilRegularPointCloudToPolyData, \
+from .conversion import Converter, \
                         cilNumpyMETAImageWriter,\
                         WriteNumpyAsMETAImage
 from .colormaps import *
