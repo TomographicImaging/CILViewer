@@ -93,18 +93,7 @@ class Converter(object):
                                  'MET_FLOAT':4,   # VTK_FLOAT,           # float32
                                  'MET_DOUBLE':8   # VTK_DOUBLE,          # float64
     }
-    # Utility functions to transform numpy arrays to vtkImageData and viceversa
-    @staticmethod
-    def numpy2vtkImporter(nparray, spacing=(1.,1.,1.), origin=(0,0,0), transpose=[2,1,0]):
-        '''Creates a vtkImageImportFromArray object and returns it.
-        
-        It handles the different axis order from numpy to VTK'''
-        importer = vtkImageImportFromArray.vtkImageImportFromArray()
-        importer.SetArray(numpy.transpose(nparray, transpose).copy())
-        importer.SetDataSpacing(spacing)
-        importer.SetDataOrigin(origin)
-        return importer
-    
+    # Utility functions to transform numpy arrays to vtkImageData and viceversa    
     @staticmethod
     def numpy2vtkImage(nparray, spacing = (1.,1.,1.), origin=(0,0,0), deep=0, output=None):
 
@@ -169,6 +158,8 @@ class Converter(object):
 
         return img_data
 
+
+# TODO:  Get rid of the below and make a tiff to vtk method and a tiff resample reader.
     @staticmethod
     def vtkTiffStack2numpy(filenames):
         '''Reads the TIFF stack with VTK. 
@@ -840,124 +831,7 @@ class cilMaskPolyData(VTKPythonAlgorithmBase):
             # print (points.GetPoint(i))
         return vertices
 
-class cilClipPolyDataBetweenPlanes(VTKPythonAlgorithmBase):
-    '''A vtkAlgorithm to clip a polydata between two planes
-    
-    It is meant to be used by the CILViewer2D to clip the polydata it's 
-    displaying to the current slice.
-    
-    It works based on the definition of 2 vtkPlane and 2 vtkClipPolyData 
-    whose clip function are the mentioned planes. 
-    
-    Input: polydata
-           origin and normal of Plane Above displayed slice
-           origin and normal of Plane Below displayed slice
-    '''
-    def __init__(self):
-        VTKPythonAlgorithmBase.__init__(self, nInputPorts=1, nOutputPorts=1)
-        self.__PlaneOriginAbove    = None
-        self.__PlaneNormalAbove    = None
-        self.__PlaneOriginBelow    = None
-        self.__PlaneNormalBelow    = None
-        
-        # self.planesource = [ vtk.vtkPlaneSource(), vtk.vtkPlaneSource() ]
-        self.visPlane = [ vtk.vtkPlane() , vtk.vtkPlane() ]
-        self.planeClipper =  [ vtk.vtkClipPolyData() , vtk.vtkClipPolyData()]
-        self.planeClipper[1].SetInputConnection(self.planeClipper[0].GetOutputPort())
-        
-                
-        self.planeClipper[0].SetClipFunction(self.visPlane[0])
-        self.planeClipper[1].SetClipFunction(self.visPlane[1])
-        
-        self.planeClipper[0].InsideOutOn()
-        self.planeClipper[1].InsideOutOn()
-            
 
-    def SetPlaneOriginAbove(self, value):
-        if not (isinstance(value, list) or isinstance(value, tuple)):
-            raise ValueError('Spacing should be a list or a tuple. Got', type(value))
-        if value != self.__PlaneOriginAbove:
-            # print ("SetPlaneOriginAbove", value)
-            self.__PlaneOriginAbove = value
-            self.Modified()
-    def GetPlaneOriginAbove(self):
-        return self.__PlaneOriginAbove
-    def SetPlaneNormalAbove(self, value):
-        if not (isinstance(value, list) or isinstance(value, tuple)):
-            raise ValueError('Spacing should be a list or a tuple. Got', type(value))
-        if value != self.__PlaneNormalAbove:
-            self.__PlaneNormalAbove = value
-            self.Modified()
-    def GetPlaneNormalAbove(self):
-        return self.__PlaneNormalAbove
-    def SetPlaneOriginBelow(self, value):
-        if not (isinstance(value, list) or isinstance(value, tuple)):
-            raise ValueError('Spacing should be a list or a tuple. Got', type(value))
-        if value != self.__PlaneOriginBelow:
-            # print ("SetPlaneOriginBelow", value)
-            self.__PlaneOriginBelow = value
-            self.Modified()
-    def GetPlaneOriginBelow(self):
-        return self.__PlaneOriginBelow
-    def SetPlaneNormalBelow(self, value):
-        if not (isinstance(value, list) or isinstance(value, tuple)):
-            raise ValueError('Spacing should be a list or a tuple. Got', type(value))
-        if value != self.__PlaneNormalBelow:
-            self.__PlaneNormalBelow = value
-            self.Modified()
-    def GetPlaneNormalBelow(self):
-        return self.__PlaneNormalBelow
-
-    def FillInputPortInformation(self, port, info):
-        if port == 0:
-            info.Set(vtk.vtkAlgorithm.INPUT_REQUIRED_DATA_TYPE(), "vtkPolyData")
-        return 1
-
-    def FillOutputPortInformation(self, port, info):
-        info.Set(vtk.vtkDataObject.DATA_TYPE_NAME(), "vtkPolyData")
-        return 1
-
-    def RequestData(self, request, inInfo, outInfo):
-        try:
-            print("Request Data")
-            inp = vtk.vtkPolyData.GetData(inInfo[0])
-            out = vtk.vtkPolyData.GetData(outInfo)
-            # print ("input number of points" , inp.GetPoints().GetNumberOfPoints())
-
-            self.planeClipper[0].SetInputData(inp)
-            # self.planeClipper[1].SetInputConnection(self.planeClipper[0].GetOutputPort())
-
-            # print("Above Plane {} {}".format(self.GetPlaneOriginAbove(), self.GetPlaneNormalAbove()))
-
-            self.visPlane[0].SetOrigin(*self.GetPlaneOriginAbove())
-            self.visPlane[0].SetNormal(*self.GetPlaneNormalAbove())
-
-            # print("Below Plane {} {}".format(self.GetPlaneOriginBelow(), self.GetPlaneNormalBelow()))
-
-            self.visPlane[1].SetOrigin(*self.GetPlaneOriginBelow())
-            self.visPlane[1].SetNormal(*self.GetPlaneNormalBelow())
-
-            # self.planesource[0].SetCenter(self.visPlane[0].GetOrigin())
-            # self.planesource[0].SetNormal(self.visPlane[0].GetNormal())
-
-            # self.planesource[1].SetCenter(self.visPlane[1].GetOrigin())
-            # self.planesource[1].SetNormal(self.visPlane[1].GetNormal())
-
-            self.planeClipper[0].Update()
-            # print ("planeclipper0 number of points" , self.planeClipper[0].GetOutput().GetPoints().GetNumberOfPoints())
-
-            self.planeClipper[1].Update()
-            # print ("planeclipper1 number of points" , self.planeClipper[1].GetOutput().GetPoints().GetNumberOfPoints())
-
-
-            # put the output in the out port
-            # out.ShallowCopy(self.planeClipper[0].GetOutput())
-            out.ShallowCopy(self.planeClipper[1].GetOutput())
-            return 1
-
-        except Exception as e:
-             print (e)
-             print ("Plane origin/s and/or normal/s not set.")
 
 class cilNumpyMETAImageWriter(object):
     '''A Writer to write a Numpy Array in npy format and a METAImage Header
@@ -1949,6 +1823,7 @@ class cilMetaImageCroppedReader(cilBaseCroppedReader):
 
     def GetMetaImageTypeCode(self):
         return self.__MetaImageTypeCode
+
 if __name__ == '__main__':
     '''this represent a good base to perform a test for the numpy-metaimage writer'''
     dimX = 128
