@@ -669,6 +669,7 @@ class cilBaseResampleReader(VTKPythonAlgorithmBase):
         self.__MetaImageTypeCode = value
 
     def RequestData(self, request, inInfo, outInfo):
+        print("RequestData BaseResampleReader")
         outData = vtk.vtkImageData.GetData(outInfo)
 
         # get basic info
@@ -769,6 +770,8 @@ class cilBaseResampleReader(VTKPythonAlgorithmBase):
 
         except Exception as e:
             print(e)
+
+        print("Set the slice length")
         
         try:
 
@@ -776,13 +779,20 @@ class cilBaseResampleReader(VTKPythonAlgorithmBase):
 
             # process each chunk
             for i,el in enumerate(end_slice_in_chunks):
+                #print("Inside for")
                 end_slice = el
+                #print("End slice", el)
                 start_slice = end_slice - slice_per_chunk
+                #print("Start slice,", start_slice)
                 if start_slice < 0:
                     raise ValueError('{} ERROR: Start slice cannot be negative.'\
                         .format(self.__class__.__name__))
+
                 header_length = file_header_length + el * slice_length
+
                 shape[2] = end_slice - start_slice
+
+                #print("Header info: ", [self.GetFileName(), header_filename, self.GetMetaImageTypeCode(),big_endian, header_length, shape])
                 cilNumpyMETAImageWriter.WriteMETAImageHeader(
                     self.GetFileName(), 
                     header_filename, 
@@ -912,33 +922,56 @@ class cilMetaImageResampleReader(cilBaseResampleReader):
         self.__StoredArrayShape = None
         self.__OutputVTKType = None
         self.__MetaImageTypeCode = None
+        self.__CompressedData = False
         
     
     def ReadMetaImageHeader(self):
         
         header_length = 0
         with open(self.__FileName, 'rb') as f:
-                for line in f:
-                    header_length += len(line)
-                    line = str(line, encoding = 'utf-8').strip()
-                    if 'BinaryDataByteOrderMSB' in line:
-                        self.__BigEndian = str(line).split('= ')[-1]
-                        print(self.__BigEndian)
-                    elif 'DimSize'  in line:
-                        shape = line.split('= ')[-1].split(' ')[:3]
-                        shape[2].strip()
-                        for i in range(0,len(shape)):
-                            shape[i] = int(shape[i])
-                        
-                        self.__StoredArrayShape = shape
-                        print(self.__StoredArrayShape)
-                    elif 'ElementType' in line:
-                        typecode = line.split('= ')[-1]
-                        print(typecode)
-                        self.__MetaImageTypeCode = typecode
-                    elif 'ElementDataFile' in str(line):
-                        break
-        self.__FileHeaderLength = header_length
+            for line in f:
+                header_length += len(line)
+                line = str(line, encoding = 'utf-8').strip()
+                if 'BinaryDataByteOrderMSB' in line:
+                    self.__BigEndian = str(line).split('= ')[-1]
+                    print(self.__BigEndian)
+                elif 'DimSize'  in line:
+                    shape = line.split('= ')[-1].split(' ')[:3]
+                    shape[2].strip()
+                    for i in range(0,len(shape)):
+                        shape[i] = int(shape[i])
+                    
+                    self.__StoredArrayShape = shape
+                    print(self.__StoredArrayShape)
+                elif 'ElementType' in line:
+                    typecode = line.split('= ')[-1]
+                    print(typecode)
+                    self.__MetaImageTypeCode = typecode
+                elif 'CompressedData' in line:
+                    compressed = line.split('= ')[-1]
+                    self.__CompressedData = compressed
+                    if(self.__CompressedData):
+                        print("Cannot resample compressed image")
+                        return
+
+                elif 'HeaderSize' in line:
+                    header_size = line.split('= ')[-1]
+                    self.__FileHeaderLength = int(header_size)
+
+                elif 'ElementDataFile' in line: #signifies end of header
+                    element_data_file = line.split('= ')[-1]
+                    if element_data_file !='LOCAL': #then we have an mhd file with data in another file
+                        file_path = os.path.dirname(self.__FileName)
+                        element_data_file = os.path.join(file_path, element_data_file)
+                        print("Filename: ", element_data_file)
+                        self.__FileName = element_data_file
+                    else:
+                        self.__FileHeaderLength = header_length
+                    break
+
+        print("Continues")
+
+        
         self.__IsFortran = True
         self.__BytesPerElement = Converter.MetaImageType_to_bytes[self.__MetaImageTypeCode]
         self.SetOutputVTKType(Converter.MetaImageType_to_vtkType[self.__MetaImageTypeCode])
