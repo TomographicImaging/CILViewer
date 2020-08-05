@@ -575,6 +575,7 @@ class cilBaseResampleReader(VTKPythonAlgorithmBase):
         self.__OutputVTKType = None
         self.__NumpyTypeCode = None
         self.__MetaImageTypeCode = None
+        self.__ElementSpacing = [1,1,1]
 
 
         
@@ -668,6 +669,13 @@ class cilBaseResampleReader(VTKPythonAlgorithmBase):
         
         self.__MetaImageTypeCode = value
 
+    def GetElementSpacing(self):
+        return self.__ElementSpacing
+
+    def SetElementSpacing(self,value):
+        self.__ElementSpacing = value
+
+
     def RequestData(self, request, inInfo, outInfo):
         print("RequestData BaseResampleReader")
         outData = vtk.vtkImageData.GetData(outInfo)
@@ -706,7 +714,7 @@ class cilBaseResampleReader(VTKPythonAlgorithmBase):
                                         big_endian, 
                                         file_header_length, 
                                         tuple(shape), 
-                                        spacing=(1.,1.,1.), #!! Don't we need to set?
+                                        spacing= tuple(self.GetElementSpacing()), #!! Don't we need to set?
                                         origin=(0.,0.,0.)) #??
                 reader.Modified()
                 reader.Update()
@@ -724,6 +732,7 @@ class cilBaseResampleReader(VTKPythonAlgorithmBase):
         # scaling is going to be similar in every axis (xy the same, z possibly different)
 
         try:
+            
             # scaling is going to be similar in every axis 
             # (xy the same, z possibly different)
             xy_axes_magnification = np.power(max_size/total_size, 1/3)
@@ -747,9 +756,14 @@ class cilBaseResampleReader(VTKPythonAlgorithmBase):
             resampler.SetOutputExtent(0, target_image_shape[0],
                                     0, target_image_shape[1],
                                     0, 0)
-            resampler.SetOutputSpacing( 1 / xy_axes_magnification, 
-                                        1 / xy_axes_magnification, 
-                                        1 / z_axis_magnification)
+
+            
+            element_spacing = self.GetElementSpacing()
+            #print("Element Spacing", element_spacing)
+
+            resampler.SetOutputSpacing( element_spacing[0] / xy_axes_magnification, 
+                                        element_spacing[1] / xy_axes_magnification, 
+                                        element_spacing[2] / z_axis_magnification)
             # resampled data
             resampled_image = outData
             resampled_image.SetExtent(0, target_image_shape[0],
@@ -779,11 +793,8 @@ class cilBaseResampleReader(VTKPythonAlgorithmBase):
 
             # process each chunk
             for i,el in enumerate(end_slice_in_chunks):
-                #print("Inside for")
                 end_slice = el
-                #print("End slice", el)
                 start_slice = end_slice - slice_per_chunk
-                #print("Start slice,", start_slice)
                 if start_slice < 0:
                     raise ValueError('{} ERROR: Start slice cannot be negative.'\
                         .format(self.__class__.__name__))
@@ -800,7 +811,7 @@ class cilBaseResampleReader(VTKPythonAlgorithmBase):
                     big_endian, 
                     header_length, 
                     tuple(shape), 
-                    spacing=(1.,1.,1.), 
+                    spacing=tuple(self.GetElementSpacing()), 
                     origin=(0.,0.,0.)
                 )
                 # force Update
@@ -923,6 +934,7 @@ class cilMetaImageResampleReader(cilBaseResampleReader):
         self.__OutputVTKType = None
         self.__MetaImageTypeCode = None
         self.__CompressedData = False
+        self.__ElementSpacing = [1,1,1]
         
     
     def ReadMetaImageHeader(self):
@@ -935,7 +947,14 @@ class cilMetaImageResampleReader(cilBaseResampleReader):
                 if 'BinaryDataByteOrderMSB' in line:
                     self.__BigEndian = str(line).split('= ')[-1]
                     print(self.__BigEndian)
-                elif 'DimSize'  in line:
+                elif 'ElementSpacing' in line:
+                        spacing = line.split('= ')[-1].split(' ')[:3]
+                        spacing[2].strip()
+                        for i in range(0,len(spacing)):
+                            spacing[i] = float(spacing[i])
+                        self.__ElementSpacing = spacing
+                        print("Spacing", spacing)
+                elif 'DimSize' in line:
                     shape = line.split('= ')[-1].split(' ')[:3]
                     shape[2].strip()
                     for i in range(0,len(shape)):
@@ -950,7 +969,7 @@ class cilMetaImageResampleReader(cilBaseResampleReader):
                 elif 'CompressedData' in line:
                     compressed = line.split('= ')[-1]
                     self.__CompressedData = compressed
-                    if(self.__CompressedData):
+                    if(self.__CompressedData == "True"):
                         print("Cannot resample compressed image")
                         return
 
@@ -966,6 +985,7 @@ class cilMetaImageResampleReader(cilBaseResampleReader):
                         print("Filename: ", element_data_file)
                         self.__FileName = element_data_file
                     else:
+                        print("LOCAL")
                         self.__FileHeaderLength = header_length
                     break
 
@@ -1018,6 +1038,12 @@ class cilMetaImageResampleReader(cilBaseResampleReader):
 
     def GetMetaImageTypeCode(self):
         return self.__MetaImageTypeCode
+
+    def GetElementSpacing(self):
+        return self.__ElementSpacing
+
+    def SetElementSpacing(self,value):
+        self.__ElementSpacing = value
 
 
 class cilBaseCroppedReader(VTKPythonAlgorithmBase):
