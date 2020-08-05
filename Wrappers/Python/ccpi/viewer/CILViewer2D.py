@@ -1464,6 +1464,9 @@ class CILViewer2D():
         #select one slice in Z
         extent = [ i for i in self.img3D.GetExtent()]
         self.sliceno = round((extent[self.sliceOrientation * 2+1] + extent[self.sliceOrientation * 2])/2)
+
+        extent[self.sliceOrientation * 2] = self.sliceno
+        extent[self.sliceOrientation * 2 + 1] = self.sliceno
         
         self.voi.SetVOI(extent[0], extent[1],
                    extent[2], extent[3],
