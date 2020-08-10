@@ -223,6 +223,15 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
     def GetROI(self):
         return self._viewer.ROI
 
+    def GetImageResampleRate(self):
+        return self._viewer.resample_rate
+
+    def SetImageResampleRate(self, resample_rate):
+        self._viewer.setImageResampleRate(resample_rate)
+
+    def CreateAnnotationText(self, display_type, data):
+        return self._viewer.createAnnotationText(display_type, data)
+
     def UpdateCornerAnnotation(self, text, corner):
         self._viewer.updateCornerAnnotation(text, corner)
 
@@ -734,7 +743,8 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
             z = abs(roi[1][1] - roi[0][1])
 
         # Update the text bottom right of the viewer and histogram
-        text = "ROI: %d x %d x %d, %.2f kp" % (x,y,z,float(x*y)/1024.)
+        roi_data = (x,y,z,float(x*y)/1024.)
+        text = self.CreateAnnotationText("roi", roi_data)
         self.log (text)
         self.UpdateCornerAnnotation(text, 1)
         self.UpdateROIHistogram()
@@ -1107,7 +1117,8 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
         self.last_picked_voxel = vox
         # print ("Pixel %d,%d,%d Value %f" % vox )
         self._viewer.cornerAnnotation.VisibilityOn()
-        self.UpdateCornerAnnotation("[%d,%d,%d] : %.2g" % vox , 0)
+        text = self.CreateAnnotationText("pick", vox)
+        self.UpdateCornerAnnotation(text, 0)
         self.Render()
 
     def DisplayLineProfile(self, interactor, event, display):
@@ -1227,6 +1238,7 @@ class CILViewer2D():
         self.cornerAnnotation.VisibilityOff();
         self.cornerAnnotation.GetTextProperty().ShadowOn();
         self.cornerAnnotation.SetLayerNumber(1);
+        self.resample_rate = [1,1,1] #used to scale corner annotation
 
         # cursor doesn't show up
         self.cursor = vtk.vtkCursor2D()
@@ -1423,7 +1435,8 @@ class CILViewer2D():
                    extent[4], extent[5])
             self.sliceActor2.Update()
             
-        self.updateCornerAnnotation("Slice %d/%d" % (self.sliceno, self.img3D.GetDimensions()[self.sliceOrientation]-1))
+        text = self.createAnnotationText("slice", (self.sliceno, self.img3D.GetDimensions()[self.sliceOrientation]-1))
+        self.updateCornerAnnotation(text, 0)
 
         if self.displayHistogram:
             self.updateROIHistogram()
@@ -1603,14 +1616,54 @@ class CILViewer2D():
     def GetActiveSlice(self):
         return self.sliceno
 
+    def setImageResampleRate(self, resample_rate):
+        self.resample_rate = resample_rate
+
+    def getImageResampleRate(self):
+        return self.resample_rate
+
     def updateCornerAnnotation(self, text , idx=0, visibility=True):
         if visibility:
             self.cornerAnnotation.VisibilityOn()
         else:
             self.cornerAnnotation.VisibilityOff()
 
+        print("Text: ", text)
+
         self.cornerAnnotation.SetText(idx, text)
         self.iren.Render()
+
+    def createAnnotationText(self, display_type, data):
+        #print("Data: ", data)
+        #print("Resample rate: ", self.resample_rate)
+        if isinstance(data, tuple):
+            data = list(data)
+
+            if display_type == "slice":
+                for i, value in enumerate(data):
+                    data[i]= data[i] * self.resample_rate[self.GetSliceOrientation()]
+                data = tuple(data)
+                text = "Slice %d/%d" % data
+            
+            elif display_type == "pick":
+                for i, value in enumerate(self.resample_rate):
+                    data[i]= data[i] * self.resample_rate[i]
+                data = tuple(data)
+                text = "[%d,%d,%d] : %.2g" % data
+
+            elif display_type == "roi":
+                for i, value in enumerate(self.resample_rate):
+                    data[i]= data[i] * self.resample_rate[i]
+                data = tuple(data)
+                text = "ROI: %d x %d x %d, %.2f kp" % data
+
+            else:
+                text = None
+
+            #print("Text: ", text)
+
+        return text
+
 
     def saveRender(self, filename, renWin=None):
         '''Save the render window to PNG file'''
