@@ -223,11 +223,11 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
     def GetROI(self):
         return self._viewer.ROI
 
-    def GetImageResampleRate(self):
-        return self._viewer.resample_rate
+    def GetVisualisationDownsampling(self):
+        return self._viewer.visualisation_downsampling
 
-    def SetImageResampleRate(self, resample_rate):
-        self._viewer.setImageResampleRate(resample_rate)
+    def SetVisualisationDownsampling(self, value):
+        self._viewer.setVisualisationDownsampling(value)
 
     def CreateAnnotationText(self, display_type, data):
         return self._viewer.createAnnotationText(display_type, data)
@@ -1238,7 +1238,7 @@ class CILViewer2D():
         self.cornerAnnotation.VisibilityOff();
         self.cornerAnnotation.GetTextProperty().ShadowOn();
         self.cornerAnnotation.SetLayerNumber(1);
-        self.resample_rate = [1,1,1] #used to scale corner annotation
+        self.visualisation_downsampling = [1,1,1] #used to scale corner annotation
 
         # cursor doesn't show up
         self.cursor = vtk.vtkCursor2D()
@@ -1616,11 +1616,11 @@ class CILViewer2D():
     def GetActiveSlice(self):
         return self.sliceno
 
-    def setImageResampleRate(self, resample_rate):
-        self.resample_rate = resample_rate
+    def setVisualisationDownsampling(self, value):
+        self.visualisation_downsampling = value
 
-    def getImageResampleRate(self):
-        return self.resample_rate
+    def getVisualisationDownsampling(self):
+        return self.visualisation_downsampling
 
     def updateCornerAnnotation(self, text , idx=0, visibility=True):
         if visibility:
@@ -1635,25 +1635,25 @@ class CILViewer2D():
 
     def createAnnotationText(self, display_type, data):
         #print("Data: ", data)
-        #print("Resample rate: ", self.resample_rate)
+        #print("Resample rate: ", self.visualisation_downsampling)
         if isinstance(data, tuple):
             data = list(data)
 
             if display_type == "slice":
                 for i, value in enumerate(data):
-                    data[i]= data[i] * self.resample_rate[self.GetSliceOrientation()]
+                    data[i]= data[i] * self.visualisation_downsampling[self.GetSliceOrientation()]
                 data = tuple(data)
                 text = "Slice %d/%d" % data
             
             elif display_type == "pick":
-                for i, value in enumerate(self.resample_rate):
-                    data[i]= data[i] * self.resample_rate[i]
+                for i, value in enumerate(self.visualisation_downsampling):
+                    data[i]= data[i] * self.visualisation_downsampling[i]
                 data = tuple(data)
                 text = "[%d,%d,%d] : %.2g" % data
 
             elif display_type == "roi":
-                for i, value in enumerate(self.resample_rate):
-                    data[i]= data[i] * self.resample_rate[i]
+                for i, value in enumerate(self.visualisation_downsampling):
+                    data[i]= data[i] * self.visualisation_downsampling[i]
                 data = tuple(data)
                 text = "ROI: %d x %d x %d, %.2f kp" % data
 
