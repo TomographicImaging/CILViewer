@@ -432,7 +432,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
             self.SetActiveCamera(camera)
 
             self.SetSliceOrientation ( SLICE_ORIENTATION_YZ )
-            self.SetActiveSlice( int(self.GetDimensions()[0] / 2) )
+            self.SetActiveSlice( int((self.GetInputData().GetExtent()[1] + self.GetInputData().GetExtent()[0]) / 2) )
             self.UpdatePipeline(True)
 
         elif interactor.GetKeyCode() == "y":
@@ -456,7 +456,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
             camera.SetViewUp(1,0,0)
             self.SetActiveCamera(camera)
             self.SetSliceOrientation(SLICE_ORIENTATION_XZ)
-            self.SetActiveSlice(int(self.GetInputData().GetDimensions()[1] / 2))
+            self.SetActiveSlice(int((self.GetInputData().GetExtent()[3] + self.GetInputData().GetExtent()[2]) / 2))
             self.UpdatePipeline(True)
 
         elif interactor.GetKeyCode() == "z":
@@ -481,7 +481,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
             self.SetActiveCamera(camera)
             self.ResetCamera()
             self.SetSliceOrientation(SLICE_ORIENTATION_XY)
-            self.SetActiveSlice(int(self.GetInputData().GetDimensions()[2] / 2))
+            self.SetActiveSlice(int((self.GetInputData().GetExtent()[5] + self.GetInputData().GetExtent()[4]) / 2))
             self.UpdatePipeline(True)
 
         elif interactor.GetKeyCode() == "a":
@@ -1469,25 +1469,26 @@ class CILViewer2D():
 
     def installPipeline(self):
         '''Slices a 3D volume and then creates an actor to be rendered'''
-        
         self.log("installPipeline")
         self.ren.AddViewProp(self.cornerAnnotation)
 
         self.voi.SetInputData(self.img3D)
         #select one slice in Z
         extent = [ i for i in self.img3D.GetExtent()]
+        # print("Extent: ", extent)
+        # print("Dimensions: ", self.img3D.GetDimensions())
         self.sliceno = round((extent[self.sliceOrientation * 2+1] + extent[self.sliceOrientation * 2])/2)
+        #print("Sliceno: ", self.sliceno)
 
         extent[self.sliceOrientation * 2] = self.sliceno
         extent[self.sliceOrientation * 2 + 1] = self.sliceno
         
         self.voi.SetVOI(extent[0], extent[1],
-                   extent[2], extent[3],
-                   extent[4], extent[5])
+                extent[2], extent[3],
+                extent[4], extent[5])
 
         self.voi.Update()
         # set window/level for current slices
-
 
         self.wl = vtk.vtkImageMapToWindowLevelColors()
         self.ia.SetInputData(self.voi.GetOutput())
@@ -1505,7 +1506,7 @@ class CILViewer2D():
         self.InitialLevel = level
         self.InitialWindow = window
         self.log("level {0} window {1}".format(self.InitialLevel,
-                                               self.InitialWindow))
+                                            self.InitialWindow))
 
 
         self.wl.SetLevel(self.InitialLevel)
@@ -1516,8 +1517,8 @@ class CILViewer2D():
 
         self.sliceActor.SetInputData(self.wl.GetOutput())
         self.sliceActor.SetDisplayExtent(extent[0], extent[1],
-                   extent[2], extent[3],
-                   extent[4], extent[5])
+                extent[2], extent[3],
+                extent[4], extent[5])
         self.sliceActor.Update()
         self.sliceActor.SetInterpolate(False)
         # actors are added directly to the renderer
@@ -1533,12 +1534,13 @@ class CILViewer2D():
         self.ren.AddViewProp(self.cursorActor)
         self.cursorActor.VisibilityOn()
         
-                 
+                
         self.imageTracer.SetViewProp(self.sliceActor);
         
         self.iren.Initialize()
         self.renWin.Render()
         #self.iren.Start()
+
     def installPipeline2(self):
         '''Slices a 3D volume and then creates an actor to be rendered'''
         self.log("installPipeline2")
@@ -1627,8 +1629,6 @@ class CILViewer2D():
             self.cornerAnnotation.VisibilityOn()
         else:
             self.cornerAnnotation.VisibilityOff()
-
-        print("Text: ", text)
 
         self.cornerAnnotation.SetText(idx, text)
         self.iren.Render()
