@@ -78,20 +78,26 @@ class Converter(object):
                                 'MET_UINT': vtk.VTK_UNSIGNED_INT,    # uint32
                                 'MET_FLOAT': vtk.VTK_FLOAT,           # float32
                                 'MET_DOUBLE': vtk.VTK_DOUBLE,          # float64
-                                'MET_FLOAT': vtk.VTK_FLOAT,           # float32
-                                'MET_DOUBLE': vtk.VTK_DOUBLE,          # float64
     }
 
     MetaImageType_to_bytes= {'MET_CHAR': 1,    # VTK_SIGNED_CHAR,     # int8
                              'MET_UCHAR': 1,   # VTK_UNSIGNED_CHAR,   # uint8
-                                 'MET_SHORT':2,   # VTK_SHORT,           # int16
-                                 'MET_USHORT':2,  # VTK_UNSIGNED_SHORT,  # uint16
-                                 'MET_INT':4,     # VTK_INT,             # int32
-                                 'MET_UINT':4,    # VTK_UNSIGNED_INT,    # uint32
-                                 'MET_FLOAT':4,   # VTK_FLOAT,           # float32
-                                 'MET_DOUBLE':8,  # VTK_DOUBLE,          # float64
-                                 'MET_FLOAT':4,   # VTK_FLOAT,           # float32
-                                 'MET_DOUBLE':8   # VTK_DOUBLE,          # float64
+                             'MET_SHORT':2,   # VTK_SHORT,           # int16
+                             'MET_USHORT':2,  # VTK_UNSIGNED_SHORT,  # uint16
+                             'MET_INT':4,     # VTK_INT,             # int32
+                             'MET_UINT':4,    # VTK_UNSIGNED_INT,    # uint32
+                             'MET_FLOAT':4,   # VTK_FLOAT,           # float32
+                             'MET_DOUBLE':8,  # VTK_DOUBLE,          # float64
+    }
+
+    raw_dtype_char_to_MetaImageType = {'int8':'MET_CHAR',    # VTK_SIGNED_CHAR,     # int8
+                                       'uint8':'MET_UCHAR',   # VTK_UNSIGNED_CHAR,   # uint8
+                                       'int16':'MET_SHORT',   # VTK_SHORT,           # int16
+                                       'uint16':'MET_USHORT',  # VTK_UNSIGNED_SHORT,  # uint16
+                                       'int32':'MET_INT',     # VTK_INT,             # int32
+                                       'uint32':'MET_UINT',    # VTK_UNSIGNED_INT,    # uint32
+                                       'float32':'MET_FLOAT',   # VTK_FLOAT,           # float32
+                                       'float64':'MET_DOUBLE',  # VTK_DOUBLE,          # float64
     }
     # Utility functions to transform numpy arrays to vtkImageData and viceversa    
     @staticmethod
@@ -566,7 +572,7 @@ class cilBaseResampleReader(VTKPythonAlgorithmBase):
         VTKPythonAlgorithmBase.__init__(self, nInputPorts=0, nOutputPorts=1)
         
         self.__FileName = 1
-        self.__TargetShape = (256,256,256)
+        self.__TargetSize = 256*256*256
         self.__IsFortran = False
         self.__BigEndian = False
         self.__FileHeaderLength = 0
@@ -574,13 +580,13 @@ class cilBaseResampleReader(VTKPythonAlgorithmBase):
         self.__StoredArrayShape = None
         self.__OutputVTKType = None
         self.__NumpyTypeCode = None
+        self.__RawTypeCode = None
         self.__MetaImageTypeCode = None
         self.__ElementSpacing = [1,1,1]
 
 
         
     def SetFileName(self, value):
-        '''Sets the value at which the mask is active'''
         if not os.path.exists(value):
             raise ValueError('File does not exist!' , value)
 
@@ -591,15 +597,15 @@ class cilBaseResampleReader(VTKPythonAlgorithmBase):
     def GetFileName(self):
         return self.__FileName
     
-    def SetTargetShape(self, value):
-        if not isinstance (value, tuple):
-            raise ValueError('Expected a tuple. Got {}' , type(value))
-
-        if not value == self.__TargetShape:
-            self.__TargetShape = value
+    def SetTargetSize(self, value):
+        if not isinstance (value, int):
+            raise ValueError('Expected an integer. Got {}' , type(value))
+        if not value == self.__TargetSize:
+            self.__TargetSize = value
             self.Modified()
-    def GetTargetShape(self):
-        return self.__TargetShape
+
+    def GetTargetSize(self):
+        return self.__TargetSize
 
     def FillInputPortInformation(self, port, info):
         '''This is a reader so no input'''
@@ -654,20 +660,36 @@ class cilBaseResampleReader(VTKPythonAlgorithmBase):
         if value not in [vtk.VTK_SIGNED_CHAR, vtk.VTK_UNSIGNED_CHAR,  vtk.VTK_SHORT,  vtk.VTK_UNSIGNED_SHORT,\
                          vtk.VTK_INT, vtk.VTK_UNSIGNED_INT,  vtk.VTK_FLOAT, vtk.VTK_DOUBLE, vtk.VTK_FLOAT,  \
                          vtk.VTK_DOUBLE]:
-            raise ValueError("Unexpected Type: got {}", value)
+            raise ValueError("Unexpected Type:  {}".format(value))
         self.__OutputVTKType = value
+
+    def GetNumpyTypeCode(self,value):
+        return self.__NumpyTypeCode
+
     def SetNumpyTypeCode(self, value):
         if value not in ['b','B','h','H','i','I','f','d','F','D']:
-            raise ValueError("Unexpected Type: got {}", value)
+            raise ValueError("Unexpected Type:  {}".format(value))
         self.__NumpyTypeCode = value
         self.SetMetaImageTypeCode(Converter.numpy_dtype_char_to_MetaImageType[value])
+
+    def GetRawTypeCode(self):
+        return self.__RawTypeCode
+
+    def SetRawTypeCode(self, value):
+        if value not in ['int8','uint8','int16','uint16','int32','uint32','float32','float64']:
+            raise ValueError("Unexpected Type: got {}".format(value))
+        self.__RawTypeCode = value
+        self.SetMetaImageTypeCode(Converter.raw_dtype_char_to_MetaImageType[value])
+    
 
     def GetMetaImageTypeCode(self):
         return self.__MetaImageTypeCode
 
     def SetMetaImageTypeCode(self, value):
-        
+        if value not in ['MET_CHAR',  'MET_UCHAR', 'MET_SHORT', 'MET_USHORT', 'MET_INT', 'MET_UINT', 'MET_FLOAT','MET_DOUBLE','MET_FLOAT','MET_DOUBLE']:
+            raise ValueError("Unexpected Type:  {}".format(value))
         self.__MetaImageTypeCode = value
+        self.SetOutputVTKType(Converter.MetaImageType_to_vtkType[value])
 
     def GetElementSpacing(self):
         return self.__ElementSpacing
@@ -677,7 +699,7 @@ class cilBaseResampleReader(VTKPythonAlgorithmBase):
 
 
     def RequestData(self, request, inInfo, outInfo):
-        print("RequestData BaseResampleReader")
+        # print("RequestData BaseResampleReader")
         outData = vtk.vtkImageData.GetData(outInfo)
 
         # get basic info
@@ -686,7 +708,7 @@ class cilBaseResampleReader(VTKPythonAlgorithmBase):
         readshape = self.GetStoredArrayShape()
         file_header_length = self.GetFileHeaderLength()
         is_fortran = self.GetIsFortran()
-        
+      
         if is_fortran:
             shape = list(readshape)
         else:
@@ -694,8 +716,7 @@ class cilBaseResampleReader(VTKPythonAlgorithmBase):
 
         total_size = shape[0] * shape[1] * shape[2]
 
-        # calculate the product of the elements of TargetShape
-        max_size = functools.reduce (lambda x,y: x*y, self.GetTargetShape(),1)
+        max_size = self.GetTargetSize()
 
         tmpdir = tempfile.mkdtemp()
         header_filename = os.path.join(tmpdir, "header.mhd")
@@ -703,10 +724,10 @@ class cilBaseResampleReader(VTKPythonAlgorithmBase):
         reader.SetFileName(header_filename)
 
         #print("typecode", self.GetNumpyTypeCode())
-
-        if total_size < max_size: #in this case we don't need to resample
-            try:
-                print("Don't resample")
+        try:
+            if total_size < max_size: #in this case we don't need to resample
+                
+                # print("Don't resample")
 
                 cilNumpyMETAImageWriter.WriteMETAImageHeader(self.GetFileName(), 
                                         header_filename, 
@@ -719,115 +740,93 @@ class cilBaseResampleReader(VTKPythonAlgorithmBase):
                 reader.Modified()
                 reader.Update()
                 outData.ShallowCopy(reader.GetOutput())
-                print("Finished")
 
-            finally:
-                print("Finally")
-                os.remove(header_filename)
-                os.rmdir(tmpdir)
 
-            return 1
-
-        print("Proceeding")
-        # scaling is going to be similar in every axis (xy the same, z possibly different)
-
-        try:
+            else:
             
-            # scaling is going to be similar in every axis 
-            # (xy the same, z possibly different)
-            xy_axes_magnification = np.power(max_size/total_size, 1/3)
-            slice_per_chunk = np.int(1/xy_axes_magnification)
-            
-            # indices of the first and last slice per chunk
-            # we will read in slice_per_chunk slices at a time
-            end_slice_in_chunks = [ i for i in \
-                range (slice_per_chunk, shape[2], slice_per_chunk) ]
-            # append last slice
-            end_slice_in_chunks.append( shape[2] )
-            num_chunks = len(end_slice_in_chunks)
-
-            z_axis_magnification = num_chunks / shape[2]
-            
-            target_image_shape = (int(xy_axes_magnification * shape[0]), 
-                                int(xy_axes_magnification * shape[1]), 
-                                num_chunks)
-
-            resampler = vtk.vtkImageReslice()
-            resampler.SetOutputExtent(0, target_image_shape[0],
-                                    0, target_image_shape[1],
-                                    0, 0)
-
-            
-            element_spacing = self.GetElementSpacing()
-            #print("Element Spacing", element_spacing)
-
-            resampler.SetOutputSpacing( element_spacing[0] / xy_axes_magnification, 
-                                        element_spacing[1] / xy_axes_magnification, 
-                                        element_spacing[2] / z_axis_magnification)
-            # resampled data
-            resampled_image = outData
-            resampled_image.SetExtent(0, target_image_shape[0],
-                                      0, target_image_shape[1],
-                                      0, target_image_shape[2])
-
-            resampled_image.SetSpacing(1/xy_axes_magnification,
-                                       1/xy_axes_magnification, 
-                                       1/z_axis_magnification)
-            resampled_image.AllocateScalars(self.GetOutputVTKType(), 1)
-        
-            # slice size in bytes
-            slice_length = shape[1] * shape[0] * nbytes
-
-            #dimensions = descr['description']['shape']
-            # tmpdir = tempfile.mkdtemp()
-            # header_filename = os.path.join(tmpdir, "header.mhd")
-
-        except Exception as e:
-            print(e)
-
-        print("Set the slice length")
-        
-        try:
-
-            resampler.SetInputData(reader.GetOutput())
-
-            # process each chunk
-            for i,el in enumerate(end_slice_in_chunks):
-                end_slice = el
-                start_slice = end_slice - slice_per_chunk
-                if start_slice < 0:
-                    raise ValueError('{} ERROR: Start slice cannot be negative.'\
-                        .format(self.__class__.__name__))
-
-                header_length = file_header_length + el * slice_length
-
-                shape[2] = end_slice - start_slice
-
-                #print("Header info: ", [self.GetFileName(), header_filename, self.GetMetaImageTypeCode(),big_endian, header_length, shape])
-                cilNumpyMETAImageWriter.WriteMETAImageHeader(
-                    self.GetFileName(), 
-                    header_filename, 
-                    self.GetMetaImageTypeCode(), #self.GetNumpyTypeCode(), 
-                    big_endian, 
-                    header_length, 
-                    tuple(shape), 
-                    spacing=tuple(self.GetElementSpacing()), 
-                    origin=(0.,0.,0.)
-                )
-                # force Update
+                # scaling is going to be similar in every axis 
+                # (xy the same, z possibly different)
+                xy_axes_magnification = np.power(max_size/total_size, 1/3)
+                slice_per_chunk = np.int(1/xy_axes_magnification)
                 
-                reader.Modified()
-                reader.Update()
-                # change the extent of the resampled image
-                extent = (0,target_image_shape[0], 
-                        0,target_image_shape[1],
-                        i,i)
-                resampler.SetOutputExtent(extent)
-                resampler.Update()
+                # indices of the first and last slice per chunk
+                # we will read in slice_per_chunk slices at a time
+                end_slice_in_chunks = [ i for i in \
+                    range (slice_per_chunk, shape[2], slice_per_chunk) ]
+                # append last slice
+                end_slice_in_chunks.append( shape[2] )
+                num_chunks = len(end_slice_in_chunks)
 
-                ################# vtk way ####################
-                resampled_image.CopyAndCastFrom( resampler.GetOutput(), extent )
-                self.UpdateProgress(i/ num_chunks )
+                z_axis_magnification = num_chunks / shape[2]
+                
+                target_image_shape = (int(xy_axes_magnification * shape[0]), 
+                                    int(xy_axes_magnification * shape[1]), 
+                                    num_chunks)
+
+                resampler = vtk.vtkImageReslice()
+                resampler.SetOutputExtent(0, target_image_shape[0],
+                                        0, target_image_shape[1],
+                                        0, 0)
+
+                
+                element_spacing = self.GetElementSpacing()
+                #print("Element Spacing", element_spacing)
+
+                resampler.SetOutputSpacing( element_spacing[0] / xy_axes_magnification, 
+                                            element_spacing[1] / xy_axes_magnification, 
+                                            element_spacing[2] / z_axis_magnification)
+                # resampled data
+                resampled_image = outData
+                resampled_image.SetExtent(0, target_image_shape[0],
+                                        0, target_image_shape[1],
+                                        0, target_image_shape[2])
+
+                resampled_image.SetSpacing(1/xy_axes_magnification,
+                                        1/xy_axes_magnification, 
+                                        1/z_axis_magnification)
+                resampled_image.AllocateScalars(self.GetOutputVTKType(), 1)
+            
+                # slice size in bytes
+                slice_length = shape[1] * shape[0] * nbytes
+
+                resampler.SetInputData(reader.GetOutput())
+
+                # process each chunk
+                for i,el in enumerate(end_slice_in_chunks):
+                    end_slice = el
+                    start_slice = end_slice - slice_per_chunk
+                    if start_slice < 0:
+                        raise ValueError('{} ERROR: Start slice cannot be negative.'\
+                            .format(self.__class__.__name__))
+
+                    header_length = file_header_length + el * slice_length
+
+                    shape[2] = end_slice - start_slice
+
+                    #print("Header info: ", [self.GetFileName(), header_filename, self.GetMetaImageTypeCode(),big_endian, header_length, shape])
+                    cilNumpyMETAImageWriter.WriteMETAImageHeader(
+                        self.GetFileName(), 
+                        header_filename, 
+                        self.GetMetaImageTypeCode(), #self.GetNumpyTypeCode(), 
+                        big_endian, 
+                        header_length, 
+                        tuple(shape), 
+                        spacing=tuple(self.GetElementSpacing()), 
+                        origin=(0.,0.,0.)
+                    )
+                    # force Update
+                    reader.Modified()
+                    reader.Update()
+                    # change the extent of the resampled image
+                    extent = (0,target_image_shape[0], 
+                            0,target_image_shape[1],
+                            i,i)
+                    resampler.SetOutputExtent(extent)
+                    resampler.Update()
+
+                    ################# vtk way ####################
+                    resampled_image.CopyAndCastFrom( resampler.GetOutput(), extent )
+                    self.UpdateProgress(i/ num_chunks )
 
         except Exception as e:
             print(e)
@@ -850,21 +849,10 @@ class cilNumpyResampleReader(cilBaseResampleReader):
         super(cilNumpyResampleReader, self).__init__()
         
         self.__FileName = 1
-        self.__TargetShape = (256,256,256)
-        self.__IsFortran = False
-        self.__BigEndian = False
-        self.__FileHeaderLength = 0
-        self.__BytesPerElement = 1
-        self.__StoredArrayShape = None
-        self.__OutputVTKType = None
-        self.__NumpyTypeCode = None
-
-
-        
     
     def ReadNpyHeader(self):
         # extract info from the npy header
-        descr = parseNpyHeader(self.GetFileName())
+        descr = parseNpyHeader(self.__FileName)
         # find the typecode of the data and the number of bytes per pixel
         typecode = ''
         nbytes = 0
@@ -875,45 +863,35 @@ class cilNumpyResampleReader(cilBaseResampleReader):
                 nbytes = Converter.numpy_dtype_char_to_bytes[typecode]
                 break
         
-        big_endian = 'True' if descr['description']['descr'][0] == '>' else 'False'
+        big_endian = True if descr['description']['descr'][0] == '>' else False
         readshape = descr['description']['shape']
         is_fortran = descr['description']['fortran_order']
         file_header_length = descr['header_length']
         
         
-        self.__IsFortran = is_fortran
-        self.__BigEndian = big_endian
-        self.__FileHeaderLength = file_header_length
-        self.__BytesPerElement = nbytes
-        self.__StoredArrayShape = readshape
-        self.__OutputVTKType = Converter.numpy_dtype_char_to_vtkType[typecode]
-        self.__MetaImageTypeCode = Converter.numpy_dtype_char_to_MetaImageType[typecode]
-        self.SetNumpyTypeCode(typecode)
+        self.SetIsFortran(is_fortran)
+        self.SetBigEndian(big_endian)
+        self.SetFileHeaderLength(file_header_length)
+        self.SetBytesPerElement(nbytes)
+        self.SetStoredArrayShape(readshape)
+        self.SetMetaImageTypeCode(Converter.numpy_dtype_char_to_MetaImageType[typecode])
         
         self.Modified()
 
+    def SetFileName(self, value):
+        if value != 'LOCAL': #in the case of an mha file, data is stored in the same file.
+            if not os.path.exists(value):
+                raise ValueError('File does not exist!' , value)
+
+        if value != self.__FileName:
+            self.__FileName = value
+            self.ReadNpyHeader()
+            self.Modified()
+
+    def GetFileName(self):
+        return self.__FileName
+
         
-    def GetStoredArrayShape(self):
-        self.ReadNpyHeader()
-        return self.__StoredArrayShape
-    def GetFileHeaderLength(self):
-        self.ReadNpyHeader()
-        return self.__FileHeaderLength
-    def GetBytesPerElement(self):
-        self.ReadNpyHeader()
-        return self.__BytesPerElement
-    def GetBigEndian(self):
-        self.ReadNpyHeader()
-        return self.__BigEndian
-    def GetIsFortran(self):
-        self.ReadNpyHeader()
-        return self.__IsFortran
-    def GetOutputVTKType(self):
-        self.ReadNpyHeader()
-        return self.__OutputVTKType
-    def GetNumpyTypeCode(self):
-        self.ReadNpyHeader()
-        return self.__NumpyTypeCode
 
 class cilMetaImageResampleReader(cilBaseResampleReader):
     '''vtkAlgorithm to load and resample a metaimage file to an approximate memory footprint
@@ -925,14 +903,6 @@ class cilMetaImageResampleReader(cilBaseResampleReader):
         super(cilMetaImageResampleReader, self).__init__()
         
         self.__FileName = 1
-        self.__TargetShape = (512,512,512)
-        self.__IsFortran = False
-        self.__BigEndian = False
-        self.__FileHeaderLength = 0
-        self.__BytesPerElement = 1
-        self.__StoredArrayShape = None
-        self.__OutputVTKType = None
-        self.__MetaImageTypeCode = None
         self.__CompressedData = False
         self.__ElementSpacing = [1,1,1]
         
@@ -945,105 +915,85 @@ class cilMetaImageResampleReader(cilBaseResampleReader):
                 header_length += len(line)
                 line = str(line, encoding = 'utf-8').strip()
                 if 'BinaryDataByteOrderMSB' in line:
-                    self.__BigEndian = str(line).split('= ')[-1]
-                    print(self.__BigEndian)
+                    if str(line).split('= ')[-1] == "True":
+                        self.SetBigEndian(True)
+                    else:
+                        self.SetBigEndian(False)
+
+                    # print(self.GetBigEndian())
                 elif 'ElementSpacing' in line:
-                        spacing = line.split('= ')[-1].split(' ')[:3]
-                        spacing[2].strip()
-                        for i in range(0,len(spacing)):
-                            spacing[i] = float(spacing[i])
-                        self.__ElementSpacing = spacing
-                        print("Spacing", spacing)
+                    spacing = line.split('= ')[-1].split(' ')[:3]
+                    spacing[2].strip()
+                    for i in range(0,len(spacing)):
+                        spacing[i] = float(spacing[i])
+                    self.SetElementSpacing(spacing)
+                    # print("Spacing", spacing)
                 elif 'DimSize' in line:
                     shape = line.split('= ')[-1].split(' ')[:3]
                     shape[2].strip()
                     for i in range(0,len(shape)):
                         shape[i] = int(shape[i])
-                    
-                    self.__StoredArrayShape = shape
-                    print(self.__StoredArrayShape)
+                    self.SetStoredArrayShape(tuple(shape))
+                    # print(self.GetStoredArrayShape())
                 elif 'ElementType' in line:
                     typecode = line.split('= ')[-1]
-                    print(typecode)
-                    self.__MetaImageTypeCode = typecode
+                    self.SetMetaImageTypeCode(typecode)
+                    # print(self.GetMetaImageTypeCode())
                 elif 'CompressedData' in line:
                     compressed = line.split('= ')[-1]
-                    self.__CompressedData = compressed
-                    if(self.__CompressedData == "True"):
-                        print("Cannot resample compressed image")
+                    self.SetCompressedData(compressed)
+                    if(self.GetCompressedData() == "True"):
+                        # print("Cannot resample compressed image")
                         return
 
                 elif 'HeaderSize' in line:
                     header_size = line.split('= ')[-1]
-                    self.__FileHeaderLength = int(header_size)
+                    self.SetFileHeaderLength(int(header_size))
 
                 elif 'ElementDataFile' in line: #signifies end of header
                     element_data_file = line.split('= ')[-1]
                     if element_data_file !='LOCAL': #then we have an mhd file with data in another file
                         file_path = os.path.dirname(self.__FileName)
                         element_data_file = os.path.join(file_path, element_data_file)
-                        print("Filename: ", element_data_file)
+                        # print("Filename: ", element_data_file)
                         self.__FileName = element_data_file
                     else:
-                        print("LOCAL")
-                        self.__FileHeaderLength = header_length
+                        self.SetFileHeaderLength(header_length)
                     break
 
-        print("Continues")
 
         
-        self.__IsFortran = True
-        self.__BytesPerElement = Converter.MetaImageType_to_bytes[self.__MetaImageTypeCode]
-        self.SetOutputVTKType(Converter.MetaImageType_to_vtkType[self.__MetaImageTypeCode])
-        print(self.GetOutputVTKType())
+        self.SetIsFortran(True)
+        self.SetBytesPerElement(Converter.MetaImageType_to_bytes[self.GetMetaImageTypeCode()])
         
-        # self.Modified()
+        self.Modified()
 
-        
-    def GetStoredArrayShape(self):
-        #self.ReadMetaImageHeader()
-        return self.__StoredArrayShape
-    def GetFileHeaderLength(self):
-        #self.ReadMetaImageHeader()
-        return self.__FileHeaderLength
-    def GetBytesPerElement(self):
-        #self.ReadMetaImageHeader()
-        return self.__BytesPerElement
-    def GetBigEndian(self):
-        #self.ReadMetaImageHeader()
-        return self.__BigEndian
-    def GetIsFortran(self):
-        #self.ReadMetaImageHeader()
-        return self.__IsFortran
 
     def SetFileName(self, value):
-        print("Setting filename")
         if value != 'LOCAL': #in the case of an mha file, data is stored in the same file.
             if not os.path.exists(value):
                 raise ValueError('File does not exist!' , value)
 
         if value != self.__FileName:
             self.__FileName = value
-            print(self.__FileName)
-            self.Modified()
             self.ReadMetaImageHeader()
+            self.Modified()
+            
     
     def GetFileName(self):
         return self.__FileName
-
-    def SetMetaImageTypeCode(self, value):
-        if value not in ['MET_CHAR',  'MET_UCHAR', 'MET_SHORT', 'MET_USHORT', 'MET_INT', 'MET_UINT', 'MET_FLOAT','MET_DOUBLE','MET_FLOAT','MET_DOUBLE']:
-            raise ValueError("Unexpected Type: got {}", value)
-        self.__MetaImageTypeCode = value
-
-    def GetMetaImageTypeCode(self):
-        return self.__MetaImageTypeCode
 
     def GetElementSpacing(self):
         return self.__ElementSpacing
 
     def SetElementSpacing(self,value):
         self.__ElementSpacing = value
+
+    def GetCompressedData(self):
+        return self.__CompressedData
+
+    def SetCompressedData(self, value):
+        self.__CompressedData = value
 
 
 class cilBaseCroppedReader(VTKPythonAlgorithmBase):
@@ -1070,7 +1020,6 @@ class cilBaseCroppedReader(VTKPythonAlgorithmBase):
         
     def SetFileName(self, value):
         '''Sets the value at which the mask is active'''
-        print("Set filename")
         if not os.path.exists(value):
             raise ValueError('File does not exist!' , value)
 
@@ -1079,7 +1028,6 @@ class cilBaseCroppedReader(VTKPythonAlgorithmBase):
             self.Modified()
 
     def GetFileName(self):
-        print("Getting filename")
         return self.__FileName
     
 
@@ -1136,11 +1084,11 @@ class cilBaseCroppedReader(VTKPythonAlgorithmBase):
         if value not in [vtk.VTK_SIGNED_CHAR, vtk.VTK_UNSIGNED_CHAR,  vtk.VTK_SHORT,  vtk.VTK_UNSIGNED_SHORT,\
                          vtk.VTK_INT, vtk.VTK_UNSIGNED_INT,  vtk.VTK_FLOAT, vtk.VTK_DOUBLE, vtk.VTK_FLOAT,  \
                          vtk.VTK_DOUBLE]:
-            raise ValueError("Unexpected Type: got {}", value)
+            raise ValueError("Unexpected Type:  {}".format(value))
         self.__OutputVTKType = value
     def SetNumpyTypeCode(self, value):
         if value not in ['b','B','h','H','i','I','f','d','F','D']:
-            raise ValueError("Unexpected Type: got {}", value)
+            raise ValueError("Unexpected Type:  {}".format(value))
         self.__NumpyTypeCode = value
         self.SetMetaImageTypeCode(Converter.numpy_dtype_char_to_MetaImageType[value])
 
@@ -1148,6 +1096,8 @@ class cilBaseCroppedReader(VTKPythonAlgorithmBase):
         return self.__MetaImageTypeCode
 
     def SetMetaImageTypeCode(self, value):
+        if value not in ['MET_CHAR',  'MET_UCHAR', 'MET_SHORT', 'MET_USHORT', 'MET_INT', 'MET_UINT', 'MET_FLOAT','MET_DOUBLE','MET_FLOAT','MET_DOUBLE']:
+            raise ValueError("Unexpected Type:  {}".format(value))
         
         self.__MetaImageTypeCode = value
 
@@ -1198,7 +1148,7 @@ class cilBaseCroppedReader(VTKPythonAlgorithmBase):
 
         if self.GetTargetZExtent()[1] >= shape[2]: #in this case we don't need to resample
             try:
-                print("Don't resample")
+                # print("Don't resample")
 
                 cilNumpyMETAImageWriter.WriteMETAImageHeader(self.GetFileName(), 
                                         header_filename, 
@@ -1211,10 +1161,8 @@ class cilBaseCroppedReader(VTKPythonAlgorithmBase):
                 reader.Modified()
                 reader.Update()
                 outData.ShallowCopy(reader.GetOutput())
-                print("Finished")
 
             finally:
-                print("Finally")
                 os.remove(header_filename)
                 os.rmdir(tmpdir)
 
@@ -1253,8 +1201,7 @@ class cilBaseCroppedReader(VTKPythonAlgorithmBase):
             # 
 
         except Exception as e:
-            print(e)
-            print("Exception")
+            print("Exception", e)
         finally:
             os.remove(header_filename)
             os.rmdir(tmpdir)
@@ -1273,7 +1220,7 @@ class cilNumpyCroppedReader(cilBaseCroppedReader):
         super(cilNumpyCroppedReader, self).__init__()
         
         self.__FileName = 1
-        self.__TargetShape = (256,256,256)
+        self.__TargetSize = 256*256*256
         self.__IsFortran = False
         self.__BigEndian = False
         self.__FileHeaderLength = 0
@@ -1315,7 +1262,7 @@ class cilNumpyCroppedReader(cilBaseCroppedReader):
         self.__StoredArrayShape = readshape
         self.__OutputVTKType = Converter.numpy_dtype_char_to_vtkType[typecode]
         self.__MetaImageTypeCode = Converter.numpy_dtype_char_to_MetaImageType[typecode]
-        self.SetNumpyTypeCode(typecode)
+        #self.SetNumpyTypeCode(typecode)
         
         self.Modified()
 
@@ -1338,6 +1285,9 @@ class cilNumpyCroppedReader(cilBaseCroppedReader):
     def GetOutputVTKType(self):
         self.ReadNpyHeader()
         return self.__OutputVTKType
+    def GetMetaImageTypeCode(self):
+         self.ReadNpyHeader()
+         return self.__MetaImageTypeCode
     def GetNumpyTypeCode(self):
         self.ReadNpyHeader()
         return self.__NumpyTypeCode
@@ -1352,7 +1302,7 @@ class cilMetaImageCroppedReader(cilBaseCroppedReader):
         super(cilMetaImageCroppedReader, self).__init__()
         
         self.__FileName = 1
-        self.__TargetShape = (512,512,512)
+        self.__TargetSize = 256*256*256
         self.__IsFortran = False
         self.__BigEndian = False
         self.__FileHeaderLength = 0
@@ -1366,74 +1316,92 @@ class cilMetaImageCroppedReader(cilBaseCroppedReader):
         
         header_length = 0
         with open(self.__FileName, 'rb') as f:
-                for line in f:
-                    header_length += len(line)
-                    line = str(line, encoding = 'utf-8').strip()
-                    if 'BinaryDataByteOrderMSB' in line:
-                        self.__BigEndian = str(line).split('= ')[-1]
-                        print(self.__BigEndian)
-                    elif 'DimSize'  in line:
-                        shape = line.split('= ')[-1].split(' ')[:3]
-                        shape[2].strip()
-                        for i in range(0,len(shape)):
-                            shape[i] = int(shape[i])
-                        
-                        self.__StoredArrayShape = shape
-                        print(self.__StoredArrayShape)
-                        print(self.__StoredArrayShape)
-                    elif 'ElementType' in line:
-                        typecode = line.split('= ')[-1]
-                        print(typecode)
-                        self.__MetaImageTypeCode = typecode
-                    elif 'ElementDataFile' in str(line):
-                        break
-        self.__FileHeaderLength = header_length
-        self.__IsFortran = True
-        self.__BytesPerElement = Converter.MetaImageType_to_bytes[self.__MetaImageTypeCode]
-        self.SetOutputVTKType(Converter.MetaImageType_to_vtkType[self.__MetaImageTypeCode])
-        print(self.GetOutputVTKType())
+            for line in f:
+                header_length += len(line)
+                line = str(line, encoding = 'utf-8').strip()
+                if 'BinaryDataByteOrderMSB' in line:
+                    if str(line).split('= ')[-1] == "True":
+                        self.SetBigEndian(True)
+                    else:
+                        self.SetBigEndian(False)
+
+                    # print(self.GetBigEndian())
+                elif 'ElementSpacing' in line:
+                    spacing = line.split('= ')[-1].split(' ')[:3]
+                    spacing[2].strip()
+                    for i in range(0,len(spacing)):
+                        spacing[i] = float(spacing[i])
+                    self.SetElementSpacing(spacing)
+                    # print("Spacing", spacing)
+                elif 'DimSize' in line:
+                    shape = line.split('= ')[-1].split(' ')[:3]
+                    shape[2].strip()
+                    for i in range(0,len(shape)):
+                        shape[i] = int(shape[i])
+                    self.SetStoredArrayShape(tuple(shape))
+                    # print(self.GetStoredArrayShape())
+                elif 'ElementType' in line:
+                    typecode = line.split('= ')[-1]
+                    self.SetMetaImageTypeCode(typecode)
+                    # print(self.GetMetaImageTypeCode())
+                elif 'CompressedData' in line:
+                    compressed = line.split('= ')[-1]
+                    self.SetCompressedData(compressed)
+                    if(self.GetCompressedData() == "True"):
+                        # print("Cannot resample compressed image")
+                        return
+
+                elif 'HeaderSize' in line:
+                    header_size = line.split('= ')[-1]
+                    self.SetFileHeaderLength(int(header_size))
+
+                elif 'ElementDataFile' in line: #signifies end of header
+                    element_data_file = line.split('= ')[-1]
+                    if element_data_file !='LOCAL': #then we have an mhd file with data in another file
+                        file_path = os.path.dirname(self.__FileName)
+                        element_data_file = os.path.join(file_path, element_data_file)
+                        # print("Filename: ", element_data_file)
+                        self.__FileName = element_data_file
+                    else:
+                        self.SetFileHeaderLength(header_length)
+                    break
+
+
+        
+        self.SetIsFortran(True)
+        self.SetBytesPerElement(Converter.MetaImageType_to_bytes[self.GetMetaImageTypeCode()])
+        
+        self.Modified()
         
         # self.Modified()
 
         
-    def GetStoredArrayShape(self):
-        #self.ReadMetaImageHeader()
-        return self.__StoredArrayShape
-    def GetFileHeaderLength(self):
-        #self.ReadMetaImageHeader()
-        return self.__FileHeaderLength
-    def GetBytesPerElement(self):
-        #self.ReadMetaImageHeader()
-        return self.__BytesPerElement
-    def GetBigEndian(self):
-        #self.ReadMetaImageHeader()
-        return self.__BigEndian
-    def GetIsFortran(self):
-        #self.ReadMetaImageHeader()
-        return self.__IsFortran
 
     def SetFileName(self, value):
-        print("Setting filename")
         if value != 'LOCAL': #in the case of an mha file, data is stored in the same file.
             if not os.path.exists(value):
                 raise ValueError('File does not exist!' , value)
 
         if value != self.__FileName:
             self.__FileName = value
-            print(self.__FileName)
             self.Modified()
             self.ReadMetaImageHeader()
     
     def GetFileName(self):
         return self.__FileName
 
-    def SetMetaImageTypeCode(self, value):
-        if value not in ['MET_CHAR',  'MET_UCHAR', 'MET_SHORT', 'MET_USHORT', 'MET_INT', 'MET_UINT', 'MET_FLOAT','MET_DOUBLE','MET_FLOAT','MET_DOUBLE']:
-            raise ValueError("Unexpected Type: got {}", value)
-        self.__MetaImageTypeCode = value
+    def GetElementSpacing(self):
+        return self.__ElementSpacing
 
-    def GetMetaImageTypeCode(self):
-        return self.__MetaImageTypeCode
+    def SetElementSpacing(self,value):
+        self.__ElementSpacing = value
+
+    def GetCompressedData(self):
+        return self.__CompressedData
+
+    def SetCompressedData(self, value):
+        self.__CompressedData = value
+
 
 if __name__ == '__main__':
     '''this represent a good base to perform a test for the numpy-metaimage writer'''
