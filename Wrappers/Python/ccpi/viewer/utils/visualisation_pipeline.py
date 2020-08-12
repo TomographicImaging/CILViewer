@@ -83,7 +83,7 @@ class cilClipPolyDataBetweenPlanes(VTKPythonAlgorithmBase):
 
     def RequestData(self, request, inInfo, outInfo):
         try:
-            print("Request Data")
+            # print("requesting clipping data")
             inp = vtk.vtkPolyData.GetData(inInfo[0])
             out = vtk.vtkPolyData.GetData(outInfo)
             # print ("input number of points" , inp.GetPoints().GetNumberOfPoints())
@@ -174,35 +174,40 @@ class cilPlaneClipper(object):
             if len(self.DataListToClip) > 0:
                 if interactor is None:
                     interactor = self.Interactor
-                print("Update Clipping Planes", self.DataListToClip)
+                    interactor.UpdatePipeline()
+                # print("Update Clipping Planes", self.DataListToClip)
+                # print("Clipping Event: ", event)
+                # print("Interactor is type: ", type(interactor))
                 
-                print("Orientation", interactor.GetSliceOrientation())
-                #print("Interactor", interactor)
+                # print("Orientation", interactor.GetSliceOrientation())
+                # print("Interactor", interactor)
                 normal = [0, 0, 0]
                 origin = [0, 0, 0]
                 norm = 1
 
                 orientation = interactor.GetSliceOrientation()
 
-                print("Current active slice", interactor.GetActiveSlice())
-
                 spac = interactor.GetInputData().GetSpacing()
                 orig = interactor.GetInputData().GetOrigin()
                 slice_thickness = spac[orientation]
+
+                #print("Current active slice in image coords:", interactor.GetActiveSlice())
+                #print("In world coords", interactor.GetActiveSlice() * slice_thickness)
 
                 beta_up = 0.5 - 1e-9
                 beta_down = 0.5
    
                 normal[orientation] = norm
-                origin [orientation] = (interactor.GetActiveSlice()) * slice_thickness + beta_up #- orig[orientation]
+                origin [orientation] = (interactor.GetActiveSlice() + beta_up) * slice_thickness  #- orig[orientation]
 
                 # update the  plane below
                 slice_below = interactor.GetActiveSlice() 
 
                 origin_below = [i for i in origin]
-                origin_below[orientation] = ( slice_below ) * slice_thickness - beta_down #- orig[orientation]
+                origin_below[orientation] = ( slice_below - beta_down) * slice_thickness  #- orig[orientation]
 
                 for data_to_clip in self.DataListToClip.values():
+                    #print("On data: ", list(self.DataListToClip.keys())[list(self.DataListToClip.values()).index(data_to_clip)])
                     data_to_clip.SetPlaneOriginAbove(origin)
                     data_to_clip.SetPlaneNormalAbove(normal)
                     data_to_clip.SetPlaneOriginBelow(origin_below)
