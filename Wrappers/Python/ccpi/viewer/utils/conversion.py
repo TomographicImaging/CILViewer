@@ -105,6 +105,7 @@ class Converter(object):
 
         shape=numpy.shape(nparray)
         if(nparray.flags["FNC"]):
+            
             order = "F"
             i=0
             k=2
@@ -112,6 +113,7 @@ class Converter(object):
             order = "C"
             i=2
             k=0
+
 
         nparray = nparray.ravel(order)
         vtkarray = numpy_support.numpy_to_vtk(num_array=nparray, deep=deep, array_type=numpy_support.get_vtk_array_type(nparray.dtype))
@@ -584,7 +586,6 @@ class cilBaseResampleReader(VTKPythonAlgorithmBase):
         self.__MetaImageTypeCode = None
         self.__ElementSpacing = [1,1,1]
 
-
         
     def SetFileName(self, value):
         if not os.path.exists(value):
@@ -735,8 +736,8 @@ class cilBaseResampleReader(VTKPythonAlgorithmBase):
                                         big_endian, 
                                         file_header_length, 
                                         tuple(shape), 
-                                        spacing= tuple(self.GetElementSpacing()), #!! Don't we need to set?
-                                        origin=(0.,0.,0.)) #??
+                                        spacing= tuple(self.GetElementSpacing()),
+                                        origin=(0.,0.,0.)) #TODO: set origin to correct value given by image file
                 reader.Modified()
                 reader.Update()
                 outData.ShallowCopy(reader.GetOutput())
@@ -748,27 +749,25 @@ class cilBaseResampleReader(VTKPythonAlgorithmBase):
                 # (xy the same, z possibly different)
                 xy_axes_magnification = np.power(max_size/total_size, 1/3)
                 slice_per_chunk = np.int(1/xy_axes_magnification)
-                
+                # print("Slice per chunk: ", slice_per_chunk)
+
                 # indices of the first and last slice per chunk
                 # we will read in slice_per_chunk slices at a time
                 end_slice_in_chunks = [ i for i in \
-                    range (slice_per_chunk, shape[2], slice_per_chunk) ]
+                    range (slice_per_chunk, shape[2]-1, slice_per_chunk) ]
+
                 # append last slice
-                end_slice_in_chunks.append( shape[2] )
+                end_slice_in_chunks.append( shape[2]-1)
                 num_chunks = len(end_slice_in_chunks)
 
-                z_axis_magnification = num_chunks / shape[2]
+                z_axis_magnification = num_chunks / (shape[2]-1)
                 
                 target_image_shape = (int(xy_axes_magnification * shape[0]), 
                                     int(xy_axes_magnification * shape[1]), 
                                     num_chunks)
 
                 resampler = vtk.vtkImageReslice()
-                resampler.SetOutputExtent(0, target_image_shape[0],
-                                        0, target_image_shape[1],
-                                        0, 0)
 
-                
                 element_spacing = self.GetElementSpacing()
                 #print("Element Spacing", element_spacing)
 
@@ -777,13 +776,14 @@ class cilBaseResampleReader(VTKPythonAlgorithmBase):
                                             element_spacing[2] / z_axis_magnification)
                 # resampled data
                 resampled_image = outData
-                resampled_image.SetExtent(0, target_image_shape[0],
-                                        0, target_image_shape[1],
-                                        0, target_image_shape[2])
 
-                resampled_image.SetSpacing(1/xy_axes_magnification,
-                                        1/xy_axes_magnification, 
-                                        1/z_axis_magnification)
+                resampled_image.SetExtent(0, target_image_shape[0]-1,
+                                        0, target_image_shape[1]-1,
+                                        0, target_image_shape[2]-1)
+
+                resampled_image.SetSpacing(element_spacing[0]/xy_axes_magnification,
+                                        element_spacing[1]/xy_axes_magnification, 
+                                        element_spacing[2]/z_axis_magnification)
                 resampled_image.AllocateScalars(self.GetOutputVTKType(), 1)
             
                 # slice size in bytes
@@ -791,6 +791,26 @@ class cilBaseResampleReader(VTKPythonAlgorithmBase):
 
                 resampler.SetInputData(reader.GetOutput())
 
+                shape[2] = slice_per_chunk
+
+                chunk_file_name = os.path.join(tmpdir, "chunk.raw")
+
+                cilNumpyMETAImageWriter.WriteMETAImageHeader(
+                        chunk_file_name, 
+                        header_filename, 
+                        self.GetMetaImageTypeCode(),
+                        big_endian, 
+                        0, 
+                        tuple(shape), 
+                        spacing=tuple(self.GetElementSpacing()), 
+                        origin=(0.,0.,0.)
+                )
+
+                image_file = self.GetFileName()
+                image_file_object = open(image_file, "rb")
+                
+                # print("slice length calculated: ", slice_length)
+        
                 # process each chunk
                 for i,el in enumerate(end_slice_in_chunks):
                     end_slice = el
@@ -799,30 +819,30 @@ class cilBaseResampleReader(VTKPythonAlgorithmBase):
                         raise ValueError('{} ERROR: Start slice cannot be negative.'\
                             .format(self.__class__.__name__))
 
-                    header_length = file_header_length + el * slice_length
+                    chunk_location = file_header_length + start_slice*slice_length
+                    chunk_file_object = open(chunk_file_name, "wb")
+                    image_file_object.seek(chunk_location)
+                    chunk_length = slice_length*slice_per_chunk
 
-                    shape[2] = end_slice - start_slice
+                    chunk = image_file_object.read(chunk_length)
+                    chunk_file_object.write(chunk)
 
-                    #print("Header info: ", [self.GetFileName(), header_filename, self.GetMetaImageTypeCode(),big_endian, header_length, shape])
-                    cilNumpyMETAImageWriter.WriteMETAImageHeader(
-                        self.GetFileName(), 
-                        header_filename, 
-                        self.GetMetaImageTypeCode(), #self.GetNumpyTypeCode(), 
-                        big_endian, 
-                        header_length, 
-                        tuple(shape), 
-                        spacing=tuple(self.GetElementSpacing()), 
-                        origin=(0.,0.,0.)
-                    )
-                    # force Update
+                    chunk_file_object.close()
+
                     reader.Modified()
                     reader.Update()
+                    # print(i, reader.GetOutput().GetScalarComponentAsDouble(0,0,0,0))
+                    
                     # change the extent of the resampled image
-                    extent = (0,target_image_shape[0], 
-                            0,target_image_shape[1],
+                    extent = (0,target_image_shape[0]-1, 
+                            0,target_image_shape[1]-1,
                             i,i)
+
+                    #print("New extent: ", extent)
+                    
                     resampler.SetOutputExtent(extent)
                     resampler.Update()
+                    # print(i, resampler.GetOutput().GetScalarComponentAsDouble(0,0,i,0))
 
                     ################# vtk way ####################
                     resampled_image.CopyAndCastFrom( resampler.GetOutput(), extent )
@@ -983,12 +1003,6 @@ class cilMetaImageResampleReader(cilBaseResampleReader):
     def GetFileName(self):
         return self.__FileName
 
-    def GetElementSpacing(self):
-        return self.__ElementSpacing
-
-    def SetElementSpacing(self,value):
-        self.__ElementSpacing = value
-
     def GetCompressedData(self):
         return self.__CompressedData
 
@@ -1015,6 +1029,7 @@ class cilBaseCroppedReader(VTKPythonAlgorithmBase):
         self.__MetaImageTypeCode = None
         self.__TargetZExtent = (0,0)
         self.__Origin = (0,0,0)
+        self.__ElementSpacing = [1,1,1]
 
 
         
@@ -1098,8 +1113,8 @@ class cilBaseCroppedReader(VTKPythonAlgorithmBase):
     def SetMetaImageTypeCode(self, value):
         if value not in ['MET_CHAR',  'MET_UCHAR', 'MET_SHORT', 'MET_USHORT', 'MET_INT', 'MET_UINT', 'MET_FLOAT','MET_DOUBLE','MET_FLOAT','MET_DOUBLE']:
             raise ValueError("Unexpected Type:  {}".format(value))
-        
         self.__MetaImageTypeCode = value
+        self.SetOutputVTKType(Converter.MetaImageType_to_vtkType[value])
 
     def SetTargetZExtent(self, value):
         if not isinstance (value, tuple):
@@ -1123,6 +1138,12 @@ class cilBaseCroppedReader(VTKPythonAlgorithmBase):
     
     def GetOrigin(self):
         return self.__Origin
+
+    def GetElementSpacing(self):
+        return self.__ElementSpacing
+
+    def SetElementSpacing(self,value):
+        self.__ElementSpacing = value
 
     def RequestData(self, request, inInfo, outInfo):
         outData = vtk.vtkImageData.GetData(outInfo)
@@ -1156,8 +1177,8 @@ class cilBaseCroppedReader(VTKPythonAlgorithmBase):
                                         big_endian, 
                                         file_header_length, 
                                         tuple(shape), 
-                                        spacing=(1.,1.,1.), #!! Don't we need to set?
-                                        origin=(0.,0.,0.)) #??
+                                        spacing=tuple(self.GetElementSpacing()),
+                                        origin=self.GetOrigin()) 
                 reader.Modified()
                 reader.Update()
                 outData.ShallowCopy(reader.GetOutput())
@@ -1169,36 +1190,45 @@ class cilBaseCroppedReader(VTKPythonAlgorithmBase):
             return 1
         
         try:
-            header_length  = file_header_length + (self.GetTargetZExtent()[0]-1)* shape[1] * shape[0] * nbytes
-            shape[2] = self.GetTargetZExtent()[1]- self.GetTargetZExtent()[0] + 1
-
+            shape[2] = self.GetTargetZExtent()[1] + 1
             cilNumpyMETAImageWriter.WriteMETAImageHeader(self.GetFileName(), 
-                                header_filename, 
-                                self.GetMetaImageTypeCode(),#self.GetNumpyTypeCode(), 
-                                big_endian, 
-                                header_length, 
-                                tuple(shape), 
-                                spacing=(1.,1.,1.), 
-                                origin=(0.,0.,0.))
-            
+                    header_filename, 
+                    self.GetMetaImageTypeCode(),
+                    big_endian, 
+                    0, 
+                    tuple(shape), 
+                    spacing=tuple(self.GetElementSpacing()), 
+                    origin=(0.,0.,0.))
+
+            chunk_file_name = os.path.join(tmpdir, "chunk.raw")
+            chunk_location = file_header_length + (self.GetTargetZExtent()[0])* shape[1] * shape[0] * nbytes
+            chunk_file_object = open(chunk_file_name, "wb")
+
+            image_file = self.GetFileName()
+            image_file_object = open(image_file, "rb")
+            image_file_object.seek(chunk_location)
+
+            chunk_length = self.GetTargetZExtent()[1]- self.GetTargetZExtent()[0] + 1
+            chunk = image_file_object.read(chunk_length)
+            chunk_file_object.write(chunk)
+
+            image_file_object.close()
+            chunk_file_object.close()
+
             reader.Modified()
             reader.Update()
-            # Data = vtk.vtkImageData()
-            # print(self.GetStoredArrayShape())
-            # print(self.GetTargetZExtent())
-            # Data.SetDimensions(self.GetStoredArrayShape())
-            # print("Extent", Data.GetExtent())
-            # Data.SetSpacing(1,1,1)
-            # extent = (0, shape[0], 0, shape[1], self.GetTargetZExtent()[0], self.GetTargetZExtent()[1])
-            # print("New extent", Data.GetExtent())
-            # print("Inserted extent", extent)
-            # Data.CopyAndCastFrom(reader.GetOutput(), extent)
-            # outData.ShallowCopy(Data)
 
-            outData.ShallowCopy(reader.GetOutput())
-            outData.SetOrigin(self.GetOrigin())
+            Data = vtk.vtkImageData()
+            extent = (0, shape[0]-1, 0, shape[1]-1, self.GetTargetZExtent()[0], self.GetTargetZExtent()[1])
+            Data.SetExtent(extent)
+            Data.SetSpacing(1,1,1)
+            Data.AllocateScalars(self.GetOutputVTKType(), 1)
+
+            read_data = reader.GetOutput()
+            read_data.SetExtent(extent)
             
-            # 
+            Data.CopyAndCastFrom(read_data, extent)
+            outData.ShallowCopy(Data)
 
         except Exception as e:
             print("Exception", e)
@@ -1390,11 +1420,6 @@ class cilMetaImageCroppedReader(cilBaseCroppedReader):
     def GetFileName(self):
         return self.__FileName
 
-    def GetElementSpacing(self):
-        return self.__ElementSpacing
-
-    def SetElementSpacing(self,value):
-        self.__ElementSpacing = value
 
     def GetCompressedData(self):
         return self.__CompressedData
