@@ -47,10 +47,10 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
         return self._viewer.img3D.GetDimensions()
 
     def GetActiveSlice(self):
-        return self._viewer.sliceno
+        return self._viewer.getActiveSlice()
 
-    def SetActiveSlice(self, value):
-        self._viewer.sliceno = value
+    def SetActiveSlice(self, sliceno):
+        self._viewer.setActiveSlice(sliceno)
 
     def UpdatePipeline(self, resetcamera=False):
         self._viewer.updatePipeline(resetcamera)
@@ -177,21 +177,15 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
         alt = interactor.GetShiftKey()
 
         if interactor.GetKeyCode() == "x":
-
             self.SetSliceOrientation( SLICE_ORIENTATION_YZ )
-            self.SetActiveSlice(int(self.GetDimensions()[0]/2))
             self.UpdatePipeline(resetcamera=True)
 
         elif interactor.GetKeyCode() == "y":
-
             self.SetSliceOrientation(SLICE_ORIENTATION_XZ)
-            self.SetActiveSlice(int(self.GetDimensions()[1] / 2))
             self.UpdatePipeline(resetcamera=True)
 
         elif interactor.GetKeyCode() == "z":
-
             self.SetSliceOrientation(SLICE_ORIENTATION_XY)
-            self.SetActiveSlice(int(self.GetDimensions()[2] / 2))
             self.UpdatePipeline(resetcamera=True)
 
         elif interactor.GetKeyCode() == "a":
@@ -213,13 +207,6 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
             self.GetWindowLevel().Update()
 
             self.Render()
-
-        elif interactor.GetKeyCode() == "i":
-            # toggle interpolation of slice actor
-            is_interpolated = self._viewer.sliceActor.GetInterpolate()
-            self._viewer.sliceActor.SetInterpolate(not is_interpolated)
-        else :
-            self.log("Unhandled event %s" % (interactor.GetKeyCode()))
 
         elif ctrl and not (alt and shift):
             # CREATE ROI
@@ -254,6 +241,11 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
             else:
                 self._viewer.sliceActor.VisibilityOn()
             self._viewer.updatePipeline()
+        elif interactor.GetKeyCode() == "i":
+            # toggle interpolation of slice actor
+            is_interpolated = self._viewer.sliceActor.GetInterpolate()
+            self._viewer.sliceActor.SetInterpolate(not is_interpolated)
+
         else:
             print("Unhandled event %s" % interactor.GetKeyCode())
 
@@ -345,7 +337,7 @@ class CILViewer():
 
         # img 3D as slice
         self.img3D = None
-        self.sliceno = 0
+        self.slicenos = [0,0,0]
         self.sliceOrientation = SLICE_ORIENTATION_XY
         self.sliceActor = vtk.vtkImageActor()
         self.voi = vtk.vtkExtractVOI()
@@ -412,6 +404,12 @@ class CILViewer():
 
     def GetSliceOrientation(self):
         return self.sliceOrientation
+
+    def getActiveSlice(self):
+        return self.slicenos[self.GetSliceOrientation()]
+
+    def setActiveSlice(self, sliceno):
+        self.slicenos[self.GetSliceOrientation()] = sliceno
 
     def getRenderWindow(self):
         '''returns the render window'''
@@ -600,9 +598,11 @@ class CILViewer():
         self.voi.SetInputData(self.img3D)
 
         extent = [ i for i in self.img3D.GetExtent()]
-        self.sliceno = round((extent[self.sliceOrientation * 2+1] + extent[self.sliceOrientation * 2])/2)
-        extent[self.sliceOrientation * 2] = self.sliceno
-        extent[self.sliceOrientation * 2 + 1] = self.sliceno
+        for i in range(len(self.slicenos)):
+            self.slicenos[i] = round((extent[i * 2+1] + extent[i * 2])/2)
+        extent[self.sliceOrientation * 2] = self.getActiveSlice()
+        extent[self.sliceOrientation * 2 + 1] = self.getActiveSlice()
+
         self.voi.SetVOI(extent[0], extent[1],
                    extent[2], extent[3],
                    extent[4], extent[5])
@@ -643,8 +643,8 @@ class CILViewer():
         self.hideActor(self.sliceActorNo)
 
         extent = [i for i in self.img3D.GetExtent()]
-        extent[self.sliceOrientation * 2] = self.sliceno
-        extent[self.sliceOrientation * 2 + 1] = self.sliceno
+        extent[self.sliceOrientation * 2] = self.getActiveSlice()
+        extent[self.sliceOrientation * 2 + 1] = self.getActiveSlice()
         self.voi.SetVOI(extent[0], extent[1],
                    extent[2], extent[3],
                    extent[4], extent[5])
