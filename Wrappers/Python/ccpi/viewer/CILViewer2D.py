@@ -524,9 +524,9 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
                 self.SetEventActive("SHOW_LINE_PROFILE_EVENT")
                 self.DisplayLineProfile(interactor, event, True)
 
-        elif interactor.GetKeyCode() == 'h':
+        elif interactor.GetKeyCode() == "h":
             self.DisplayHelp()
-        elif interactor.GetKeyCode() == 'w':
+        elif interactor.GetKeyCode() == "w":
             x,y = interactor.GetEventPosition()
             print (x,y)
             ic = self.display2imageCoordinate((x,y))
@@ -593,10 +593,10 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
             self.UpdateSliceActor()
             self.AdjustCamera()
             self.Render()
-        elif interactor.GetKeyCode() == 't':
+        elif interactor.GetKeyCode() == "t":
             # tracing event is captured by widget
             pass
-        elif interactor.GetKeyCode() == 'i':
+        elif interactor.GetKeyCode() == "i":
             # toggle interpolation of slice actor
             is_interpolated = self._viewer.sliceActor.GetInterpolate()
             self._viewer.sliceActor.SetInterpolate(not is_interpolated)

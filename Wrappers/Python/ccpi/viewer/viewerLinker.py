@@ -316,8 +316,17 @@ class ViewerLinkObserver():
 
         # KeyPress and orientation
         if (event == "KeyPressEvent"  or state == 1026):
-                if ( not (self.linkOrientation and ( interactor.GetKeyCode() == "x" or interactor.GetKeyCode() == "y" or interactor.GetKeyCode() == "z"))):
-                    shouldPassEvent = False
+            orientation_link_event = self.linkOrientation and ( interactor.GetKeyCode() == "x" or interactor.GetKeyCode() == "y" or interactor.GetKeyCode() == "z")
+            window_level_link_event = self.linkWindowLevel and (interactor.GetKeyCode() == "a" or interactor.GetKeyCode() == "w")
+
+            if not (orientation_link_event):
+                shouldPassEvent = False
+
+            if window_level_link_event:
+                # Set current window/level
+                window = self.sourceViewer.getColourWindow()
+                level = self.sourceViewer.getColourLevel()
+                self.targetVtkViewer.setColourWindowLevel(window, level)
             
         # Check if event should be passed
         if (shouldPassEvent):
