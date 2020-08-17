@@ -807,51 +807,48 @@ class cilBaseResampleReader(VTKPythonAlgorithmBase):
                 )
 
                 image_file = self.GetFileName()
-                image_file_object = open(image_file, "rb")
-                
-                # print("slice length calculated: ", slice_length)
-        
-                # process each chunk
-                for i,el in enumerate(end_slice_in_chunks):
-                    end_slice = el
-                    start_slice = end_slice - slice_per_chunk
-                    if start_slice < 0:
-                        raise ValueError('{} ERROR: Start slice cannot be negative.'\
-                            .format(self.__class__.__name__))
+                with open(image_file, "rb") as image_file_object:
+                    # print("slice length calculated: ", slice_length)
+            
+                    # process each chunk
+                    for i,el in enumerate(end_slice_in_chunks):
+                        end_slice = el
+                        start_slice = end_slice - slice_per_chunk
+                        if start_slice < 0:
+                            raise ValueError('{} ERROR: Start slice cannot be negative.'\
+                                .format(self.__class__.__name__))
 
-                    chunk_location = file_header_length + start_slice*slice_length
-                    chunk_file_object = open(chunk_file_name, "wb")
-                    image_file_object.seek(chunk_location)
-                    chunk_length = slice_length*slice_per_chunk
+                        chunk_location = file_header_length + start_slice*slice_length
+                        with open(chunk_file_name, "wb") as chunk_file_object:
+                            image_file_object.seek(chunk_location)
+                            chunk_length = slice_length*slice_per_chunk
+                            chunk = image_file_object.read(chunk_length)
+                            chunk_file_object.write(chunk)
 
-                    chunk = image_file_object.read(chunk_length)
-                    chunk_file_object.write(chunk)
+                        reader.Modified()
+                        reader.Update()
+                        # print(i, reader.GetOutput().GetScalarComponentAsDouble(0,0,0,0))
+                        
+                        # change the extent of the resampled image
+                        extent = (0,target_image_shape[0]-1, 
+                                0,target_image_shape[1]-1,
+                                i,i)
 
-                    chunk_file_object.close()
+                        #print("New extent: ", extent)
+                        
+                        resampler.SetOutputExtent(extent)
+                        resampler.Update()
+                        # print(i, resampler.GetOutput().GetScalarComponentAsDouble(0,0,i,0))
 
-                    reader.Modified()
-                    reader.Update()
-                    # print(i, reader.GetOutput().GetScalarComponentAsDouble(0,0,0,0))
-                    
-                    # change the extent of the resampled image
-                    extent = (0,target_image_shape[0]-1, 
-                            0,target_image_shape[1]-1,
-                            i,i)
-
-                    #print("New extent: ", extent)
-                    
-                    resampler.SetOutputExtent(extent)
-                    resampler.Update()
-                    # print(i, resampler.GetOutput().GetScalarComponentAsDouble(0,0,i,0))
-
-                    ################# vtk way ####################
-                    resampled_image.CopyAndCastFrom( resampler.GetOutput(), extent )
-                    self.UpdateProgress(i/ num_chunks )
+                        ################# vtk way ####################
+                        resampled_image.CopyAndCastFrom( resampler.GetOutput(), extent )
+                        self.UpdateProgress(i/ num_chunks )
 
         except Exception as e:
             print(e)
         finally:
             os.remove(header_filename)
+            os.remove(chunk_file_name)
             os.rmdir(tmpdir)
         
         return 1
@@ -1200,20 +1197,17 @@ class cilBaseCroppedReader(VTKPythonAlgorithmBase):
                     spacing=tuple(self.GetElementSpacing()), 
                     origin=(0.,0.,0.))
 
+            
+
             chunk_file_name = os.path.join(tmpdir, "chunk.raw")
-            chunk_location = file_header_length + (self.GetTargetZExtent()[0])* shape[1] * shape[0] * nbytes
-            chunk_file_object = open(chunk_file_name, "wb")
-
             image_file = self.GetFileName()
-            image_file_object = open(image_file, "rb")
-            image_file_object.seek(chunk_location)
-
-            chunk_length = self.GetTargetZExtent()[1]- self.GetTargetZExtent()[0] + 1
-            chunk = image_file_object.read(chunk_length)
-            chunk_file_object.write(chunk)
-
-            image_file_object.close()
-            chunk_file_object.close()
+            chunk_location = file_header_length + (self.GetTargetZExtent()[0])* shape[1] * shape[0] * nbytes
+            with open(chunk_file_name, "wb") as chunk_file_object:
+                with open(image_file, "rb") as image_file_object:   
+                    image_file_object.seek(chunk_location)
+                    chunk_length = self.GetTargetZExtent()[1]- self.GetTargetZExtent()[0] + 1
+                    chunk = image_file_object.read(chunk_length)
+                    chunk_file_object.write(chunk)
 
             reader.Modified()
             reader.Update()
@@ -1234,6 +1228,7 @@ class cilBaseCroppedReader(VTKPythonAlgorithmBase):
             print("Exception", e)
         finally:
             os.remove(header_filename)
+            os.remove(chunk_file_name)
             os.rmdir(tmpdir)
         return 1
 
