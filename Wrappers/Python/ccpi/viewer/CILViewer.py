@@ -214,6 +214,13 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
 
             self.Render()
 
+        elif interactor.GetKeyCode() == "i":
+            # toggle interpolation of slice actor
+            is_interpolated = self._viewer.sliceActor.GetInterpolate()
+            self._viewer.sliceActor.SetInterpolate(not is_interpolated)
+        else :
+            self.log("Unhandled event %s" % (interactor.GetKeyCode()))
+
         elif ctrl and not (alt and shift):
             # CREATE ROI
             position = interactor.GetEventPosition()
