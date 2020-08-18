@@ -1188,7 +1188,10 @@ class cilBaseCroppedReader(VTKPythonAlgorithmBase):
         
         try:
             shape[2] = self.GetTargetZExtent()[1] + 1
-            cilNumpyMETAImageWriter.WriteMETAImageHeader(self.GetFileName(), 
+
+            chunk_file_name = os.path.join(tmpdir, "chunk.raw")
+
+            cilNumpyMETAImageWriter.WriteMETAImageHeader(chunk_file_name, 
                     header_filename, 
                     self.GetMetaImageTypeCode(),
                     big_endian, 
@@ -1197,15 +1200,15 @@ class cilBaseCroppedReader(VTKPythonAlgorithmBase):
                     spacing=tuple(self.GetElementSpacing()), 
                     origin=(0.,0.,0.))
 
-            
-
-            chunk_file_name = os.path.join(tmpdir, "chunk.raw")
+                        
             image_file = self.GetFileName()
-            chunk_location = file_header_length + (self.GetTargetZExtent()[0])* shape[1] * shape[0] * nbytes
+            slice_length = shape[1] * shape[0] * nbytes
+            chunk_location = file_header_length + (self.GetTargetZExtent()[0])* slice_length
+
             with open(chunk_file_name, "wb") as chunk_file_object:
                 with open(image_file, "rb") as image_file_object:   
                     image_file_object.seek(chunk_location)
-                    chunk_length = self.GetTargetZExtent()[1]- self.GetTargetZExtent()[0] + 1
+                    chunk_length = (self.GetTargetZExtent()[1]- self.GetTargetZExtent()[0] + 1) * slice_length
                     chunk = image_file_object.read(chunk_length)
                     chunk_file_object.write(chunk)
 
@@ -1479,5 +1482,3 @@ if __name__ == '__main__':
                     if not is_same:
                         raise ValueError('arrays do not match', v1,v2,x,y,z)
         print ('YEEE array match!')
-
-
