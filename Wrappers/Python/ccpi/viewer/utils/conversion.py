@@ -719,6 +719,9 @@ class cilBaseResampleReader(VTKPythonAlgorithmBase):
 
         max_size = self.GetTargetSize()
 
+        # slice size in bytes
+        slice_length = shape[1] * shape[0] * nbytes
+
         tmpdir = tempfile.mkdtemp()
         header_filename = os.path.join(tmpdir, "header.mhd")
         reader = vtk.vtkMetaImageReader()
@@ -728,18 +731,33 @@ class cilBaseResampleReader(VTKPythonAlgorithmBase):
         try:
             if total_size < max_size: #in this case we don't need to resample
                 
-                # print("Don't resample")
+                #print("Don't resample")
 
-                cilNumpyMETAImageWriter.WriteMETAImageHeader(self.GetFileName(), 
+                chunk_file_name = os.path.join(tmpdir, "chunk.raw")
+
+                cilNumpyMETAImageWriter.WriteMETAImageHeader(chunk_file_name, 
                                         header_filename, 
-                                        self.GetMetaImageTypeCode(),#self.GetNumpyTypeCode(), 
+                                        self.GetMetaImageTypeCode(),
                                         big_endian, 
-                                        file_header_length, 
+                                        0, 
                                         tuple(shape), 
                                         spacing= tuple(self.GetElementSpacing()),
-                                        origin=(0.,0.,0.)) #TODO: set origin to correct value given by image file
+                                        origin=(0.,0.,0.))
+
+                image_file = self.GetFileName()
+
+                with open(image_file, "rb") as image_file_object:
+                        end_slice = shape[2]
+                        chunk_location = file_header_length
+                        with open(chunk_file_name, "wb") as chunk_file_object:
+                            image_file_object.seek(chunk_location)
+                            chunk_length = slice_length*end_slice
+                            chunk = image_file_object.read(chunk_length)
+                            chunk_file_object.write(chunk)
+
                 reader.Modified()
                 reader.Update()
+                print(reader.GetOutput().GetScalarComponentAsDouble(0,0,0,0))
                 outData.ShallowCopy(reader.GetOutput())
 
 
@@ -760,7 +778,7 @@ class cilBaseResampleReader(VTKPythonAlgorithmBase):
                 end_slice_in_chunks.append( shape[2]-1)
                 num_chunks = len(end_slice_in_chunks)
 
-                z_axis_magnification = num_chunks / (shape[2]-1)
+                z_axis_magnification = num_chunks / (shape[2])
                 
                 target_image_shape = (int(xy_axes_magnification * shape[0]), 
                                     int(xy_axes_magnification * shape[1]), 
@@ -784,10 +802,15 @@ class cilBaseResampleReader(VTKPythonAlgorithmBase):
                 resampled_image.SetSpacing(element_spacing[0]/xy_axes_magnification,
                                         element_spacing[1]/xy_axes_magnification, 
                                         element_spacing[2]/z_axis_magnification)
+
+                print("Z SPACING: ", element_spacing[2]/z_axis_magnification)
+
+                resampled_image.SetOrigin(-1/(2),
+                                        -1/(2), 
+                                        -1/(2))
+                print("ORIGIN Z: ", element_spacing[2]/(2*z_axis_magnification))
                 resampled_image.AllocateScalars(self.GetOutputVTKType(), 1)
             
-                # slice size in bytes
-                slice_length = shape[1] * shape[0] * nbytes
 
                 resampler.SetInputData(reader.GetOutput())
 
@@ -1157,6 +1180,8 @@ class cilBaseCroppedReader(VTKPythonAlgorithmBase):
         else:
             shape = list(readshape)[::-1]
 
+        slice_length = shape[1] * shape[0] * nbytes
+
 
         tmpdir = tempfile.mkdtemp()
         header_filename = os.path.join(tmpdir, "header.mhd")
@@ -1168,20 +1193,36 @@ class cilBaseCroppedReader(VTKPythonAlgorithmBase):
             try:
                 # print("Don't resample")
 
-                cilNumpyMETAImageWriter.WriteMETAImageHeader(self.GetFileName(), 
+                chunk_file_name = os.path.join(tmpdir, "chunk.raw")
+
+                cilNumpyMETAImageWriter.WriteMETAImageHeader(chunk_file_name, 
                                         header_filename, 
-                                        self.GetMetaImageTypeCode(),#self.GetNumpyTypeCode(), 
+                                        self.GetMetaImageTypeCode(),
                                         big_endian, 
-                                        file_header_length, 
+                                        0, 
                                         tuple(shape), 
-                                        spacing=tuple(self.GetElementSpacing()),
-                                        origin=self.GetOrigin()) 
+                                        spacing= tuple(self.GetElementSpacing()),
+                                        origin=(0.,0.,0.))
+
+                image_file = self.GetFileName()
+
+                with open(image_file, "rb") as image_file_object:
+                        end_slice = shape[2]
+                        chunk_location = file_header_length
+                        with open(chunk_file_name, "wb") as chunk_file_object:
+                            image_file_object.seek(chunk_location)
+                            chunk_length = slice_length*end_slice
+                            chunk = image_file_object.read(chunk_length)
+                            chunk_file_object.write(chunk)
+
                 reader.Modified()
                 reader.Update()
+                print(reader.GetOutput().GetScalarComponentAsDouble(0,0,0,0))
                 outData.ShallowCopy(reader.GetOutput())
 
             finally:
                 os.remove(header_filename)
+                os.remove(chunk_file_name)
                 os.rmdir(tmpdir)
 
             return 1
@@ -1202,7 +1243,7 @@ class cilBaseCroppedReader(VTKPythonAlgorithmBase):
 
                         
             image_file = self.GetFileName()
-            slice_length = shape[1] * shape[0] * nbytes
+            
             chunk_location = file_header_length + (self.GetTargetZExtent()[0])* slice_length
 
             with open(chunk_file_name, "wb") as chunk_file_object:
@@ -1482,3 +1523,5 @@ if __name__ == '__main__':
                     if not is_same:
                         raise ValueError('arrays do not match', v1,v2,x,y,z)
         print ('YEEE array match!')
+
+
