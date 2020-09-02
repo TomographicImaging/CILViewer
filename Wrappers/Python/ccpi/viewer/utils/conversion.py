@@ -772,10 +772,10 @@ class cilBaseResampleReader(VTKPythonAlgorithmBase):
                 # indices of the first and last slice per chunk
                 # we will read in slice_per_chunk slices at a time
                 end_slice_in_chunks = [ i for i in \
-                    range (slice_per_chunk, shape[2]-1, slice_per_chunk) ]
+                    range (slice_per_chunk, shape[2], slice_per_chunk) ]
 
                 # append last slice
-                end_slice_in_chunks.append( shape[2]-1)
+                end_slice_in_chunks.append( shape[2])
                 num_chunks = len(end_slice_in_chunks)
 
                 z_axis_magnification = num_chunks / (shape[2])
@@ -803,12 +803,15 @@ class cilBaseResampleReader(VTKPythonAlgorithmBase):
                                         element_spacing[1]/xy_axes_magnification, 
                                         element_spacing[2]/z_axis_magnification)
 
-                print("Z SPACING: ", element_spacing[2]/z_axis_magnification)
+                #print("Z SPACING: ", element_spacing[2]/z_axis_magnification)
 
-                resampled_image.SetOrigin(-1/(2),
-                                        -1/(2), 
-                                        -1/(2))
-                print("ORIGIN Z: ", element_spacing[2]/(2*z_axis_magnification))
+                if z_axis_magnification < 1:
+                    resampled_image.SetOrigin(-0.5,-0.5, -0.5)
+                    #print("Resampled origin: ", [-0.5,-0.5, -0.5])
+                else:
+                    resampled_image.SetOrigin(-0.5,-0.5, 0)
+                    #print("Resampled origin: ", [-0.5,-0.5, 0])
+
                 resampled_image.AllocateScalars(self.GetOutputVTKType(), 1)
             
 
@@ -1126,6 +1129,12 @@ class cilBaseCroppedReader(VTKPythonAlgorithmBase):
             raise ValueError("Unexpected Type:  {}".format(value))
         self.__NumpyTypeCode = value
         self.SetMetaImageTypeCode(Converter.numpy_dtype_char_to_MetaImageType[value])
+
+    def SetRawTypeCode(self, value):
+        if value not in ['int8','uint8','int16','uint16','int32','uint32','float32','float64']:
+            raise ValueError("Unexpected Type: got {}".format(value))
+        self.__RawTypeCode = value
+        self.SetMetaImageTypeCode(Converter.raw_dtype_char_to_MetaImageType[value])
 
     def GetMetaImageTypeCode(self):
         return self.__MetaImageTypeCode
