@@ -635,8 +635,8 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
     def SetDisplayHistogram(self, display):
         if display:
             if (self._viewer.displayHistogram == 0):
-                self.GetRenderer().AddActor(self._viewer.histogramPlotActor)
-                #self.AddActor(self._viewer.histogramPlotActor, HISTOGRAM_ACTOR)
+                #self.GetRenderer().AddActor(self._viewer.histogramPlotActor)
+                self.AddActor(self._viewer.histogramPlotActor, HISTOGRAM_ACTOR)
                 self.firstHistogram = 1
                 self.Render()
 
@@ -792,8 +792,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
         # print ("PICK POS", pickPosition)
 
         pickPosition[self.GetSliceOrientation()] = \
-            self.GetInputData().GetSpacing()[self.GetSliceOrientation()] * self.GetActiveSlice() + \
-            self.GetInputData().GetOrigin()[self.GetSliceOrientation()]
+            self.GetInputData().GetSpacing()[self.GetSliceOrientation()]  * (self.GetActiveSlice()) # + self.GetInputData().GetOrigin()[self.GetSliceOrientation()])
         self.log ("Pick Position " + str (pickPosition))
 
         if (pickPosition != [0,0,0]):
@@ -869,7 +868,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
         spac = self.GetInputData().GetSpacing()
         orig = self.GetInputData().GetOrigin()
 
-        return [round(world_coordinates[i] / spac[i] - orig[i]) for i in range(3)]
+        return [round((world_coordinates[i] + orig[i]) / spac[i] ) for i in range(3)]
     
     def world2imageCoordinateFloat(self, world_coordinates):
         """
@@ -883,14 +882,16 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
         spac = self.GetInputData().GetSpacing()
         orig = self.GetInputData().GetOrigin()
 
-        return [world_coordinates[i] / spac[i] + orig[i] for i in range(3)]
+        return [(world_coordinates[i] + orig[i] ) / spac[i]  for i in range(3)]
 
     def image2world(self, image_coordinates):
 
         spac = self.GetInputData().GetSpacing()
         orig = self.GetInputData().GetOrigin()
 
-        return [(image_coordinates[i] - orig[i]) * spac[i] for i in range(3)]
+        #print("Spacing: ", spac)
+
+        return [(image_coordinates[i] - orig[i]) * spac[i]  for i in range(3)]
 
     def imageCoordinate2display(self, imageposition):
         '''
@@ -1010,6 +1011,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
         self.Render()
 
     def HandleZoomEvent(self, interactor, event):
+        #print("Handling zoom event")
         camera = self.GetActiveCamera()
 
         # Extract change from start of event
@@ -1147,7 +1149,7 @@ class CILViewer2D():
         else:
             self.iren = iren
         # holder for list of actors    
-        self.actors = []
+        self.actors = {}
         self.debug = debug
 
         self.renWin.SetSize(dimx,dimy)
@@ -1446,11 +1448,9 @@ class CILViewer2D():
                 self.imageTracer.SetProjectionNormal(self.sliceOrientation)
                 # Set the Tracer widget's position along the current projection normal,
                 # which should be the same location as the current slice. 
-                self.imageTracer.SetProjectionPosition(
-                        self.GetActiveSlice() * \
-                         self.img3D.GetSpacing()[self.sliceOrientation] - \
-                         self.img3D.GetPoint(0)[self.sliceOrientation] )
-                         #self.img3D.GetOrigin()[self.sliceOrientation] )
+                slice_coords = [0,0,0]
+                slice_coords[self.GetSliceOrientation()] = self.GetActiveSlice()
+                self.imageTracer.SetProjectionPosition(self.style.image2world(slice_coords)[self.GetSliceOrientation()])
                          
     # this->input->GetPoint(0)[this->SliceOrientation] + (this->Slice * this->input->GetSpacing()[this->SliceOrientation]));
             
@@ -1647,19 +1647,29 @@ class CILViewer2D():
 
             if display_type == "slice":
                 for i, value in enumerate(data):
-                    data[i]= data[i] * self.visualisation_downsampling[self.GetSliceOrientation()]
+                    if self.visualisation_downsampling[self.GetSliceOrientation()] != 1:
+                        data[i]= (data[i] +0.5) * self.visualisation_downsampling[self.GetSliceOrientation()]
+                    else:
+                        data[i]= (data[i]) * self.visualisation_downsampling[self.GetSliceOrientation()]
+
                 data = tuple(data)
                 text = "Slice %d/%d" % data
             
             elif display_type == "pick":
                 for i, value in enumerate(self.visualisation_downsampling):
-                    data[i]= data[i] * self.visualisation_downsampling[i]
+                    if self.visualisation_downsampling[i] != 1:
+                        data[i]= (data[i] + 0.5) * self.visualisation_downsampling[i]
+                    else:
+                        data[i]= (data[i]) * self.visualisation_downsampling[i]
                 data = tuple(data)
                 text = "[%d,%d,%d] : %.2g" % data
 
             elif display_type == "roi":
                 for i, value in enumerate(self.visualisation_downsampling):
-                    data[i]= data[i] * self.visualisation_downsampling[i]
+                    if self.visualisation_downsampling[i] != 1:
+                        data[i]= (data[i] + 0.5) * self.visualisation_downsampling[i]
+                    else:
+                        data[i]= (data[i]) * self.visualisation_downsampling[i]
                 data = tuple(data)
                 text = "ROI: %d x %d x %d, %.2f kp" % data
 
@@ -1918,22 +1928,37 @@ class CILViewer2D():
         return self.wl.GetLevel()
     
     def AddActor(self, actor, name=None):
-        '''self.log("Calling AddActor " + name)
-        present_actors = self.ren.GetActors()
+        '''print("ADDING ACTOR", name)
+        self.log("Calling AddActor " + name)
+        present_actors = self.ren.GetActors() # Only seems to return some of the actors - possibly only the visible ones?
         present_actors.InitTraversal()
         self.log("Currently present actors {}".format(present_actors))
+
+        print("Current len", present_actors.GetNumberOfItems())
     
         for i in range(present_actors.GetNumberOfItems()):
             nextActor = present_actors.GetNextActor()
+            nextActor.SetVisibility(False)
             self.log("{} {} Visibility {}".format(i, nextActor, nextActor.GetVisibility() ))
             self.log("ClassName"+ str( nextActor.GetClassName()))
-            
-            
-        if name is None:
-            name = 'actor_{}'.format(present_actors.GetNumberOfItems()+1)
-        '''
+
         
+        print("intermediate len", self.ren.GetActors().GetNumberOfItems())        
+        if name is None:
+            name = 'actor_{}'.format(present_actors.GetNumberOfItems()+1)'''
         
         self.ren.AddActor(actor)
-        self.actors.append(name)
+        # print("final len", self.ren.GetActors().GetNumberOfItems())
+        self.actors[name]  = actor
+
+    def GetActorsDict(self):
+        return self.actors
+    
+    def GetActor(self, name):
+        if name in self.actors:
+            actor = self.actors[name]       
+            return actor
+        else:
+            return(None)
+
     
