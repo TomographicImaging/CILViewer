@@ -14,13 +14,11 @@ build:
   
 requirements:
   build:
-    - {{ pin_compatible('numpy', max_pin='x.x') }}
     - python 
     - setuptools
     - numpy
  
   run:
-    - {{ pin_compatible('numpy', max_pin='x.x') }}
     - python
     - numpy
     - vtk ==8.1.2
