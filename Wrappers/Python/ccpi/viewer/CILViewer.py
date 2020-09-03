@@ -47,10 +47,10 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
         return self._viewer.img3D.GetDimensions()
 
     def GetActiveSlice(self):
-        return self._viewer.sliceno
+        return self._viewer.getActiveSlice()
 
-    def SetActiveSlice(self, value):
-        self._viewer.sliceno = value
+    def SetActiveSlice(self, sliceno):
+        self._viewer.setActiveSlice(sliceno)
 
     def UpdatePipeline(self, resetcamera=False):
         self._viewer.updatePipeline(resetcamera)
@@ -102,6 +102,21 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
 
     def GetViewerEvent(self, event):
         return self._viewer.event.isActive(event)
+    
+    def SetInitialLevel(self, level):
+        self._viewer.InitialLevel = level
+
+    def GetInitialLevel(self):
+        return self._viewer.InitialLevel
+
+    def SetInitialWindow(self, window):
+        self._viewer.InitialWindow = window
+
+    def GetInitialWindow(self):
+        return self._viewer.InitialWindow
+
+    def GetWindowLevel(self):
+        return self._viewer.wl
 
     def HideActor(self, actorno, delete=False):
         self._viewer.hideActor(actorno, delete)
@@ -162,22 +177,36 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
         alt = interactor.GetShiftKey()
 
         if interactor.GetKeyCode() == "x":
-
             self.SetSliceOrientation( SLICE_ORIENTATION_YZ )
-            self.SetActiveSlice(int(self.GetDimensions()[0]/2))
             self.UpdatePipeline(resetcamera=True)
 
         elif interactor.GetKeyCode() == "y":
-
             self.SetSliceOrientation(SLICE_ORIENTATION_XZ)
-            self.SetActiveSlice(int(self.GetDimensions()[1] / 2))
             self.UpdatePipeline(resetcamera=True)
 
         elif interactor.GetKeyCode() == "z":
-
             self.SetSliceOrientation(SLICE_ORIENTATION_XY)
-            self.SetActiveSlice(int(self.GetDimensions()[2] / 2))
             self.UpdatePipeline(resetcamera=True)
+
+        elif interactor.GetKeyCode() == "a":
+            # reset color/window
+            cmin, cmax = self._viewer.ia.GetAutoRange()
+
+            # probably the level could be the median of the image within
+            # the percintiles
+            level = self._viewer.ia.GetMedian()
+            # accommodates all values between the level an the percentiles
+            window = 2*max(abs(level-cmin),abs(level-cmax))
+
+            self.SetInitialLevel( level )
+            self.SetInitialWindow( window )
+
+            self.GetWindowLevel().SetLevel(self.GetInitialLevel())
+            self.GetWindowLevel().SetWindow(self.GetInitialWindow())
+
+            self.GetWindowLevel().Update()
+
+            self.Render()
 
         elif ctrl and not (alt and shift):
             # CREATE ROI
@@ -212,6 +241,11 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
             else:
                 self._viewer.sliceActor.VisibilityOn()
             self._viewer.updatePipeline()
+        elif interactor.GetKeyCode() == "i":
+            # toggle interpolation of slice actor
+            is_interpolated = self._viewer.sliceActor.GetInterpolate()
+            self._viewer.sliceActor.SetInterpolate(not is_interpolated)
+
         else:
             print("Unhandled event %s" % interactor.GetKeyCode())
 
@@ -259,6 +293,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
                              "  - Save render to current_render.png: r\n"
                              "  - Toggle visibility of volume render: v\n"
                              "  - Toggle visibility of slice: s\n"
+                             "  - Whole image Auto Window/Level: a\n"
                              )
         tprop = textMapperC.GetTextProperty()
         tprop.ShallowCopy(multiLineTextProp)
@@ -302,7 +337,7 @@ class CILViewer():
 
         # img 3D as slice
         self.img3D = None
-        self.sliceno = 0
+        self.slicenos = [0,0,0]
         self.sliceOrientation = SLICE_ORIENTATION_XY
         self.sliceActor = vtk.vtkImageActor()
         self.voi = vtk.vtkExtractVOI()
@@ -370,6 +405,12 @@ class CILViewer():
     def GetSliceOrientation(self):
         return self.sliceOrientation
 
+    def getActiveSlice(self):
+        return self.slicenos[self.GetSliceOrientation()]
+
+    def setActiveSlice(self, sliceno):
+        self.slicenos[self.GetSliceOrientation()] = sliceno
+
     def getRenderWindow(self):
         '''returns the render window'''
         return self.renWin
@@ -381,6 +422,12 @@ class CILViewer():
     def getCamera(self):
         '''returns the active camera'''
         return self.ren.GetActiveCamera()
+
+    def getColourWindow(self):
+        return self.wl.GetWindow()
+
+    def getColourLevel(self):
+        return self.wl.GetLevel()
 
     def createPolyDataActor(self, polydata):
         '''returns an actor for a given polydata'''
@@ -551,8 +598,11 @@ class CILViewer():
         self.voi.SetInputData(self.img3D)
 
         extent = [ i for i in self.img3D.GetExtent()]
-        extent[self.sliceOrientation * 2] = self.sliceno
-        extent[self.sliceOrientation * 2 + 1] = self.sliceno
+        for i in range(len(self.slicenos)):
+            self.slicenos[i] = round((extent[i * 2+1] + extent[i * 2])/2)
+        extent[self.sliceOrientation * 2] = self.getActiveSlice()
+        extent[self.sliceOrientation * 2 + 1] = self.getActiveSlice()
+
         self.voi.SetVOI(extent[0], extent[1],
                    extent[2], extent[3],
                    extent[4], extent[5])
@@ -593,8 +643,8 @@ class CILViewer():
         self.hideActor(self.sliceActorNo)
 
         extent = [i for i in self.img3D.GetExtent()]
-        extent[self.sliceOrientation * 2] = self.sliceno
-        extent[self.sliceOrientation * 2 + 1] = self.sliceno
+        extent[self.sliceOrientation * 2] = self.getActiveSlice()
+        extent[self.sliceOrientation * 2 + 1] = self.getActiveSlice()
         self.voi.SetVOI(extent[0], extent[1],
                    extent[2], extent[3],
                    extent[4], extent[5])

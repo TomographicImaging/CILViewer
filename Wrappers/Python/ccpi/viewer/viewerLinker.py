@@ -151,6 +151,16 @@ class ViewerLinker():
 
         self._to.linkOrientation = linkOrientation
         self._from.linkOrientation = linkOrientation
+    
+    def setLinkInterpolation(self, linkInterpolation):
+        """
+        Boolean flag to set linkage of interpolation of slice actor
+        :param linkInterpolation: (boolean)
+        """
+
+        self._to.linkInterpolation = linkInterpolation
+        self._from.linkInterpolation = linkInterpolation
+
 
 
 #################################
@@ -192,6 +202,7 @@ class ViewerLinkObserver():
         self.linkWindowLevel = True
         self.linkSlice = True
         self.linkOrientation = True
+        self.linkInterpolation = True
 
     def __call__(self, interactor, event):
         """
@@ -316,8 +327,17 @@ class ViewerLinkObserver():
 
         # KeyPress and orientation
         if (event == "KeyPressEvent"  or state == 1026):
-                if ( not (self.linkOrientation and ( interactor.GetKeyCode() == "x" or interactor.GetKeyCode() == "y" or interactor.GetKeyCode() == "z"))):
-                    shouldPassEvent = False
+            orientation_link_event = self.linkOrientation and ( interactor.GetKeyCode() == "x" or interactor.GetKeyCode() == "y" or interactor.GetKeyCode() == "z")
+            window_level_link_event = self.linkWindowLevel and (interactor.GetKeyCode() == "a" or interactor.GetKeyCode() == "w")
+            interpolation_link_event = self.linkInterpolation and interactor.GetKeyCode() == "i"
+            if not (orientation_link_event or interpolation_link_event):
+                shouldPassEvent = False
+
+            if window_level_link_event:
+                # Set current window/level
+                window = self.sourceViewer.getColourWindow()
+                level = self.sourceViewer.getColourLevel()
+                self.targetVtkViewer.setColourWindowLevel(window, level)
             
         # Check if event should be passed
         if (shouldPassEvent):

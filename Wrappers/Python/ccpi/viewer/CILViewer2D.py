@@ -149,10 +149,10 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
         self._viewer.sliceOrientation = orientation
 
     def GetActiveSlice(self):
-        return self._viewer.sliceno
+        return self._viewer.GetActiveSlice()
 
     def SetActiveSlice(self, sliceno):
-        self._viewer.sliceno = sliceno
+        self._viewer.SetActiveSlice(sliceno)
 
     def UpdatePipeline(self, reset = False):
         self._viewer.updatePipeline(reset)
@@ -222,6 +222,15 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
 
     def GetROI(self):
         return self._viewer.ROI
+
+    def GetVisualisationDownsampling(self):
+        return self._viewer.visualisation_downsampling
+
+    def SetVisualisationDownsampling(self, value):
+        self._viewer.setVisualisationDownsampling(value)
+
+    def CreateAnnotationText(self, display_type, data):
+        return self._viewer.createAnnotationText(display_type, data)
 
     def UpdateCornerAnnotation(self, text, corner):
         self._viewer.updateCornerAnnotation(text, corner)
@@ -423,7 +432,6 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
             self.SetActiveCamera(camera)
 
             self.SetSliceOrientation ( SLICE_ORIENTATION_YZ )
-            self.SetActiveSlice( int(self.GetDimensions()[0] / 2) )
             self.UpdatePipeline(True)
 
         elif interactor.GetKeyCode() == "y":
@@ -447,7 +455,6 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
             camera.SetViewUp(1,0,0)
             self.SetActiveCamera(camera)
             self.SetSliceOrientation(SLICE_ORIENTATION_XZ)
-            self.SetActiveSlice(int(self.GetInputData().GetDimensions()[1] / 2))
             self.UpdatePipeline(True)
 
         elif interactor.GetKeyCode() == "z":
@@ -472,7 +479,6 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
             self.SetActiveCamera(camera)
             self.ResetCamera()
             self.SetSliceOrientation(SLICE_ORIENTATION_XY)
-            self.SetActiveSlice(int(self.GetInputData().GetDimensions()[2] / 2))
             self.UpdatePipeline(True)
 
         elif interactor.GetKeyCode() == "a":
@@ -515,9 +521,9 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
                 self.SetEventActive("SHOW_LINE_PROFILE_EVENT")
                 self.DisplayLineProfile(interactor, event, True)
 
-        elif interactor.GetKeyCode() == 'h':
+        elif interactor.GetKeyCode() == "h":
             self.DisplayHelp()
-        elif interactor.GetKeyCode() == 'w':
+        elif interactor.GetKeyCode() == "w":
             x,y = interactor.GetEventPosition()
             print (x,y)
             ic = self.display2imageCoordinate((x,y))
@@ -584,10 +590,10 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
             self.UpdateSliceActor()
             self.AdjustCamera()
             self.Render()
-        elif interactor.GetKeyCode() == 't':
+        elif interactor.GetKeyCode() == "t":
             # tracing event is captured by widget
             pass
-        elif interactor.GetKeyCode() == 'i':
+        elif interactor.GetKeyCode() == "i":
             # toggle interpolation of slice actor
             is_interpolated = self._viewer.sliceActor.GetInterpolate()
             self._viewer.sliceActor.SetInterpolate(not is_interpolated)
@@ -629,8 +635,8 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
     def SetDisplayHistogram(self, display):
         if display:
             if (self._viewer.displayHistogram == 0):
-                self.GetRenderer().AddActor(self._viewer.histogramPlotActor)
-                #self.AddActor(self._viewer.histogramPlotActor, HISTOGRAM_ACTOR)
+                #self.GetRenderer().AddActor(self._viewer.histogramPlotActor)
+                self.AddActor(self._viewer.histogramPlotActor, HISTOGRAM_ACTOR)
                 self.firstHistogram = 1
                 self.Render()
 
@@ -734,7 +740,8 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
             z = abs(roi[1][1] - roi[0][1])
 
         # Update the text bottom right of the viewer and histogram
-        text = "ROI: %d x %d x %d, %.2f kp" % (x,y,z,float(x*y)/1024.)
+        roi_data = (x,y,z,float(x*y)/1024.)
+        text = self.CreateAnnotationText("roi", roi_data)
         self.log (text)
         self.UpdateCornerAnnotation(text, 1)
         self.UpdateROIHistogram()
@@ -785,8 +792,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
         # print ("PICK POS", pickPosition)
 
         pickPosition[self.GetSliceOrientation()] = \
-            self.GetInputData().GetSpacing()[self.GetSliceOrientation()] * self.GetActiveSlice() + \
-            self.GetInputData().GetOrigin()[self.GetSliceOrientation()]
+            self.GetInputData().GetSpacing()[self.GetSliceOrientation()]  * (self.GetActiveSlice()) # + self.GetInputData().GetOrigin()[self.GetSliceOrientation()])
         self.log ("Pick Position " + str (pickPosition))
 
         if (pickPosition != [0,0,0]):
@@ -862,7 +868,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
         spac = self.GetInputData().GetSpacing()
         orig = self.GetInputData().GetOrigin()
 
-        return [int(world_coordinates[i] / spac[i] - orig[i]) for i in range(3)]
+        return [round((world_coordinates[i] + orig[i]) / spac[i] ) for i in range(3)]
     
     def world2imageCoordinateFloat(self, world_coordinates):
         """
@@ -876,14 +882,16 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
         spac = self.GetInputData().GetSpacing()
         orig = self.GetInputData().GetOrigin()
 
-        return [world_coordinates[i] / spac[i] + orig[i] for i in range(3)]
+        return [(world_coordinates[i] + orig[i] ) / spac[i]  for i in range(3)]
 
     def image2world(self, image_coordinates):
 
         spac = self.GetInputData().GetSpacing()
         orig = self.GetInputData().GetOrigin()
 
-        return [(image_coordinates[i] - orig[i]) * spac[i] for i in range(3)]
+        #print("Spacing: ", spac)
+
+        return [(image_coordinates[i] - orig[i]) * spac[i]  for i in range(3)]
 
     def imageCoordinate2display(self, imageposition):
         '''
@@ -1003,6 +1011,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
         self.Render()
 
     def HandleZoomEvent(self, interactor, event):
+        #print("Handling zoom event")
         camera = self.GetActiveCamera()
 
         # Extract change from start of event
@@ -1107,7 +1116,8 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
         self.last_picked_voxel = vox
         # print ("Pixel %d,%d,%d Value %f" % vox )
         self._viewer.cornerAnnotation.VisibilityOn()
-        self.UpdateCornerAnnotation("[%d,%d,%d] : %.2g" % vox , 0)
+        text = self.CreateAnnotationText("pick", vox)
+        self.UpdateCornerAnnotation(text, 0)
         self.Render()
 
     def DisplayLineProfile(self, interactor, event, display):
@@ -1139,7 +1149,7 @@ class CILViewer2D():
         else:
             self.iren = iren
         # holder for list of actors    
-        self.actors = []
+        self.actors = {}
         self.debug = debug
 
         self.renWin.SetSize(dimx,dimy)
@@ -1159,7 +1169,7 @@ class CILViewer2D():
 
         # data (input 1)
         self.img3D = None
-        self.sliceno = 0
+        self.slicenos = [0,0,0]
         self.sliceOrientation = SLICE_ORIENTATION_XY
         #Actors
         self.sliceActor = vtk.vtkImageActor()
@@ -1227,6 +1237,7 @@ class CILViewer2D():
         self.cornerAnnotation.VisibilityOff();
         self.cornerAnnotation.GetTextProperty().ShadowOn();
         self.cornerAnnotation.SetLayerNumber(1);
+        self.visualisation_downsampling = [1,1,1] #used to scale corner annotation
 
         # cursor doesn't show up
         self.cursor = vtk.vtkCursor2D()
@@ -1390,8 +1401,8 @@ class CILViewer2D():
 
         self.installPipeline()
 
-    def displaySlice(self, sliceno = 0):
-        self.sliceno = sliceno
+    def displaySlice(self, sliceno = [0]):
+        self.SetActiveSlice(sliceno)
 
         self.updatePipeline()
 
@@ -1401,8 +1412,8 @@ class CILViewer2D():
 
     def updatePipeline(self, resetcamera = False):
         extent = [ i for i in self.img3D.GetExtent()]
-        extent[self.sliceOrientation * 2] = self.sliceno
-        extent[self.sliceOrientation * 2 + 1] = self.sliceno
+        extent[self.sliceOrientation * 2] = self.GetActiveSlice()
+        extent[self.sliceOrientation * 2 + 1] = self.GetActiveSlice()
         self.voi.SetVOI(extent[0], extent[1],
                    extent[2], extent[3],
                    extent[4], extent[5])
@@ -1423,7 +1434,8 @@ class CILViewer2D():
                    extent[4], extent[5])
             self.sliceActor2.Update()
             
-        self.updateCornerAnnotation("Slice %d/%d" % (self.sliceno, self.img3D.GetDimensions()[self.sliceOrientation]-1))
+        text = self.createAnnotationText("slice", (self.GetActiveSlice(), self.img3D.GetDimensions()[self.sliceOrientation]-1))
+        self.updateCornerAnnotation(text, 0)
 
         if self.displayHistogram:
             self.updateROIHistogram()
@@ -1436,11 +1448,9 @@ class CILViewer2D():
                 self.imageTracer.SetProjectionNormal(self.sliceOrientation)
                 # Set the Tracer widget's position along the current projection normal,
                 # which should be the same location as the current slice. 
-                self.imageTracer.SetProjectionPosition(
-                        self.GetActiveSlice() * \
-                         self.img3D.GetSpacing()[self.sliceOrientation] - \
-                         self.img3D.GetPoint(0)[self.sliceOrientation] )
-                         #self.img3D.GetOrigin()[self.sliceOrientation] )
+                slice_coords = [0,0,0]
+                slice_coords[self.GetSliceOrientation()] = self.GetActiveSlice()
+                self.imageTracer.SetProjectionPosition(self.style.image2world(slice_coords)[self.GetSliceOrientation()])
                          
     # this->input->GetPoint(0)[this->SliceOrientation] + (this->Slice * this->input->GetSpacing()[this->SliceOrientation]));
             
@@ -1456,22 +1466,27 @@ class CILViewer2D():
 
     def installPipeline(self):
         '''Slices a 3D volume and then creates an actor to be rendered'''
-        
         self.log("installPipeline")
         self.ren.AddViewProp(self.cornerAnnotation)
 
         self.voi.SetInputData(self.img3D)
         #select one slice in Z
         extent = [ i for i in self.img3D.GetExtent()]
-        extent[self.sliceOrientation * 2] = self.sliceno
-        extent[self.sliceOrientation * 2 + 1] = self.sliceno
+        # print("Extent: ", extent)
+        # print("Dimensions: ", self.img3D.GetDimensions())
+        for i in range(len(self.slicenos)):
+            self.slicenos[i] = round((extent[i * 2+1] + extent[i * 2])/2)
+        #print("Sliceno: ", self.GetActiveSlice())
+
+        extent[self.sliceOrientation * 2] = self.GetActiveSlice()
+        extent[self.sliceOrientation * 2 + 1] = self.GetActiveSlice()
+        
         self.voi.SetVOI(extent[0], extent[1],
-                   extent[2], extent[3],
-                   extent[4], extent[5])
+                extent[2], extent[3],
+                extent[4], extent[5])
 
         self.voi.Update()
         # set window/level for current slices
-
 
         self.wl = vtk.vtkImageMapToWindowLevelColors()
         self.ia.SetInputData(self.voi.GetOutput())
@@ -1489,7 +1504,7 @@ class CILViewer2D():
         self.InitialLevel = level
         self.InitialWindow = window
         self.log("level {0} window {1}".format(self.InitialLevel,
-                                               self.InitialWindow))
+                                            self.InitialWindow))
 
 
         self.wl.SetLevel(self.InitialLevel)
@@ -1500,8 +1515,8 @@ class CILViewer2D():
 
         self.sliceActor.SetInputData(self.wl.GetOutput())
         self.sliceActor.SetDisplayExtent(extent[0], extent[1],
-                   extent[2], extent[3],
-                   extent[4], extent[5])
+                extent[2], extent[3],
+                extent[4], extent[5])
         self.sliceActor.Update()
         self.sliceActor.SetInterpolate(False)
         # actors are added directly to the renderer
@@ -1517,12 +1532,13 @@ class CILViewer2D():
         self.ren.AddViewProp(self.cursorActor)
         self.cursorActor.VisibilityOn()
         
-                 
+                
         self.imageTracer.SetViewProp(self.sliceActor);
         
         self.iren.Initialize()
         self.renWin.Render()
         #self.iren.Start()
+
     def installPipeline2(self):
         '''Slices a 3D volume and then creates an actor to be rendered'''
         self.log("installPipeline2")
@@ -1570,7 +1586,7 @@ class CILViewer2D():
         # adjust camera focal point
         camera = self.getRenderer().GetActiveCamera()
         fp = list (camera.GetFocalPoint())
-        fp[self.sliceOrientation] = self.sliceno
+        fp[self.sliceOrientation] = self.GetActiveSlice()
         camera.SetFocalPoint(fp)
 
         if resetcamera:
@@ -1594,11 +1610,25 @@ class CILViewer2D():
     def startRenderLoop(self):
         self.iren.Start()
 
+    def setSliceOrientation(self, axis):
+        if axis in ['x','y','z']:
+            self.getInteractor().SetKeyCode(axis)
+            self.style.OnKeyPress(self.getInteractor(), "KeyPressEvent")
+
     def GetSliceOrientation(self):
         return self.sliceOrientation
 
+    def SetActiveSlice(self, sliceno):
+        self.slicenos[self.GetSliceOrientation()] = sliceno
+
     def GetActiveSlice(self):
-        return self.sliceno
+        return self.slicenos[self.GetSliceOrientation()]
+
+    def setVisualisationDownsampling(self, value):
+        self.visualisation_downsampling = value
+
+    def getVisualisationDownsampling(self):
+        return self.visualisation_downsampling
 
     def updateCornerAnnotation(self, text , idx=0, visibility=True):
         if visibility:
@@ -1608,6 +1638,48 @@ class CILViewer2D():
 
         self.cornerAnnotation.SetText(idx, text)
         self.iren.Render()
+
+    def createAnnotationText(self, display_type, data):
+        #print("Data: ", data)
+        #print("Resample rate: ", self.visualisation_downsampling)
+        if isinstance(data, tuple):
+            data = list(data)
+
+            if display_type == "slice":
+                for i, value in enumerate(data):
+                    if self.visualisation_downsampling[self.GetSliceOrientation()] != 1:
+                        data[i]= (data[i] +0.5) * self.visualisation_downsampling[self.GetSliceOrientation()]
+                    else:
+                        data[i]= (data[i]) * self.visualisation_downsampling[self.GetSliceOrientation()]
+
+                data = tuple(data)
+                text = "Slice %d/%d" % data
+            
+            elif display_type == "pick":
+                for i, value in enumerate(self.visualisation_downsampling):
+                    if self.visualisation_downsampling[i] != 1:
+                        data[i]= (data[i] + 0.5) * self.visualisation_downsampling[i]
+                    else:
+                        data[i]= (data[i]) * self.visualisation_downsampling[i]
+                data = tuple(data)
+                text = "[%d,%d,%d] : %.2g" % data
+
+            elif display_type == "roi":
+                for i, value in enumerate(self.visualisation_downsampling):
+                    if self.visualisation_downsampling[i] != 1:
+                        data[i]= (data[i] + 0.5) * self.visualisation_downsampling[i]
+                    else:
+                        data[i]= (data[i]) * self.visualisation_downsampling[i]
+                data = tuple(data)
+                text = "ROI: %d x %d x %d, %.2f kp" % data
+
+            else:
+                text = None
+
+            #print("Text: ", text)
+
+        return text
+
 
     def saveRender(self, filename, renWin=None):
         '''Save the render window to PNG file'''
@@ -1710,10 +1782,7 @@ class CILViewer2D():
         self.histogramPlotActor.SetXRange(irange[0],irange[1])
         self.histogramPlotActor.SetYRange( self.roiIA.GetOutput().GetScalarRange() )
 
-    def setSliceOrientation(self, axis):
-        if axis in ['x','y','z']:
-            self.getInteractor().SetKeyCode(axis)
-            self.style.OnKeyPress(self.getInteractor(), "KeyPressEvent")
+
 
     def setColourWindowLevel(self, window, level):
         self.wl.SetWindow(window)
@@ -1859,22 +1928,37 @@ class CILViewer2D():
         return self.wl.GetLevel()
     
     def AddActor(self, actor, name=None):
-        '''self.log("Calling AddActor " + name)
-        present_actors = self.ren.GetActors()
+        '''print("ADDING ACTOR", name)
+        self.log("Calling AddActor " + name)
+        present_actors = self.ren.GetActors() # Only seems to return some of the actors - possibly only the visible ones?
         present_actors.InitTraversal()
         self.log("Currently present actors {}".format(present_actors))
+
+        print("Current len", present_actors.GetNumberOfItems())
     
         for i in range(present_actors.GetNumberOfItems()):
             nextActor = present_actors.GetNextActor()
+            nextActor.SetVisibility(False)
             self.log("{} {} Visibility {}".format(i, nextActor, nextActor.GetVisibility() ))
             self.log("ClassName"+ str( nextActor.GetClassName()))
-            
-            
-        if name is None:
-            name = 'actor_{}'.format(present_actors.GetNumberOfItems()+1)
-        '''
+
         
+        print("intermediate len", self.ren.GetActors().GetNumberOfItems())        
+        if name is None:
+            name = 'actor_{}'.format(present_actors.GetNumberOfItems()+1)'''
         
         self.ren.AddActor(actor)
-        self.actors.append(name)
+        # print("final len", self.ren.GetActors().GetNumberOfItems())
+        self.actors[name]  = actor
+
+    def GetActorsDict(self):
+        return self.actors
+    
+    def GetActor(self, name):
+        if name in self.actors:
+            actor = self.actors[name]       
+            return actor
+        else:
+            return(None)
+
     
