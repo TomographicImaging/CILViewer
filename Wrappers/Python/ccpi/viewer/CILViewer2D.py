@@ -1237,7 +1237,10 @@ class CILViewer2D():
         self.cornerAnnotation.VisibilityOff();
         self.cornerAnnotation.GetTextProperty().ShadowOn();
         self.cornerAnnotation.SetLayerNumber(1);
-        self.visualisation_downsampling = [1,1,1] #used to scale corner annotation
+
+        #used to scale corner annotation:
+        self.visualisation_downsampling = [1,1,1] 
+        self.display_unsampled_coords = False
 
         # cursor doesn't show up
         self.cursor = vtk.vtkCursor2D()
@@ -1336,9 +1339,19 @@ class CILViewer2D():
         # Use 't' to activate image tracer
         self.imageTracer.SetKeyPressActivationValue('t')
         
-        
         # Set autoclose to on
         self.imageTracer.AutoCloseOn()
+
+        # axis orientation widget
+        om = vtk.vtkAxesActor()
+        ori = vtk.vtkOrientationMarkerWidget()
+        ori.SetOutlineColor( 0.9300, 0.5700, 0.1300 )
+        ori.SetInteractor(self.iren)
+        ori.SetOrientationMarker(om)
+        ori.SetViewport( 0.0, 0.0, 0.4, 0.4 )
+        ori.SetEnabled(1)
+        ori.InteractiveOff()
+        self.orientation_marker = ori
 
 
     def log(self, msg):
@@ -1630,6 +1643,13 @@ class CILViewer2D():
     def getVisualisationDownsampling(self):
         return self.visualisation_downsampling
 
+    def setDisplayUnsampledCoordinates(self, value):
+        self.display_unsampled_coords = value
+
+    def getDisplayUnsampledCoordinates(self):
+        return self.display_unsampled_coords
+
+
     def updateCornerAnnotation(self, text , idx=0, visibility=True):
         if visibility:
             self.cornerAnnotation.VisibilityOn()
@@ -1646,30 +1666,33 @@ class CILViewer2D():
             data = list(data)
 
             if display_type == "slice":
-                for i, value in enumerate(data):
-                    if self.visualisation_downsampling[self.GetSliceOrientation()] != 1:
-                        data[i]= (data[i] +0.5) * self.visualisation_downsampling[self.GetSliceOrientation()]
-                    else:
-                        data[i]= (data[i]) * self.visualisation_downsampling[self.GetSliceOrientation()]
+                if self.display_unsampled_coords:
+                    for i, value in enumerate(data):
+                        if self.visualisation_downsampling[self.GetSliceOrientation()] != 1:
+                            data[i]= (data[i] +0.5) * self.visualisation_downsampling[self.GetSliceOrientation()]
+                        else:
+                            data[i]= (data[i]) * self.visualisation_downsampling[self.GetSliceOrientation()]
 
                 data = tuple(data)
                 text = "Slice %d/%d" % data
             
             elif display_type == "pick":
-                for i, value in enumerate(self.visualisation_downsampling):
-                    if self.visualisation_downsampling[i] != 1:
-                        data[i]= (data[i] + 0.5) * self.visualisation_downsampling[i]
-                    else:
-                        data[i]= (data[i]) * self.visualisation_downsampling[i]
+                if self.display_unsampled_coords:
+                    for i, value in enumerate(self.visualisation_downsampling):
+                        if self.visualisation_downsampling[i] != 1:
+                            data[i]= (data[i] + 0.5) * self.visualisation_downsampling[i]
+                        else:
+                            data[i]= (data[i]) * self.visualisation_downsampling[i]
                 data = tuple(data)
                 text = "[%d,%d,%d] : %.2g" % data
 
             elif display_type == "roi":
-                for i, value in enumerate(self.visualisation_downsampling):
-                    if self.visualisation_downsampling[i] != 1:
-                        data[i]= (data[i] + 0.5) * self.visualisation_downsampling[i]
-                    else:
-                        data[i]= (data[i]) * self.visualisation_downsampling[i]
+                if self.display_unsampled_coords:
+                    for i, value in enumerate(self.visualisation_downsampling):
+                        if self.visualisation_downsampling[i] != 1:
+                            data[i]= (data[i] + 0.5) * self.visualisation_downsampling[i]
+                        else:
+                            data[i]= (data[i]) * self.visualisation_downsampling[i]
                 data = tuple(data)
                 text = "ROI: %d x %d x %d, %.2f kp" % data
 

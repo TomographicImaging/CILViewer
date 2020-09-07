@@ -23,10 +23,7 @@ from distutils.core import setup
 import os
 import sys
 
-cil_version=os.environ['CIL_VERSION']
-if  cil_version == '':
-    print("Please set the environmental variable CIL_VERSION")
-    sys.exit(1)
+cil_version = "20.07.3"
 
 setup(
     name="ccpi-viewer",
