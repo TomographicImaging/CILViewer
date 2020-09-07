@@ -23,7 +23,7 @@ from distutils.core import setup
 import os
 import sys
 
-cil_version = "20.07.2"
+cil_version = "20.07.3"
 
 setup(
     name="ccpi-viewer",
