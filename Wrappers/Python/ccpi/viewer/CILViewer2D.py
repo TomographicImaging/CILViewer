@@ -1339,9 +1339,19 @@ class CILViewer2D():
         # Use 't' to activate image tracer
         self.imageTracer.SetKeyPressActivationValue('t')
         
-        
         # Set autoclose to on
         self.imageTracer.AutoCloseOn()
+
+        # axis orientation widget
+        om = vtk.vtkAxesActor()
+        ori = vtk.vtkOrientationMarkerWidget()
+        ori.SetOutlineColor( 0.9300, 0.5700, 0.1300 )
+        ori.SetInteractor(self.iren)
+        ori.SetOrientationMarker(om)
+        ori.SetViewport( 0.0, 0.0, 0.4, 0.4 )
+        ori.SetEnabled(1)
+        ori.InteractiveOff()
+        self.orientation_marker = ori
 
 
     def log(self, msg):
