@@ -419,6 +419,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
             camera.ParallelProjectionOn()
             camera.SetFocalPoint(self.GetActiveCamera().GetFocalPoint())
             camera.SetPosition(self.GetActiveCamera().GetPosition())
+            self.SetInitialCameraPosition(self.GetActiveCamera().GetPosition())
             camera.SetViewUp(self.GetActiveCamera().GetViewUp())
 
             # Rotation of camera depends on current orientation:
@@ -443,6 +444,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
             camera.ParallelProjectionOn()
             camera.SetFocalPoint(self.GetActiveCamera().GetFocalPoint())
             camera.SetPosition(self.GetActiveCamera().GetPosition())
+            self.SetInitialCameraPosition(self.GetActiveCamera().GetPosition())
             camera.SetViewUp(self.GetActiveCamera().GetViewUp())
 
             # Rotation of camera depends on current orientation:
@@ -465,6 +467,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
             camera = vtk.vtkCamera()
             camera.ParallelProjectionOn()
             camera.SetPosition(self.GetActiveCamera().GetPosition())
+            self.SetInitialCameraPosition(self.GetActiveCamera().GetPosition())
             camera.SetFocalPoint(self.GetActiveCamera().GetFocalPoint())
             camera.SetViewUp(self.GetActiveCamera().GetViewUp())
 
@@ -1031,34 +1034,33 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
         self.dy = dy
 
     def HandlePanEvent(self, interactor, event):
+        #Camera uses world coordinates, not display coordinates so we have to make a coneversion
+        interactor_event_position = interactor.GetEventPosition()
+        interactor_initial_event_position = interactor.GetInitialEventPosition()
 
-        x,y = interactor.GetEventPosition()
-        x0,y0 = interactor.GetInitialEventPosition()
+        event_position = interactor.image2world(interactor.display2imageCoordinate(interactor_event_position)[:-1])
+        initial_event_position = interactor.image2world(interactor.display2imageCoordinate(interactor_initial_event_position)[:-1])
 
-        dx = (x - x0)/2
-        dy = (y - y0)/2
+        #Update initial position to current event position, ready for next panning event:
+        interactor.SetInitialEventPosition(interactor_event_position) 
+        
+        change = []
+        for i in range(len(event_position)):
+            change.append(event_position[i]-initial_event_position[i]) 
 
         camera = self.GetActiveCamera()
+
         newposition = [i for i in self.GetInitialCameraPosition()]
-        newfocalpoint = [i for i in self.GetActiveCamera().GetFocalPoint()]
-        if self.GetSliceOrientation() == SLICE_ORIENTATION_XY:
-            newposition[0] -= dx
-            newposition[1] -= dy
-            newfocalpoint[0] = newposition[0]
-            newfocalpoint[1] = newposition[1]
-        elif self.GetSliceOrientation() == SLICE_ORIENTATION_XZ:
-            newposition[0] -= dx
-            newposition[2] -= dy
-            newfocalpoint[0] = newposition[0]
-            newfocalpoint[2] = newposition[2]
-        elif self.GetSliceOrientation() == SLICE_ORIENTATION_YZ:
-            newposition[1] -= dx
-            newposition[2] -= dy
-            newfocalpoint[2] = newposition[2]
-            newfocalpoint[1] = newposition[1]
+        newfocalpoint = [i for i in camera.GetFocalPoint()]
+
+        for i in range(len(event_position)):
+            newposition[i] -= change[i]
+            newfocalpoint[i] -=change[i]
+
         camera.SetFocalPoint(newfocalpoint)
         camera.SetPosition(newposition)
-
+        self.SetInitialCameraPosition(newposition)
+        
         self.Render()
 
     def HandleWindowLevel(self, interactor, event):
@@ -1238,7 +1240,8 @@ class CILViewer2D():
         self.cornerAnnotation.GetTextProperty().ShadowOn();
         self.cornerAnnotation.SetLayerNumber(1);
 
-        #used to scale corner annotation:
+        #used to scale corner annotation and decide whether to interpolate:
+        self.image_is_downsampled = False
         self.visualisation_downsampling = [1,1,1] 
         self.display_unsampled_coords = False
 
@@ -1531,7 +1534,10 @@ class CILViewer2D():
                 extent[2], extent[3],
                 extent[4], extent[5])
         self.sliceActor.Update()
-        self.sliceActor.SetInterpolate(False)
+        if self.image_is_downsampled:
+            self.sliceActor.SetInterpolate(True)
+        else:
+            self.sliceActor.SetInterpolate(False)
         # actors are added directly to the renderer
         # self.ren.AddActor(self.sliceActor)
         self.AddActor(self.sliceActor, SLICE_ACTOR)
@@ -1639,6 +1645,13 @@ class CILViewer2D():
 
     def setVisualisationDownsampling(self, value):
         self.visualisation_downsampling = value
+        if value != [1,1,1]:
+            self.image_is_downsampled = True
+            self.sliceActor.SetInterpolate(True)
+        else:
+            self.image_is_downsampled = False
+            self.sliceActor.SetInterpolate(False)
+
 
     def getVisualisationDownsampling(self):
         return self.visualisation_downsampling
@@ -1666,7 +1679,7 @@ class CILViewer2D():
             data = list(data)
 
             if display_type == "slice":
-                if self.display_unsampled_coords:
+                if self.display_unsampled_coords and self.image_is_downsampled:
                     for i, value in enumerate(data):
                         if self.visualisation_downsampling[self.GetSliceOrientation()] != 1:
                             data[i]= (data[i] +0.5) * self.visualisation_downsampling[self.GetSliceOrientation()]
@@ -1677,7 +1690,7 @@ class CILViewer2D():
                 text = "Slice %d/%d" % data
             
             elif display_type == "pick":
-                if self.display_unsampled_coords:
+                if self.display_unsampled_coords and self.image_is_downsampled:
                     for i, value in enumerate(self.visualisation_downsampling):
                         if self.visualisation_downsampling[i] != 1:
                             data[i]= (data[i] + 0.5) * self.visualisation_downsampling[i]
@@ -1687,7 +1700,7 @@ class CILViewer2D():
                 text = "[%d,%d,%d] : %.2g" % data
 
             elif display_type == "roi":
-                if self.display_unsampled_coords:
+                if self.display_unsampled_coords and self.image_is_downsampled:
                     for i, value in enumerate(self.visualisation_downsampling):
                         if self.visualisation_downsampling[i] != 1:
                             data[i]= (data[i] + 0.5) * self.visualisation_downsampling[i]
