@@ -228,6 +228,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
             # toggle visibility of the volume render
             if not self._viewer.volume_render_initialised:
                 self._viewer.installVolumeRenderActorPipeline()
+
             if self._viewer.volume.GetVisibility():
                 self._viewer.volume.VisibilityOff()
             else:
@@ -594,6 +595,7 @@ class CILViewer():
         self.ren.AddVolume(self.volume)
         self.volume_colormap_limits = (cmin, cmax)
         self.volume_render_initialised = True
+        self.volume.VisibilityOff()
 
     def installSliceActorPipeline(self):
         self.voi.SetInputData(self.img3D)
