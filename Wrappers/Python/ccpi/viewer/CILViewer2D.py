@@ -419,6 +419,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
             camera.ParallelProjectionOn()
             camera.SetFocalPoint(self.GetActiveCamera().GetFocalPoint())
             camera.SetPosition(self.GetActiveCamera().GetPosition())
+            self.SetInitialCameraPosition(self.GetActiveCamera().GetPosition())
             camera.SetViewUp(self.GetActiveCamera().GetViewUp())
 
             # Rotation of camera depends on current orientation:
@@ -443,6 +444,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
             camera.ParallelProjectionOn()
             camera.SetFocalPoint(self.GetActiveCamera().GetFocalPoint())
             camera.SetPosition(self.GetActiveCamera().GetPosition())
+            self.SetInitialCameraPosition(self.GetActiveCamera().GetPosition())
             camera.SetViewUp(self.GetActiveCamera().GetViewUp())
 
             # Rotation of camera depends on current orientation:
@@ -465,6 +467,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
             camera = vtk.vtkCamera()
             camera.ParallelProjectionOn()
             camera.SetPosition(self.GetActiveCamera().GetPosition())
+            self.SetInitialCameraPosition(self.GetActiveCamera().GetPosition())
             camera.SetFocalPoint(self.GetActiveCamera().GetFocalPoint())
             camera.SetViewUp(self.GetActiveCamera().GetViewUp())
 
@@ -1031,34 +1034,33 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
         self.dy = dy
 
     def HandlePanEvent(self, interactor, event):
+        #Camera uses world coordinates, not display coordinates so we have to make a coneversion
+        interactor_event_position = interactor.GetEventPosition()
+        interactor_initial_event_position = interactor.GetInitialEventPosition()
 
-        x,y = interactor.GetEventPosition()
-        x0,y0 = interactor.GetInitialEventPosition()
+        event_position = interactor.image2world(interactor.display2imageCoordinate(interactor_event_position)[:-1])
+        initial_event_position = interactor.image2world(interactor.display2imageCoordinate(interactor_initial_event_position)[:-1])
 
-        dx = (x - x0)/2
-        dy = (y - y0)/2
+        #Update initial position to current event position, ready for next panning event:
+        interactor.SetInitialEventPosition(interactor_event_position) 
+        
+        change = []
+        for i in range(len(event_position)):
+            change.append(event_position[i]-initial_event_position[i]) 
 
         camera = self.GetActiveCamera()
+
         newposition = [i for i in self.GetInitialCameraPosition()]
-        newfocalpoint = [i for i in self.GetActiveCamera().GetFocalPoint()]
-        if self.GetSliceOrientation() == SLICE_ORIENTATION_XY:
-            newposition[0] -= dx
-            newposition[1] -= dy
-            newfocalpoint[0] = newposition[0]
-            newfocalpoint[1] = newposition[1]
-        elif self.GetSliceOrientation() == SLICE_ORIENTATION_XZ:
-            newposition[0] -= dx
-            newposition[2] -= dy
-            newfocalpoint[0] = newposition[0]
-            newfocalpoint[2] = newposition[2]
-        elif self.GetSliceOrientation() == SLICE_ORIENTATION_YZ:
-            newposition[1] -= dx
-            newposition[2] -= dy
-            newfocalpoint[2] = newposition[2]
-            newfocalpoint[1] = newposition[1]
+        newfocalpoint = [i for i in camera.GetFocalPoint()]
+
+        for i in range(len(event_position)):
+            newposition[i] -= change[i]
+            newfocalpoint[i] -=change[i]
+
         camera.SetFocalPoint(newfocalpoint)
         camera.SetPosition(newposition)
-
+        self.SetInitialCameraPosition(newposition)
+        
         self.Render()
 
     def HandleWindowLevel(self, interactor, event):
