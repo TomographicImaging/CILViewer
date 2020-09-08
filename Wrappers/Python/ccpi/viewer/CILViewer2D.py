@@ -1240,7 +1240,8 @@ class CILViewer2D():
         self.cornerAnnotation.GetTextProperty().ShadowOn();
         self.cornerAnnotation.SetLayerNumber(1);
 
-        #used to scale corner annotation:
+        #used to scale corner annotation and decide whether to interpolate:
+        self.image_is_downsampled = False
         self.visualisation_downsampling = [1,1,1] 
         self.display_unsampled_coords = False
 
@@ -1533,7 +1534,10 @@ class CILViewer2D():
                 extent[2], extent[3],
                 extent[4], extent[5])
         self.sliceActor.Update()
-        self.sliceActor.SetInterpolate(False)
+        if self.image_is_downsampled:
+            self.sliceActor.SetInterpolate(True)
+        else:
+            self.sliceActor.SetInterpolate(False)
         # actors are added directly to the renderer
         # self.ren.AddActor(self.sliceActor)
         self.AddActor(self.sliceActor, SLICE_ACTOR)
@@ -1641,6 +1645,13 @@ class CILViewer2D():
 
     def setVisualisationDownsampling(self, value):
         self.visualisation_downsampling = value
+        if value != [1,1,1]:
+            self.image_is_downsampled = True
+            self.sliceActor.SetInterpolate(True)
+        else:
+            self.image_is_downsampled = False
+            self.sliceActor.SetInterpolate(False)
+
 
     def getVisualisationDownsampling(self):
         return self.visualisation_downsampling
@@ -1668,7 +1679,7 @@ class CILViewer2D():
             data = list(data)
 
             if display_type == "slice":
-                if self.display_unsampled_coords:
+                if self.display_unsampled_coords and self.image_is_downsampled:
                     for i, value in enumerate(data):
                         if self.visualisation_downsampling[self.GetSliceOrientation()] != 1:
                             data[i]= (data[i] +0.5) * self.visualisation_downsampling[self.GetSliceOrientation()]
@@ -1679,7 +1690,7 @@ class CILViewer2D():
                 text = "Slice %d/%d" % data
             
             elif display_type == "pick":
-                if self.display_unsampled_coords:
+                if self.display_unsampled_coords and self.image_is_downsampled:
                     for i, value in enumerate(self.visualisation_downsampling):
                         if self.visualisation_downsampling[i] != 1:
                             data[i]= (data[i] + 0.5) * self.visualisation_downsampling[i]
@@ -1689,7 +1700,7 @@ class CILViewer2D():
                 text = "[%d,%d,%d] : %.2g" % data
 
             elif display_type == "roi":
-                if self.display_unsampled_coords:
+                if self.display_unsampled_coords and self.image_is_downsampled:
                     for i, value in enumerate(self.visualisation_downsampling):
                         if self.visualisation_downsampling[i] != 1:
                             data[i]= (data[i] + 0.5) * self.visualisation_downsampling[i]
