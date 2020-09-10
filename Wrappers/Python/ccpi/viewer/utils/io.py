@@ -6,6 +6,7 @@ import os
 import time
 import numpy
 import sys
+import shutil
 
 from functools import partial
 from os.path import isfile
@@ -35,8 +36,11 @@ class ImageDataCreator(object):
 
         Option to convert image file to numpy format: convert_numpy (bool)
 
-        Dictionary where info about image will be stored (such as vol_bit_depth and location of npy file). \\
-If the image is a raw file, this dictionary may be used to provide details of the image file: info_var (dict)
+        Option to save raw version of image file in case of metaimage files (bool)
+        Note: this converts the entire image file not the downsampled/cropped version
+
+        Dictionary where info about image will be stored (such as vol_bit_depth and location of npy file).
+        If the image is a raw file, this dictionary may be used to provide details of the image file: info_var (dict)
 
         Method to be carried out once the vtk image data creation is complete: finish_fn (method)
 
@@ -48,8 +52,8 @@ If the image is a raw file, this dictionary may be used to provide details of th
 
         '''
    
-    def createImageData(main_window, image_files, output_image, *finish_fn_args, info_var = None, convert_numpy = False,  resample = False, target_size = 0.125, crop_image = False, origin = (0,0,0), target_z_extent = (0,0), tempfolder = None, finish_fn = None,  **finish_fn_kwargs):
-        print("Create image data")
+    def createImageData(main_window, image_files, output_image, *finish_fn_args, info_var = None, convert_numpy = False, convert_raw = True,  resample = False, target_size = 0.125, crop_image = False, origin = (0,0,0), target_z_extent = (0,0), tempfolder = None, finish_fn = None,  **finish_fn_kwargs):
+        # print("Create image data")
         if len(image_files) ==1:
             image = image_files[0]
             file_extension = os.path.splitext(image)[1]
@@ -67,7 +71,7 @@ If the image is a raw file, this dictionary may be used to provide details of th
 
         if file_extension in ['.mha', '.mhd']:
             createProgressWindow(main_window,"Converting", "Converting Image")
-            image_worker = Worker(loadMetaImage, main_window, image, output_image,  info_var,  resample, target_size, crop_image, origin, target_z_extent, convert_numpy, tempfolder)
+            image_worker = Worker(loadMetaImage, main_window, image, output_image,  info_var,  resample, target_size, crop_image, origin, target_z_extent, convert_numpy, convert_raw, tempfolder)
 
         elif file_extension in ['.npy']:
             createProgressWindow(main_window,"Converting", "Converting Image")
@@ -108,21 +112,21 @@ If the image is a raw file, this dictionary may be used to provide details of th
    
 #For progress bars:
 def createProgressWindow(main_window, title, text, max = 100, cancel = None):
-        main_window.progress_window = QProgressDialog(text, "Cancel", 0,max, main_window, QtCore.Qt.Window) 
-        main_window.progress_window.setWindowTitle(title)
-        main_window.progress_window.setWindowModality(QtCore.Qt.ApplicationModal) #This means the other windows can't be used while this is open
-        main_window.progress_window.setMinimumDuration(0.1)
-        main_window.progress_window.setWindowFlag(QtCore.Qt.WindowCloseButtonHint, False)
-        main_window.progress_window.setWindowFlag(QtCore.Qt.WindowMaximizeButtonHint, False)
-        if cancel is None:
-            main_window.progress_window.setCancelButton(None)
-        else:
-            main_window.progress_window.canceled.connect(cancel)
+    main_window.progress_window = QProgressDialog(text, "Cancel", 0,max, main_window, QtCore.Qt.Window) 
+    main_window.progress_window.setWindowTitle(title)
+    main_window.progress_window.setWindowModality(QtCore.Qt.ApplicationModal) #This means the other windows can't be used while this is open
+    main_window.progress_window.setMinimumDuration(0.1)
+    main_window.progress_window.setWindowFlag(QtCore.Qt.WindowCloseButtonHint, False)
+    main_window.progress_window.setWindowFlag(QtCore.Qt.WindowMaximizeButtonHint, False)
+    if cancel is None:
+        main_window.progress_window.setCancelButton(None)
+    else:
+        main_window.progress_window.canceled.connect(cancel)
 
 def progress(progress_window,value = None):
-        if value is not None:
-            if int(value) > progress_window.value():
-                progress_window.setValue(value)
+    if value is not None:
+        if int(value) > progress_window.value():
+            progress_window.setValue(value)
 
 # Display errors:
 def displayFileErrorDialog(main_window, message, title):
@@ -147,101 +151,106 @@ def warningDialog(main_window, message='', window_title='', detailed_text=''):
 
 #mha and mhd:
 
-def loadMetaImage(main_window, image, output_image,  image_info = None, resample = False, target_size = 0.125, crop_image = False, origin = (0,0,0), target_z_extent = (0,0), convert_numpy = True, tempfolder = None, progress_callback=None):
-        if resample:
-            reader = cilMetaImageResampleReader()
-            #print("Target size: ", int(target_size * 1024*1024*1024))
-            reader.SetTargetSize(int(target_size * 1024*1024*1024)) 
-            reader.AddObserver(vtk.vtkCommand.ProgressEvent, partial(getProgress, progress_callback= progress_callback))
+def loadMetaImage(main_window, image, output_image,  image_info = None, resample = False, target_size = 0.125, crop_image = False, origin = (0,0,0), target_z_extent = (0,0), convert_numpy = False, convert_raw = True, tempfolder = None, progress_callback=None):
+    if resample:
+        reader = cilMetaImageResampleReader()
+        #print("Target size: ", int(target_size * 1024*1024*1024))
+        reader.SetTargetSize(int(target_size * 1024*1024*1024)) 
+        reader.AddObserver(vtk.vtkCommand.ProgressEvent, partial(getProgress, progress_callback= progress_callback))
 
-        elif crop_image:
-            reader = cilMetaImageCroppedReader()
-            reader.SetOrigin(tuple(origin))
-            reader.SetTargetZExtent(target_z_extent)
-            if image_info is not None:
-                image_info['sampled'] = False
-                image_info['cropped'] = True
-            
-        
-        else:
-            reader = vtk.vtkMetaImageReader()
-            reader.AddObserver(vtk.vtkCommand.ProgressEvent, partial(getProgress, progress_callback= progress_callback))
-            if image_info is not None:
-                image_info['sampled'] = False
-        
-        
-        reader.AddObserver("ErrorEvent", main_window.e)
-        
-        reader.SetFileName(image)
-        reader.Update()
-        
-        output_image.ShallowCopy(reader.GetOutput())
-    
-        progress_callback.emit(90)
-
-        if resample:
-            loaded_image_size = reader.GetStoredArrayShape()[0] * reader.GetStoredArrayShape()[1] * reader.GetStoredArrayShape()[2]
-            resampled_image_size = reader.GetTargetSize()
-            if image_info is not None:
-                if loaded_image_size <= resampled_image_size:
-                    image_info['sampled'] = False
-                else:
-                    image_info['sampled'] = True
-
-        if resample or crop_image:
-            loaded_shape = reader.GetStoredArrayShape()
-
-            if not reader.GetIsFortran():
-                loaded_shape = loaded_shape[::-1]
-        else:
-            loaded_shape = output_image.GetDimensions()
-
-        print("Loaded shape: ", loaded_shape)
-
+    elif crop_image:
+        reader = cilMetaImageCroppedReader()
+        reader.SetOrigin(tuple(origin))
+        reader.SetTargetZExtent(target_z_extent)
         if image_info is not None:
-            image_info['shape'] = loaded_shape
+            image_info['sampled'] = False
+            image_info['cropped'] = True
+        
+    else:
+        reader = cilMetaImageResampleReader()
+        reader.SetTargetSize(int(1e12)) #Forces use of resample reader but does not resample
+        reader.AddObserver(vtk.vtkCommand.ProgressEvent, partial(getProgress, progress_callback= progress_callback))
+        if image_info is not None:
+            image_info['sampled'] = False
+    
+    
+    reader.AddObserver("ErrorEvent", main_window.e)
+    
+    reader.SetFileName(image)
+    reader.Update()
+    
+    output_image.ShallowCopy(reader.GetOutput())
 
+    progress_callback.emit(90)
 
-        if convert_numpy:
-            print("Converting metaimage to numpy") #this is for using in the dvc code
-            if tempfolder is None:
-                filename = os.path.abspath(image)[:-4] + ".npy"
+    if resample:
+        loaded_image_size = reader.GetStoredArrayShape()[0] * reader.GetStoredArrayShape()[1] * reader.GetStoredArrayShape()[2]
+        resampled_image_size = reader.GetTargetSize()
+        if image_info is not None:
+            if loaded_image_size <= resampled_image_size:
+                image_info['sampled'] = False
             else:
-                filename = os.path.join(tempfolder, os.path.basename(image)[:-4] + ".npy")
-            print(filename)
-            numpy_array =  Converter.vtk2numpy(reader.GetOutput(), order = "F")
-            numpy.save(filename,numpy_array)
-            
-            if image_info is not None:
-                image_info['numpy_file'] = filename
-                if (isinstance(numpy_array[0][0][0],numpy.uint8)):
-                    image_info['vol_bit_depth'] = '8'
-                elif(isinstance(numpy_array[0][0][0],numpy.uint16)):
-                    image_info['vol_bit_depth'] = '16'
-                if(numpy_array.flags["FNC"]):
-                    print("F order")
-                else:
-                    print("Not F")
- 
-                if numpy_array.dtype.byteorder == '=': #gives order will either be '=': sys.byteorder or |: irrelevant
-                    if sys.byteorder == 'big':
-                        image_info['isBigEndian'] = True
-                    else:
-                        image_info['isBigEndian'] = False
-                else:
-                    image_info['isBigEndian'] = None #in the uint8 case its not relevant
+                image_info['sampled'] = True
+
+    
+    loaded_shape = reader.GetStoredArrayShape()
+
+    if not reader.GetIsFortran():
+        loaded_shape = loaded_shape[::-1]
 
 
-                with open(filename, 'rb') as f:
-                    header = f.readline()
-                image_info['header_length'] = len(header)
-                
+    if image_info is not None:
+        image_info['shape'] = loaded_shape
+        image_info['vol_bit_depth'] = str(reader.GetBytesPerElement()*8)
+        image_info['isBigEndian'] = reader.GetBigEndian()
+        image_info['header_length'] = 0
+
+
+    if convert_raw:
+        filename = reader.GetFileName()
+        if '.mha' in filename:
+            headerlength = reader.GetFileHeaderLength()
+            if tempfolder is None:
+                new_filename = os.path.abspath(image)[:-4] + ".raw"
+            else:
+                new_filename = os.path.join(tempfolder, os.path.basename(image)[:-4] + ".raw")
             
+            with open(image, "rb") as image_file_object:
+                end_slice = loaded_shape[2]
+                image_location = headerlength
+                with open(new_filename, "wb") as raw_file_object:
+                    image_file_object.seek(image_location)
+                    chunk = image_file_object.read()
+                    raw_file_object.write(chunk)
+        else:
+            file_ext =  os.path.splitext(filename)[1]
+            if tempfolder is not None:
+                new_filename = os.path.join(tempfolder, os.path.basename(filename))
+                shutil.copyfile(filename, new_filename)
+            else:
+                new_filename = filename
+        
+        
+        image_info['raw_file'] = new_filename
+        image_info['header_length'] = 0
+
+    if convert_numpy:
+        print("Converting metaimage to numpy") #this is for using in the dvc code
+        if tempfolder is None:
+            filename = os.path.abspath(image)[:-4] + ".npy"
+        else:
+            filename = os.path.join(tempfolder, os.path.basename(image)[:-4] + ".npy")
+        print(filename)
+        numpy_array =  Converter.vtk2numpy(reader.GetOutput(), order = "F")
+        numpy.save(filename,numpy_array)
+        
+        if image_info is not None:
+            image_info['numpy_file'] = filename
             with open(filename, 'rb') as f:
                 header = f.readline()
-                image_info['header_length'] = len(header)
+            image_info['header_length'] = len(header)
 
-        progress_callback.emit(100)
+    progress_callback.emit(100)
 
 
 def loadNpyImage(image_file, output_image, image_info = None, resample = False, target_size = 0.125, crop_image = False, origin = (0,0,0), target_z_extent = (0,0), progress_callback=None):
@@ -835,6 +844,3 @@ def generateMetaImageHeader(datafname, typecode, shape, isFortran, isBigEndian, 
         header += 'HeaderSize = {}\n'.format(header_size)
         header += 'ElementDataFile = {}'.format(os.path.basename(datafname))
         return header
-
-
-
