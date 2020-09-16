@@ -100,6 +100,17 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
         # Initialise difference from zoom event start point
         self.dy = 0
 
+        self._reslicing_enabled = True
+
+    @property
+    def reslicing_enabled(self):
+        return self._reslicing_enabled
+    @reslicing_enabled.setter
+    def reslicing_enabled(self, value):
+        if isinstance(value, bool):
+            self._reslicing_enabled = value
+
+
     def log(self, msg):
         if self.debug:
             print(msg)
@@ -410,7 +421,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
 
     def OnKeyPress(self, interactor, event):
 
-        if interactor.GetKeyCode() == "x":
+        if self.reslicing_enabled and interactor.GetKeyCode() == "x":
             # Change the camera view point
 
             orientation = self.GetSliceOrientation()
@@ -435,7 +446,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
             self.SetSliceOrientation ( SLICE_ORIENTATION_YZ )
             self.UpdatePipeline(True)
 
-        elif interactor.GetKeyCode() == "y":
+        elif self.reslicing_enabled and interactor.GetKeyCode() == "y":
             # Change the camera view point
 
             orientation = self.GetSliceOrientation()
@@ -459,7 +470,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
             self.SetSliceOrientation(SLICE_ORIENTATION_XZ)
             self.UpdatePipeline(True)
 
-        elif interactor.GetKeyCode() == "z":
+        elif self.reslicing_enabled and interactor.GetKeyCode() == "z":
             # Change the camera view point
 
             orientation = self.GetSliceOrientation()
@@ -639,7 +650,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
         if display:
             if (self._viewer.displayHistogram == 0):
                 #self.GetRenderer().AddActor(self._viewer.histogramPlotActor)
-                self.AddActor(self._viewer.histogramPlotActor, HISTOGRAM_ACTOR)
+                self._viewer.AddActor(self._viewer.histogramPlotActor, HISTOGRAM_ACTOR)
                 self.firstHistogram = 1
                 self.Render()
 
