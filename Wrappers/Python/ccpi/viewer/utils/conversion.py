@@ -805,12 +805,14 @@ class cilBaseResampleReader(VTKPythonAlgorithmBase):
 
                 #print("Z SPACING: ", element_spacing[2]/z_axis_magnification)
 
-                if z_axis_magnification < 1:
-                    resampled_image.SetOrigin(-0.5,-0.5, -0.5)
-                    #print("Resampled origin: ", [-0.5,-0.5, -0.5])
-                else:
-                    resampled_image.SetOrigin(-0.5,-0.5, 0)
-                    #print("Resampled origin: ", [-0.5,-0.5, 0])
+
+                new_spacing = [element_spacing[0]/xy_axes_magnification,
+                                        element_spacing[1]/xy_axes_magnification, 
+                                        element_spacing[2]/z_axis_magnification]
+
+                new_origin = [0.5/i-0.5 for i in new_spacing]
+
+                resampled_image.SetOrigin(new_origin[0], new_origin[1], new_origin[2])
 
                 resampled_image.AllocateScalars(self.GetOutputVTKType(), 1)
             
@@ -986,7 +988,7 @@ class cilMetaImageResampleReader(cilBaseResampleReader):
                     compressed = line.split('= ')[-1]
                     self.SetCompressedData(compressed)
                     if(self.GetCompressedData() == "True"):
-                        # print("Cannot resample compressed image")
+                        print("Cannot resample compressed image")
                         return
 
                 elif 'HeaderSize' in line:
@@ -1426,7 +1428,7 @@ class cilMetaImageCroppedReader(cilBaseCroppedReader):
                     compressed = line.split('= ')[-1]
                     self.SetCompressedData(compressed)
                     if(self.GetCompressedData() == "True"):
-                        # print("Cannot resample compressed image")
+                        print("Cannot resample compressed image")
                         return
 
                 elif 'HeaderSize' in line:
