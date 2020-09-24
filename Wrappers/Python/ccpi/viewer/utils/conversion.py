@@ -715,9 +715,10 @@ class cilBaseResampleReader(VTKPythonAlgorithmBase):
         else:
             shape = list(readshape)[::-1]
 
-        total_size = shape[0] * shape[1] * shape[2]
-
-        max_size = self.GetTargetSize()
+        total_size = shape[0] * shape[1] * shape[2] * nbytes
+        
+        # max siza when resampled in bytes
+        max_size = self.GetTargetSize() * 8
 
         # slice size in bytes
         slice_length = shape[1] * shape[0] * nbytes
