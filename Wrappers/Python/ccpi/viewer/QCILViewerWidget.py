@@ -1,5 +1,5 @@
 
-from PyQt5 import QtWidgets
+from PyQt5 import QtGui
 import vtk
 import sys
 import vtk
@@ -22,18 +22,14 @@ class QCILViewerWidget(QtWidgets.QFrame):
         The viewer is accessible as member 'viewer'
         '''
         
-        super(QtWidgets.QFrame, self).__init__()
+        super(QtWidgets.QFrame, self).__init__(parent=parent)
         # currently the size of the frame is set by stretching to the whole 
         # area in the main window. A resize of the MainWindow triggers a resize of 
         # the QFrame to occupy the whole area available.
 
         dimx, dimy = kwargs.get('shape', (600,600))
-        # self.resize(dimx, dimy)
 
-        self.vl = QtWidgets.QVBoxLayout()
-        #self.vtkWidget = QVTKRenderWindowInteractor(self)
         self.vtkWidget = QCILRenderWindowInteractor(self)
-        self.vl.addWidget(self.vtkWidget)
         
         if 'renderer' in kwargs.keys():
             self.ren = kwargs['renderer']
@@ -60,7 +56,18 @@ class QCILViewerWidget(QtWidgets.QFrame):
         if 'interactorStyle' in kwargs.keys():
             self.viewer.style = kwargs['interactorStyle'](self.viewer)
             self.viewer.iren.SetInteractorStyle(self.viewer.style)
-        
+
+
+        # create actions for toolbar
+        change_viewUp = QtWidgets.QAction(QtGui.QIcon("no_entry.xpm"),"Change viewUp Y", parent = self)
+        toolbar = QtWidgets.QToolBar("CILViewer toolbar", parent = parent)
+        toolbar.setMovable(False)
+        toolbar.addAction(change_viewUp)
+        # create layout for the QFrame
+        self.vl = QtWidgets.QVBoxLayout()
+        # Add Widget to layout
+        self.vl.addWidget(self.vtkWidget)
+        # set QFrame layout
         self.setLayout(self.vl)
         self.adjustSize()
 
