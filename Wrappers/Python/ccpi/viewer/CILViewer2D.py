@@ -870,57 +870,80 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
             pixelValue
         )
 
-    def world2imageCoordinate(self, world_coordinates):
+    def world2imageCoordinate(self, world_coordinates, **kwargs):
         """
         Convert from the world or global coordinates to image coordinates
         :param world_coordinates: (x,y,z)
+        :param spacing: optional parameter to specify the spacing for the conversion. Useful if the 
+                        viewer is showing a downsampled image
+        :param origin: optional parameter to specify the origin for the conversion. Useful if the 
+                        viewer is showing a downsampled image
         :return: rounded to next integer (x,y,z) in image coorindates eg. slice index
         """
 
-        dims = self.GetInputData().GetDimensions()
-        self.log(dims)
-        spac = self.GetInputData().GetSpacing()
-        orig = self.GetInputData().GetOrigin()
+        ic = self.world2imageCoordinateFloat(world_coordinates, **kwargs)
 
-        return [round((world_coordinates[i] + orig[i]) / spac[i] ) for i in range(3)]
+        return [round( el ) for el in ic]
     
-    def world2imageCoordinateFloat(self, world_coordinates):
+    def world2imageCoordinateFloat(self, world_coordinates, **kwargs):
         """
-        Convert from the world or global coordinates to image coordinates
+        Convert from the world or global coordinates to image coordinates for the 
+        currently displayed image. 
+
         :param world_coordinates: (x,y,z)
+        :param spacing: optional parameter to specify the spacing for the conversion. Useful if the 
+                        viewer is showing a downsampled image
+        :param origin: optional parameter to specify the origin for the conversion. Useful if the 
+                        viewer is showing a downsampled image
         :return: float (x,y,z) in image coorindates eg. slice index
         """
 
         dims = self.GetInputData().GetDimensions()
         self.log(dims)
-        spac = self.GetInputData().GetSpacing()
-        orig = self.GetInputData().GetOrigin()
+        # get the origin and spacing from the displayed image unless 
+        # the user passes the key worded arguments spacing and origin
+        spac = kwargs.get('spacing', self.GetInputData().GetSpacing())
+        orig = kwargs.get('origin',  self.GetInputData().GetOrigin() )
 
-        return [(world_coordinates[i] + orig[i] ) / spac[i]  for i in range(3)]
+        return [ (world_coordinates[i] / spac[i]) + orig[i] for i in range(3)]
 
-    def image2world(self, image_coordinates):
+    def image2world(self, image_coordinates, **kwargs):
+        """
+        Convert from the image coordinates to world coordinates for the 
+        currently displayed image. 
 
-        spac = self.GetInputData().GetSpacing()
-        orig = self.GetInputData().GetOrigin()
+        :param world_coordinates: (x,y,z)
+        :param spacing: optional parameter to specify the spacing for the conversion. Useful if the 
+                        viewer is showing a downsampled image
+        :param origin: optional parameter to specify the origin for the conversion. Useful if the 
+                        viewer is showing a downsampled image
+        :return: float (x,y,z) in image coorindates eg. slice index
+        """
+        spac = kwargs.get('spacing', self.GetInputData().GetSpacing())
+        orig = kwargs.get('origin',  self.GetInputData().GetOrigin() )
 
         #print("Spacing: ", spac)
 
-        return [(image_coordinates[i] - orig[i]) * spac[i]  for i in range(3)]
+        return [(image_coordinates[i] * spac[i]) - orig[i]  for i in range(3)]
 
-    def imageCoordinate2display(self, imageposition):
+    def imageCoordinate2display(self, imageposition, **kwargs):
         '''
         Convert image coordinates back into viewer coordinates
         :param imageposition: (x,y,z) coordinates in image coordinates
+        :param spacing: optional parameter to specify the spacing for the conversion. Useful if the 
+                        viewer is showing a downsampled image
+        :param origin: optional parameter to specify the origin for the conversion. Useful if the 
+                        viewer is showing a downsampled image
         :return: (x,y,z) coordinates for the window
         '''
         # Truncate to first 3 values x,y,z. Not interested in pixel value.
         ip = imageposition[0:3]
 
-        spac = self.GetInputData().GetSpacing()
-        orig = self.GetInputData().GetOrigin()
+        spac = kwargs.get('spacing', self.GetInputData().GetSpacing())
+        orig = kwargs.get('origin',  self.GetInputData().GetOrigin() )
 
         # Convert image coordiantes to world coordinates
-        world_coord = [spac[i] * (ip[i] - orig[i]) for i in range(3)]
+        world_coord = [ ( spac[i] * ip[i] ) - orig[i] for i in range(3)]
 
         vc = vtk.vtkCoordinate()
         vc.SetCoordinateSystemToWorld()
@@ -1245,16 +1268,17 @@ class CILViewer2D():
 
         # corner annotation
         self.cornerAnnotation = vtk.vtkCornerAnnotation()
-        self.cornerAnnotation.SetMaximumFontSize(12);
-        self.cornerAnnotation.PickableOff();
-        self.cornerAnnotation.VisibilityOff();
-        self.cornerAnnotation.GetTextProperty().ShadowOn();
-        self.cornerAnnotation.SetLayerNumber(1);
+        self.cornerAnnotation.SetMaximumFontSize(12)
+        self.cornerAnnotation.PickableOff()
+        self.cornerAnnotation.VisibilityOff()
+        self.cornerAnnotation.GetTextProperty().ShadowOn()
+        self.cornerAnnotation.SetLayerNumber(1)
 
         #used to scale corner annotation and decide whether to interpolate:
         self.image_is_downsampled = False
         self.visualisation_downsampling = [1,1,1] 
         self.display_unsampled_coords = False
+        self.unsampled_origin_sampling = { 'origin': [0,0,0], 'spacing' : [1,1,1] }
 
         # cursor doesn't show up
         self.cursor = vtk.vtkCursor2D()
@@ -1362,7 +1386,7 @@ class CILViewer2D():
         ori.SetOutlineColor( 0.9300, 0.5700, 0.1300 )
         ori.SetInteractor(self.iren)
         ori.SetOrientationMarker(om)
-        ori.SetViewport( 0.0, 0.0, 0.4, 0.4 )
+        ori.SetViewport( 0.0, 0.0, 0.2, 0.2 )
         ori.SetEnabled(1)
         ori.InteractiveOff()
         self.orientation_marker = ori
@@ -1702,6 +1726,9 @@ class CILViewer2D():
             
             elif display_type == "pick":
                 if self.display_unsampled_coords and self.image_is_downsampled:
+                    # data is the picked voxel in the downsampled imageCoordinates
+                    # in practice we need to get the data in the unsampled imageCoordinates
+                    # downsampled -> world -> unsampled
                     for i, value in enumerate(self.visualisation_downsampling):
                         if self.visualisation_downsampling[i] != 1:
                             data[i]= (data[i] + 0.5) * self.visualisation_downsampling[i]
