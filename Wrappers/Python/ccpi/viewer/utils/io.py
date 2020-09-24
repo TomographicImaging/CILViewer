@@ -75,7 +75,8 @@ class ImageDataCreator(object):
 
         elif file_extension in ['.npy']:
             createProgressWindow(main_window,"Converting", "Converting Image")
-            image_worker = Worker(loadNpyImage,image, output_image, info_var, resample, target_size, crop_image, origin, target_z_extent)     
+            image_worker = Worker(loadNpyImage,image, output_image, info_var, resample, \
+                target_size, crop_image, origin, target_z_extent)     
 
         elif file_extension in ['tif', 'tiff', '.tif', '.tiff']:
             reader = vtk.vtkTIFFReader()
@@ -116,7 +117,7 @@ def createProgressWindow(main_window, title, text, max = 100, cancel = None):
     main_window.progress_window.setWindowTitle(title)
     main_window.progress_window.setWindowModality(QtCore.Qt.ApplicationModal) #This means the other windows can't be used while this is open
     main_window.progress_window.setMinimumDuration(0.1)
-    main_window.progress_window.setWindowFlag(QtCore.Qt.WindowCloseButtonHint, False)
+    main_window.progress_window.setWindowFlag(QtCore.Qt.WindowCloseButtonHint, True)
     main_window.progress_window.setWindowFlag(QtCore.Qt.WindowMaximizeButtonHint, False)
     if cancel is None:
         main_window.progress_window.setCancelButton(None)
