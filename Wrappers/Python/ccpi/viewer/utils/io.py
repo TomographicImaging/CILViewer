@@ -511,7 +511,7 @@ def createRawImportDialog(main_window, fname, output_image, info_var, resample, 
         dtypeLabel.setText("Data Type")
         formLayout.setWidget(widgetno, QFormLayout.LabelRole, dtypeLabel)
         dtypeValue = QComboBox(groupBox)
-        dtypeValue.addItems(["int8", "uint8", "int16", "uint16"])#, "int32", "uint32", "float32", "float64"])
+        dtypeValue.addItems(["uint8", "int8", "uint16", "int16", "uint32", "int32", "float32", "float64"])
         dtypeValue.setCurrentIndex(0)
         
         formLayout.setWidget(widgetno, QFormLayout.FieldRole, dtypeValue)
