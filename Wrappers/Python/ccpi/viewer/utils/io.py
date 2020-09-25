@@ -88,7 +88,8 @@ class ImageDataCreator(object):
                 createConvertRawImageWorker(main_window,image, output_image, info_var, resample, target_size, crop_image, origin, target_z_extent, finish_fn)
                 return
             else: #if we aren't given the image dimensions etc, the user needs to enter them
-                main_window.raw_import_dialog = createRawImportDialog(main_window, image, output_image, info_var, resample, target_size, crop_image, origin, target_z_extent, finish_fn)
+                main_window.raw_import_dialog = createRawImportDialog(main_window, image, output_image, info_var, resample,
+                    target_size, crop_image, origin, target_z_extent, finish_fn)
                 dialog = main_window.raw_import_dialog['dialog'].show()
                 return
 
@@ -545,7 +546,8 @@ def createRawImportDialog(main_window, fname, output_image, info_var, resample, 
 
         buttonbox = QDialogButtonBox(QDialogButtonBox.Ok |
                                     QDialogButtonBox.Cancel)
-        buttonbox.accepted.connect(lambda: createConvertRawImageWorker(main_window,fname, output_image, info_var, resample, target_size, crop_image, origin, target_z_extent, finish_fn))
+        buttonbox.accepted.connect(lambda: createConvertRawImageWorker(main_window,fname, output_image, info_var, resample, target_size,
+                                                                       crop_image, origin, target_z_extent, finish_fn))
         buttonbox.rejected.connect(dialog.close)
         formLayout.addWidget(buttonbox)
 
@@ -675,7 +677,7 @@ def saveRawImageData(main_window,fname, output_image, info_var, resample, target
         
 
         if info_var is not None:
-            if typecode == 0 or 1:
+            if typecode == 0 or typecode == 1:
                 info_var['vol_bit_depth'] = '8'
                 bytes_per_element = 1
             else:
