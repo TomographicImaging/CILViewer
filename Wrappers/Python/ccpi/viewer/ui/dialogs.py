@@ -93,7 +93,7 @@ class WorkerWithProgressDialog(object):
     @property
     def progress_dialog(self):
         if self.modified:
-            print ("modified")
+            # print ("modified")
             pd = QProgressDialog(self._labelText, self._cancelButtonText, self._min, self._max, 
                 self._parent)
             pd.setWindowTitle(self._title)
@@ -105,7 +105,7 @@ class WorkerWithProgressDialog(object):
             self._progress_dialog = pd
             self.modified = False
         else:
-            print ("not modified")
+            # print ("not modified")
             pd = self._progress_dialog
         return pd
     def setOnCancelled(self, onCancel):
@@ -114,9 +114,32 @@ class WorkerWithProgressDialog(object):
         # pd.setCancelButton(button)
         pd.canceled.connect(onCancel)
     def setAsyncTask(self, task, *args, **kwargs):
-        work = Worker(task, *args, **kwargs)
+        '''Creates a Worker for the AsyncTask and attaches the 
+        progress signal emitted by the Worker to the progress dialog'''
+        print ("task ", task)
+        w = Worker(task, *args, **kwargs)
+        
+        w.signals.progress.connect(self.progress)
+        self._worker = w
 
-
+    def progress(self,value = None):
+        if value is not None:
+            if int(value) > self.progress_dialog.value():
+                self.progress_dialog.setValue(int(value))
+    @property
+    def worker(self):
+        return self._worker
+    @property
+    def signals(self):
+        '''QThreads signals are meant to be connected via this property
+        
+        instance = WorkerWithProgressDialog() 
+        ...
+        instance.signals.connect.finished(some_function)
+        instance.signals.connect.progress(progress_function)
+        '''
+        return self.worker.signals   
+        
     def setParentWindow(self, parent):
         self._parent = parent
     @property
@@ -212,9 +235,6 @@ class ImportRawImageDialog(QDialog):
     def onFinished(self):
         return self._on_finished
 
-    #def setupRawImportDialog( main_window, fname, output_image, info_var, resample, target_size, crop_image, origin, target_z_extent, finish_fn):
-    #def createRawImportDialog(main_window, fname, output_image, info_var, resample, target_size, crop_image, origin, target_z_extent, finish_fn):
-        # dialog = QDialog(main_window)
     def update(self):
         ui = self._ui
         groupBox = ui['groupBox']
@@ -232,10 +252,6 @@ class ImportRawImageDialog(QDialog):
         dimensionalityValue.addItem("3D")
         dimensionalityValue.addItem("2D")
         dimensionalityValue.setCurrentIndex(0)
-        # dimensionalityValue.currentIndexChanged.connect(lambda: \
-        #             main_window.overlapZValueEntry.setEnabled(True) \
-        #             if main_window.dimensionalityValue.currentIndex() == 0 else \
-        #             main_window.overlapZValueEntry.setEnabled(False))
         
         formLayout.setWidget(widgetno, QFormLayout.FieldRole, dimensionalityValue)
         widgetno += 1
@@ -365,11 +381,34 @@ class ImportRawImageDialog(QDialog):
         return True if self.form['isFortran'].currentIndex() == 0 else False
 
 
+def asyncTask(N=10, form=None, progress_callback=None):
+    '''an example of an async task
+    
+    :param N: integer number of loops
+    :param progress_callback: callback that emits the current progress. 
+        If passed to the Worker class, the progress_callback is defined 
+        internally in the Worker class and the user is supposed just to 
+        connect the Worker signal progress with a function that receives 
+        the current progress as an integer, e.g.
 
+        
+        work = Worker(asyncTask, 4)
+        work.signals.progress.connect(lambda x: print("progress.connect", x))
+    '''
+    # N=10
+    if form is not None:
+        print ("Press OK:\ndimensionality {}\n{}\ndtype {}, isBigEndian {}, F {}"\
+             .format(form.dimensionality, form.shape , form.dtype, form.isBigEndian, form.isFortranOrder))
+    i = 0
+    while i < N:
+        time.sleep(1)
+        i+=1
+        if progress_callback is not None:
+            progress_callback.emit(i)
+        else:
+            print("progress_callback is None", i)
 
 def test_progress_dialog():
-    app = QtWidgets.QApplication(sys.argv)
-    main = QtWidgets.QMainWindow()
     
     def onFinished(self):
         print ("Press OK:\ndimensionality {}\n{}\ndtype {}, isBigEndian {}, F {}"\
@@ -377,50 +416,31 @@ def test_progress_dialog():
             #  , self.dtype, self.isBigEndian, self.isFortranOrder )
         )
 
-    def launchProgressDialog(parent, labelText, title, cancelButtonText="Cancel", asyncTask=None):
-        pd = WorkerWithProgressDialog(parent = parent)
-        pd.setProgressDialogParameters(labelText="labelText", cancelButtonText="Cancel", 
-            parent = main, title=title)
-        pd.setMinimumDuration(0.001)
-        pd.setOnCancelled(lambda: print ("this is a lambda"))
+
+    title = "title"
+    N = 10
+    pd = WorkerWithProgressDialog(parent = main)
+    pd.setProgressDialogParameters(labelText="labelText", cancelButtonText="Cancel", 
+        parent = main, title=title, pmax=N)
+    #pd.progress_dialog.setMinimumDuration(0.001)
+    pd.setOnCancelled(lambda: print ("this is a lambda"))
+    
+    threadpool = QThreadPool()
 
     dialog = ImportRawImageDialog(parent=main)
     dialog.setFileName("pippo")\
         .setTitle("Hello!")\
         .setOnFinished(
-            #partial(lambda: onFinished(dialog))
-            partial(lambda: launchProgressDialog(main))
+            lambda: threadpool.start(pd.worker)
         )
     dialog.update()
-    
+
+    pd.setAsyncTask(asyncTask, N, dialog)
+
     dialog.show()
-    
-    sys.exit(app.exec_())
 
 def test_worker():
-    def asyncTask(N=10, progress_callback=None):
-        '''an example of an async task
-        
-        :param N: integer number of loops
-        :param progress_callback: callback that emits the current progress. 
-          If passed to the Worker class, the progress_callback is defined 
-          internally in the Worker class and the user is supposed just to 
-          connect the Worker signal progress with a function that receives 
-          the current progress as an integer, e.g.
-
-          
-          work = Worker(asyncTask, 4)
-          work.signals.progress.connect(lambda x: print("progress.connect", x))
-        '''
-        # N=10
-        i = 0
-        while i < N:
-            time.sleep(1)
-            if progress_callback is not None:
-                progress_callback.emit(i)
-            else:
-                print("progress_callback is None", i)
-            i+=1
+    
     def asyncTaskSimple():
         N = 2
         i = 0
@@ -437,17 +457,20 @@ if __name__ == "__main__":
     
     app = QtWidgets.QApplication(sys.argv)
     main = QtWidgets.QMainWindow()
-    print ("creating Workers")
-    work0 = test_worker()
-    work1 = test_worker()
-    print ("creating QThreadPool")
-    threadpool = QThreadPool()
-    print ("Starting workers")
-    threadpool.start(work0)
-    time.sleep(1)
-    threadpool.start(work1)
-    print ("End")
-    #test_progress_dialog()
-    
-    main.show()
+    if False:
+        print ("creating Workers")
+        work0 = test_worker()
+        work1 = test_worker()
+        print ("creating QThreadPool")
+        threadpool = QThreadPool()
+        print ("Starting workers")
+        threadpool.start(work0)
+        time.sleep(1)
+        threadpool.start(work1)
+        print ("End")
+        
+        
+        main.show()
+    else:
+        test_progress_dialog()
     sys.exit(app.exec())
