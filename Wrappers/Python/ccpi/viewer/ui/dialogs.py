@@ -1,9 +1,12 @@
 from PyQt5 import QtCore, QtWidgets, QtGui
 from PyQt5.QtCore import QThreadPool
-from PyQt5.QtWidgets import QProgressDialog, QDialog, QLabel, QComboBox, QDialogButtonBox, QFormLayout, QWidget, QVBoxLayout, QGroupBox, QLineEdit, QMessageBox
+from PyQt5.QtWidgets import QProgressDialog, QDialog, QLabel, QComboBox, QDialogButtonBox, QFormLayout, QWidget, QVBoxLayout, \
+    QGroupBox, QLineEdit, QMessageBox, QPushButton
 # from ccpi.viewer.io import generateUIFormView
 from functools import partial
-import sys, os
+import sys, os, time
+from ccpi.viewer.QtThreading import Worker
+
 def generateUIFormView():
     '''creates a widget with a form layout group to add things to
 
@@ -55,6 +58,74 @@ def createProgressWindow(main_window, title, text, max = 100, cancel = None):
         main_window.progress_window.setCancelButton(None)
     else:
         main_window.progress_window.canceled.connect(cancel)
+
+class WorkerWithProgressDialog(object):
+    '''
+    Creates a modal progress dialog and a worker to perform some task off the main ui thread.
+    '''
+    def __init__(self, parent):
+        self._parent = None
+        self._cancelButtonText = "Cancel"
+        self._labelText = None
+        self._min = 0 
+        self._max = 100
+        self._modified = True
+    
+    def setProgressDialogParameters(self, labelText="", cancelButtonText="Cancel", 
+             pmin=0, pmax=100, parent=None, 
+             windowFlags=[[QtCore.Qt.WindowCloseButtonHint, True],[QtCore.Qt.WindowMaximizeButtonHint, False]], 
+             title="", windowModality=QtCore.Qt.ApplicationModal):
+        self._labelText = labelText
+        self._cancelButtonText = cancelButtonText
+        self._min = pmin
+        self._max = pmax
+        self._parent = parent
+        self._windowFlags = windowFlags
+        self._title = title
+        self._windowModality = windowModality
+        self._modified = True
+    @property
+    def modified(self):
+        return self._modified
+    @modified.setter
+    def modified(self, value):
+        self._modified = value
+    @property
+    def progress_dialog(self):
+        if self.modified:
+            print ("modified")
+            pd = QProgressDialog(self._labelText, self._cancelButtonText, self._min, self._max, 
+                self._parent)
+            pd.setWindowTitle(self._title)
+            pd.setWindowModality(self._windowModality)
+            # apply window flags
+            for flag in self._windowFlags:
+                pd.setWindowFlag(flag[0], flag[1])
+            pd.setMinimumDuration(0.1)
+            self._progress_dialog = pd
+            self.modified = False
+        else:
+            print ("not modified")
+            pd = self._progress_dialog
+        return pd
+    def setOnCancelled(self, onCancel):
+        pd = self.progress_dialog
+        # button = QPushButton("Cancel")
+        # pd.setCancelButton(button)
+        pd.canceled.connect(onCancel)
+    def setAsyncTask(self, task, *args, **kwargs):
+        work = Worker(task, *args, **kwargs)
+
+
+    def setParentWindow(self, parent):
+        self._parent = parent
+    @property
+    def parent(self):
+        return self._parent
+    
+    def __call__(self):
+        print ("Call ", self.__class__.__name__)
+    
 
 class ImportRawImageDialog(QDialog):
     def __init__(self, parent):
@@ -294,135 +365,89 @@ class ImportRawImageDialog(QDialog):
         return True if self.form['isFortran'].currentIndex() == 0 else False
 
 
-def createRawImportDialog(main_window, fname, output_image, info_var, resample, target_size, crop_image, origin, target_z_extent, finish_fn):
-        dialog = QDialog(main_window)
-        ui = generateUIFormView()
-        groupBox = ui['groupBox']
-        formLayout = ui['groupBoxFormLayout']
-        widgetno = 1
 
-        title = "Config for " + os.path.basename(fname)
-        dialog.setWindowTitle(title)
-        
-        # dimensionality
-        dimensionalityLabel = QLabel(groupBox)
-        dimensionalityLabel.setText("Dimensionality")
-        formLayout.setWidget(widgetno, QFormLayout.LabelRole, dimensionalityLabel)
-        dimensionalityValue = QComboBox(groupBox)
-        dimensionalityValue.addItem("3D")
-        dimensionalityValue.addItem("2D")
-        dimensionalityValue.setCurrentIndex(0)
-        # dimensionalityValue.currentIndexChanged.connect(lambda: \
-        #             main_window.overlapZValueEntry.setEnabled(True) \
-        #             if main_window.dimensionalityValue.currentIndex() == 0 else \
-        #             main_window.overlapZValueEntry.setEnabled(False))
-        
-        formLayout.setWidget(widgetno, QFormLayout.FieldRole, dimensionalityValue)
-        widgetno += 1
 
-        validator = QtGui.QIntValidator()
-        # Add X size
-        dimXLabel = QLabel(groupBox)
-        dimXLabel.setText("Size X")
-        formLayout.setWidget(widgetno, QFormLayout.LabelRole, dimXLabel)
-        dimXValueEntry = QLineEdit(groupBox)
-        dimXValueEntry.setValidator(validator)
-        dimXValueEntry.setText("0")
-        formLayout.setWidget(widgetno, QFormLayout.FieldRole, dimXValueEntry)
-        widgetno += 1
-
-        # Add Y size
-        dimYLabel = QLabel(groupBox)
-        dimYLabel.setText("Size Y")
-        formLayout.setWidget(widgetno, QFormLayout.LabelRole, dimYLabel)
-        dimYValueEntry = QLineEdit(groupBox)
-        dimYValueEntry.setValidator(validator)
-        dimYValueEntry.setText("0")
-        formLayout.setWidget(widgetno, QFormLayout.FieldRole, dimYValueEntry)
-        widgetno += 1
-        
-        # Add Z size
-        dimZLabel = QLabel(groupBox)
-        dimZLabel.setText("Size Z")
-        formLayout.setWidget(widgetno, QFormLayout.LabelRole, dimZLabel)
-        dimZValueEntry = QLineEdit(groupBox)
-        dimZValueEntry.setValidator(validator)
-        dimZValueEntry.setText("0")
-        formLayout.setWidget(widgetno, QFormLayout.FieldRole, dimZValueEntry)
-        widgetno += 1
-        
-        # Data Type
-        dtypeLabel = QLabel(groupBox)
-        dtypeLabel.setText("Data Type")
-        formLayout.setWidget(widgetno, QFormLayout.LabelRole, dtypeLabel)
-        dtypeValue = QComboBox(groupBox)
-        dtypeValue.addItems(["uint8", "int8", "uint16", "int16", "uint32", "int32", "float32", "float64"])
-        dtypeValue.setCurrentIndex(0)
-        
-        formLayout.setWidget(widgetno, QFormLayout.FieldRole, dtypeValue)
-        widgetno += 1
-
-        # Endiannes
-        endiannesLabel = QLabel(groupBox)
-        endiannesLabel.setText("Byte Ordering")
-        formLayout.setWidget(widgetno, QFormLayout.LabelRole, endiannesLabel)
-        endiannes = QComboBox(groupBox)
-        endiannes.addItems(["Big Endian","Little Endian"])
-        endiannes.setCurrentIndex(1)
-        
-        formLayout.setWidget(widgetno, QFormLayout.FieldRole, endiannes)
-        widgetno += 1
-
-        # Fortran Ordering
-        fortranLabel = QLabel(groupBox)
-        fortranLabel.setText("Fortran Ordering")
-        formLayout.setWidget(widgetno, QFormLayout.LabelRole, fortranLabel)
-        fortranOrder = QComboBox(groupBox)
-        fortranOrder.addItem("Fortran Order: XYZ")
-        fortranOrder.addItem("C Order: ZYX")
-        fortranOrder.setCurrentIndex(0)
-        # dimensionalityValue.currentIndexChanged.connect(lambda: \
-        #             main_window.overlapZValueEntry.setEnabled(True) \
-        #             if main_window.dimensionalityValue.currentIndex() == 0 else \
-        #             main_window.overlapZValueEntry.setEnabled(False))
-        
-        formLayout.setWidget(widgetno, QFormLayout.FieldRole, fortranOrder)
-        widgetno += 1
-
-        buttonbox = QDialogButtonBox(QDialogButtonBox.Ok |
-                                    QDialogButtonBox.Cancel)
-        buttonbox.accepted.connect(lambda: createConvertRawImageWorker(main_window,fname, output_image, info_var, resample, target_size,
-                                                                       crop_image, origin, target_z_extent, finish_fn))
-        buttonbox.rejected.connect(dialog.close)
-        formLayout.addWidget(buttonbox)
-
-        dialog.setLayout(ui['verticalLayout'])
-        dialog.setModal(True)
-
-        return {'dialog': dialog, 'ui': ui, 
-                'dimensionality': dimensionalityValue, 
-                'dimX': dimXValueEntry, 'dimY': dimYValueEntry, 'dimZ': dimZValueEntry,
-                'dtype': dtypeValue, 'endiannes' : endiannes, 'isFortran' : fortranOrder,
-                'buttonBox': buttonbox}
-
-if __name__ == "__main__":
+def test_progress_dialog():
     app = QtWidgets.QApplication(sys.argv)
     main = QtWidgets.QMainWindow()
+    
     def onFinished(self):
         print ("Press OK:\ndimensionality {}\n{}\ndtype {}, isBigEndian {}, F {}"\
              .format(self.dimensionality, self.shape , self.dtype, self.isBigEndian, self.isFortranOrder)
             #  , self.dtype, self.isBigEndian, self.isFortranOrder )
         )
-        
+
+    def launchProgressDialog(parent, labelText, title, cancelButtonText="Cancel", asyncTask=None):
+        pd = WorkerWithProgressDialog(parent = parent)
+        pd.setProgressDialogParameters(labelText="labelText", cancelButtonText="Cancel", 
+            parent = main, title=title)
+        pd.setMinimumDuration(0.001)
+        pd.setOnCancelled(lambda: print ("this is a lambda"))
+
     dialog = ImportRawImageDialog(parent=main)
     dialog.setFileName("pippo")\
         .setTitle("Hello!")\
         .setOnFinished(
-            partial(lambda: onFinished(dialog))
+            #partial(lambda: onFinished(dialog))
+            partial(lambda: launchProgressDialog(main))
         )
     dialog.update()
     
     dialog.show()
-
     
     sys.exit(app.exec_())
+
+def test_worker():
+    def asyncTask(N=10, progress_callback=None):
+        '''an example of an async task
+        
+        :param N: integer number of loops
+        :param progress_callback: callback that emits the current progress. 
+          If passed to the Worker class, the progress_callback is defined 
+          internally in the Worker class and the user is supposed just to 
+          connect the Worker signal progress with a function that receives 
+          the current progress as an integer, e.g.
+
+          
+          work = Worker(asyncTask, 4)
+          work.signals.progress.connect(lambda x: print("progress.connect", x))
+        '''
+        # N=10
+        i = 0
+        while i < N:
+            time.sleep(1)
+            if progress_callback is not None:
+                progress_callback.emit(i)
+            else:
+                print("progress_callback is None", i)
+            i+=1
+    def asyncTaskSimple():
+        N = 2
+        i = 0
+        while i < N:
+            time.sleep(1)
+            i+=1
+    
+    work = Worker(asyncTask, 4)
+    work.signals.progress.connect(lambda x: print("progress.connect", x))
+    work.signals.result.connect(lambda: print("Done!"))
+    return work
+    
+if __name__ == "__main__":
+    
+    app = QtWidgets.QApplication(sys.argv)
+    main = QtWidgets.QMainWindow()
+    print ("creating Workers")
+    work0 = test_worker()
+    work1 = test_worker()
+    print ("creating QThreadPool")
+    threadpool = QThreadPool()
+    print ("Starting workers")
+    threadpool.start(work0)
+    time.sleep(1)
+    threadpool.start(work1)
+    print ("End")
+    #test_progress_dialog()
+    
+    main.show()
+    sys.exit(app.exec())
