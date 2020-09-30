@@ -108,11 +108,7 @@ class WorkerWithProgressDialog(object):
             # print ("not modified")
             pd = self._progress_dialog
         return pd
-    def setOnCancelled(self, onCancel):
-        pd = self.progress_dialog
-        # button = QPushButton("Cancel")
-        # pd.setCancelButton(button)
-        pd.canceled.connect(onCancel)
+    
     def setAsyncTask(self, task, *args, **kwargs):
         '''Creates a Worker for the AsyncTask and attaches the 
         progress signal emitted by the Worker to the progress dialog'''
@@ -422,8 +418,9 @@ def test_progress_dialog():
     pd = WorkerWithProgressDialog(parent = main)
     pd.setProgressDialogParameters(labelText="labelText", cancelButtonText="Cancel", 
         parent = main, title=title, pmax=N)
-    #pd.progress_dialog.setMinimumDuration(0.001)
-    pd.setOnCancelled(lambda: print ("this is a lambda"))
+    # if cancelButtonText is None then connecting to cancel is totally useless.
+    pd.progress_dialog.canceled.connect(lambda: print ("Cancel dialog"))
+    # pd.setOnCancelled(lambda: print("Cancel dialog"))
     
     threadpool = QThreadPool()
 
