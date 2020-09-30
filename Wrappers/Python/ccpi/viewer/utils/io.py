@@ -24,6 +24,7 @@ from vtk.util.vtkAlgorithm import VTKPythonAlgorithmBase
 from ccpi.viewer.utils.conversion import cilNumpyResampleReader, cilBaseResampleReader, cilNumpyCroppedReader, cilMetaImageResampleReader, cilMetaImageCroppedReader, cilBaseCroppedReader
 
 import imghdr
+from ccpi.viewer.ui.dialogs import generateUIFormView
 
 # ImageCreator class
 class ImageDataCreator(object):   
@@ -587,44 +588,44 @@ def finishRawConversion(main_window,finish_fn, error = None):
         if finish_fn is not None:
             finish_fn()
                 
-def generateUIFormView():
-        '''creates a widget with a form layout group to add things to
+# def generateUIFormView():
+#         '''creates a widget with a form layout group to add things to
 
-        basically you can add widget to the returned groupBoxFormLayout and paramsGroupBox
-        The returned dockWidget must be added with
-        main_window.addDockWidget(QtCore.Qt.RightDockWidgetArea, dockWidget)
-        '''
-        dockWidgetContents = QWidget()
-
-
-        # Add vertical layout to dock contents
-        dockContentsVerticalLayout = QVBoxLayout(dockWidgetContents)
-        dockContentsVerticalLayout.setContentsMargins(0, 0, 0, 0)
-
-        # Create widget for dock contents
-        internalDockWidget = QWidget(dockWidgetContents)
-
-        # Add vertical layout to dock widget
-        internalWidgetVerticalLayout = QVBoxLayout(internalDockWidget)
-        internalWidgetVerticalLayout.setContentsMargins(0, 0, 0, 0)
-
-        # Add group box
-        paramsGroupBox = QGroupBox(internalDockWidget)
+#         basically you can add widget to the returned groupBoxFormLayout and paramsGroupBox
+#         The returned dockWidget must be added with
+#         main_window.addDockWidget(QtCore.Qt.RightDockWidgetArea, dockWidget)
+#         '''
+#         dockWidgetContents = QWidget()
 
 
-        # Add form layout to group box
-        groupBoxFormLayout = QFormLayout(paramsGroupBox)
+#         # Add vertical layout to dock contents
+#         dockContentsVerticalLayout = QVBoxLayout(dockWidgetContents)
+#         dockContentsVerticalLayout.setContentsMargins(0, 0, 0, 0)
 
-        # Add elements to layout
-        internalWidgetVerticalLayout.addWidget(paramsGroupBox)
-        dockContentsVerticalLayout.addWidget(internalDockWidget)
-        #dockWidget.setWidget(dockWidgetContents)
-        return {'widget': dockWidgetContents,
-                'verticalLayout':dockContentsVerticalLayout, 
-                'internalWidget': internalDockWidget,
-                'internalVerticalLayout': internalWidgetVerticalLayout, 
-                'groupBox' : paramsGroupBox,
-                'groupBoxFormLayout': groupBoxFormLayout}
+#         # Create widget for dock contents
+#         internalDockWidget = QWidget(dockWidgetContents)
+
+#         # Add vertical layout to dock widget
+#         internalWidgetVerticalLayout = QVBoxLayout(internalDockWidget)
+#         internalWidgetVerticalLayout.setContentsMargins(0, 0, 0, 0)
+
+#         # Add group box
+#         paramsGroupBox = QGroupBox(internalDockWidget)
+
+
+#         # Add form layout to group box
+#         groupBoxFormLayout = QFormLayout(paramsGroupBox)
+
+#         # Add elements to layout
+#         internalWidgetVerticalLayout.addWidget(paramsGroupBox)
+#         dockContentsVerticalLayout.addWidget(internalDockWidget)
+#         #dockWidget.setWidget(dockWidgetContents)
+#         return {'widget': dockWidgetContents,
+#                 'verticalLayout':dockContentsVerticalLayout, 
+#                 'internalWidget': internalDockWidget,
+#                 'internalVerticalLayout': internalWidgetVerticalLayout, 
+#                 'groupBox' : paramsGroupBox,
+#                 'groupBoxFormLayout': groupBoxFormLayout}
 
 def saveRawImageData(main_window,fname, output_image, info_var, resample, target_size, crop_image, origin, target_z_extent, progress_callback):
         errors = {} 
