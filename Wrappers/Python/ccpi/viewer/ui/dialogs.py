@@ -2,10 +2,11 @@ from PyQt5 import QtCore, QtWidgets, QtGui
 from PyQt5.QtCore import QThreadPool
 from PyQt5.QtWidgets import QProgressDialog, QDialog, QLabel, QComboBox, QDialogButtonBox, QFormLayout, QWidget, QVBoxLayout, \
     QGroupBox, QLineEdit, QMessageBox, QPushButton
-# from ccpi.viewer.io import generateUIFormView
 from functools import partial
 import sys, os, time
 from ccpi.viewer.QtThreading import Worker
+import vtk
+from ccpi.viewer.conversion import cilBaseResampleReader
 
 def generateUIFormView():
     '''creates a widget with a form layout group to add things to
@@ -47,17 +48,6 @@ def generateUIFormView():
             'groupBoxFormLayout': groupBoxFormLayout}
 
 
-def createProgressWindow(main_window, title, text, max = 100, cancel = None):
-    main_window.progress_window = QProgressDialog(text, "Cancel", 0,max, main_window, QtCore.Qt.Window) 
-    main_window.progress_window.setWindowTitle(title)
-    main_window.progress_window.setWindowModality(QtCore.Qt.ApplicationModal) #This means the other windows can't be used while this is open
-    main_window.progress_window.setMinimumDuration(0.1)
-    main_window.progress_window.setWindowFlag(QtCore.Qt.WindowCloseButtonHint, False)
-    main_window.progress_window.setWindowFlag(QtCore.Qt.WindowMaximizeButtonHint, False)
-    if cancel is None:
-        main_window.progress_window.setCancelButton(None)
-    else:
-        main_window.progress_window.canceled.connect(cancel)
 
 class WorkerWithProgressDialog(object):
     '''
@@ -376,7 +366,7 @@ class ImportRawImageDialog(QDialog):
     def isFortranOrder(self):
         return True if self.form['isFortran'].currentIndex() == 0 else False
 
-
+#############################################################################
 def asyncTask(N=10, form=None, progress_callback=None):
     '''an example of an async task
     
@@ -404,25 +394,72 @@ def asyncTask(N=10, form=None, progress_callback=None):
         else:
             print("progress_callback is None", i)
 
-def test_progress_dialog():
-    
-    def onFinished(self):
-        print ("Press OK:\ndimensionality {}\n{}\ndtype {}, isBigEndian {}, F {}"\
-             .format(self.dimensionality, self.shape , self.dtype, self.isBigEndian, self.isFortranOrder)
-            #  , self.dtype, self.isBigEndian, self.isFortranOrder )
+
+class cilGUIRawImageImporter(object):
+    def __init__(self, parent):
+        self._parent = parent
+        self._fname = None
+        
+        pd = WorkerWithProgressDialog(parent = main)
+        self.pd = pd
+        
+        pd.setProgressDialogParameters( labelText="labelText", cancelButtonText=None, 
+                                        parent = main, title=title, pmax=N)
+        
+        dialog = ImportRawImageDialog(parent=main)
+        self._dialog = dialog
+        
+        dialog.setTitle("Load Raw File")\
+          .setOnFinished(
+            lambda: self.threadpool.start(pd.worker)
         )
 
+        self._vtkImage = vtk.vtkImageData()
+         
+        reader = cilBaseResampleReader()
+        self._resamplereader = reader
+        
+
+
+    def setFileName(self, file_name):
+        self._fname = os.path.abspath(file_name)
+        self._dialog.setFileName(self._fname)
+
+    @property
+    def file_name(self):
+        return self._fname
+    def setThreadPool(self, value):
+        self._threadpool = value
+    @property
+    def threadpool(self):
+        if hasattr(self, "_threadpool"):
+            return self._threadpool
+        else:
+            return QThreadPool.globalInstance()
+    @property
+    def dialog(self):
+        return self._dialog
+
+    def Update(self):
+        self.dialog.update()
+
+        self.dialog.setAsyncTask(asyncTask, N, dialog)
+
+        dialog.show()
+
+
+def test_progress_dialog():
 
     title = "title"
     N = 10
     pd = WorkerWithProgressDialog(parent = main)
-    pd.setProgressDialogParameters(labelText="labelText", cancelButtonText="Cancel", 
+    pd.setProgressDialogParameters(labelText="labelText", cancelButtonText=None, 
         parent = main, title=title, pmax=N)
     # if cancelButtonText is None then connecting to cancel is totally useless.
     pd.progress_dialog.canceled.connect(lambda: print ("Cancel dialog"))
-    # pd.setOnCancelled(lambda: print("Cancel dialog"))
     
     threadpool = QThreadPool()
+    # threadpool = QThreadPool.globalInstance()
 
     dialog = ImportRawImageDialog(parent=main)
     dialog.setFileName("pippo")\
