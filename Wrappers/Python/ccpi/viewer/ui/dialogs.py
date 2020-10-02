@@ -513,7 +513,7 @@ def test_progress_dialog():
     
     pd.setProgressDialogParameter(labelText="labelText", title=title, pmax=N)
     # if cancelButtonText is None then connecting to cancel is totally useless.
-    # pd.progress_dialog.canceled.connect(lambda: print ("Cancel dialog"))
+    # pd.setOnCancel(lambda: print ("Cancel dialog"))
     pd.setAsyncTask(asyncTask, N, dialog)
 
     threadpool = QThreadPool()
