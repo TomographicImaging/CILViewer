@@ -459,7 +459,7 @@ class cilGUIRawImageImporter(object):
         pd = WorkerWithProgressDialog(parent = main)
         self.pd = pd
         
-        pd.setProgressDialogParameters( labelText="labelText", cancelButtonText=None, 
+        pd.setProgressDialogParameter( labelText="Loading RAW image file", cancelButtonText=None, 
                                         parent = main, title=title, pmax=N)
         
         dialog = ImportRawImageDialog(parent=main)
@@ -491,7 +491,7 @@ class cilGUIRawImageImporter(object):
         if hasattr(self, "_threadpool"):
             return self._threadpool
         else:
-            return QThreadPool.globalInstance()
+            return QThreadPool()
     @property
     def dialog(self):
         return self._dialog
