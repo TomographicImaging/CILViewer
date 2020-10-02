@@ -6,7 +6,8 @@ from functools import partial
 import sys, os, time
 from ccpi.viewer.QtThreading import Worker
 import vtk
-from ccpi.viewer.conversion import cilBaseResampleReader
+
+from ccpi.viewer.utils.conversion import cilBaseResampleReader
 
 def generateUIFormView():
     '''creates a widget with a form layout group to add things to
@@ -53,27 +54,76 @@ class WorkerWithProgressDialog(object):
     '''
     Creates a modal progress dialog and a worker to perform some task off the main ui thread.
     '''
-    def __init__(self, parent):
-        self._parent = None
-        self._cancelButtonText = "Cancel"
-        self._labelText = None
-        self._min = 0 
-        self._max = 100
-        self._modified = True
-    
-    def setProgressDialogParameters(self, labelText="", cancelButtonText="Cancel", 
-             pmin=0, pmax=100, parent=None, 
-             windowFlags=[[QtCore.Qt.WindowCloseButtonHint, True],[QtCore.Qt.WindowMaximizeButtonHint, False]], 
-             title="", windowModality=QtCore.Qt.ApplicationModal):
-        self._labelText = labelText
-        self._cancelButtonText = cancelButtonText
-        self._min = pmin
-        self._max = pmax
+    def __init__(self, parent, **kwargs):
+        '''Creator
+
+        Creates a default modal progress bar with close button enabled, maximise button disabled.
+        If passed a function, with setAsyncTask, a thread will be created and launched but no 
+        the signal to configure what happens on the thread finished is not connected.
+        '''
+        if parent is None:
+            raise ValueError('Progress Dialog requires a parent. We were passed None')
         self._parent = parent
-        self._windowFlags = windowFlags
-        self._title = title
-        self._windowModality = windowModality
-        self._modified = True
+
+        self._labelText = "Progress"
+        self._cancelButtonText = None
+        self._onCancel = None
+        self._min = 0
+        self._max = 100
+        self._windowFlags = [[QtCore.Qt.WindowCloseButtonHint, True],[QtCore.Qt.WindowMaximizeButtonHint, False]]
+        self._title = ''
+        self._windowModality = QtCore.Qt.ApplicationModal
+    
+    def setProgressDialogParameter(self, labelText=None, cancelButtonText=None, 
+             pmin=None, pmax=None, 
+             windowFlags=None, 
+             title=None, windowModality=None, 
+             onCancel = None):
+        '''Defines the parameters for the progress dialog
+
+        :param title: title on the progress bar dialog window
+        :param labelText: label above the progress bar
+        :param cancelButtonText: label on the optional cancel button. If None the Cancel button 
+         will not appear
+        :type cancelButtonText: str, default None
+        :param onCancel: slot to attach to the signal cancel emitted by pressing the (optional) cancel button 
+        :param pmin: minimum value of the progress bar, default 0
+        :param pmax: maximum value of the progress bar, default 100
+        :param windowFlags: Qt window flags, default close button enabled, maximise button disabled
+        :param windowModality: window modality, default modal window
+
+        Notice that the parent window of the progress dialog must be passed in the instantiation
+        of the WorkerWithProgressDialog class.
+
+        Also this method does not set any named parameter which has not been explicitly set.
+        Default values are set in the creator of the class, this method will update the relevant 
+        parameter only when passed.
+
+        '''
+        if labelText is not None:
+            self._labelText = labelText
+            self._modified = True
+        if cancelButtonText is not None:
+            self._cancelButtonText = cancelButtonText
+            self._modified = True
+        if onCancel is not None:
+            self._onCancel = onCancel
+            self._modified = True
+        if pmin is not None:
+            self._min = pmin
+            self._modified = True
+        if pmax is not None:
+            self._max = pmax
+            self._modified = True
+        if windowFlags is not None:
+            self._windowFlags = windowFlags
+            self._modified = True
+        if title is not None:
+            self._title = title
+            self._modified = True
+        if windowModality is not None:
+            self._windowModality = windowModality
+            self._modified = True
     @property
     def modified(self):
         return self._modified
@@ -92,12 +142,18 @@ class WorkerWithProgressDialog(object):
             for flag in self._windowFlags:
                 pd.setWindowFlag(flag[0], flag[1])
             pd.setMinimumDuration(0.1)
+            if self._cancelButtonText is not None:
+                pd.cancel.connect(self._onCancel)
             self._progress_dialog = pd
             self.modified = False
         else:
             # print ("not modified")
             pd = self._progress_dialog
         return pd
+    def setOnCancel(self, onCancel):
+        '''connects the signal cancel of the progress dialog to the onCancel slot'''
+        self._onCancel = onCancel
+        self.modified = True
     
     def setAsyncTask(self, task, *args, **kwargs):
         '''Creates a Worker for the AsyncTask and attaches the 
@@ -453,24 +509,22 @@ def test_progress_dialog():
     title = "title"
     N = 10
     pd = WorkerWithProgressDialog(parent = main)
-    pd.setProgressDialogParameters(labelText="labelText", cancelButtonText=None, 
-        parent = main, title=title, pmax=N)
-    # if cancelButtonText is None then connecting to cancel is totally useless.
-    pd.progress_dialog.canceled.connect(lambda: print ("Cancel dialog"))
+    dialog = ImportRawImageDialog(parent=main)
     
+    pd.setProgressDialogParameter(labelText="labelText", title=title, pmax=N)
+    # if cancelButtonText is None then connecting to cancel is totally useless.
+    # pd.progress_dialog.canceled.connect(lambda: print ("Cancel dialog"))
+    pd.setAsyncTask(asyncTask, N, dialog)
+
     threadpool = QThreadPool()
     # threadpool = QThreadPool.globalInstance()
 
-    dialog = ImportRawImageDialog(parent=main)
     dialog.setFileName("pippo")\
         .setTitle("Hello!")\
         .setOnFinished(
             lambda: threadpool.start(pd.worker)
         )
     dialog.update()
-
-    pd.setAsyncTask(asyncTask, N, dialog)
-
     dialog.show()
 
 def test_worker():
