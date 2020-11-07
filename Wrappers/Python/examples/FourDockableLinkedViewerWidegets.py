@@ -43,6 +43,10 @@ class FourLinkedViewersDockableWidget(QtWidgets.QMainWindow):
         self.v00.viewer.setSliceOrientation('x')
         self.v01.viewer.setSliceOrientation('y')
         self.v10.viewer.setSliceOrientation('z')
+        # disable reslicing by the user
+        self.v00.viewer.style.reslicing_enabled = False
+        self.v01.viewer.style.reslicing_enabled = False
+        self.v10.viewer.style.reslicing_enabled = False
         
         # add to the GUI
 
@@ -73,7 +77,10 @@ class FourLinkedViewersDockableWidget(QtWidgets.QMainWindow):
 
 
 if __name__ == "__main__":
- 
+    err = vtk.vtkFileOutputWindow()
+    err.SetFileName("viewer.log")
+    vtk.vtkOutputWindow.SetInstance(err)
+
     app = QtWidgets.QApplication(sys.argv)
  
     window = FourLinkedViewersDockableWidget()
