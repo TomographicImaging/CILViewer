@@ -1085,7 +1085,7 @@ def relu(x, xmin, xmax, scaling=1):
     returns values as
     1. x< xmin : f(x) = 0
     2. xmin <= x <= xmax : f(x) =  (x - xmin) / (xmax - xmin)
-    3. x > xmax: f(x) = 0
+    3. x > xmax: f(x) = scaling
 
     :param x: ndarray to evaluate the function at
     :param xmin: value at which the function start increasing
@@ -1096,10 +1096,12 @@ def relu(x, xmin, xmax, scaling=1):
     out = []
     dx = xmax-xmin
     for i, val in enumerate(x):
-        if val < xmin or val > xmax:
-            out.append(0) 
+        if val < xmin:
+            out.append(0)
+        elif val >= xmax:
+             out.append(scaling)
         else:
-            out.append( (val - xmin) / dx)
+            out.append( (val - xmin) / dx * scaling)
     return numpy.asarray(out)
 
 class CILColorMaps(object):
@@ -1115,6 +1117,14 @@ class CILColorMaps(object):
             colors = _inferno_data
         elif cmap == 'magma':
             colors = _magma_data
+        elif cmap == 'viridis_r':
+            colors = _viridis_data[::-1]
+        elif cmap == 'plasma_r':
+            colors = _plasma_data[::-1]
+        elif cmap == 'inferno_r':
+            colors = _inferno_data[::-1]
+        elif cmap == 'magma_r':
+            colors = _magma_data[::-1]
         else:
             raise ValueError('Unknown color map. Expected any of viridis, plasma, inferno, magma, got {}'.format(cmap))
         
