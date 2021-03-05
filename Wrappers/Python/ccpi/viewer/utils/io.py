@@ -1,6 +1,6 @@
-from PyQt5 import QtCore, QtWidgets, QtGui
-from PyQt5.QtCore import QThreadPool
-from PyQt5.QtWidgets import QProgressDialog, QDialog, QLabel, QComboBox, QDialogButtonBox, QFormLayout, QWidget, QVBoxLayout, QGroupBox, QLineEdit, QMessageBox
+from PySide2 import QtCore, QtWidgets, QtGui
+from PySide2.QtCore import QThreadPool
+from PySide2.QtWidgets import QProgressDialog, QDialog, QLabel, QComboBox, QDialogButtonBox, QFormLayout, QWidget, QVBoxLayout, QGroupBox, QLineEdit, QMessageBox
 
 import os
 import time
@@ -17,7 +17,8 @@ from ccpi.viewer.utils import Converter
 
 from ccpi.viewer.utils import cilNumpyMETAImageWriter
 
-from ccpi.viewer.QtThreading import Worker, WorkerSignals, ErrorObserver #
+# from ccpi.viewer.QtThreading import Worker, WorkerSignals, ErrorObserver #
+from eqt.threading import Worker
 
 from vtk.util.vtkAlgorithm import VTKPythonAlgorithmBase
 

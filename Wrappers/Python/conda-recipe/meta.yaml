@@ -1,16 +1,15 @@
 package:
   name: ccpi-viewer
-  version: 20.07.4
+  version: 21.0
 
 
 build:
   preserve_egg_dir: False
 
-  entry_points:
-    - CILViewerLaunch = ccpi.viewer.standaloneQT:main
-    - triViewerLaunch = ccpi.viewer.triWidgetQT:main
+  # entry_points:
+  #   - triViewerLaunch = ccpi.viewer.triWidgetQT:main
 
-  number: 0
+  number: 1
   
 requirements:
   build:
@@ -23,7 +22,7 @@ requirements:
     - numpy
     - vtk ==8.1.2
     - natsort
-    - pyqt >=5.6
+    - pyside2
     - matplotlib
 
 about:

@@ -1,9 +1,9 @@
 
-from PyQt5 import QtWidgets
+from PySide2 import QtWidgets
 import vtk
 import sys
 import vtk
-from PyQt5 import QtCore, QtWidgets
+from PySide2 import QtCore, QtWidgets
 from ccpi.viewer.QCILRenderWindowInteractor import QCILRenderWindowInteractor
 from ccpi.viewer import viewer2D
 
