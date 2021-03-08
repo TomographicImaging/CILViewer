@@ -72,17 +72,24 @@ class ImageDataCreator(object):
 
         if file_extension in ['.mha', '.mhd']:
             createProgressWindow(main_window,"Converting", "Converting Image")
-            image_worker = Worker(loadMetaImage, main_window, image, output_image,  info_var,  resample, target_size, crop_image, origin, target_z_extent, convert_numpy, convert_raw, tempfolder)
+            image_worker = Worker(loadMetaImage, main_window=main_window, image=image, output_image=output_image,
+              image_info=info_var, resample=resample, target_size=target_size, crop_image=crop_image, origin=origin,
+              target_z_extent=target_z_extent, convert_numpy=convert_numpy, convert_raw=convert_raw, tempfolder=tempfolder)
 
         elif file_extension in ['.npy']:
             createProgressWindow(main_window,"Converting", "Converting Image")
-            image_worker = Worker(loadNpyImage,image, output_image, info_var, resample, target_size, crop_image, origin, target_z_extent)     
+            #image_file, output_image, image_info = None, resample = False, target_size = 0.125, crop_image = False,
+            # origin = (0,0,0), target_z_extent = (0,0), progress_callback=None
+            image_worker = Worker(loadNpyImage,image_file=image, output_image=output_image, image_info=info_var, resample=resample, target_size=target_size, 
+            crop_image=crop_image, origin=origin, target_z_extent=target_z_extent)     
 
         elif file_extension in ['tif', 'tiff', '.tif', '.tiff']:
             reader = vtk.vtkTIFFReader()
             reader.AddObserver("ErrorEvent", main_window.e)
             createProgressWindow(main_window,"Converting", "Converting Image")
-            image_worker = Worker(loadTif,image_files,reader, output_image, convert_numpy, info_var)
+            #filenames, reader, output_image,   convert_numpy = False,  image_info = None, progress_callback=None
+            image_worker = Worker(loadTif, image_files, reader, output_image, 
+                                  convert_numpy=convert_numpy, image_info=info_var)
 
         elif file_extension in ['.raw']:
             if 'file_type' in info_var and info_var['file_type'] == 'raw':
@@ -117,7 +124,7 @@ def createProgressWindow(main_window, title, text, max = 100, cancel = None):
     main_window.progress_window.setWindowTitle(title)
     main_window.progress_window.setWindowModality(QtCore.Qt.ApplicationModal) #This means the other windows can't be used while this is open
     main_window.progress_window.setMinimumDuration(0.1)
-    main_window.progress_window.setWindowFlag(QtCore.Qt.WindowCloseButtonHint, False)
+    main_window.progress_window.setWindowFlag(QtCore.Qt.WindowCloseButtonHint, True)
     main_window.progress_window.setWindowFlag(QtCore.Qt.WindowMaximizeButtonHint, False)
     if cancel is None:
         main_window.progress_window.setCancelButton(None)
@@ -152,7 +159,21 @@ def warningDialog(main_window, message='', window_title='', detailed_text=''):
 
 #mha and mhd:
 
-def loadMetaImage(main_window, image, output_image,  image_info = None, resample = False, target_size = 0.125, crop_image = False, origin = (0,0,0), target_z_extent = (0,0), convert_numpy = False, convert_raw = True, tempfolder = None, progress_callback=None):
+#def loadMetaImage(main_window, image, output_image,  image_info = None, resample = False, target_size = 0.125, crop_image = False, origin = (0,0,0), target_z_extent = (0,0), convert_numpy = False, convert_raw = True, tempfolder = None, progress_callback=None):
+def loadMetaImage(**kwargs):
+    main_window = kwargs.get('main_window')
+    image = kwargs.get('image')
+    output_image = kwargs.get('output_image')
+    image_info  = kwargs.get('image_info', None)
+    resample = kwargs.get('resample', False)
+    target_size = kwargs.get('target_size', 0.125)
+    crop_image = kwargs.get('crop_image', False)
+    origin = kwargs.get('origin', (0,0,0))
+    target_z_extent = kwargs.get('target_z_extent', (0,0))
+    convert_numpy = kwargs.get('convert_numpy', False)
+    convert_raw = kwargs.get('convert_raw', True)
+    tempfolder = kwargs.get('tempfolder', None)
+    progress_callback = kwargs.get('progress_callback',None)
     if resample:
         reader = cilMetaImageResampleReader()
         #print("Target size: ", int(target_size * 1024*1024*1024))
@@ -254,195 +275,211 @@ def loadMetaImage(main_window, image, output_image,  image_info = None, resample
     progress_callback.emit(100)
 
 
-def loadNpyImage(image_file, output_image, image_info = None, resample = False, target_size = 0.125, crop_image = False, origin = (0,0,0), target_z_extent = (0,0), progress_callback=None):
-        if resample:
-            reader = cilNumpyResampleReader()
-            reader.SetFileName(image_file)
-            reader.SetTargetSize(int(target_size * 1024*1024*1024))
-            reader.AddObserver(vtk.vtkCommand.ProgressEvent, partial(getProgress, progress_callback= progress_callback))
-            reader.Update()
-            output_image.ShallowCopy(reader.GetOutput())
-            print ("Spacing ", output_image.GetSpacing())
-            header_length = reader.GetFileHeaderLength()
-            print("Length of header: ", header_length) 
-            vol_bit_depth = reader.GetBytesPerElement()*8
-            shape = reader.GetStoredArrayShape()
-            if not reader.GetIsFortran():
-                shape = shape[::-1]
-            if image_info is not None:
-                image_info['isBigEndian'] = reader.GetBigEndian()
-                
-                image_size = reader.GetStoredArrayShape()[0] * reader.GetStoredArrayShape()[1]*reader.GetStoredArrayShape()[2]
-                target_size = reader.GetTargetSize()
-                print("array shape", image_size)
-                print("target", target_size)
-                if image_size <= target_size:
-                    image_info['sampled'] = False
-                else:
-                    image_info['sampled'] = True
-            # print("Header", header_length)
-            # print("vol_bit_depth", vol_bit_depth)
-
-        elif crop_image:
-            print("Target z extent", target_z_extent)
-            print("Origin", origin)
-            reader = cilNumpyCroppedReader()
-            reader.SetFileName(image_file)
-            reader.SetOrigin(tuple(origin))
-            reader.SetTargetZExtent(target_z_extent)
-            reader.Update()
-            output_image.ShallowCopy(reader.GetOutput())
-            print ("Spacing ", output_image.GetSpacing())
-            header_length = reader.GetFileHeaderLength() 
-            vol_bit_depth = reader.GetBytesPerElement()*8
-            shape = reader.GetStoredArrayShape()
-            if not reader.GetIsFortran():
-                shape = shape[::-1]
-            if image_info is not None:
-                image_info['isBigEndian'] = reader.GetBigEndian()
-                
-                image_info['cropped'] = True
-            
-        else: 
-                time.sleep(0.1)
-                progress_callback.emit(5)
-
-                with open(image_file, 'rb') as f:
-                    header = f.readline()
-                header_length = len(header)
-                print("Length of header: ", len(header))
-
-
-                numpy_array = numpy.load(image_file)
-                shape = numpy.shape(numpy_array)
-
-                if (isinstance(numpy_array[0][0][0],numpy.uint8)):
-                    vol_bit_depth = '8'
-                elif(isinstance(numpy_array[0][0][0],numpy.uint16)):
-                    vol_bit_depth = '16'
-                else:
-                    vol_bit_depth = None #in this case we can't run the DVC code
-                    output_image = None
-                    return
-                
-                if image_info is not None:
-                    image_info['sampled'] = False
-                    if numpy_array.dtype.byteorder == '=':
-                        if sys.byteorder == 'big':
-                            image_info['isBigEndian'] = True
-                        else:
-                            image_info['isBigEndian'] = False
-                    else:
-                        image_info['isBigEndian'] = None
-
-                        print(image_info['isBigEndian'])
-
-                Converter.numpy2vtkImage(numpy_array, output = output_image) #(3.2,3.2,1.5)
-                progress_callback.emit(80)
-            
-        progress_callback.emit(100)
-
+#def loadNpyImage(image_file, output_image, image_info = None, resample = False, target_size = 0.125, crop_image = False, origin = (0,0,0), target_z_extent = (0,0), progress_callback=None):
+def loadNpyImage(**kwargs):
+    image_file = kwargs.get('image_file')
+    output_image = kwargs.get('output_image')
+    image_info  = kwargs.get('image_info', None)
+    resample = kwargs.get('resample', False)
+    target_size = kwargs.get('target_size', 0.125)
+    crop_image = kwargs.get('crop_image', False)
+    origin = kwargs.get('origin', (0,0,0))
+    target_z_extent = kwargs.get('target_z_extent', (0,0))
+    progress_callback = kwargs.get('progress_callback',None)
+    if resample:
+        reader = cilNumpyResampleReader()
+        reader.SetFileName(image_file)
+        reader.SetTargetSize(int(target_size * 1024*1024*1024))
+        reader.AddObserver(vtk.vtkCommand.ProgressEvent, partial(getProgress, progress_callback= progress_callback))
+        reader.Update()
+        output_image.ShallowCopy(reader.GetOutput())
+        print ("Spacing ", output_image.GetSpacing())
+        header_length = reader.GetFileHeaderLength()
+        print("Length of header: ", header_length) 
+        vol_bit_depth = reader.GetBytesPerElement()*8
+        shape = reader.GetStoredArrayShape()
+        if not reader.GetIsFortran():
+            shape = shape[::-1]
         if image_info is not None:
-            image_info["header_length"]  = header_length
-            image_info["vol_bit_depth"] =  vol_bit_depth
-            image_info["shape"] = shape
+            image_info['isBigEndian'] = reader.GetBigEndian()
+            
+            image_size = reader.GetStoredArrayShape()[0] * reader.GetStoredArrayShape()[1]*reader.GetStoredArrayShape()[2]
+            target_size = reader.GetTargetSize()
+            print("array shape", image_size)
+            print("target", target_size)
+            if image_size <= target_size:
+                image_info['sampled'] = False
+            else:
+                image_info['sampled'] = True
+        # print("Header", header_length)
+        # print("vol_bit_depth", vol_bit_depth)
 
-        #print("Loaded npy")
+    elif crop_image:
+        print("Target z extent", target_z_extent)
+        print("Origin", origin)
+        reader = cilNumpyCroppedReader()
+        reader.SetFileName(image_file)
+        reader.SetOrigin(tuple(origin))
+        reader.SetTargetZExtent(target_z_extent)
+        reader.Update()
+        output_image.ShallowCopy(reader.GetOutput())
+        print ("Spacing ", output_image.GetSpacing())
+        header_length = reader.GetFileHeaderLength() 
+        vol_bit_depth = reader.GetBytesPerElement()*8
+        shape = reader.GetStoredArrayShape()
+        if not reader.GetIsFortran():
+            shape = shape[::-1]
+        if image_info is not None:
+            image_info['isBigEndian'] = reader.GetBigEndian()
+            
+            image_info['cropped'] = True
         
+    else: 
+            time.sleep(0.1)
+            progress_callback.emit(5)
 
-        
-        
-def loadTif(filenames, reader, output_image,   convert_numpy = False,  image_info = None, progress_callback=None):
-        #time.sleep(0.1) #required so that progress window displays
-        #progress_callback.emit(10)
-        resample = False
-
-        if resample:
-            reader = Converter.tiffStack2numpyEnforceBounds(filenames = filenames, bounds = (12,12,12)) 
-            #reader.AddObserver(vtk.vtkCommand.ProgressEvent, partial(getProgress, progress_callback= progress_callback))
-            #reader.Update()
-            #output_image.ShallowCopy(reader.GetOutput())
-            #print ("Spacing ", output_image.GetSpacing())
-            #header_length = reader.GetFileHeaderLength() 
-            #vol_bit_depth = reader.GetBytesPerElement()*8
-            #shape = reader.GetStoredArrayShape()
-            # if not reader.GetIsFortran():
-            #     shape = shape[::-1]
-
-            # image_info['isBigEndian'] = reader.GetBigEndian()
-            # print("Header", header_length)
-            # print("vol_bit_depth", vol_bit_depth)
+            with open(image_file, 'rb') as f:
+                header = f.readline()
+            header_length = len(header)
+            print("Length of header: ", len(header))
 
 
-        else:
+            numpy_array = numpy.load(image_file)
+            shape = numpy.shape(numpy_array)
 
-            sa = vtk.vtkStringArray()
-            for fname in filenames:
-                i = sa.InsertNextValue(fname)
-            print("read {} files".format(i))
-
-            reader.AddObserver(vtk.vtkCommand.ProgressEvent, partial(getProgress, progress_callback= progress_callback))
-            reader.SetFileNames(sa)
-
-            dtype = vtk.VTK_UNSIGNED_CHAR
-
-            if reader.GetOutput().GetScalarType() != dtype and False:
-                # need to cast to 8 bits unsigned
-                print("The if statement is true")
-
-                stats = vtk.vtkImageAccumulate()
-                stats.SetInputConnection(reader.GetOutputPort())
-                stats.Update()
-                iMin = stats.GetMin()[0]
-                iMax = stats.GetMax()[0]
-                if (iMax - iMin == 0):
-                    scale = 1
+            if (isinstance(numpy_array[0][0][0],numpy.uint8)):
+                vol_bit_depth = '8'
+            elif(isinstance(numpy_array[0][0][0],numpy.uint16)):
+                vol_bit_depth = '16'
+            else:
+                vol_bit_depth = None #in this case we can't run the DVC code
+                output_image = None
+                return
+            
+            if image_info is not None:
+                image_info['sampled'] = False
+                if numpy_array.dtype.byteorder == '=':
+                    if sys.byteorder == 'big':
+                        image_info['isBigEndian'] = True
+                    else:
+                        image_info['isBigEndian'] = False
                 else:
-                    scale = vtk.VTK_UNSIGNED_CHAR_MAX / (iMax - iMin)
+                    image_info['isBigEndian'] = None
 
-                shiftScaler = vtk.vtkImageShiftScale()
-                shiftScaler.SetInputConnection(reader.GetOutputPort())
-                shiftScaler.SetScale(scale)
-                shiftScaler.SetShift(-iMin)
-                shiftScaler.SetOutputScalarType(dtype)
-                shiftScaler.Update()
+                    print(image_info['isBigEndian'])
 
-                tmpdir = tempfile.gettempdir()
-                writer = vtk.vtkMetaImageWriter()
-                writer.SetInputConnection(shiftScaler.GetOutputPort())
-                writer.SetFileName(os.path.join(tmpdir, 'input8bit.mhd'))
-                writer.Write()
-
-                reader = shiftScaler
-            reader.Update()
-
+            Converter.numpy2vtkImage(numpy_array, output = output_image) #(3.2,3.2,1.5)
             progress_callback.emit(80)
+        
+    progress_callback.emit(100)
 
-            print("Convert np")
+    if image_info is not None:
+        image_info["header_length"]  = header_length
+        image_info["vol_bit_depth"] =  vol_bit_depth
+        image_info["shape"] = shape
 
-            image_data = reader.GetOutput()
-            output_image.ShallowCopy(image_data)
+    #print("Loaded npy")
+        
 
-            progress_callback.emit(90)
+        
+        
+def loadTif(*args, **kwargs):
+    #filenames, reader, output_image,   convert_numpy = False,  image_info = None, progress_callback=None):
+#filenames, reader, output_image,   convert_numpy = False,  image_info = None, progress_callback=None
+    filenames, reader, output_image = args
+    image_info  = kwargs.get('image_info', None)
+    convert_numpy = kwargs.get('convert_numpy', False)
 
-            if convert_numpy:
-                filename = os.path.abspath(filenames[0])[:-4] + ".npy"
-                numpy_array =  Converter.vtk2numpy(reader.GetOutput())
-                #numpy_array =  Converter.tiffStack2numpy(filenames = filenames)
-                numpy.save(filename,numpy_array)
-                image_info['numpy_file'] = filename
+    #time.sleep(0.1) #required so that progress window displays
+    #progress_callback.emit(10)
+    resample = False
 
-                if image_info is not None:
-                    if (isinstance(numpy_array[0][0][0],numpy.uint8)):
-                        image_info['vol_bit_depth'] = '8'
-                    elif(isinstance(numpy_array[0][0][0],numpy.uint16)):
-                        image_info['vol_bit_depth'] = '16'
-                    print(image_info['vol_bit_depth'])
+    if resample:
+        reader = Converter.tiffStack2numpyEnforceBounds(filenames = filenames, bounds = (12,12,12)) 
+        #reader.AddObserver(vtk.vtkCommand.ProgressEvent, partial(getProgress, progress_callback= progress_callback))
+        #reader.Update()
+        #output_image.ShallowCopy(reader.GetOutput())
+        #print ("Spacing ", output_image.GetSpacing())
+        #header_length = reader.GetFileHeaderLength() 
+        #vol_bit_depth = reader.GetBytesPerElement()*8
+        #shape = reader.GetStoredArrayShape()
+        # if not reader.GetIsFortran():
+        #     shape = shape[::-1]
 
-            image_info['sampled'] = False
+        # image_info['isBigEndian'] = reader.GetBigEndian()
+        # print("Header", header_length)
+        # print("vol_bit_depth", vol_bit_depth)
 
-                #TODO: save volume header length
-            progress_callback.emit(100)
+
+    else:
+
+        sa = vtk.vtkStringArray()
+        for fname in filenames:
+            i = sa.InsertNextValue(fname)
+        print("read {} files".format(i))
+
+        reader.AddObserver(vtk.vtkCommand.ProgressEvent, partial(getProgress, progress_callback= progress_callback))
+        reader.SetFileNames(sa)
+
+        dtype = vtk.VTK_UNSIGNED_CHAR
+
+        if reader.GetOutput().GetScalarType() != dtype and False:
+            # need to cast to 8 bits unsigned
+            print("The if statement is true")
+
+            stats = vtk.vtkImageAccumulate()
+            stats.SetInputConnection(reader.GetOutputPort())
+            stats.Update()
+            iMin = stats.GetMin()[0]
+            iMax = stats.GetMax()[0]
+            if (iMax - iMin == 0):
+                scale = 1
+            else:
+                scale = vtk.VTK_UNSIGNED_CHAR_MAX / (iMax - iMin)
+
+            shiftScaler = vtk.vtkImageShiftScale()
+            shiftScaler.SetInputConnection(reader.GetOutputPort())
+            shiftScaler.SetScale(scale)
+            shiftScaler.SetShift(-iMin)
+            shiftScaler.SetOutputScalarType(dtype)
+            shiftScaler.Update()
+
+            tmpdir = tempfile.gettempdir()
+            writer = vtk.vtkMetaImageWriter()
+            writer.SetInputConnection(shiftScaler.GetOutputPort())
+            writer.SetFileName(os.path.join(tmpdir, 'input8bit.mhd'))
+            writer.Write()
+
+            reader = shiftScaler
+        reader.Update()
+
+        progress_callback.emit(80)
+
+        print("Convert np")
+
+        image_data = reader.GetOutput()
+        output_image.ShallowCopy(image_data)
+
+        progress_callback.emit(90)
+
+        if convert_numpy:
+            filename = os.path.abspath(filenames[0])[:-4] + ".npy"
+            numpy_array =  Converter.vtk2numpy(reader.GetOutput())
+            #numpy_array =  Converter.tiffStack2numpy(filenames = filenames)
+            numpy.save(filename,numpy_array)
+            image_info['numpy_file'] = filename
+
+            if image_info is not None:
+                if (isinstance(numpy_array[0][0][0],numpy.uint8)):
+                    image_info['vol_bit_depth'] = '8'
+                elif(isinstance(numpy_array[0][0][0],numpy.uint16)):
+                    image_info['vol_bit_depth'] = '16'
+                print(image_info['vol_bit_depth'])
+
+        image_info['sampled'] = False
+
+            #TODO: save volume header length
+        progress_callback.emit(100)
 
 def getProgress(caller, event, progress_callback):
         progress_callback.emit(caller.GetProgress()*80)

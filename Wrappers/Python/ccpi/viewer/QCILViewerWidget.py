@@ -22,7 +22,7 @@ class QCILViewerWidget(QtWidgets.QFrame):
         The viewer is accessible as member 'viewer'
         '''
         
-        super(QtWidgets.QFrame, self).__init__()
+        super(QCILViewerWidget, self).__init__(parent=parent)
         # currently the size of the frame is set by stretching to the whole 
         # area in the main window. A resize of the MainWindow triggers a resize of 
         # the QFrame to occupy the whole area available.
