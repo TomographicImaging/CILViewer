@@ -27,13 +27,15 @@ from ccpi.viewer.CILViewer2D import SLICE_ORIENTATION_XY, SLICE_ORIENTATION_XZ, 
 
 from ccpi.viewer.utils import colormaps
 
+VOLUME_ACTOR = 'volume'
+
 class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
 
     def __init__(self, callback):
         vtk.vtkInteractorStyleTrackballCamera.__init__(self)
         self._viewer = callback
-        self.AddObserver('MouseWheelForwardEvent', self.mouseInteraction, 1.0)
-        self.AddObserver('MouseWheelBackwardEvent', self.mouseInteraction, 1.0)
+        self.AddObserver('MouseWheelForwardEvent', self.mouseWheelInteraction, 1.0)
+        self.AddObserver('MouseWheelBackwardEvent', self.mouseWheelInteraction, 1.0)
         self.AddObserver('KeyPressEvent', self.keyPress, 1.0)
         self.AddObserver('LeftButtonPressEvent', self.OnLeftMouseClick)
         self.AddObserver('LeftButtonReleaseEvent', self.OnLeftMouseRelease)
@@ -124,23 +126,24 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
     def ShowActor(self, actorno):
         self._viewer.showActor(actorno)
 
-    def mouseInteraction(self, interactor, event):
-        shift = interactor.GetShiftKey()
-        advance = 1
-        if shift:
-            advance = 10
+    def mouseWheelInteraction(self, interactor, event):
+        if SLICE_ACTOR in self._viewer.actors.keys():
+            shift = interactor.GetShiftKey()
+            advance = 1
+            if shift:
+                advance = 10
 
-        if event == 'MouseWheelForwardEvent':
-            maxSlice = self._viewer.img3D.GetExtent()[self.GetSliceOrientation()*2+1]
-            # print (self.GetActiveSlice())
-            if (self.GetActiveSlice() + advance <= maxSlice):
-                self.SetActiveSlice(self.GetActiveSlice() + advance)
-                self.UpdatePipeline()
-        else:
-            minSlice = self._viewer.img3D.GetExtent()[self.GetSliceOrientation()*2]
-            if (self.GetActiveSlice() - advance >= minSlice):
-                self.SetActiveSlice(self.GetActiveSlice() - advance)
-                self.UpdatePipeline()
+            if event == 'MouseWheelForwardEvent':
+                maxSlice = self._viewer.img3D.GetExtent()[self.GetSliceOrientation()*2+1]
+                # print (self.GetActiveSlice())
+                if (self.GetActiveSlice() + advance <= maxSlice):
+                    self.SetActiveSlice(self.GetActiveSlice() + advance)
+                    self.UpdatePipeline()
+            else:
+                minSlice = self._viewer.img3D.GetExtent()[self.GetSliceOrientation()*2]
+                if (self.GetActiveSlice() - advance >= minSlice):
+                    self.SetActiveSlice(self.GetActiveSlice() - advance)
+                    self.UpdatePipeline()
 
     def OnLeftMouseClick(self, interactor, event):
         self.SetDecimalisation(0.8)
@@ -237,11 +240,17 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
         elif interactor.GetKeyCode() == "s":
             # toggle visibility of the slice 
             
-            if self._viewer.sliceActor.GetVisibility():
-                self._viewer.sliceActor.VisibilityOff()
+            # if self._viewer.sliceActor.GetVisibility():
+            #     self._viewer.sliceActor.VisibilityOff()
+            # else:
+            #     self._viewer.sliceActor.VisibilityOn()
+            # self._viewer.updatePipeline()
+            
+            # remove slice actor if present, add it if not
+            if SLICE_ACTOR in self._viewer.actors.keys():
+                self._viewer.removeActorByName(SLICE_ACTOR)
             else:
-                self._viewer.sliceActor.VisibilityOn()
-            self._viewer.updatePipeline()
+                self._viewer.addAndShowActor(SLICE_ACTOR, self._viewer.sliceActor, visibility=True)
         elif interactor.GetKeyCode() == "i":
             # toggle interpolation of slice actor
             is_interpolated = self._viewer.sliceActor.GetInterpolate()
@@ -258,7 +267,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
         if help_actor.GetVisibility():
             help_actor.VisibilityOff()
             slice_actor.VisibilityOn()
-            self.ShowActor(1)
+            self.ShowActor(HELP_ACTOR, visibility=True)
             self.Render()
             return
 
@@ -311,6 +320,9 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
         self.Render()
     def SaveRender(self, filename):
         self._viewer.saveRender(filename)
+
+    def SetLinkedPickEvent(self, pick_position):
+        pass
 
 class CILViewer():
     '''Simple 3D Viewer based on VTK classes'''
@@ -367,7 +379,8 @@ class CILViewer():
         self.helpActor.GetPositionCoordinate().SetCoordinateSystemToNormalizedDisplay()
         self.helpActor.GetPositionCoordinate().SetValue(0.1, 0.5)
         self.helpActor.VisibilityOff()
-        self.ren.AddActor(self.helpActor)
+        #self.ren.AddActor(self.helpActor)
+        self.addAndShowActor(HELP_ACTOR, self.helpActor, visibility=False)
 
 
         # volume render
@@ -476,24 +489,54 @@ class CILViewer():
         except KeyError as ke:
             print ("Warning Actor not present")
         
-    def showActor(self, actorno, actor = None):
+    def showActor(self, actorname, actor = None, visibility=True):
         '''Shows hidden actor identified by its number in the list of actors'''
         try:
-            if not self.actors[actorno][1]:
-                self.ren.AddActor(self.actors[actorno][0])
-                self.actors[actorno][1] = True
+            if not self.actors[actorname][1]:
+                self.ren.AddActor(self.actors[actorname][0])
+                self.actors[actorname][1] = visibility
                 return actorno
         except KeyError as ke:
             # adds it to the actors if not there already
             if actor != None:
                 self.ren.AddActor(actor)
-                self.actors[len(self.actors)+1] = [actor, True]
+                self.actors[actorname] = [actor, visibility]
                 return len(self.actors)
 
-    def addActor(self, actor):
-        '''Adds an actor to the render'''
-        return self.showActor(0, actor)
-            
+    def AddActor(self, actor, name=None):
+        '''print("ADDING ACTOR", name)
+        self.log("Calling AddActor " + name)
+        present_actors = self.ren.GetActors() # Only seems to return some of the actors - possibly only the visible ones?
+        present_actors.InitTraversal()
+        self.log("Currently present actors {}".format(present_actors))
+
+        print("Current len", present_actors.GetNumberOfItems())
+    
+        for i in range(present_actors.GetNumberOfItems()):
+            nextActor = present_actors.GetNextActor()
+            nextActor.SetVisibility(False)
+            self.log("{} {} Visibility {}".format(i, nextActor, nextActor.GetVisibility() ))
+            self.log("ClassName"+ str( nextActor.GetClassName()))
+
+        
+        print("intermediate len", self.ren.GetActors().GetNumberOfItems())        
+        if name is None:
+            name = 'actor_{}'.format(present_actors.GetNumberOfItems()+1)'''
+        
+        # print("final len", self.ren.GetActors().GetNumberOfItems())
+        if name is None:
+            name = "actor_{}".format(len(actors.keys()))
+        self.showActor(name, actor)
+    
+    def addAndShowActor(self, name=None, actor=None, visibility=True):
+        if name is not None and actor is not None:
+            self.showActor(name, actor, visibility=visibility)
+    
+    def removeActorByName(self, name):
+        for k,v in self.actors.items():
+            if k == name:
+                actor = self.actors.pop(k)
+                self.ren.RemoveActor(actor[0])
 
     def startRenderLoop(self):
         self.iren.Start()
@@ -580,9 +623,9 @@ class CILViewer():
         # accomodates all values between the level an the percentiles
         #window = 2*max(abs(median-cmin),abs(median-cmax))
         window = cmax - cmin
-        viridis = colormaps.CILColorMaps.get_color_transfer_function('viridis', (cmin,cmax))
+        viridis = colormaps.CILColorMaps.get_color_transfer_function('inferno', (cmin,cmax))
 
-        x = numpy.linspace(ia.GetMinimum(), ia.GetMaximum(), num=255)
+        x = numpy.linspace(cmin, cmax, num=255)
         scaling = 0.1
         opacity = colormaps.CILColorMaps.get_opacity_transfer_function(x, 
           colormaps.relu, cmin, cmax, scaling)
@@ -639,33 +682,36 @@ class CILViewer():
         self.sliceActor.GetProperty().SetOpacity(0.99)
         self.sliceActor.Update()
         self.sliceActor.SetInterpolate(False)
-        self.ren.AddActor(self.sliceActor)
+        #self.ren.AddActor(self.sliceActor)
+        self.addAndShowActor(SLICE_ACTOR, self.sliceActor, visibility=True)
         
 
     def updatePipeline(self, resetcamera = False):
-        self.hideActor(self.sliceActorNo)
+        if SLICE_ACTOR in self.actors.keys():
+            # self.hideActor(self.sliceActorNo)
 
-        extent = [i for i in self.img3D.GetExtent()]
-        extent[self.sliceOrientation * 2] = self.getActiveSlice()
-        extent[self.sliceOrientation * 2 + 1] = self.getActiveSlice()
-        self.voi.SetVOI(extent[0], extent[1],
-                   extent[2], extent[3],
-                   extent[4], extent[5])
+            extent = [i for i in self.img3D.GetExtent()]
+            extent[self.sliceOrientation * 2] = self.getActiveSlice()
+            extent[self.sliceOrientation * 2 + 1] = self.getActiveSlice()
+            self.voi.SetVOI(extent[0], extent[1],
+                    extent[2], extent[3],
+                    extent[4], extent[5])
 
-        self.voi.Update()
-        self.ia.Update()
-        self.wl.Update()
+            self.voi.Update()
+            self.ia.Update()
+            self.wl.Update()
 
-        # Set image actor
-        self.sliceActor.SetInputData(self.wl.GetOutput())
-        self.sliceActor.SetDisplayExtent(extent[0], extent[1],
-                                    extent[2], extent[3],
-                                    extent[4], extent[5])
-        self.sliceActor.GetProperty().SetOpacity(0.99)
-        self.sliceActor.Update()
+            # Set image actor
+            self.sliceActor.SetInputData(self.wl.GetOutput())
+            self.sliceActor.SetDisplayExtent(extent[0], extent[1],
+                                        extent[2], extent[3],
+                                        extent[4], extent[5])
+            self.sliceActor.GetProperty().SetOpacity(0.99)
+            self.sliceActor.Update()
 
-        no = self.showActor(self.sliceActorNo, self.sliceActor)
-        self.sliceActorNo = no
+            # no = self.addAndShowActor(SLICE_ACTOR, self.sliceActor)
+            # self.sliceActorNo = no
+            self.sliceActor.VisibilityOn()
 
         self.updateVolumePipeline()
 
@@ -676,7 +722,7 @@ class CILViewer():
     def updateVolumePipeline(self):
         if self.volume_render_initialised and self.volume.GetVisibility():
             cmin , cmax = self.volume_colormap_limits
-            viridis = colormaps.CILColorMaps.get_color_transfer_function('viridis', (cmin,cmax))
+            viridis = colormaps.CILColorMaps.get_color_transfer_function('inferno', (cmin,cmax))
 
             x = numpy.linspace(self.ia.GetMinimum(), self.ia.GetMaximum(), num=255)
             scaling = 0.1

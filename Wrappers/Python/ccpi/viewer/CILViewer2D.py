@@ -1150,7 +1150,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
 
         vox = self.display2imageCoordinate(position)
         self.last_picked_voxel = vox
-        # print ("Pixel %d,%d,%d Value %f" % vox )
+        print ("Pixel %d,%d,%d Value %f" % vox )
         self._viewer.cornerAnnotation.VisibilityOn()
         text = self.CreateAnnotationText("pick", vox)
         self.UpdateCornerAnnotation(text, 0)
@@ -1160,6 +1160,21 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
         x,y = interactor.GetEventPosition()
         ic = self.display2imageCoordinate((x,y))
         self.UpdateLinePlot(ic, display)
+    
+    def SetLinkedPickEvent(self, pick_position):
+        self.last_picked_voxel = pick_position[:]
+        print ("LinkedPickEvent", pick_position)
+        sliceno = pick_position[self._viewer.sliceOrientation]
+        print ("Should go to slice", sliceno)
+        self.SetActiveSlice(sliceno)
+        x,y = self.imageCoordinate2display(pick_position[:-1])
+        print (x,y,pick_position)
+        self.GetInteractor().SetEventPosition(int(x),int(y))
+        event = 'LeftButtonPressEvent'
+        self.HandlePickEvent(self.GetInteractor(), event)
+        self.UpdatePipeline(True)
+
+
 
 
 ###############################################################################
@@ -1604,11 +1619,14 @@ class CILViewer2D():
             lut = vtk.vtkLookupTable()
             
             self.lut2 = lut
-            lut.SetNumberOfColors(7)
-            lut.SetHueRange(.4,.6)
+            lut.SetNumberOfColors(256)
+            lut.SetHueRange(.2,.6)
             lut.SetSaturationRange(1, 1)
-            lut.SetValueRange(0.7, 0.7)
-            lut.SetAlphaRange(0,0.5)
+            cl = self.getColourLevel()
+            cw = self.getColourWindow()
+            # lut.SetValueRange(cl -cw/2, cl + cw/2)
+            lut.SetValueRange(0,1)
+            lut.SetAlphaRange(0,0.9)
             lut.Build()
             
             
