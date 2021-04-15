@@ -805,13 +805,11 @@ class cilBaseResampleReader(VTKPythonAlgorithmBase):
 
                 #print("Z SPACING: ", element_spacing[2]/z_axis_magnification)
 
-
                 new_spacing = [element_spacing[0]/xy_axes_magnification,
-                                        element_spacing[1]/xy_axes_magnification, 
-                                        element_spacing[2]/z_axis_magnification]
-
-                new_origin = [0.5/i-0.5 for i in new_spacing]
-
+                               element_spacing[1]/xy_axes_magnification, 
+                               element_spacing[2]/z_axis_magnification]
+                
+                new_origin = [(i-1)/2 for i in new_spacing]
                 resampled_image.SetOrigin(new_origin[0], new_origin[1], new_origin[2])
 
                 resampled_image.AllocateScalars(self.GetOutputVTKType(), 1)
