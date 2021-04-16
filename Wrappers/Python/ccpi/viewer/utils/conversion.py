@@ -585,6 +585,7 @@ class cilBaseResampleReader(VTKPythonAlgorithmBase):
         self.__RawTypeCode = None
         self.__MetaImageTypeCode = None
         self.__ElementSpacing = [1,1,1]
+        self.__Origin = (0.,0.,0.)
 
         
     def SetFileName(self, value):
@@ -632,8 +633,6 @@ class cilBaseResampleReader(VTKPythonAlgorithmBase):
         return self.__OutputVTKType
     def GetNumpyTypeCode(self):
         return self.__NumpyTypeCode
-    def GetFileName(self):
-        return self.__FileName
     
     def SetStoredArrayShape(self, value):
         if not isinstance (value , tuple):
@@ -698,6 +697,17 @@ class cilBaseResampleReader(VTKPythonAlgorithmBase):
     def SetElementSpacing(self,value):
         self.__ElementSpacing = value
 
+    def SetOrigin(self, value):
+        if not isinstance (value, tuple):
+            raise ValueError('Expected a tuple. Got {}' , type(value))
+
+        if not value == self.__Origin:
+            self.__Origin = value
+            self.Modified()
+    
+    def GetOrigin(self):
+        return self.__Origin
+
 
     def RequestData(self, request, inInfo, outInfo):
         # print("RequestData BaseResampleReader")
@@ -742,7 +752,7 @@ class cilBaseResampleReader(VTKPythonAlgorithmBase):
                                         0, 
                                         tuple(shape), 
                                         spacing= tuple(self.GetElementSpacing()),
-                                        origin=(0.,0.,0.))
+                                        origin=self.GetOrigin())
 
                 image_file = self.GetFileName()
 
@@ -808,9 +818,11 @@ class cilBaseResampleReader(VTKPythonAlgorithmBase):
                 new_spacing = [element_spacing[0]/xy_axes_magnification,
                                element_spacing[1]/xy_axes_magnification, 
                                element_spacing[2]/z_axis_magnification]
-                
-                new_origin = [(i-1)/2 for i in new_spacing]
-                resampled_image.SetOrigin(new_origin[0], new_origin[1], new_origin[2])
+
+                original_origin = self.GetOrigin()
+                new_origin = tuple([(s-1)/2 + original_origin[i] for i, s in enumerate(new_spacing)])
+
+                resampled_image.SetOrigin(new_origin)
 
                 resampled_image.AllocateScalars(self.GetOutputVTKType(), 1)
             
@@ -829,7 +841,7 @@ class cilBaseResampleReader(VTKPythonAlgorithmBase):
                         0, 
                         tuple(shape), 
                         spacing=tuple(self.GetElementSpacing()), 
-                        origin=(0.,0.,0.)
+                        origin=self.GetOrigin()
                 )
 
                 image_file = self.GetFileName()
@@ -962,7 +974,12 @@ class cilMetaImageResampleReader(cilBaseResampleReader):
                         self.SetBigEndian(True)
                     else:
                         self.SetBigEndian(False)
-
+                elif 'Offset' in line:
+                    origin = line.split('= ')[-1].split(' ')[:3]
+                    origin[2].strip()
+                    for i in range(0,len(origin)):
+                        origin[i] = float(origin[i])
+                    self.SetOrigin(tuple(origin))
                     # print(self.GetBigEndian())
                 elif 'ElementSpacing' in line:
                     spacing = line.split('= ')[-1].split(' ')[:3]
@@ -1211,7 +1228,7 @@ class cilBaseCroppedReader(VTKPythonAlgorithmBase):
                                         0, 
                                         tuple(shape), 
                                         spacing= tuple(self.GetElementSpacing()),
-                                        origin=(0.,0.,0.))
+                                        origin=self.GetOrigin())
 
                 image_file = self.GetFileName()
 
@@ -1248,7 +1265,7 @@ class cilBaseCroppedReader(VTKPythonAlgorithmBase):
                     0, 
                     tuple(shape), 
                     spacing=tuple(self.GetElementSpacing()), 
-                    origin=(0.,0.,0.))
+                    origin=self.GetOrigin())
 
                         
             image_file = self.GetFileName()
@@ -1268,7 +1285,8 @@ class cilBaseCroppedReader(VTKPythonAlgorithmBase):
             Data = vtk.vtkImageData()
             extent = (0, shape[0]-1, 0, shape[1]-1, self.GetTargetZExtent()[0], self.GetTargetZExtent()[1])
             Data.SetExtent(extent)
-            Data.SetSpacing(1,1,1)
+            Data.SetSpacing(self.GetElementSpacing())
+            Data.SetOrigin(self.GetOrigin())
             Data.AllocateScalars(self.GetOutputVTKType(), 1)
 
             read_data = reader.GetOutput()
@@ -1402,8 +1420,13 @@ class cilMetaImageCroppedReader(cilBaseCroppedReader):
                         self.SetBigEndian(True)
                     else:
                         self.SetBigEndian(False)
-
                     # print(self.GetBigEndian())
+                elif 'Offset' in line:
+                    origin = line.split('= ')[-1].split(' ')[:3]
+                    origin[2].strip()
+                    for i in range(0,len(origin)):
+                        origin[i] = float(origin[i])
+                    self.SetOrigin(tuple(origin))
                 elif 'ElementSpacing' in line:
                     spacing = line.split('= ')[-1].split(' ')[:3]
                     spacing[2].strip()
