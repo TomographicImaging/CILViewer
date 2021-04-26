@@ -1,30 +1,179 @@
-from PySide2 import QtCore, QtWidgets, QtGui
-from PySide2.QtCore import QThreadPool
-from PySide2.QtWidgets import QProgressDialog, QDialog, QLabel, QComboBox, QDialogButtonBox, QFormLayout, QWidget, QVBoxLayout, QGroupBox, QLineEdit, QMessageBox
-
+import imghdr
 import os
-import time
-import numpy
-import sys
 import shutil
-
+import sys
+import time
 from functools import partial
-from os.path import isfile
 
+import h5py
+import numpy
 import vtk
-
 from ccpi.viewer.utils import Converter
-
-from ccpi.viewer.utils import cilNumpyMETAImageWriter
-
+from ccpi.viewer.utils.conversion import (cilBaseCroppedReader,
+                                          cilBaseResampleReader,
+                                          cilMetaImageCroppedReader,
+                                          cilMetaImageResampleReader,
+                                          cilNumpyCroppedReader,
+                                          cilNumpyResampleReader)
 # from ccpi.viewer.QtThreading import Worker, WorkerSignals, ErrorObserver #
 from eqt.threading import Worker
-
+from PySide2 import QtCore, QtGui, QtWidgets
+from PySide2.QtCore import QThreadPool
+from PySide2.QtWidgets import (QComboBox, QDialog, QDialogButtonBox,
+                               QFormLayout, QGroupBox, QLabel, QLineEdit,
+                               QMessageBox, QProgressDialog, QVBoxLayout,
+                               QWidget)
+from vtk.numpy_interface import dataset_adapter as dsa
 from vtk.util.vtkAlgorithm import VTKPythonAlgorithmBase
 
-from ccpi.viewer.utils.conversion import cilNumpyResampleReader, cilBaseResampleReader, cilNumpyCroppedReader, cilMetaImageResampleReader, cilMetaImageCroppedReader, cilBaseCroppedReader
+# Methods for reading and writing HDF5 files:
 
-import imghdr
+
+def write_image_data_to_hdf5(filename, data, label="ImageData", attributes={},
+                             array_name='vtkarray'):
+    '''
+    Writes vtkImageData to a dataset in a HDF5 file
+
+    Args:
+        filename: string - name of HDF5 file to write to.
+        data: vtkImageData - image data to write.
+        label: string - label for HDF5 dataset.
+        attributes: dict - attributes to assign to HDF5 dataset.
+        array_name: string - name of array to read points from the vtkImageData
+    '''
+
+    with h5py.File(filename, "a") as f:
+        wdata = dsa.WrapDataObject(data)
+        array = wdata.PointData[array_name]
+        # Note that we flip the dimensions here because
+        # VTK's order is Fortran whereas h5py writes in
+        # C order. We don't want to do deep copies so we write
+        # with dimensions flipped and pretend the array is
+        # C order.
+        array = array.reshape(wdata.GetDimensions()[::-1])
+        dset = f.create_dataset(label, data=array)
+        for key, value in attributes.items():
+            dset.attrs[key] = value
+        # print("The file written: ", f)
+        # print("The image data: ", f[label])
+        # print("The attributes: ", f[label].attrs.items())
+
+
+class HDF5Source(VTKPythonAlgorithmBase):
+    '''
+    vtkAlgorithm for reading vtkImageData from a HDF5 file
+    Adapted from:
+    https://blog.kitware.com/developing-hdf5-readers-using-vtkpythonalgorithm/
+    '''
+
+    def __init__(self):
+        VTKPythonAlgorithmBase.__init__(self,
+                                        nInputPorts=0,
+                                        nOutputPorts=1,
+                                        outputType='vtkImageData')
+
+        self.__FileName = ""
+        self.__Label = "ImageData"
+
+    def RequestData(self, request, inInfo, outInfo):
+        f = h5py.File(self.__FileName, 'r')
+        info = outInfo.GetInformationObject(0)
+        data = f[self.__Label]
+        print(data)
+        ue = info.Get(vtk.vtkStreamingDemandDrivenPipeline.UPDATE_EXTENT())
+        # Note that we flip the update extents because VTK is Fortran order
+        # whereas h5py reads in C order. When writing we pretend that the
+        # data was C order so we have to flip the extents/dimensions.
+        data = f[self.__Label][ue[4]:ue[5]+1, ue[2]:ue[3]+1, ue[0]:ue[1]+1]
+        output = dsa.WrapDataObject(vtk.vtkImageData.GetData(outInfo))
+        output.SetExtent(ue)
+        output.PointData.append(data.ravel(), self.__Label)
+        output.PointData.SetActiveScalars(self.__Label)
+        return 1
+
+    def SetFileName(self, fname):
+        if fname != self.__FileName:
+            self.Modified()
+            self.__FileName = fname
+
+    def GetFileName(self):
+        return self.__FileName
+
+    def SetLabel(self, lname):
+        if lname != self.__Label:
+            self.Modified()
+            self.__Label = lname
+
+    def GetLabel(self):
+        return self.__Label
+
+    def RequestInformation(self, request, inInfo, outInfo):
+        f = h5py.File(self.__FileName, 'r')
+        # Note that we flip the shape because VTK is Fortran order
+        # whereas h5py reads in C order. When writing we pretend that the
+        # data was C order so we have to flip the extents/dimensions.
+        dims = f[self.__Label].shape[::-1]
+        info = outInfo.GetInformationObject(0)
+        info.Set(vtk.vtkStreamingDemandDrivenPipeline.WHOLE_EXTENT(),
+                 (0, dims[0]-1, 0, dims[1]-1, 0, dims[2]-1), 6)
+        return 1
+
+
+class RequestSubset(VTKPythonAlgorithmBase):
+    def __init__(self):
+        VTKPythonAlgorithmBase.__init__(self,
+                                        nInputPorts=1,
+                                        inputType='vtkImageData',
+                                        nOutputPorts=1,
+                                        outputType='vtkImageData')
+        self.__UpdateExtent = None
+
+    def RequestInformation(self, request, inInfo, outInfo):
+        info = outInfo.GetInformationObject(0)
+        info.Set(vtk.vtkStreamingDemandDrivenPipeline.WHOLE_EXTENT(),
+                 self.__UpdateExtent, 6)
+        return 1
+
+    def RequestUpdateExtent(self, request, inInfo, outInfo):
+        if self.__UpdateExtent is not None:
+            info = inInfo[0].GetInformationObject(0)
+
+            whole_extent = info.Get(
+                vtk.vtkStreamingDemandDrivenPipeline.WHOLE_EXTENT())
+            set_extent = info.Get(
+                vtk.vtkStreamingDemandDrivenPipeline.UPDATE_EXTENT())
+            for i, value in enumerate(set_extent):
+                if i % 2 == 0:
+                    if value < whole_extent[i]:
+                        raise ValueError("Requested extent {}\
+                             is outside of original image extent {}".format(
+                            set_extent, whole_extent))
+                        return
+                else:
+                    if value > whole_extent[i]:
+                        raise ValueError("Requested extent {}\
+                             is outside of original image extent {}".format(
+                            set_extent, whole_extent))
+                        return
+
+            info.Set(vtk.vtkStreamingDemandDrivenPipeline.UPDATE_EXTENT(),
+                     self.__UpdateExtent, 6)
+        return 1
+
+    def RequestData(self, request, inInfo, outInfo):
+        inp = vtk.vtkImageData.GetData(inInfo[0])
+        opt = vtk.vtkImageData.GetData(outInfo)
+        opt.ShallowCopy(inp)
+        return 1
+
+    def SetUpdateExtent(self, ue):
+        if ue != self.__UpdateExtent:
+            self.Modified()
+            self.__UpdateExtent = ue
+
+    def GetUpdateExtent(self):
+        return self.__UpdateExtent
+
 
 # ImageCreator class
 
