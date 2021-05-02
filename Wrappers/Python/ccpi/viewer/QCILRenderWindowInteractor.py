@@ -1,7 +1,7 @@
 import vtk
 from vtk.qt.QVTKRenderWindowInteractor import QVTKRenderWindowInteractor,\
         _qt_key_to_key_sym
-from PyQt5.QtCore import Qt, QEvent
+from PySide2.QtCore import Qt, QEvent
 
 class QCILRenderWindowInteractor(QVTKRenderWindowInteractor):
     '''Extends the QVTKRenderWindowInteractor to accept also ALT modifier'''

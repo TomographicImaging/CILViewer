@@ -1,5 +1,6 @@
 import sys
 import vtk
+import os
 from PyQt5 import QtCore, QtWidgets
 from vtk.qt.QVTKRenderWindowInteractor import QVTKRenderWindowInteractor
 from ccpi.viewer.QCILRenderWindowInteractor import QCILRenderWindowInteractor
@@ -11,7 +12,7 @@ import ccpi.viewer.viewerLinker as vlink
 
 class FourLinkedViewersDockableWidget(QtWidgets.QMainWindow):
 
-    def __init__(self, parent = None):
+    def __init__(self, parent = None, reader=None):
         QtWidgets.QMainWindow.__init__(self, parent)
         #self.resize(800,600)
         
@@ -33,8 +34,9 @@ class FourLinkedViewersDockableWidget(QtWidgets.QMainWindow):
 
         self.viewerLinkers = viewerLinkers
 
-        reader = vtk.vtkMetaImageReader()
-        reader.SetFileName('head.mha')
+        if reader is None:
+            reader = vtk.vtkMetaImageReader()
+            reader.SetFileName('head.mha')
         reader.Update()
         
         for el in [self.v00, self.v01, self.v10, self.v11]:
@@ -61,8 +63,14 @@ class FourLinkedViewersDockableWidget(QtWidgets.QMainWindow):
 
     def linkedViewersSetup(self, *args):
         linked = [viewer for viewer in args]
-        # link pair-wise
-        pairs = [(linked[i+1],linked[i]) for i in range(len(linked)-1)]
+        # link all combination of viewers
+        #pairs = [(linked[0],linked[i]) for i in range(1, len(linked))]
+        pairs = []
+        for i in range(len(linked)):
+            for j in range(len(linked)):
+                if not i == j:
+                    pairs.append( (linked[i], linked[j]) )
+
         linkers = []
         for pair in pairs:
             v2d = pair[0].viewer
@@ -82,7 +90,12 @@ if __name__ == "__main__":
     vtk.vtkOutputWindow.SetInstance(err)
 
     app = QtWidgets.QApplication(sys.argv)
- 
-    window = FourLinkedViewersDockableWidget()
+    
+
+    reader = vtk.vtkNIFTIImageReader()
+    data_dir = os.path.abspath('C:/Users/ofn77899/Documents/Projects/PETMR/Publications/2020RS_MCIR/cluster_test/recons')
+    
+    reader.SetFileName(os.path.join(data_dir, 'ungated_Reg-FGP_TV-alpha5.0_nGates1_nSubsets1_pdhg_wPrecond_gamma1.0_wAC_wNorm_wRands-riters100_noMotion_iters_39.nii'))
+    window = FourLinkedViewersDockableWidget(reader = reader)
     
     sys.exit(app.exec_())

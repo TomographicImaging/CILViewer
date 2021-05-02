@@ -20,7 +20,7 @@ if __name__ == "__main__":
 
     reader = cilNumpyResampleReader()
     reader.SetFileName(fname)
-    reader.SetTargetShape((512,512,512))
+    reader.SetTargetSize(512**3)
     reader.AddObserver(vtk.vtkCommand.ProgressEvent, progress)
     reader.Update()
     resampled_image = reader.GetOutput()

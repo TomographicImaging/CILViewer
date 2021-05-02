@@ -882,7 +882,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
         spac = self.GetInputData().GetSpacing()
         orig = self.GetInputData().GetOrigin()
 
-        return [round((world_coordinates[i] + orig[i]) / spac[i] ) for i in range(3)]
+        return [round((world_coordinates[i]) / spac[i] - orig[i]) for i in range(3)]
     
     def world2imageCoordinateFloat(self, world_coordinates):
         """
@@ -896,16 +896,14 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
         spac = self.GetInputData().GetSpacing()
         orig = self.GetInputData().GetOrigin()
 
-        return [(world_coordinates[i] + orig[i] ) / spac[i]  for i in range(3)]
+        return [(world_coordinates[i]) / spac[i] - orig[i]  for i in range(3)]
 
     def image2world(self, image_coordinates):
 
         spac = self.GetInputData().GetSpacing()
         orig = self.GetInputData().GetOrigin()
 
-        #print("Spacing: ", spac)
-
-        return [(image_coordinates[i] - orig[i]) * spac[i]  for i in range(3)]
+        return [(image_coordinates[i]) * spac[i] + orig[i] for i in range(3)]
 
     def imageCoordinate2display(self, imageposition):
         '''
@@ -941,22 +939,22 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
 ##################################  END ######################################
 
     def OnMouseMoveEvent(self, interactor, event):
+        if self.GetInputData() is not None:
+            if self.GetViewerEvent("WINDOW_LEVEL_EVENT"):
+                self.log ("Event %s is WINDOW_LEVEL_EVENT" % (event))
+                self.HandleWindowLevel(interactor, event)
 
-        if self.GetViewerEvent("WINDOW_LEVEL_EVENT"):
-            self.log ("Event %s is WINDOW_LEVEL_EVENT" % (event))
-            self.HandleWindowLevel(interactor, event)
+            elif self.GetViewerEvent("PICK_EVENT"):
+                self.HandlePickEvent(interactor, event)
 
-        elif self.GetViewerEvent("PICK_EVENT"):
-            self.HandlePickEvent(interactor, event)
+            elif self.GetViewerEvent("ZOOM_EVENT"):
+                self.HandleZoomEvent(interactor, event)
 
-        elif self.GetViewerEvent("ZOOM_EVENT"):
-            self.HandleZoomEvent(interactor, event)
+            elif self.GetViewerEvent("PAN_EVENT"):
+                self.HandlePanEvent(interactor, event)
 
-        elif self.GetViewerEvent("PAN_EVENT"):
-            self.HandlePanEvent(interactor, event)
-
-        elif self.GetViewerEvent("SHOW_LINE_PROFILE_EVENT"):
-            self.DisplayLineProfile(interactor, event, True)
+            elif self.GetViewerEvent("SHOW_LINE_PROFILE_EVENT"):
+                self.DisplayLineProfile(interactor, event, True)
 
     def DisplayHelp(self):
         help_actor = self._viewer.helpActor
@@ -1267,7 +1265,7 @@ class CILViewer2D():
         self.cursorActor.PickableOff()
         self.cursorActor.VisibilityOn()
         self.cursorActor.GetProperty().SetColor(1, 1, 1)
-        self.cursorActor.SetLayerNumber(1)
+        self.cursorActor.SetLayerNumber(0)
         self.cursorMapper.SetInputData(self.cursor.GetOutput())
         self.cursorActor.SetMapper(self.cursorMapper)
         # self.getRenderer().AddActor(self.cursorActor)
@@ -1302,8 +1300,8 @@ class CILViewer2D():
         self.linePlotActor.ExchangeAxesOff()
         self.linePlotActor.SetXTitle( "" )
         self.linePlotActor.SetYTitle( "" )
-        self.linePlotActor.SetXLabelFormat( "%.0f" )
-        self.linePlotActor.SetYLabelFormat( "%.0f" )
+        self.linePlotActor.SetXLabelFormat( "%.1f" )
+        self.linePlotActor.SetYLabelFormat( "%.1e" )
         #self.linePlotActor.SetAdjustXLabels(3)
         #self.linePlotActor.SetXTitle( "Level" )
         #self.linePlotActor.SetYTitle( "N" )
@@ -1684,46 +1682,54 @@ class CILViewer2D():
         self.iren.Render()
 
     def createAnnotationText(self, display_type, data):
-        #print("Data: ", data)
-        #print("Resample rate: ", self.visualisation_downsampling)
+        ''' Returns string to be set as the corner annotation, giving
+        the coordinates or slice number (may be downsampled or unsampled coordinates)
+
+        Args:
+            display_type (str) :    'slice', 'pick', 'roi' - determines the
+                                    way in which the data is displayed
+            data (tuple):           the data to be displayed.'''
+
+        text = None
+
         if isinstance(data, tuple):
-            data = list(data)
 
             if display_type == "slice":
                 if self.display_unsampled_coords and self.image_is_downsampled:
-                    for i, value in enumerate(data):
-                        if self.visualisation_downsampling[self.GetSliceOrientation()] != 1:
-                            data[i]= (data[i] +0.5) * self.visualisation_downsampling[self.GetSliceOrientation()]
-                        else:
-                            data[i]= (data[i]) * self.visualisation_downsampling[self.GetSliceOrientation()]
-
-                data = tuple(data)
+                    # Different method for converting to world coords, as we only
+                    # have coordinates in one direction
+                    data = list(data)
+                    slice_coord = [0, 0, 0]
+                    axis_length = [0, 0, 0]
+                    slice_coord[self.GetSliceOrientation()] = data[0]
+                    axis_length[self.GetSliceOrientation()] = data[1] + 1
+                    slice_coord = self.style.image2world(slice_coord)[self.GetSliceOrientation()]
+                    axis_length = self.style.image2world(axis_length)[self.GetSliceOrientation()]-1
+                    data = (round(slice_coord), round(axis_length))
                 text = "Slice %d/%d" % data
-            
-            elif display_type == "pick":
+
+            else:
+                # In all other cases, we have coordinates, and then we have an extra value
+                # The extra value shouldn't be converted in the same way
+                # TODO: check whether we need some kind of conversion on these 'extra' values
                 if self.display_unsampled_coords and self.image_is_downsampled:
-                    for i, value in enumerate(self.visualisation_downsampling):
-                        if self.visualisation_downsampling[i] != 1:
-                            data[i]= (data[i] + 0.5) * self.visualisation_downsampling[i]
-                        else:
-                            data[i]= (data[i]) * self.visualisation_downsampling[i]
-                data = tuple(data)
+                    data = list(data)
+                    extra_info = data.pop(-1)
+                    data = self.style.image2world(data)
+                    data.append(extra_info)
+                    # Round the coordinates to integers:
+                    # Without rounding the %d formatting
+                    # later on just truncates to integer
+                    for i, d in enumerate(data):
+                        if i < 3:
+                            data[i] = round(d)
+                    data = tuple(data)
+
+            if display_type == "pick":
                 text = "[%d,%d,%d] : %.2g" % data
 
             elif display_type == "roi":
-                if self.display_unsampled_coords and self.image_is_downsampled:
-                    for i, value in enumerate(self.visualisation_downsampling):
-                        if self.visualisation_downsampling[i] != 1:
-                            data[i]= (data[i] + 0.5) * self.visualisation_downsampling[i]
-                        else:
-                            data[i]= (data[i]) * self.visualisation_downsampling[i]
-                data = tuple(data)
                 text = "ROI: %d x %d x %d, %.2f kp" % data
-
-            else:
-                text = None
-
-            #print("Text: ", text)
 
         return text
 
