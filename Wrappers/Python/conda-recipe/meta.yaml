@@ -9,7 +9,8 @@ build:
   
 requirements:
   build:
-    - python 
+    - python
+    - numpy {{ numpy }} 
  
   run:
     - python
