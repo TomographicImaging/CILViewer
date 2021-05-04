@@ -30,6 +30,15 @@
 
 import vtk, numpy
 
+from matplotlib import cm
+
+
+# print(cm.get_cmap('gist_earth')[0])
+_gist_earth_data = []
+
+for x in range(0, 255):
+    _gist_earth_data.append([cm.gist_earth_r(x)[0], cm.gist_earth_r(x)[1], cm.gist_earth_r(x)[2]])
+
 _magma_data = [[0.001462, 0.000466, 0.013866],
                [0.002258, 0.001295, 0.018331],
                [0.003279, 0.002305, 0.023708],
@@ -1102,9 +1111,68 @@ def relu(x, xmin, xmax, scaling=1):
             out.append( (val - xmin) / dx)
     return numpy.asarray(out)
 
+
+# def step_fn(x, xmin, xmax,  cutoff_loc=5/6, gradient_factor=10):
+#     r''' relu function with gradient change
+#     returns values as
+#     1. x < xmin : f(x) = 0
+#     2. xmin <= x <= (xmin + (xmax-xmin) * cutoff_loc): 
+#     3. xmin <= x <= xmax : f(x) =  (x - xmin) / (xmax - xmin)
+#     3. x > xmax: f(x) = 0
+
+#     :param x: ndarray to evaluate the function at
+#     :param xmin: value at which the function start increasing
+#     :param xmax: value at which the function stops increasing
+#     :param cutoff_loc: (xmax-xmin)*cutoff_loc will be the point at which the gradient changes
+#     :param gradient_factor: factor by which to divide gradient by, before cut off point
+    
+#     '''
+#     out = []
+#     dx = xmax-xmin
+#     cutoff = xmin + (xmax-xmin)*cutoff_loc
+#     for i, val in enumerate(x):
+#         if val < xmin or val > xmax:
+#             out.append(0)
+#         if val < cutoff:
+#             out.append((val-xmin) / (gradient_factor*dx))
+#         else:
+#             cutoff_out = (val-xmin) / (gradient_factor*dx)
+#             m = (1-cutoff_out)/(xmax-cutoff)
+#             out.append(m*val+1-m*xmax)
+#     return numpy.asarray(out)
+    #
+def step_fn(x, xmin, xmax, xc=0.5, yc=0.1):
+    r''' relu function with gradient change
+    returns values as
+    1. x < xmin : f(x) = 0
+    2. xmin <= x <= xc : f(x) = yc * (x-xmin)/(xc-xmin)
+    3. xc <= x <= xmax : f(x) =  1-(1-yc)*(xmax-x)/(xmax-xc)
+    3. x > xmax: f(x) = 0
+
+    :param x: ndarray to evaluate the function at
+    :param xmin: value at which the function start increasing
+    :param xmax: value at which the function stops increasing
+    :param xc: percentage along x where we change gradient
+    :param yc: percentage along y where we change gradient
+    
+    '''
+    out = [] 
+    xc = xmin + (xmax-xmin) * xc
+
+    for i, val in enumerate(x):
+        if val < xmin or val > xmax:
+            out.append(0)
+        if val < xc:
+            dx = xc-xmin
+            out.append(yc * (val-xmin)/dx)
+        else:
+            dx = xmax-xc
+            out.append(1-(1-yc)*(xmax-val)/dx)
+    return numpy.asarray(out)
+
 class CILColorMaps(object):
     @staticmethod
-    def get_color_transfer_function(cmap, color_range):
+    def get_color_transfer_function(cmap, color_range, xc=None, yc=None):
         
         tf = vtk.vtkColorTransferFunction()
         if cmap == 'viridis':
@@ -1115,14 +1183,29 @@ class CILColorMaps(object):
             colors = _inferno_data
         elif cmap == 'magma':
             colors = _magma_data
+        elif cmap == 'gist_earth':
+            colors = _gist_earth_data
         else:
             raise ValueError('Unknown color map. Expected any of viridis, plasma, inferno, magma, got {}'.format(cmap))
         
         N = len(colors)
-        for i, color in enumerate(colors):
-            level = color_range[0] + (color_range[1] - color_range[0]) * i / (N-1)
-            tf.AddRGBPoint( level, color[0], color[1], color[2] )
         
+        cutoff=xc
+        if cutoff is None:
+            for i, color in enumerate(colors):
+                level = color_range[0] + (color_range[1] - color_range[0]) * i / (N-1)
+                tf.AddRGBPoint( level, color[0], color[1], color[2] )
+        
+        if cutoff is not None:
+            xc = xc * N
+            yc = color_range[0] + (color_range[1]-color_range[0])*yc
+            for i, color in enumerate(colors):
+                if i < cutoff:
+                    level = (yc - color_range[0])*i/xc + color_range[0]
+                elif i >= cutoff:
+                    level = color_range[1]-(color_range[1]-yc)*((N-1)-i)/(N-1-xc)
+
+                    tf.AddRGBPoint( level, color[0], color[1], color[2] ) 
         return tf
 
     @staticmethod
@@ -1133,4 +1216,33 @@ class CILColorMaps(object):
         for _x,_y in zip(x,vals):
             opacity.AddPoint( _x, _y )
         return opacity
+
+
+# old attempt at colors:
+
+        # N = len(colors)
+        # cutoff=0.08
+        # cutoff = cutoff*N
+        # F=0.3
+        # cutoff=None
+        # if cutoff is None:
+        #     for i, color in enumerate(colors):
+        #         level = color_range[0] + (color_range[1] - color_range[0]) * i / (N-1)
+        #         tf.AddRGBPoint( level, color[0], color[1], color[2] )
+        
+        # if cutoff is not None:
+        #     for i, color in enumerate(colors):
+        #         if i < cutoff:
+        #             level = color_range[0] + (color_range[1] - color_range[0]) * i / (F*(N-1))
+        #         elif i >= cutoff:
+        #             R = color_range[1]-color_range[0]
+        #             K = cutoff
+                    
+        #             m = (1-K/(F*(N-1)))/(1+K/(N-1))
+        #             # m = (cutoff/(0.1*(N-1-cutoff)))
+        #             c = (color_range[1]-color_range[0])*(1-m)
+        #             level = color_range[0] + c + m*(color_range[1] - color_range[0]) * i / (N-1)
+
+        #             tf.AddRGBPoint( level, color[0], color[1], color[2] )
+
     
