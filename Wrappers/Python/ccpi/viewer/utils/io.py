@@ -74,17 +74,24 @@ class HDF5Source(VTKPythonAlgorithmBase):
 
         self.__FileName = ""
         self.__Label = "ImageData"
+        self.__4DIndex = 0
 
     def RequestData(self, request, inInfo, outInfo):
         f = h5py.File(self.__FileName, 'r')
         info = outInfo.GetInformationObject(0)
         data = f[self.__Label]
-        print(data)
+        # print("keys:", list(f.keys()))
+        # print("data: ", data, type(data), numpy.shape(data))
         ue = info.Get(vtk.vtkStreamingDemandDrivenPipeline.UPDATE_EXTENT())
         # Note that we flip the update extents because VTK is Fortran order
         # whereas h5py reads in C order. When writing we pretend that the
         # data was C order so we have to flip the extents/dimensions.
-        data = f[self.__Label][ue[4]:ue[5]+1, ue[2]:ue[3]+1, ue[0]:ue[1]+1]
+        if len(numpy.shape(data)) == 3:
+            data = data[ue[4]:ue[5]+1, ue[2]:ue[3]+1, ue[0]:ue[1]+1]
+        elif len(numpy.shape(data)) == 4:
+            data = data[self.__4DIndex][ue[4]:ue[5] +
+                                        1, ue[2]:ue[3]+1, ue[0]:ue[1]+1]
+        # print("attributes: ", f.attrs.items())
         output = dsa.WrapDataObject(vtk.vtkImageData.GetData(outInfo))
         output.SetExtent(ue)
         output.PointData.append(data.ravel(), self.__Label)
@@ -106,6 +113,12 @@ class HDF5Source(VTKPythonAlgorithmBase):
 
     def GetLabel(self):
         return self.__Label
+
+    def Set4DIndex(self, index):
+        '''Sets which index to read, in the case of a 4D dataset'''
+        if index != self.__4DIndex:
+            self.Modified()
+            self.__4DIndex = index
 
     def RequestInformation(self, request, inInfo, outInfo):
         f = h5py.File(self.__FileName, 'r')
