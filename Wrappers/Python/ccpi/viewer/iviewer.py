@@ -21,16 +21,84 @@ class SingleViewerCenterWidget(QtWidgets.QMainWindow):
     def set_input(self, data):
         self.frame.viewer.setInputData(data)
         
+class FourLinkedViewersCenterWidget(QtWidgets.QMainWindow):
+
+    def __init__(self, parent = None):
+        QtWidgets.QMainWindow.__init__(self, parent)
+        #self.resize(800,600)
+        
+        self.frame1 = QCILViewerWidget(viewer=viewer3D, shape=(600,600),
+              interactorStyle=vlink.Linked3DInteractorStyle)
+        self.frame2 = QCILViewerWidget(viewer=viewer3D, shape=(600,600),
+              interactorStyle=vlink.Linked3DInteractorStyle)
+        self.frame3 = QCILViewerWidget(viewer=viewer3D, shape=(600,600),
+              interactorStyle=vlink.Linked3DInteractorStyle)
+        self.frame4 = QCILViewerWidget(viewer=viewer3D, shape=(600,600),
+              interactorStyle=vlink.Linked3DInteractorStyle)
+                
+        # Initially link viewers
+        self.linkedViewersSetup()
+        self.linker.enable()
+        
+        layout = QtWidgets.QBoxLayout(QtWidgets.QBoxLayout.LeftToRight)
+        layout.addWidget(self.frame1)
+        layout.addWidget(self.frame2)
+        layout2 = QtWidgets.QBoxLayout(QtWidgets.QBoxLayout.LeftToRight)
+        layout2.addWidget(self.frame3)
+        layout2.addWidget(self.frame4)
+        
+        cw1 = QtWidgets.QWidget()
+        cw1.setLayout(layout)
+        cw2 = QtWidgets.QWidget()
+        cw2.setLayout(layout2)
+        cw = QtWidgets.QWidget()
+        layout3 = QtWidgets.QBoxLayout(QtWidgets.QBoxLayout.TopToBottom)
+        layout3.addWidget(cw1)
+        layout3.addWidget(cw2)
+        cw.setLayout(layout3)
+        self.setCentralWidget(cw)
+        self.central_widget = cw
+
+        self.show()
+
+    def linkedViewersSetup(self):
+        v1 = self.frame1.viewer
+        v2 = self.frame2.viewer
+        v3 = self.frame3.viewer
+        v4 = self.frame4.viewer
+        self.linker = vlink.ViewerLinker(v1, v2)
+        self.linker.setLinkPan(True)
+        self.linker.setLinkZoom(True)
+        self.linker.setLinkWindowLevel(True)
+        self.linker.setLinkSlice(True)
+        self.linker2 = vlink.ViewerLinker(v2, v3)
+        self.linker2.setLinkPan(True)
+        self.linker2.setLinkZoom(True)
+        self.linker2.setLinkWindowLevel(True)
+        self.linker2.setLinkSlice(True)
+        self.linker3 = vlink.ViewerLinker(v3, v4)
+        self.linker3.setLinkPan(True)
+        self.linker3.setLinkZoom(True)
+        self.linker3.setLinkWindowLevel(True)
+        self.linker3.setLinkSlice(True)
+
+    def set_input(self, data1, data2, data3, data4):
+        self.frame1.viewer.setInputData(data1)
+        self.frame2.viewer.setInputData(data2)
+        self.frame3.viewer.setInputData(data3)
+        self.frame3.viewer.setInputData(data4)
+
+
 class TwoLinkedViewersCenterWidget(QtWidgets.QMainWindow):
 
     def __init__(self, parent = None):
         QtWidgets.QMainWindow.__init__(self, parent)
         #self.resize(800,600)
         
-        self.frame1 = QCILViewerWidget(viewer=viewer2D, shape=(600,600),
-              interactorStyle=vlink.Linked2DInteractorStyle)
-        self.frame2 = QCILViewerWidget(viewer=viewer2D, shape=(600,600),
-              interactorStyle=vlink.Linked2DInteractorStyle)
+        self.frame1 = QCILViewerWidget(viewer=viewer3D, shape=(600,600),
+              interactorStyle=vlink.Linked3DInteractorStyle)
+        self.frame2 = QCILViewerWidget(viewer=viewer3D, shape=(600,600),
+              interactorStyle=vlink.Linked3DInteractorStyle)
                 
         # Initially link viewers
         self.linkedViewersSetup()
