@@ -86,9 +86,6 @@ class CILColorMaps(object):
     def get_color_transfer_function(cmap, color_range):
 
         tf = vtk.vtkColorTransferFunction()
-
-        #raise ValueError('Unknown color map. Expected any of viridis, plasma, inferno, magma, got {}'.format(cmap))
-
         colors = []
         for x in range(0, 255):
             color = cm.get_cmap(cmap)(x)
