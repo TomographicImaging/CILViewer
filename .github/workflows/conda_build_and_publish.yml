@@ -9,14 +9,14 @@ on:
     branches: [ main ]
     
 jobs:
-  publish:
+  build:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v1
     - name: publish-to-conda
       uses: paskino/conda-package-publish-action@master
       with:
-        subDir: 'conda'
+        subDir: 'Wrappers/python/conda-recipe'
         channels: 'conda-forge'
         AnacondaToken: ${{ secrets.ANACONDA_TOKEN }}
         publish: ${{ github.event_name == 'release'}}
