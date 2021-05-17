@@ -19,4 +19,4 @@ jobs:
         subDir: 'Wrappers/python/conda-recipe'
         channels: 'conda-forge'
         AnacondaToken: ${{ secrets.ANACONDA_TOKEN }}
-        publish: ${{ github.event_name == 'release'}}
+        publish: ${{ github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags') }}
