@@ -16,7 +16,7 @@ jobs:
     - name: publish-to-conda
       uses: paskino/conda-package-publish-action@master
       with:
-        subDir: 'Wrappers/python/conda-recipe'
+        subDir: 'Wrappers/Python/conda-recipe'
         channels: 'conda-forge'
         AnacondaToken: ${{ secrets.ANACONDA_TOKEN }}
         publish: ${{ github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags') }}
