@@ -22,5 +22,3 @@ jobs:
         channels: 'conda-forge -c paskino'
         AnacondaToken: ${{ secrets.ANACONDA_TOKEN }}
         publish: ${{ github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags') }}
-
-
