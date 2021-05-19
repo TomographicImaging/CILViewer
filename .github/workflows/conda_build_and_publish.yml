@@ -5,6 +5,8 @@ on:
     types: [published]
   push:
     branches: [ master ]
+    tags:
+      - '**'
   pull_request:
     branches: [ master ]
     
