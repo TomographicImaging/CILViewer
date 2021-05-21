@@ -186,6 +186,42 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
     def AdjustCamera(self):
         self._viewer.AdjustCamera()
 
+    def SetXViewUp(self, value):
+        self._viewer.setXViewUp(value)
+
+    def SetYViewUp(self, value):
+        self._viewer.setYViewUp(value)
+
+    def SetZViewUp(self, value):
+        self._viewer.setZViewUp(value)
+
+    def SetXInverted(self, value):
+        self._viewer.setXInverted(value)
+
+    def SetYInverted(self, value):
+        self._viewer.setYInverted(value)
+
+    def SetZInverted(self, value):
+        self._viewer.setZInverted(value)
+
+    def GetXViewUp(self):
+        return self._viewer.getXViewUp()
+
+    def GetYViewUp(self):
+        return self._viewer.getYViewUp()
+
+    def GetZViewUp(self):
+        return self._viewer.getZViewUp()
+
+    def GetXInverted(self):
+        return self._viewer.getXInverted()
+
+    def GetYInverted(self):
+        return self._viewer.getYInverted()
+
+    def GetZInverted(self):
+        return self._viewer.getZInverted()
+
     def SaveRender(self, filename):
         self._viewer.saveRender(filename)
 
@@ -398,7 +434,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
         if (self.GetActiveSlice() + advance <= maxSlice):
             self.SetActiveSlice(self.GetActiveSlice() + advance)
 
-            self.UpdatePipeline()
+            self.UpdatePipeline(False)
         else:
             self.log ("maxSlice %d request %d" % (maxSlice, self.GetActiveSlice() ))
 
@@ -413,7 +449,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
             advance = 10
         if (self.GetActiveSlice() - advance >= minSlice):
             self.SetActiveSlice( self.GetActiveSlice() - advance)
-            self.UpdatePipeline()
+            self.UpdatePipeline(False)
         else:
             self.log ("minSlice %d request %d" % (minSlice, self.GetActiveSlice() ))
         if self.GetViewerEvent("SHOW_LINE_PROFILE_EVENT"):
@@ -421,79 +457,42 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
 
     def OnKeyPress(self, interactor, event):
 
+        print("key press here, ", interactor.GetKeyCode())
+
         if self.reslicing_enabled and interactor.GetKeyCode() == "x":
-            # Change the camera view point
-
-            orientation = self.GetSliceOrientation()
-
-            camera = vtk.vtkCamera()
-            camera.ParallelProjectionOn()
-            camera.SetFocalPoint(self.GetActiveCamera().GetFocalPoint())
-            camera.SetPosition(self.GetActiveCamera().GetPosition())
-            self.SetInitialCameraPosition(self.GetActiveCamera().GetPosition())
-            camera.SetViewUp(self.GetActiveCamera().GetViewUp())
-
-            # Rotation of camera depends on current orientation:
-            if orientation == SLICE_ORIENTATION_XY:
-                camera.Azimuth(90)
-
-            elif  orientation == SLICE_ORIENTATION_XZ:
-                camera.Elevation(90)
-
-            camera.SetViewUp(0,0,1)
-            self.SetActiveCamera(camera)
-
-            self.SetSliceOrientation ( SLICE_ORIENTATION_YZ )
-            self.UpdatePipeline(True)
+            if self.GetSliceOrientation() != SLICE_ORIENTATION_YZ:
+                camera = vtk.vtkCamera()
+                camera.ParallelProjectionOn()
+                camera.SetViewUp(self.GetXViewUp())
+                self.SetActiveCamera(camera)
+                self.SetSliceOrientation(SLICE_ORIENTATION_YZ)
+                self.UpdatePipeline(True)
 
         elif self.reslicing_enabled and interactor.GetKeyCode() == "y":
-            # Change the camera view point
-
-            orientation = self.GetSliceOrientation()
-
-            camera = vtk.vtkCamera()
-            camera.ParallelProjectionOn()
-            camera.SetFocalPoint(self.GetActiveCamera().GetFocalPoint())
-            camera.SetPosition(self.GetActiveCamera().GetPosition())
-            self.SetInitialCameraPosition(self.GetActiveCamera().GetPosition())
-            camera.SetViewUp(self.GetActiveCamera().GetViewUp())
-
-            # Rotation of camera depends on current orientation:
-            if orientation == SLICE_ORIENTATION_XY:
-                camera.Elevation(90)
-
-            elif orientation == SLICE_ORIENTATION_YZ:
-                camera.Azimuth(90)
-                
-            camera.SetViewUp(1,0,0)
-            self.SetActiveCamera(camera)
-            self.SetSliceOrientation(SLICE_ORIENTATION_XZ)
-            self.UpdatePipeline(True)
+            if self.GetSliceOrientation() != SLICE_ORIENTATION_XZ:
+                camera = vtk.vtkCamera()
+                camera.ParallelProjectionOn()
+                self.SetActiveCamera(camera)
+                camera.SetViewUp(self.GetYViewUp())
+                self.SetSliceOrientation(SLICE_ORIENTATION_XZ)
+                self.UpdatePipeline(True)
 
         elif self.reslicing_enabled and interactor.GetKeyCode() == "z":
-            # Change the camera view point
+            if self.GetSliceOrientation() != SLICE_ORIENTATION_XY:
+                camera = vtk.vtkCamera()
+                camera.ParallelProjectionOn()
+                camera.SetViewUp(self.GetZViewUp())
+                self.SetActiveCamera(camera)
+                self.SetSliceOrientation(SLICE_ORIENTATION_XY)
+                self.UpdatePipeline(True)
 
-            orientation = self.GetSliceOrientation()
+                #either do:
+                #camera.SetViewUp(0,-1,0)
+                #camera.Azimuth(180)
+                #self.ResetCamera()
+                # or don't reset and do:
+                # camera.SetViewUp(0,-1,0)
 
-            camera = vtk.vtkCamera()
-            camera.ParallelProjectionOn()
-            camera.SetPosition(self.GetActiveCamera().GetPosition())
-            self.SetInitialCameraPosition(self.GetActiveCamera().GetPosition())
-            camera.SetFocalPoint(self.GetActiveCamera().GetFocalPoint())
-            camera.SetViewUp(self.GetActiveCamera().GetViewUp())
-
-            # Rotation of camera depends on current orientation:
-            if orientation == SLICE_ORIENTATION_YZ:
-                camera.Elevation(90)
-
-            elif orientation == SLICE_ORIENTATION_XZ:
-                camera.Azimuth(90)
-                 
-            camera.SetViewUp(0,1,0)
-            self.SetActiveCamera(camera)
-            self.ResetCamera()
-            self.SetSliceOrientation(SLICE_ORIENTATION_XY)
-            self.UpdatePipeline(True)
 
         elif interactor.GetKeyCode() == "a":
             # reset color/window
@@ -539,9 +538,9 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
             self.DisplayHelp()
         elif interactor.GetKeyCode() == "w":
             x,y = interactor.GetEventPosition()
-            # print (x,y)
+            #print (x,y)
             ic = self.display2imageCoordinate((x,y))
-            # print (ic)
+            #print (ic)
             whole_extent = self._viewer.img3D.GetExtent()
             around = 20
             extent = [ ic[0]-around, ic[0]+around, 
@@ -554,8 +553,8 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
             extent[orientation * 2] = self._viewer.sliceno
             extent[orientation * 2 + 1] = self._viewer.sliceno
             
-            # print (extent)
-            # print (whole_extent)
+            print (extent)
+            print (whole_extent)
             if extent[0] < whole_extent[0]:
                 extent[0] = whole_extent[0]
             if extent[1] > whole_extent[1]:
@@ -569,7 +568,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
             if extent[5] > whole_extent[5]:
                 extent[5] = whole_extent[5]
 
-            # print (extent)
+            print (extent)
             # get mouse location
             
             self._viewer.voicursor.SetInputData(self._viewer.img3D)
@@ -810,7 +809,6 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
         self.log ("Pick Position " + str (pickPosition))
 
         if (pickPosition != [0,0,0]):
-
             imagePosition = self.world2imageCoordinate(pickPosition)
             imagePositionF = self.world2imageCoordinateFloat(pickPosition)
             extent = self._viewer.img3D.GetExtent()
@@ -1178,6 +1176,13 @@ class CILViewer2D():
         self.camera.ParallelProjectionOn()
         self.ren.SetActiveCamera(self.camera)
 
+        self.xViewUp = (0, -1, 0)
+        self.yViewUp = (0, 0, -1)
+        self.zViewUp = (0, -1, 0)
+        self.xInverted = False
+        self.yInverted = True
+        self.zInverted = False
+
         # data (input 1)
         self.img3D = None
         self.slicenos = [0,0,0]
@@ -1300,8 +1305,8 @@ class CILViewer2D():
         self.linePlotActor.ExchangeAxesOff()
         self.linePlotActor.SetXTitle( "" )
         self.linePlotActor.SetYTitle( "" )
-        self.linePlotActor.SetXLabelFormat( "%.1f" )
-        self.linePlotActor.SetYLabelFormat( "%.1e" )
+        self.linePlotActor.SetXLabelFormat( "%.0f" )
+        self.linePlotActor.SetYLabelFormat( "%.0f" )
         #self.linePlotActor.SetAdjustXLabels(3)
         #self.linePlotActor.SetXTitle( "Level" )
         #self.linePlotActor.SetYTitle( "N" )
@@ -1332,6 +1337,7 @@ class CILViewer2D():
         
         # ImageTracer
         self.imageTracer = vtk.vtkImageTracerWidget()
+        self.imageTracer.SetEnabled(True)
         # set Interactor
         self.imageTracer.SetInteractor(self.iren)
         self.imageTracer.SetCaptureRadius(1.5)
@@ -1386,7 +1392,7 @@ class CILViewer2D():
     def setInputData2 (self, imageData):
         self.image2 = imageData
         # TODO resample on image1
-        # print ("setInputData2")
+        print ("setInputData2")
         self.installPipeline2()
         
     def setInputAsNumpy(self, numpyarray,  origin=(0,0,0), spacing=(1.,1.,1.),
@@ -1480,8 +1486,8 @@ class CILViewer2D():
     # this->input->GetPoint(0)[this->SliceOrientation] + (this->Slice * this->input->GetSpacing()[this->SliceOrientation]));
             
                 self.imageTracer.SetViewProp(self.sliceActor);
-            # else:
-            #     print ("self.img3D None")
+            else:
+                print ("self.img3D None")
         except Exception as ge:
             print (ge)
         self.AdjustCamera(resetcamera)
@@ -1548,24 +1554,21 @@ class CILViewer2D():
         else:
             self.sliceActor.SetInterpolate(False)
         # actors are added directly to the renderer
-        # self.ren.AddActor(self.sliceActor)
         self.AddActor(self.sliceActor, SLICE_ACTOR)
         
-        
-        self.ren.ResetCamera()
         self.ren.Render()
 
-        self.AdjustCamera()
+        self.camera.SetViewUp(self.zViewUp)
+        self.AdjustCamera(True)
 
         self.ren.AddViewProp(self.cursorActor)
         self.cursorActor.VisibilityOn()
-        
                 
         self.imageTracer.SetViewProp(self.sliceActor);
         
         self.iren.Initialize()
         self.renWin.Render()
-        #self.iren.Start()
+
 
     def installPipeline2(self):
         '''Slices a 3D volume and then creates an actor to be rendered'''
@@ -1615,10 +1618,23 @@ class CILViewer2D():
         camera = self.getRenderer().GetActiveCamera()
         fp = list (camera.GetFocalPoint())
         fp[self.sliceOrientation] = self.GetActiveSlice()
+        viewup_vars = [self.getXInverted(), self.getYInverted(), self.getZInverted()]
+        if viewup_vars[self.sliceOrientation]:
+            print("flipping focal point")
+            fp[self.sliceOrientation] = -self.GetActiveSlice()
         camera.SetFocalPoint(fp)
 
+        print("view up: ", camera.GetViewUp())
+        print("pos: ", camera.GetPosition())
+        print("focal: ", camera.GetFocalPoint())
+
         if resetcamera:
+            print("Resetting camera")
             self.ren.ResetCamera()
+
+        print("view up: ", camera.GetViewUp())
+        print("pos: ", camera.GetPosition())
+        print("focal: ", camera.GetFocalPoint())
 
 
     def getROI(self):
@@ -1651,6 +1667,42 @@ class CILViewer2D():
 
     def GetActiveSlice(self):
         return self.slicenos[self.GetSliceOrientation()]
+
+    def setXViewUp(self, value):
+        self.xViewUp = value
+
+    def setYViewUp(self, value):
+        self.yViewUp = value
+
+    def setZViewUp(self, value):
+        self.zViewUp = value
+
+    def setXInverted(self, value):
+        self.xInverted = value
+
+    def setYInverted(self, value):
+        self.yInverted = value
+
+    def setZInverted(self, value):
+        self.zInverted = value
+
+    def getXViewUp(self):
+        return self.xViewUp
+
+    def getYViewUp(self):
+        return self.yViewUp
+
+    def getZViewUp(self):
+        return self.zViewUp
+
+    def getXInverted(self):
+        return self.xInverted
+
+    def getYInverted(self):
+        return self.yInverted
+
+    def getZInverted(self):
+        return self.zInverted
 
     def setVisualisationDownsampling(self, value):
         self.visualisation_downsampling = value
@@ -1778,7 +1830,7 @@ class CILViewer2D():
             return value
 
     def updateROIHistogram(self):
-        # print ("Updating hist")
+        print ("Updating hist")
 
         extent = [0 for i in range(6)]
         if self.GetSliceOrientation() == SLICE_ORIENTATION_XY:
