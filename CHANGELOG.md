@@ -1,5 +1,10 @@
 # Changelog
 
+## v21.0.1
+* change default orientation of axes
+* reduce print-outs from code
+
+
 ## v21.0.0
 
  * change backend for Qt as PySide2

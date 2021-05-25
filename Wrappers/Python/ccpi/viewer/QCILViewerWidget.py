@@ -43,7 +43,7 @@ class QCILViewerWidget(QtWidgets.QFrame):
         self.iren = self.vtkWidget.GetRenderWindow().GetInteractor()
         try:
             
-            print ("provided viewer class ", kwargs['viewer'])
+            # print ("provided viewer class ", kwargs['viewer'])
             self.viewer = kwargs['viewer'](renWin = self.vtkWidget.GetRenderWindow(),
                                            iren = self.iren, 
                                            ren = self.ren,
