@@ -540,9 +540,9 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
             self.DisplayHelp()
         elif interactor.GetKeyCode() == "w":
             x,y = interactor.GetEventPosition()
-            print (x,y)
+            # print (x,y)
             ic = self.display2imageCoordinate((x,y))
-            print (ic)
+            # print (ic)
             whole_extent = self._viewer.img3D.GetExtent()
             around = 20
             extent = [ ic[0]-around, ic[0]+around, 
@@ -554,9 +554,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
             
             extent[orientation * 2] = self._viewer.sliceno
             extent[orientation * 2 + 1] = self._viewer.sliceno
-            
-            print (extent)
-            print (whole_extent)
+
             if extent[0] < whole_extent[0]:
                 extent[0] = whole_extent[0]
             if extent[1] > whole_extent[1]:
@@ -569,8 +567,6 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
                 extent[4] = whole_extent[4]
             if extent[5] > whole_extent[5]:
                 extent[5] = whole_extent[5]
-
-            print (extent)
             # get mouse location
             
             self._viewer.voicursor.SetInputData(self._viewer.img3D)
@@ -1388,7 +1384,7 @@ class CILViewer2D():
     def setInputData2 (self, imageData):
         self.image2 = imageData
         # TODO resample on image1
-        print ("setInputData2")
+        # print ("setInputData2")
         self.installPipeline2()
         
     def setInputAsNumpy(self, numpyarray,  origin=(0,0,0), spacing=(1.,1.,1.),
