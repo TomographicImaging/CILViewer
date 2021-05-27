@@ -4,6 +4,7 @@ import unittest
 import h5py
 import numpy as np
 from ccpi.viewer.utils.conversion import Converter
+import os
 
 
 class TestIO(unittest.TestCase):
@@ -85,14 +86,16 @@ class TestIO(unittest.TestCase):
         image_data = image_source.GetOutput()
         numpy_data = Converter.vtk2numpy(image_data)
 
-        hdf5_filename = "test_image_data.hdf5"
+        print("RUNNING THIS TEST")
+        self.hdf5_filename_RT = "test_image_data.hdf5"
 
         write_image_data_to_hdf5(
-            hdf5_filename, image_data, label='RTData', array_name='RTData')
+            self.hdf5_filename_RT, image_data, label='RTData',
+            array_name='RTData')
 
         # Test reading hdf5:
         reader = HDF5Reader()
-        reader.SetFileName(hdf5_filename)
+        reader.SetFileName(self.hdf5_filename_RT)
         reader.SetLabel('RTData')
         reader.Update()
 
@@ -100,7 +103,13 @@ class TestIO(unittest.TestCase):
         read_numpy_data = Converter.vtk2numpy(read_image_data)
         np.testing.assert_array_equal(numpy_data, read_numpy_data)
         # self.assertEqual(image_data.GetExtent(), read_image_data.GetExtent()) # currently fails
+        os.remove(self.hdf5_filename_RT)
 
+    def tearDown(self):
+        files = [self.hdf5_filename_3D,
+                 self.hdf5_filename_4D]
+        for f in files:
+            os.remove(f)
 
 if __name__ == '__main__':
     unittest.main()
