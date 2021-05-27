@@ -51,7 +51,13 @@ def write_image_data_to_hdf5(filename, data, label="ImageData", attributes={},
         # with dimensions flipped and pretend the array is
         # C order.
         array = array.reshape(wdata.GetDimensions()[::-1])
-        dset = f.create_dataset(label, data=array)
+        try:
+            dset = f.create_dataset(label, data=array)
+        except RuntimeError:
+            print("Unable to save image data to {0}."
+                  "Dataset with name {1} already exists in this file.".format(
+                      filename, label))
+            return
         for key, value in attributes.items():
             dset.attrs[key] = value
         # print("The file written: ", f)
@@ -59,7 +65,7 @@ def write_image_data_to_hdf5(filename, data, label="ImageData", attributes={},
         # print("The attributes: ", f[label].attrs.items())
 
 
-class HDF5Source(VTKPythonAlgorithmBase):
+class HDF5Reader(VTKPythonAlgorithmBase):
     '''
     vtkAlgorithm for reading vtkImageData from a HDF5 file
     Adapted from:
@@ -132,7 +138,7 @@ class HDF5Source(VTKPythonAlgorithmBase):
         return 1
 
 
-class RequestSubset(VTKPythonAlgorithmBase):
+class HDF5SubsetReader(VTKPythonAlgorithmBase):
     def __init__(self):
         VTKPythonAlgorithmBase.__init__(self,
                                         nInputPorts=1,
@@ -161,13 +167,11 @@ class RequestSubset(VTKPythonAlgorithmBase):
                         raise ValueError("Requested extent {}\
                              is outside of original image extent {}".format(
                             set_extent, whole_extent))
-                        return
                 else:
                     if value > whole_extent[i]:
                         raise ValueError("Requested extent {}\
                              is outside of original image extent {}".format(
                             set_extent, whole_extent))
-                        return
 
             info.Set(vtk.vtkStreamingDemandDrivenPipeline.UPDATE_EXTENT(),
                      self.__UpdateExtent, 6)
