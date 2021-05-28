@@ -21,14 +21,14 @@ cil_version = "21.0.0"
 if os.environ.get('CONDA_BUILD', None) is not None:
     requires = []
 else:
-    requires = ['numpy','vtk']
+    requires = ['numpy', 'vtk']
 
 setup(
     name="ccpi-viewer",
     version=cil_version,
-    packages=['ccpi','ccpi.viewer', 'ccpi.viewer.utils'],
-	install_requires=requires,
-    zip_safe = False,
+    packages=['ccpi', 'ccpi.viewer', 'ccpi.viewer.utils'],
+    install_requires=requires,
+    zip_safe=False,
     # metadata for upload to PyPI
     author="Edoardo Pasca",
     author_email="edo.paskino@gmail.com",

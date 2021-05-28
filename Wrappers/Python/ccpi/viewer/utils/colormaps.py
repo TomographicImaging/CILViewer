@@ -28,7 +28,8 @@
 # You should have received a copy of the CC0 legalcode along with this
 # work.  If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
 
-import vtk, numpy
+import vtk
+import numpy
 
 _magma_data = [[0.001462, 0.000466, 0.013866],
                [0.002258, 0.001295, 0.018331],
@@ -1058,17 +1059,19 @@ _viridis_data = [[0.267004, 0.004874, 0.329415],
                  [0.983868, 0.904867, 0.136897],
                  [0.993248, 0.906157, 0.143936]]
 
+
 def gaussian(x, sigma, b=0):
     '''Gaussian function
-    
+
     :param x: ndarray to evaluate the gaussian at
     :param sigma: standard deviation
     :param b: optional center of the distribution'''
     return numpy.exp(-(x-b)**2/(2*sigma**2))
 
+
 def logistic(x, L, k, x0):
     r'''Logistic function
-    
+
     .. math:: 
 
         f(x) = \frac{L}{1+ e^{-k(x-x_0)}}
@@ -1079,6 +1082,8 @@ def logistic(x, L, k, x0):
     :param x0: optional translation of the function
     '''
     return L / (1+numpy.exp(-k*(x-x0)))
+
+
 def relu(x, xmin, xmax, scaling=1):
     r'''Similar to rectified linear unit relu
 
@@ -1091,21 +1096,22 @@ def relu(x, xmin, xmax, scaling=1):
     :param xmin: value at which the function start increasing
     :param xmax: value at which the function stops increasing
     :param scaling: (optional) max value, defaults to 1
-    
+
     '''
     out = []
     dx = xmax-xmin
     for i, val in enumerate(x):
         if val < xmin or val > xmax:
-            out.append(0) 
+            out.append(0)
         else:
-            out.append( (val - xmin) / dx)
+            out.append((val - xmin) / dx)
     return numpy.asarray(out)
+
 
 class CILColorMaps(object):
     @staticmethod
     def get_color_transfer_function(cmap, color_range):
-        
+
         tf = vtk.vtkColorTransferFunction()
         if cmap == 'viridis':
             colors = _viridis_data
@@ -1116,13 +1122,15 @@ class CILColorMaps(object):
         elif cmap == 'magma':
             colors = _magma_data
         else:
-            raise ValueError('Unknown color map. Expected any of viridis, plasma, inferno, magma, got {}'.format(cmap))
-        
+            raise ValueError(
+                'Unknown color map. Expected any of viridis, plasma, inferno, magma, got {}'.format(cmap))
+
         N = len(colors)
         for i, color in enumerate(colors):
-            level = color_range[0] + (color_range[1] - color_range[0]) * i / (N-1)
-            tf.AddRGBPoint( level, color[0], color[1], color[2] )
-        
+            level = color_range[0] + \
+                (color_range[1] - color_range[0]) * i / (N-1)
+            tf.AddRGBPoint(level, color[0], color[1], color[2])
+
         return tf
 
     @staticmethod
@@ -1130,7 +1138,6 @@ class CILColorMaps(object):
         opacity = vtk.vtkPiecewiseFunction()
         N = len(x)
         vals = function(x, *params)
-        for _x,_y in zip(x,vals):
-            opacity.AddPoint( _x, _y )
+        for _x, _y in zip(x, vals):
+            opacity.AddPoint(_x, _y)
         return opacity
-    

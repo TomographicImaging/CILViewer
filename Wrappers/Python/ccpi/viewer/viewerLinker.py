@@ -3,20 +3,21 @@
 from ccpi.viewer.CILViewer import CILInteractorStyle as CIL3DInteractorStyle
 from ccpi.viewer.CILViewer2D import CILInteractorStyle as CIL2DInteractorStyle
 
+
 class Linked3DInteractorStyle(CIL3DInteractorStyle):
     """
     Add attributes and methods needed to link two viewer together to the interactor style
     """
 
     def __init__(self, callback):
-        CIL3DInteractorStyle.__init__(self,callback)
+        CIL3DInteractorStyle.__init__(self, callback)
 
         self.LinkedInteractor = None
         self.LinkedEvent = 0
 
     def SetLinkedInteractor(self, iren):
         self.LinkedInteractor = iren
-    
+
     def GetLinkedInteractor(self):
         return self.LinkedInteractor
 
@@ -85,7 +86,8 @@ class ViewerLinker():
         self.disable()
 
         self._observerToId = self._viewer1.getInteractor().AddObserver("AnyEvent", self._to)
-        self._observerFromId = self._viewer2.getInteractor().AddObserver("AnyEvent", self._from)
+        self._observerFromId = self._viewer2.getInteractor(
+        ).AddObserver("AnyEvent", self._from)
 
     def disable(self):
         """
@@ -142,7 +144,7 @@ class ViewerLinker():
 
         self._to.linkSlice = linkSlice
         self._from.linkSlice = linkSlice
-    
+
     def setLinkOrientation(self, linkOrientation):
         """
         Boolean flag to set slice orientation linkage
@@ -151,7 +153,7 @@ class ViewerLinker():
 
         self._to.linkOrientation = linkOrientation
         self._from.linkOrientation = linkOrientation
-    
+
     def setLinkInterpolation(self, linkInterpolation):
         """
         Boolean flag to set linkage of interpolation of slice actor
@@ -160,7 +162,6 @@ class ViewerLinker():
 
         self._to.linkInterpolation = linkInterpolation
         self._from.linkInterpolation = linkInterpolation
-
 
 
 #################################
@@ -251,7 +252,8 @@ class ViewerLinkObserver():
             else:
                 # Set current zoom
                 if (event == "LeftButtonPressEvent"):
-                    self.targetCamera.SetParallelScale(self.sourceCamera.GetParallelScale())
+                    self.targetCamera.SetParallelScale(
+                        self.sourceCamera.GetParallelScale())
 
         # Pan
         if (((event == "LeftButtonPressEvent") and
@@ -285,10 +287,10 @@ class ViewerLinkObserver():
                     sliceno = pick_position[self.targetViewer.sliceOrientation]
                     targetInteractorStyle.SetActiveSlice(sliceno)
                     targetInteractorStyle.UpdatePipeline(True)
-                    # the event has not been generated in the targetInteractor so it 
+                    # the event has not been generated in the targetInteractor so it
                     # should not passed on to any linked interactors
                     shouldPassEvent = False
-                    
+
         # WindowLevel
         if (((event == "RightButtonPressEvent") and
              interactor.GetAltKey() == 1 and
@@ -307,7 +309,7 @@ class ViewerLinkObserver():
 
         # Update window level on mouse move
         if (event == "MouseMoveEvent" and
-            self.sourceViewer.event.isActive("WINDOW_LEVEL_EVENT")):
+                self.sourceViewer.event.isActive("WINDOW_LEVEL_EVENT")):
 
             if not self.linkWindowLevel:
                 shouldPassEvent = False
@@ -330,9 +332,11 @@ class ViewerLinkObserver():
                     shouldPassEvent = False
 
         # KeyPress and orientation
-        if (event == "KeyPressEvent"  or state == 1026):
-            orientation_link_event = self.linkOrientation and ( interactor.GetKeyCode() == "x" or interactor.GetKeyCode() == "y" or interactor.GetKeyCode() == "z")
-            window_level_link_event = self.linkWindowLevel and (interactor.GetKeyCode() == "a" or interactor.GetKeyCode() == "w")
+        if (event == "KeyPressEvent" or state == 1026):
+            orientation_link_event = self.linkOrientation and (interactor.GetKeyCode(
+            ) == "x" or interactor.GetKeyCode() == "y" or interactor.GetKeyCode() == "z")
+            window_level_link_event = self.linkWindowLevel and (
+                interactor.GetKeyCode() == "a" or interactor.GetKeyCode() == "w")
             interpolation_link_event = self.linkInterpolation and interactor.GetKeyCode() == "i"
             if not (orientation_link_event or interpolation_link_event):
                 shouldPassEvent = False
@@ -342,7 +346,7 @@ class ViewerLinkObserver():
                 window = self.sourceViewer.getColourWindow()
                 level = self.sourceViewer.getColourLevel()
                 self.targetVtkViewer.setColourWindowLevel(window, level)
-            
+
         # Check if event should be passed
         if (shouldPassEvent):
             # Pass event
@@ -351,7 +355,8 @@ class ViewerLinkObserver():
             # Check if source interactor is already linked itself
             if (sourceInteractorStyle.GetLinkedEvent()):
                 # Already linked, pass source interactor
-                targetInteractorStyle.SetLinkedInteractor(sourceInteractorStyle.GetLinkedInteractor())
+                targetInteractorStyle.SetLinkedInteractor(
+                    sourceInteractorStyle.GetLinkedInteractor())
             else:
                 # Not linked, this is the source interactor
                 targetInteractorStyle.SetLinkedInteractor(interactor)
@@ -381,5 +386,3 @@ class ViewerLinkObserver():
         # print (type(self.targetInteractor.GetInteractorStyle()))
         # Mark the event as linked
         self.targetInteractor.GetInteractorStyle().LinkedEventOn()
-
-
