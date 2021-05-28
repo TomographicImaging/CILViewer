@@ -126,12 +126,15 @@ class HDF5Reader(VTKPythonAlgorithmBase):
             self.Modified()
             self.__4DIndex = index
 
-    def RequestInformation(self, request, inInfo, outInfo):
+    def GetDimensions(self):
         f = h5py.File(self.__FileName, 'r')
         # Note that we flip the shape because VTK is Fortran order
         # whereas h5py reads in C order. When writing we pretend that the
         # data was C order so we have to flip the extents/dimensions.
-        dims = f[self.__Label].shape[::-1]
+        return f[self.__Label].shape[::-1]
+
+    def RequestInformation(self, request, inInfo, outInfo):
+        dims = self.GetDimensions()
         info = outInfo.GetInformationObject(0)
         info.Set(vtk.vtkStreamingDemandDrivenPipeline.WHOLE_EXTENT(),
                  (0, dims[0]-1, 0, dims[1]-1, 0, dims[2]-1), 6)
