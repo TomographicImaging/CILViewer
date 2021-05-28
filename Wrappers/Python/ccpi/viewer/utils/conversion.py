@@ -59,17 +59,18 @@ class Converter(object):
         'F': 4,   # VTK_FLOAT,           # float32
         'D': 8   # VTK_DOUBLE,          # float64
         }
-    numpy_dtype_char_to_vtkType = {'b': vtk.VTK_SIGNED_CHAR,     # int8
-                                   'B': vtk.VTK_UNSIGNED_CHAR,   # uint8
-                                   'h': vtk.VTK_SHORT,           # int16
-                                   'H': vtk.VTK_UNSIGNED_SHORT,  # uint16
-                                   'i': vtk.VTK_INT,             # int32
-                                   'I': vtk.VTK_UNSIGNED_INT,    # uint32
-                                   'f': vtk.VTK_FLOAT,           # float32
-                                   'd': vtk.VTK_DOUBLE,          # float64
-                                   'F': vtk.VTK_FLOAT,           # float32
-                                   'D': vtk.VTK_DOUBLE           # float64
-                                   }
+    numpy_dtype_char_to_vtkType = {
+        'b': vtk.VTK_SIGNED_CHAR,     # int8
+        'B': vtk.VTK_UNSIGNED_CHAR,   # uint8
+        'h': vtk.VTK_SHORT,           # int16
+        'H': vtk.VTK_UNSIGNED_SHORT,  # uint16
+        'i': vtk.VTK_INT,             # int32
+        'I': vtk.VTK_UNSIGNED_INT,    # uint32
+        'f': vtk.VTK_FLOAT,           # float32
+        'd': vtk.VTK_DOUBLE,          # float64
+        'F': vtk.VTK_FLOAT,           # float32
+        'D': vtk.VTK_DOUBLE           # float64
+        }
     MetaImageType_to_vtkType = {
         'MET_CHAR': vtk.VTK_SIGNED_CHAR,     # int8
         'MET_UCHAR': vtk.VTK_UNSIGNED_CHAR,   # uint8
