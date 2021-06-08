@@ -47,7 +47,7 @@ class Converter(object):
         'd': 'MET_DOUBLE',  # VTK_DOUBLE,          # float64
         'F': 'MET_FLOAT',   # VTK_FLOAT,           # float32
         'D': 'MET_DOUBLE'   # VTK_DOUBLE,          # float64
-    }
+        }
     numpy_dtype_char_to_bytes = {
         'b': 1,    # VTK_SIGNED_CHAR,     # int8
         'B': 1,   # VTK_UNSIGNED_CHAR,   # uint8
@@ -59,7 +59,7 @@ class Converter(object):
         'd': 8,  # VTK_DOUBLE,          # float64
         'F': 4,   # VTK_FLOAT,           # float32
         'D': 8   # VTK_DOUBLE,          # float64
-    }
+        }
     numpy_dtype_char_to_vtkType = {
         'b': vtk.VTK_SIGNED_CHAR,     # int8
         'B': vtk.VTK_UNSIGNED_CHAR,   # uint8
@@ -71,7 +71,7 @@ class Converter(object):
         'd': vtk.VTK_DOUBLE,          # float64
         'F': vtk.VTK_FLOAT,           # float32
         'D': vtk.VTK_DOUBLE           # float64
-    }
+        }
     MetaImageType_to_vtkType = {
         'MET_CHAR': vtk.VTK_SIGNED_CHAR,     # int8
         'MET_UCHAR': vtk.VTK_UNSIGNED_CHAR,   # uint8
@@ -81,7 +81,7 @@ class Converter(object):
         'MET_UINT': vtk.VTK_UNSIGNED_INT,    # uint32
         'MET_FLOAT': vtk.VTK_FLOAT,           # float32
         'MET_DOUBLE': vtk.VTK_DOUBLE,          # float64
-    }
+        }
 
     MetaImageType_to_bytes = {
         'MET_CHAR': 1,    # VTK_SIGNED_CHAR,     # int8
@@ -92,7 +92,7 @@ class Converter(object):
         'MET_UINT': 4,    # VTK_UNSIGNED_INT,    # uint32
         'MET_FLOAT': 4,   # VTK_FLOAT,           # float32
         'MET_DOUBLE': 8,  # VTK_DOUBLE,          # float64
-    }
+        }
 
     raw_dtype_char_to_MetaImageType = {
         'int8': 'MET_CHAR',    # VTK_SIGNED_CHAR,     # int8
@@ -103,7 +103,7 @@ class Converter(object):
         'uint32': 'MET_UINT',    # VTK_UNSIGNED_INT,    # uint32
         'float32': 'MET_FLOAT',   # VTK_FLOAT,           # float32
         'float64': 'MET_DOUBLE',  # VTK_DOUBLE,          # float64
-    }
+        }
     # Utility functions to transform numpy arrays to vtkImageData and viceversa
 
     @staticmethod
