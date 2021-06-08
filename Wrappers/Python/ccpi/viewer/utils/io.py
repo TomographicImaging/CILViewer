@@ -5,7 +5,6 @@ import sys
 import time
 from functools import partial
 
-import h5py
 import numpy
 import vtk
 from ccpi.viewer.utils import Converter
@@ -15,130 +14,14 @@ from ccpi.viewer.utils.conversion import (cilBaseCroppedReader,
                                           cilMetaImageResampleReader,
                                           cilNumpyCroppedReader,
                                           cilNumpyResampleReader)
-# from ccpi.viewer.QtThreading import Worker, WorkerSignals, ErrorObserver #
 from eqt.threading import Worker
-from PySide2 import QtCore, QtGui, QtWidgets
+from PySide2 import QtCore, QtGui
 from PySide2.QtCore import QThreadPool
 from PySide2.QtWidgets import (QComboBox, QDialog, QDialogButtonBox,
                                QFormLayout, QGroupBox, QLabel, QLineEdit,
                                QMessageBox, QProgressDialog, QVBoxLayout,
                                QWidget)
-from vtk.numpy_interface import dataset_adapter as dsa
 from vtk.util.vtkAlgorithm import VTKPythonAlgorithmBase
-
-# Methods for reading and writing HDF5 files:
-
-
-def write_image_data_to_hdf5(filename, data, label="ImageData", attributes={},
-                             array_name='vtkarray'):
-    '''
-    Writes vtkImageData to a dataset in a HDF5 file
-
-    Args:
-        filename: string - name of HDF5 file to write to.
-        data: vtkImageData - image data to write.
-        label: string - label for HDF5 dataset.
-        attributes: dict - attributes to assign to HDF5 dataset.
-        array_name: string - name of array to read points from the vtkImageData
-    '''
-
-    with h5py.File(filename, "a") as f:
-        wdata = dsa.WrapDataObject(data)
-        array = wdata.PointData[array_name]
-        # Note that we flip the dimensions here because
-        # VTK's order is Fortran whereas h5py writes in
-        # C order. We don't want to do deep copies so we write
-        # with dimensions flipped and pretend the array is
-        # C order.
-        array = array.reshape(wdata.GetDimensions()[::-1])
-        try:
-            dset = f.create_dataset(label, data=array)
-        except RuntimeError:
-            print("Unable to save image data to {0}."
-                  "Dataset with name {1} already exists in this file.".format(
-                      filename, label))
-            return
-        for key, value in attributes.items():
-            dset.attrs[key] = value
-        # print("The file written: ", f)
-        # print("The image data: ", f[label])
-        # print("The attributes: ", f[label].attrs.items())
-
-
-class HDF5Reader(VTKPythonAlgorithmBase):
-    '''
-    vtkAlgorithm for reading vtkImageData from a HDF5 file
-    Adapted from:
-    https://blog.kitware.com/developing-hdf5-readers-using-vtkpythonalgorithm/
-    '''
-
-    def __init__(self):
-        VTKPythonAlgorithmBase.__init__(self,
-                                        nInputPorts=0,
-                                        nOutputPorts=1,
-                                        outputType='vtkImageData')
-
-        self.__FileName = ""
-        self.__Label = "ImageData"
-        self.__4DIndex = 0
-
-    def RequestData(self, request, inInfo, outInfo):
-        f = h5py.File(self.__FileName, 'r')
-        info = outInfo.GetInformationObject(0)
-        data = f[self.__Label]
-        # print("keys:", list(f.keys()))
-        # print("data: ", data, type(data), numpy.shape(data))
-        ue = info.Get(vtk.vtkStreamingDemandDrivenPipeline.UPDATE_EXTENT())
-        # Note that we flip the update extents because VTK is Fortran order
-        # whereas h5py reads in C order. When writing we pretend that the
-        # data was C order so we have to flip the extents/dimensions.
-        if len(numpy.shape(data)) == 3:
-            data = data[ue[4]:ue[5]+1, ue[2]:ue[3]+1, ue[0]:ue[1]+1]
-        elif len(numpy.shape(data)) == 4:
-            data = data[self.__4DIndex][ue[4]:ue[5] +
-                                        1, ue[2]:ue[3]+1, ue[0]:ue[1]+1]
-        # print("attributes: ", f.attrs.items())
-        output = dsa.WrapDataObject(vtk.vtkImageData.GetData(outInfo))
-        output.SetExtent(ue)
-        output.PointData.append(data.ravel(), self.__Label)
-        output.PointData.SetActiveScalars(self.__Label)
-        return 1
-
-    def SetFileName(self, fname):
-        if fname != self.__FileName:
-            self.Modified()
-            self.__FileName = fname
-
-    def GetFileName(self):
-        return self.__FileName
-
-    def SetLabel(self, lname):
-        if lname != self.__Label:
-            self.Modified()
-            self.__Label = lname
-
-    def GetLabel(self):
-        return self.__Label
-
-    def Set4DIndex(self, index):
-        '''Sets which index to read, in the case of a 4D dataset'''
-        if index != self.__4DIndex:
-            self.Modified()
-            self.__4DIndex = index
-
-    def GetDimensions(self):
-        f = h5py.File(self.__FileName, 'r')
-        # Note that we flip the shape because VTK is Fortran order
-        # whereas h5py reads in C order. When writing we pretend that the
-        # data was C order so we have to flip the extents/dimensions.
-        return f[self.__Label].shape[::-1]
-
-    def RequestInformation(self, request, inInfo, outInfo):
-        dims = self.GetDimensions()
-        info = outInfo.GetInformationObject(0)
-        info.Set(vtk.vtkStreamingDemandDrivenPipeline.WHOLE_EXTENT(),
-                 (0, dims[0]-1, 0, dims[1]-1, 0, dims[2]-1), 6)
-        return 1
 
 
 class HDF5SubsetReader(VTKPythonAlgorithmBase):
