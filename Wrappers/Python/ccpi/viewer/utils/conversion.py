@@ -792,7 +792,7 @@ class cilBaseResampleReader(VTKPythonAlgorithmBase):
 
                 reader.Modified()
                 reader.Update()
-                print(reader.GetOutput().GetScalarComponentAsDouble(0, 0, 0, 0))
+                # print(reader.GetOutput().GetScalarComponentAsDouble(0, 0, 0, 0))
                 outData.ShallowCopy(reader.GetOutput())
 
             else:
@@ -891,14 +891,12 @@ class cilBaseResampleReader(VTKPythonAlgorithmBase):
 
                         reader.Modified()
                         reader.Update()
-                        print(i, reader.GetOutput().GetScalarComponentAsDouble(0,0,0,0))
+                        # print(i, reader.GetOutput().GetScalarComponentAsDouble(0,0,0,0))
 
                         # change the extent of the resampled image
                         extent = (0, target_image_shape[0]-1,
                                   0, target_image_shape[1]-1,
                                   i, i)
-
-                        print("New extent: ", extent)
 
                         resampler.SetOutputExtent(extent)
                         resampler.Update()
@@ -980,30 +978,25 @@ class cilNumpyResampleReader(cilBaseResampleReader):
 class cilHDF5ImageResampleReader(cilBaseResampleReader):
 
     def RequestData(self, request, inInfo, outInfo):
-        print("RequestData HDF5ResampleReader")
         outData = vtk.vtkImageData.GetData(outInfo)
 
         # get size info:
         reader = HDF5Reader()
-        print("The filename is: ", self.GetFileName())
         reader.SetFileName(self.GetFileName())
         shape = list(reader.GetDimensions())
         total_size = shape[0] * shape[1] * shape[2]
         max_size = self.GetTargetSize()
-        print("Shape: ", shape, max_size, type(shape))
 
         # get the datatype:
         datatype = reader.GetDataType()
-        print(datatype)
         typecode = np.dtype(datatype).char
-        print(typecode)
+
         self.SetOutputVTKType(
             Converter.numpy_dtype_char_to_vtkType[typecode])
-        print("The type: ", self.GetOutputVTKType())
 
         try:
             if total_size < max_size:
-                print("NO RESAMPLE")  # in this case we don't need to resample
+                # in this case we don't need to resample
                 reader.Modified()
                 reader.Update()
                 # print(reader.GetOutput().GetScalarComponentAsDouble(0,0,0,0))
@@ -1019,10 +1012,9 @@ class cilHDF5ImageResampleReader(cilBaseResampleReader):
                 # indices of the first and last slice per chunk
                 # we will read in slice_per_chunk slices at a time
                 end_slice_in_chunks = [i for i in
-                                       range(slice_per_chunk, shape[2], slice_per_chunk)]
+                                       range(slice_per_chunk, shape[2]+1, slice_per_chunk)]
 
                 # append last slice
-                end_slice_in_chunks.append(shape[2])
                 num_chunks = len(end_slice_in_chunks)
 
                 z_axis_magnification = num_chunks / (shape[2])
@@ -1063,38 +1055,34 @@ class cilHDF5ImageResampleReader(cilBaseResampleReader):
                                    for i, s in enumerate(new_spacing)])
 
                 resampled_image.SetOrigin(new_origin)
-                print(new_origin)
-                print(new_spacing)
 
                 resampled_image.AllocateScalars(self.GetOutputVTKType(), 1)
 
                 # Here we read just the chunk from the hdf5 file:
                 cropped_reader = HDF5SubsetReader()
                 cropped_reader.SetInputConnection(reader.GetOutputPort())
-                resampler.SetInputConnection(cropped_reader.GetOutputPort())
+                resampler.SetInputDataObject(cropped_reader.GetOutputDataObject(0))
                 for i, el in enumerate(end_slice_in_chunks):
                     end_slice = el
                     start_slice = end_slice - slice_per_chunk
+                    end_slice-=1
                     if start_slice < 0:
                         raise ValueError('{} ERROR: Start slice cannot be negative.'
                                          .format(self.__class__.__name__))
                     dims = shape
-                    print("setting the updated extent: ", (0, dims[0]-1, 0, dims[2]-1, start_slice, end_slice))
+                    # print("setting the updated extent: ", (0, dims[0]-1, 0, dims[1]-1, start_slice, end_slice))
                     cropped_reader.SetUpdateExtent(
-                        (0, dims[0]-1, 0, dims[2]-1, start_slice, end_slice))
+                        (0, dims[0]-1, 0, dims[1]-1, start_slice, end_slice))
                     cropped_reader.Update()
-                    print(i, cropped_reader.GetOutputDataObject(0).GetScalarComponentAsDouble(0,0,0,0))
+                    # print(i, cropped_reader.GetOutputDataObject(0).GetScalarComponentAsDouble(0,0,0,0))
 
                     # change the extent of the resampled image
                     extent = (0, target_image_shape[0]-1,
                               0, target_image_shape[1]-1,
                               i, i)
-                    print("Target extent: ", extent)
 
                     resampler.SetOutputExtent(extent)
-                    print("set output extent")
                     resampler.Update()
-                    print("updated resampler")
 
                     ################# vtk way ####################
                     resampled_image.CopyAndCastFrom(
