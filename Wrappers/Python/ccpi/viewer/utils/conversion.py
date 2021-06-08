@@ -36,68 +36,74 @@ class Converter(object):
     # inspired by
     # https://github.com/vejmarie/vtk-7/blob/master/Wrapping/Python/vtk/util/vtkImageImportFromArray.py
     # and metaTypes.h in VTK source code
-    numpy_dtype_char_to_MetaImageType = {'b': 'MET_CHAR',    # VTK_SIGNED_CHAR,     # int8
-                                         'B': 'MET_UCHAR',   # VTK_UNSIGNED_CHAR,   # uint8
-                                         'h': 'MET_SHORT',   # VTK_SHORT,           # int16
-                                         'H': 'MET_USHORT',  # VTK_UNSIGNED_SHORT,  # uint16
-                                         'i': 'MET_INT',     # VTK_INT,             # int32
-                                         'I': 'MET_UINT',    # VTK_UNSIGNED_INT,    # uint32
-                                         'f': 'MET_FLOAT',   # VTK_FLOAT,           # float32
-                                         'd': 'MET_DOUBLE',  # VTK_DOUBLE,          # float64
-                                         'F': 'MET_FLOAT',   # VTK_FLOAT,           # float32
-                                         'D': 'MET_DOUBLE'   # VTK_DOUBLE,          # float64
-                                         }
-    numpy_dtype_char_to_bytes = {'b': 1,    # VTK_SIGNED_CHAR,     # int8
-                                 'B': 1,   # VTK_UNSIGNED_CHAR,   # uint8
-                                 'h': 2,   # VTK_SHORT,           # int16
-                                 'H': 2,  # VTK_UNSIGNED_SHORT,  # uint16
-                                 'i': 4,     # VTK_INT,             # int32
-                                 'I': 4,    # VTK_UNSIGNED_INT,    # uint32
-                                 'f': 4,   # VTK_FLOAT,           # float32
-                                 'd': 8,  # VTK_DOUBLE,          # float64
-                                 'F': 4,   # VTK_FLOAT,           # float32
-                                 'D': 8   # VTK_DOUBLE,          # float64
-                                 }
-    numpy_dtype_char_to_vtkType = {'b': vtk.VTK_SIGNED_CHAR,     # int8
-                                   'B': vtk.VTK_UNSIGNED_CHAR,   # uint8
-                                   'h': vtk.VTK_SHORT,           # int16
-                                   'H': vtk.VTK_UNSIGNED_SHORT,  # uint16
-                                   'i': vtk.VTK_INT,             # int32
-                                   'I': vtk.VTK_UNSIGNED_INT,    # uint32
-                                   'f': vtk.VTK_FLOAT,           # float32
-                                   'd': vtk.VTK_DOUBLE,          # float64
-                                   'F': vtk.VTK_FLOAT,           # float32
-                                   'D': vtk.VTK_DOUBLE           # float64
-                                   }
-    MetaImageType_to_vtkType = {'MET_CHAR': vtk.VTK_SIGNED_CHAR,     # int8
-                                'MET_UCHAR': vtk.VTK_UNSIGNED_CHAR,   # uint8
-                                'MET_SHORT': vtk.VTK_SHORT,           # int16
-                                'MET_USHORT': vtk.VTK_UNSIGNED_SHORT,  # uint16
-                                'MET_INT': vtk.VTK_INT,             # int32
-                                'MET_UINT': vtk.VTK_UNSIGNED_INT,    # uint32
-                                'MET_FLOAT': vtk.VTK_FLOAT,           # float32
-                                'MET_DOUBLE': vtk.VTK_DOUBLE,          # float64
-                                }
+    numpy_dtype_char_to_MetaImageType = {
+        'b': 'MET_CHAR',    # VTK_SIGNED_CHAR,     # int8
+        'B': 'MET_UCHAR',   # VTK_UNSIGNED_CHAR,   # uint8
+        'h': 'MET_SHORT',   # VTK_SHORT,           # int16
+        'H': 'MET_USHORT',  # VTK_UNSIGNED_SHORT,  # uint16
+        'i': 'MET_INT',     # VTK_INT,             # int32
+        'I': 'MET_UINT',    # VTK_UNSIGNED_INT,    # uint32
+        'f': 'MET_FLOAT',   # VTK_FLOAT,           # float32
+        'd': 'MET_DOUBLE',  # VTK_DOUBLE,          # float64
+        'F': 'MET_FLOAT',   # VTK_FLOAT,           # float32
+        'D': 'MET_DOUBLE'   # VTK_DOUBLE,          # float64
+    }
+    numpy_dtype_char_to_bytes = {
+        'b': 1,    # VTK_SIGNED_CHAR,     # int8
+        'B': 1,   # VTK_UNSIGNED_CHAR,   # uint8
+        'h': 2,   # VTK_SHORT,           # int16
+        'H': 2,  # VTK_UNSIGNED_SHORT,  # uint16
+        'i': 4,     # VTK_INT,             # int32
+        'I': 4,    # VTK_UNSIGNED_INT,    # uint32
+        'f': 4,   # VTK_FLOAT,           # float32
+        'd': 8,  # VTK_DOUBLE,          # float64
+        'F': 4,   # VTK_FLOAT,           # float32
+        'D': 8   # VTK_DOUBLE,          # float64
+    }
+    numpy_dtype_char_to_vtkType = {
+        'b': vtk.VTK_SIGNED_CHAR,     # int8
+        'B': vtk.VTK_UNSIGNED_CHAR,   # uint8
+        'h': vtk.VTK_SHORT,           # int16
+        'H': vtk.VTK_UNSIGNED_SHORT,  # uint16
+        'i': vtk.VTK_INT,             # int32
+        'I': vtk.VTK_UNSIGNED_INT,    # uint32
+        'f': vtk.VTK_FLOAT,           # float32
+        'd': vtk.VTK_DOUBLE,          # float64
+        'F': vtk.VTK_FLOAT,           # float32
+        'D': vtk.VTK_DOUBLE           # float64
+    }
+    MetaImageType_to_vtkType = {
+        'MET_CHAR': vtk.VTK_SIGNED_CHAR,     # int8
+        'MET_UCHAR': vtk.VTK_UNSIGNED_CHAR,   # uint8
+        'MET_SHORT': vtk.VTK_SHORT,           # int16
+        'MET_USHORT': vtk.VTK_UNSIGNED_SHORT,  # uint16
+        'MET_INT': vtk.VTK_INT,             # int32
+        'MET_UINT': vtk.VTK_UNSIGNED_INT,    # uint32
+        'MET_FLOAT': vtk.VTK_FLOAT,           # float32
+        'MET_DOUBLE': vtk.VTK_DOUBLE,          # float64
+    }
 
-    MetaImageType_to_bytes = {'MET_CHAR': 1,    # VTK_SIGNED_CHAR,     # int8
-                              'MET_UCHAR': 1,   # VTK_UNSIGNED_CHAR,   # uint8
-                              'MET_SHORT': 2,   # VTK_SHORT,           # int16
-                              'MET_USHORT': 2,  # VTK_UNSIGNED_SHORT,  # uint16
-                              'MET_INT': 4,     # VTK_INT,             # int32
-                              'MET_UINT': 4,    # VTK_UNSIGNED_INT,    # uint32
-                              'MET_FLOAT': 4,   # VTK_FLOAT,           # float32
-                              'MET_DOUBLE': 8,  # VTK_DOUBLE,          # float64
-                              }
+    MetaImageType_to_bytes = {
+        'MET_CHAR': 1,    # VTK_SIGNED_CHAR,     # int8
+        'MET_UCHAR': 1,   # VTK_UNSIGNED_CHAR,   # uint8
+        'MET_SHORT': 2,   # VTK_SHORT,           # int16
+        'MET_USHORT': 2,  # VTK_UNSIGNED_SHORT,  # uint16
+        'MET_INT': 4,     # VTK_INT,             # int32
+        'MET_UINT': 4,    # VTK_UNSIGNED_INT,    # uint32
+        'MET_FLOAT': 4,   # VTK_FLOAT,           # float32
+        'MET_DOUBLE': 8,  # VTK_DOUBLE,          # float64
+    }
 
-    raw_dtype_char_to_MetaImageType = {'int8': 'MET_CHAR',    # VTK_SIGNED_CHAR,     # int8
-                                       'uint8': 'MET_UCHAR',   # VTK_UNSIGNED_CHAR,   # uint8
-                                       'int16': 'MET_SHORT',   # VTK_SHORT,           # int16
-                                       'uint16': 'MET_USHORT',  # VTK_UNSIGNED_SHORT,  # uint16
-                                       'int32': 'MET_INT',     # VTK_INT,             # int32
-                                       'uint32': 'MET_UINT',    # VTK_UNSIGNED_INT,    # uint32
-                                       'float32': 'MET_FLOAT',   # VTK_FLOAT,           # float32
-                                       'float64': 'MET_DOUBLE',  # VTK_DOUBLE,          # float64
-                                       }
+    raw_dtype_char_to_MetaImageType = {
+        'int8': 'MET_CHAR',    # VTK_SIGNED_CHAR,     # int8
+        'uint8': 'MET_UCHAR',   # VTK_UNSIGNED_CHAR,   # uint8
+        'int16': 'MET_SHORT',   # VTK_SHORT,           # int16
+        'uint16': 'MET_USHORT',  # VTK_UNSIGNED_SHORT,  # uint16
+        'int32': 'MET_INT',     # VTK_INT,             # int32
+        'uint32': 'MET_UINT',    # VTK_UNSIGNED_INT,    # uint32
+        'float32': 'MET_FLOAT',   # VTK_FLOAT,           # float32
+        'float64': 'MET_DOUBLE',  # VTK_DOUBLE,          # float64
+    }
     # Utility functions to transform numpy arrays to vtkImageData and viceversa
 
     @staticmethod
@@ -169,7 +175,6 @@ class Converter(object):
 
 
 # TODO:  Get rid of the below and make a tiff to vtk method and a tiff resample reader.
-
 
     @staticmethod
     def vtkTiffStack2numpy(filenames):
@@ -1061,11 +1066,12 @@ class cilHDF5ImageResampleReader(cilBaseResampleReader):
                 # Here we read just the chunk from the hdf5 file:
                 cropped_reader = HDF5SubsetReader()
                 cropped_reader.SetInputConnection(reader.GetOutputPort())
-                resampler.SetInputDataObject(cropped_reader.GetOutputDataObject(0))
+                resampler.SetInputDataObject(
+                    cropped_reader.GetOutputDataObject(0))
                 for i, el in enumerate(end_slice_in_chunks):
                     end_slice = el
                     start_slice = end_slice - slice_per_chunk
-                    end_slice-=1
+                    end_slice -= 1
                     if start_slice < 0:
                         raise ValueError('{} ERROR: Start slice cannot be negative.'
                                          .format(self.__class__.__name__))
