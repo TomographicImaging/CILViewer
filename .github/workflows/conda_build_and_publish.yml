@@ -1,0 +1,24 @@
+name: publish_conda
+
+on:
+  release:
+    types: [published]
+  push:
+    branches: [ master ]
+    tags:
+      - '**'
+  pull_request:
+    branches: [ master ]
+    
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v1
+    - name: publish-to-conda
+      uses: paskino/conda-package-publish-action@master
+      with:
+        subDir: 'Wrappers/Python/conda-recipe'
+        channels: 'conda-forge -c paskino'
+        AnacondaToken: ${{ secrets.ANACONDA_TOKEN }}
+        publish: ${{ github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags') }}

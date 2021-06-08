@@ -1,11 +1,11 @@
 package:
   name: ccpi-viewer
-  version: 21.0.0
+  version: 21.0.1
 
 
 build:
   preserve_egg_dir: False
-  number: 2
+  number: 0
   
 requirements:
   build:
