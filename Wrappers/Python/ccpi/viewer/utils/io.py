@@ -21,62 +21,6 @@ from PySide2.QtWidgets import (QComboBox, QDialog, QDialogButtonBox,
                                QFormLayout, QGroupBox, QLabel, QLineEdit,
                                QMessageBox, QProgressDialog, QVBoxLayout,
                                QWidget)
-from vtk.util.vtkAlgorithm import VTKPythonAlgorithmBase
-
-
-class HDF5SubsetReader(VTKPythonAlgorithmBase):
-    def __init__(self):
-        VTKPythonAlgorithmBase.__init__(self,
-                                        nInputPorts=1,
-                                        inputType='vtkImageData',
-                                        nOutputPorts=1,
-                                        outputType='vtkImageData')
-        self.__UpdateExtent = None
-
-    def RequestInformation(self, request, inInfo, outInfo):
-        info = outInfo.GetInformationObject(0)
-        info.Set(vtk.vtkStreamingDemandDrivenPipeline.WHOLE_EXTENT(),
-                 self.__UpdateExtent, 6)
-        return 1
-
-    def RequestUpdateExtent(self, request, inInfo, outInfo):
-        if self.__UpdateExtent is not None:
-            info = inInfo[0].GetInformationObject(0)
-
-            whole_extent = info.Get(
-                vtk.vtkStreamingDemandDrivenPipeline.WHOLE_EXTENT())
-            set_extent = info.Get(
-                vtk.vtkStreamingDemandDrivenPipeline.UPDATE_EXTENT())
-            for i, value in enumerate(set_extent):
-                if i % 2 == 0:
-                    if value < whole_extent[i]:
-                        raise ValueError("Requested extent {}\
-                             is outside of original image extent {}".format(
-                            set_extent, whole_extent))
-                else:
-                    if value > whole_extent[i]:
-                        raise ValueError("Requested extent {}\
-                             is outside of original image extent {}".format(
-                            set_extent, whole_extent))
-
-            info.Set(vtk.vtkStreamingDemandDrivenPipeline.UPDATE_EXTENT(),
-                     self.__UpdateExtent, 6)
-        return 1
-
-    def RequestData(self, request, inInfo, outInfo):
-        inp = vtk.vtkImageData.GetData(inInfo[0])
-        opt = vtk.vtkImageData.GetData(outInfo)
-        opt.ShallowCopy(inp)
-        return 1
-
-    def SetUpdateExtent(self, ue):
-        if ue != self.__UpdateExtent:
-            self.Modified()
-            self.__UpdateExtent = ue
-
-    def GetUpdateExtent(self):
-        return self.__UpdateExtent
-
 
 # ImageCreator class
 
