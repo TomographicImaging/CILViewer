@@ -9,9 +9,13 @@ from ccpi.viewer.utils.hdf5_io import (HDF5Reader, HDF5SubsetReader,
                                        write_image_data_to_hdf5)
 
 
-def calculate_target_downsample_shape(max_size, total_size, shape):
-    xy_axes_magnification = np.power(max_size/total_size, 1/3)
-    slice_per_chunk = np.int(1/xy_axes_magnification)
+def calculate_target_downsample_shape(max_size, total_size, shape, acq=False):
+    if not acq:
+        xy_axes_magnification = np.power(max_size/total_size, 1/3)
+        slice_per_chunk = np.int(1/xy_axes_magnification)
+    else:
+        slice_per_chunk = 1
+        xy_axes_magnification = np.power(max_size/total_size, 1/2)
     num_chunks = 1 + len([i for i in
                           range(slice_per_chunk, shape[2], slice_per_chunk)])
 
@@ -141,7 +145,6 @@ class TestHDF5IO(unittest.TestCase):
         # Now test if we get the full image extent if our
         # target size is larger than the size of the image:
         target_size = og_size*2
-        readerhdf5 = cilHDF5ImageResampleReader()
         readerhdf5.SetFileName(self.hdf5_filename_3D)
         readerhdf5.SetTargetSize(target_size)
         readerhdf5.Update()
@@ -150,6 +153,31 @@ class TestHDF5IO(unittest.TestCase):
         expected_shape = og_shape
         resulting_shape = (extent[1]+1, (extent[3]+1), (extent[5]+1))
         self.assertEqual(resulting_shape, expected_shape)
+
+        # Now test if we get the correct z extent if we set that we
+        # have acquisition data
+        readerhdf5 = cilHDF5ImageResampleReader()
+        readerhdf5.SetFileName(self.hdf5_filename_3D)
+        target_size = 100
+        readerhdf5.SetTargetSize(target_size)
+        readerhdf5.SetIsAcquisitionData(True)
+        readerhdf5.Update()
+        image = readerhdf5.GetOutput()
+        extent = image.GetExtent()
+        shape_not_acquisition = calculate_target_downsample_shape(
+            target_size, og_size, og_shape, acq=True)
+        expected_size = shape_not_acquisition[0]*shape_not_acquisition[1]*shape_not_acquisition[2]
+        resulting_shape = (extent[1]+1, (extent[3]+1), (extent[5]+1))
+        print(resulting_shape)
+        print(np.shape(self.input_3D_array))
+        resulting_size = resulting_shape[0]*resulting_shape[1]*resulting_shape[2]
+        # angle (z direction) is first index in numpy array, and in cil
+        # but it is the last in vtk.
+        resulting_z_shape = extent[5]+1
+        og_z_shape = np.shape(self.input_3D_array)[0]
+        self.assertEqual(resulting_size, expected_size)
+        self.assertEqual(resulting_z_shape, og_z_shape)
+
 
     def tearDown(self):
         files = [self.hdf5_filename_3D,

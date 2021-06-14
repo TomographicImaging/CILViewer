@@ -111,6 +111,10 @@ class HDF5Reader(VTKPythonAlgorithmBase):
         # data was C order so we have to flip the extents/dimensions.
         return f[self.__Label].shape[::-1]
 
+    def GetOrigin(self):
+        print("Not yet implemented, set to (0,0,0) by default.")
+        return (0, 0, 0)
+
     def GetDataType(self):
         f = h5py.File(self.__FileName, 'r')
         data_type = type(f[self.__Label][0][0][0])

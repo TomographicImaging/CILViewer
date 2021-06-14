@@ -106,6 +106,7 @@ class Converter(object):
         }
     # Utility functions to transform numpy arrays to vtkImageData and viceversa
 
+
     @staticmethod
     def numpy2vtkImage(nparray, spacing=(1., 1., 1.), origin=(0, 0, 0), deep=0, output=None):
 
@@ -982,12 +983,25 @@ class cilNumpyResampleReader(cilBaseResampleReader):
 
 class cilHDF5ImageResampleReader(cilBaseResampleReader):
 
+    def __init__(self):
+        VTKPythonAlgorithmBase.__init__(self, nInputPorts=0, nOutputPorts=1)
+        super(cilHDF5ImageResampleReader, self).__init__()
+
+        self.__IsAcquisitionData = False
+
+    def SetIsAcquisitionData(self, value):
+        self.__IsAcquisitionData = value
+
+    def GetIsAcquisitionData(self):
+        return self.__IsAcquisitionData
+
     def RequestData(self, request, inInfo, outInfo):
         outData = vtk.vtkImageData.GetData(outInfo)
 
         # get size info:
         reader = HDF5Reader()
         reader.SetFileName(self.GetFileName())
+        self.SetOrigin(reader.GetOrigin())
         shape = list(reader.GetDimensions())
         total_size = shape[0] * shape[1] * shape[2]
         max_size = self.GetTargetSize()
@@ -1010,14 +1024,22 @@ class cilHDF5ImageResampleReader(cilBaseResampleReader):
             else:
                 # scaling is going to be similar in every axis
                 # (xy the same, z possibly different)
-                xy_axes_magnification = np.power(max_size/total_size, 1/3)
-                slice_per_chunk = np.int(1/xy_axes_magnification)
+                if not self.__IsAcquisitionData:
+                    xy_axes_magnification = np.power(max_size/total_size, 1/3)
+                    slice_per_chunk = np.int(1/xy_axes_magnification)
+                else:
+                    slice_per_chunk = 1
+                    xy_axes_magnification = np.power(max_size/total_size, 1/2)
+
                 # print("Slice per chunk: ", slice_per_chunk)
 
                 # indices of the first and last slice per chunk
                 # we will read in slice_per_chunk slices at a time
                 end_slice_in_chunks = [i for i in
-                                       range(slice_per_chunk, shape[2]+1, slice_per_chunk)]
+                                       range(slice_per_chunk, shape[2],
+                                             slice_per_chunk)]
+
+                end_slice_in_chunks.append(shape[2])
 
                 # append last slice
                 num_chunks = len(end_slice_in_chunks)
