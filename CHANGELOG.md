@@ -1,5 +1,8 @@
 # Changelog
 
+## v***
+* fix bug with orientation axes when the input image is updated
+
 ## v21.0.1
 * change default orientation of axes
 * reduce print-outs from code
