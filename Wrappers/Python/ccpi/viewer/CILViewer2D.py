@@ -1180,6 +1180,7 @@ class CILViewer2D():
         self.img3D = None
         self.slicenos = [0,0,0]
         self.sliceOrientation = SLICE_ORIENTATION_XY
+        self.axes_initialised = False
         #Actors
         self.sliceActor = vtk.vtkImageActor()
         self.voi = vtk.vtkExtractVOI()
@@ -1381,6 +1382,8 @@ class CILViewer2D():
         self.log("setInputData")
         self.img3D = imageData
         self.installPipeline()
+        self.axes_initialised = True
+
     def setInputData2 (self, imageData):
         self.image2 = imageData
         # TODO resample on image1
@@ -1554,7 +1557,9 @@ class CILViewer2D():
         self.ren.Render()
 
         self.camera.SetViewUp(0,-1,0)
-        self.camera.Azimuth(180)
+
+        if not self.axes_initialised:
+            self.camera.Azimuth(180)
 
         self.AdjustCamera()
 
