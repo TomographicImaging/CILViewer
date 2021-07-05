@@ -988,6 +988,7 @@ class cilHDF5ImageResampleReader(cilBaseResampleReader):
         super(cilHDF5ImageResampleReader, self).__init__()
 
         self.__IsAcquisitionData = False
+        self.__Label = None
 
     def SetIsAcquisitionData(self, value):
         self.__IsAcquisitionData = value
@@ -995,12 +996,20 @@ class cilHDF5ImageResampleReader(cilBaseResampleReader):
     def GetIsAcquisitionData(self):
         return self.__IsAcquisitionData
 
+    def SetLabel(self, value):
+        self.__Label = value
+
+    def GetLabel(self):
+        return self.__Label
+
     def RequestData(self, request, inInfo, outInfo):
         outData = vtk.vtkImageData.GetData(outInfo)
 
         # get size info:
         reader = HDF5Reader()
         reader.SetFileName(self.GetFileName())
+        if self.GetLabel() is not None:
+            reader.SetLabel(self.GetLabel())
         self.SetOrigin(reader.GetOrigin())
         shape = list(reader.GetDimensions())
         total_size = shape[0] * shape[1] * shape[2]
