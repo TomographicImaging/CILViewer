@@ -38,9 +38,6 @@ def write_image_data_to_hdf5(filename, data, label="ImageData", attributes={},
             return
         for key, value in attributes.items():
             dset.attrs[key] = value
-        # print("The file written: ", f)
-        # print("The image data: ", f[label])
-        # print("The attributes: ", f[label].attrs.items())
 
 
 class HDF5Reader(VTKPythonAlgorithmBase):
@@ -61,26 +58,26 @@ class HDF5Reader(VTKPythonAlgorithmBase):
         self.__4DIndex = 0
 
     def RequestData(self, request, inInfo, outInfo):
-        f = h5py.File(self.__FileName, 'r')
-        info = outInfo.GetInformationObject(0)
-        shape = np.shape(f[self.__Label])
-        # print("keys:", list(f.keys()))
-        # print("data: ", data, type(data), np.shape(data))
-        ue = info.Get(vtk.vtkStreamingDemandDrivenPipeline.UPDATE_EXTENT())
-        # Note that we flip the update extents because VTK is Fortran order
-        # whereas h5py reads in C order. When writing we pretend that the
-        # data was C order so we have to flip the extents/dimensions.
-        if len(shape) == 3:
-            data = f[self.__Label][ue[4]:ue[5]+1, ue[2]:ue[3]+1, ue[0]:ue[1]+1]
-        elif len(shape) == 4:
-            data = f[self.__Label][self.__4DIndex][
-                ue[4]:ue[5] + 1, ue[2]:ue[3]+1, ue[0]:ue[1]+1]
-        # print("attributes: ", f.attrs.items())
-        output = dsa.WrapDataObject(vtk.vtkImageData.GetData(outInfo))
-        output.SetExtent(ue)
-        output.PointData.append(data.ravel(), self.__Label)
-        output.PointData.SetActiveScalars(self.__Label)
-        return 1
+        with h5py.File(self.__FileName, 'r') as f:
+            info = outInfo.GetInformationObject(0)
+            shape = np.shape(f[self.__Label])
+            # print("keys:", list(f.keys()))
+            # print(shape)
+            ue = info.Get(vtk.vtkStreamingDemandDrivenPipeline.UPDATE_EXTENT())
+            # Note that we flip the update extents because VTK is Fortran order
+            # whereas h5py reads in C order. When writing we pretend that the
+            # data was C order so we have to flip the extents/dimensions.
+            if len(shape) == 3:
+                data = f[self.__Label][ue[4]:ue[5]+1, ue[2]:ue[3]+1, ue[0]:ue[1]+1]
+            elif len(shape) == 4:
+                data = f[self.__Label][self.__4DIndex][
+                    ue[4]:ue[5] + 1, ue[2]:ue[3]+1, ue[0]:ue[1]+1]
+            # print("attributes: ", f.attrs.items())
+            output = dsa.WrapDataObject(vtk.vtkImageData.GetData(outInfo))
+            output.SetExtent(ue)
+            output.PointData.append(data.ravel(), self.__Label)
+            output.PointData.SetActiveScalars(self.__Label)
+            return 1
 
     def SetFileName(self, fname):
         if fname != self.__FileName:
@@ -105,22 +102,22 @@ class HDF5Reader(VTKPythonAlgorithmBase):
             self.__4DIndex = index
 
     def GetDimensions(self):
-        f = h5py.File(self.__FileName, 'r')
-        # Note that we flip the shape because VTK is Fortran order
-        # whereas h5py reads in C order. When writing we pretend that the
-        # data was C order so we have to flip the extents/dimensions.
-        return f[self.__Label].shape[::-1]
+        with h5py.File(self.__FileName, 'r') as f:
+            # Note that we flip the shape because VTK is Fortran order
+            # whereas h5py reads in C order. When writing we pretend that the
+            # data was C order so we have to flip the extents/dimensions.
+            return f[self.__Label].shape[::-1]
 
     def GetOrigin(self):
         print("Not yet implemented, set to (0,0,0) by default.")
         return (0, 0, 0)
 
     def GetDataType(self):
-        f = h5py.File(self.__FileName, 'r')
-        data_type = type(f[self.__Label][0][0][0])
-        if isinstance(data_type, np.ndarray):
+        with h5py.File(self.__FileName, 'r') as f:
             data_type = type(f[self.__Label][0][0][0])
-        return data_type
+            if isinstance(data_type, np.ndarray):
+                data_type = type(f[self.__Label][0][0][0])
+            return data_type
 
     def RequestInformation(self, request, inInfo, outInfo):
         dims = self.GetDimensions()

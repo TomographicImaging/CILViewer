@@ -166,18 +166,19 @@ class TestHDF5IO(unittest.TestCase):
         extent = image.GetExtent()
         shape_not_acquisition = calculate_target_downsample_shape(
             target_size, og_size, og_shape, acq=True)
-        expected_size = shape_not_acquisition[0]*shape_not_acquisition[1]*shape_not_acquisition[2]
+        expected_size = shape_not_acquisition[0] * \
+            shape_not_acquisition[1]*shape_not_acquisition[2]
         resulting_shape = (extent[1]+1, (extent[3]+1), (extent[5]+1))
         print(resulting_shape)
         print(np.shape(self.input_3D_array))
-        resulting_size = resulting_shape[0]*resulting_shape[1]*resulting_shape[2]
+        resulting_size = resulting_shape[0] * \
+            resulting_shape[1]*resulting_shape[2]
         # angle (z direction) is first index in numpy array, and in cil
         # but it is the last in vtk.
         resulting_z_shape = extent[5]+1
         og_z_shape = np.shape(self.input_3D_array)[0]
         self.assertEqual(resulting_size, expected_size)
         self.assertEqual(resulting_z_shape, og_z_shape)
-
 
     def tearDown(self):
         files = [self.hdf5_filename_3D,
