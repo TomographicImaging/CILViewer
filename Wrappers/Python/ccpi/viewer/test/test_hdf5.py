@@ -106,13 +106,13 @@ class TestHDF5IO(unittest.TestCase):
         self.hdf5_filename_RT = "test_image_data.hdf5"
 
         write_image_data_to_hdf5(
-            self.hdf5_filename_RT, image_data, label='RTData',
+            self.hdf5_filename_RT, image_data, dataset_name='RTData',
             array_name='RTData')
 
         # Test reading hdf5:
         reader = HDF5Reader()
         reader.SetFileName(self.hdf5_filename_RT)
-        reader.SetLabel('RTData')
+        reader.SetDatasetName('RTData')
         reader.Update()
 
         read_image_data = reader.GetOutputDataObject(0)

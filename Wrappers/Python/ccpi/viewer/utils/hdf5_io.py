@@ -7,7 +7,7 @@ from vtk.numpy_interface import dataset_adapter as dsa
 # Methods for reading and writing HDF5 files:
 
 
-def write_image_data_to_hdf5(filename, data, label="ImageData", attributes={},
+def write_image_data_to_hdf5(filename, data, dataset_name="ImageData", attributes={},
                              array_name='vtkarray'):
     '''
     Writes vtkImageData to a dataset in a HDF5 file
@@ -15,7 +15,7 @@ def write_image_data_to_hdf5(filename, data, label="ImageData", attributes={},
     Args:
         filename: string - name of HDF5 file to write to.
         data: vtkImageData - image data to write.
-        label: string - label for HDF5 dataset.
+        DatasetName: string - DatasetName for HDF5 dataset.
         attributes: dict - attributes to assign to HDF5 dataset.
         array_name: string - name of array to read points from the vtkImageData
     '''
@@ -30,11 +30,11 @@ def write_image_data_to_hdf5(filename, data, label="ImageData", attributes={},
         # C order.
         array = array.reshape(wdata.GetDimensions()[::-1])
         try:
-            dset = f.create_dataset(label, data=array)
+            dset = f.create_dataset(dataset_name, data=array)
         except RuntimeError:
             print("Unable to save image data to {0}."
                   "Dataset with name {1} already exists in this file.".format(
-                      filename, label))
+                      filename, dataset_name))
             return
         for key, value in attributes.items():
             dset.attrs[key] = value
@@ -54,13 +54,13 @@ class HDF5Reader(VTKPythonAlgorithmBase):
                                         outputType='vtkImageData')
 
         self.__FileName = ""
-        self.__Label = "ImageData"
+        self.__DatasetName = "ImageData"
         self.__4DIndex = 0
 
     def RequestData(self, request, inInfo, outInfo):
         with h5py.File(self.__FileName, 'r') as f:
             info = outInfo.GetInformationObject(0)
-            shape = np.shape(f[self.__Label])
+            shape = np.shape(f[self.__DatasetName])
             # print("keys:", list(f.keys()))
             # print(shape)
             ue = info.Get(vtk.vtkStreamingDemandDrivenPipeline.UPDATE_EXTENT())
@@ -68,15 +68,15 @@ class HDF5Reader(VTKPythonAlgorithmBase):
             # whereas h5py reads in C order. When writing we pretend that the
             # data was C order so we have to flip the extents/dimensions.
             if len(shape) == 3:
-                data = f[self.__Label][ue[4]:ue[5]+1, ue[2]:ue[3]+1, ue[0]:ue[1]+1]
+                data = f[self.__DatasetName][ue[4]:ue[5]+1, ue[2]:ue[3]+1, ue[0]:ue[1]+1]
             elif len(shape) == 4:
-                data = f[self.__Label][self.__4DIndex][
+                data = f[self.__DatasetName][self.__4DIndex][
                     ue[4]:ue[5] + 1, ue[2]:ue[3]+1, ue[0]:ue[1]+1]
             # print("attributes: ", f.attrs.items())
             output = dsa.WrapDataObject(vtk.vtkImageData.GetData(outInfo))
             output.SetExtent(ue)
-            output.PointData.append(data.ravel(), self.__Label)
-            output.PointData.SetActiveScalars(self.__Label)
+            output.PointData.append(data.ravel(), self.__DatasetName)
+            output.PointData.SetActiveScalars(self.__DatasetName)
             return 1
 
     def SetFileName(self, fname):
@@ -87,13 +87,13 @@ class HDF5Reader(VTKPythonAlgorithmBase):
     def GetFileName(self):
         return self.__FileName
 
-    def SetLabel(self, lname):
-        if lname != self.__Label:
+    def SetDatasetName(self, lname):
+        if lname != self.__DatasetName:
             self.Modified()
-            self.__Label = lname
+            self.__DatasetName = lname
 
-    def GetLabel(self):
-        return self.__Label
+    def GetDatasetName(self):
+        return self.__DatasetName
 
     def Set4DIndex(self, index):
         '''Sets which index to read, in the case of a 4D dataset'''
@@ -106,7 +106,7 @@ class HDF5Reader(VTKPythonAlgorithmBase):
             # Note that we flip the shape because VTK is Fortran order
             # whereas h5py reads in C order. When writing we pretend that the
             # data was C order so we have to flip the extents/dimensions.
-            return f[self.__Label].shape[::-1]
+            return f[self.__DatasetName].shape[::-1]
 
     def GetOrigin(self):
         print("Not yet implemented, set to (0,0,0) by default.")
@@ -114,9 +114,9 @@ class HDF5Reader(VTKPythonAlgorithmBase):
 
     def GetDataType(self):
         with h5py.File(self.__FileName, 'r') as f:
-            data_type = type(f[self.__Label][0][0][0])
+            data_type = type(f[self.__DatasetName][0][0][0])
             if isinstance(data_type, np.ndarray):
-                data_type = type(f[self.__Label][0][0][0])
+                data_type = type(f[self.__DatasetName][0][0][0])
             return data_type
 
     def RequestInformation(self, request, inInfo, outInfo):
