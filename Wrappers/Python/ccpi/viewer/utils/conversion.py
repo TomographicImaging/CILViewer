@@ -45,6 +45,7 @@ class Converter(object):
         'h': 'MET_SHORT',   # VTK_SHORT,           # int16
         'H': 'MET_USHORT',  # VTK_UNSIGNED_SHORT,  # uint16
         'i': 'MET_INT',     # VTK_INT,             # int32
+        'l': 'MET_INT',     # VTK_INT,             # int32
         'I': 'MET_UINT',    # VTK_UNSIGNED_INT,    # uint32
         'f': 'MET_FLOAT',   # VTK_FLOAT,           # float32
         'd': 'MET_DOUBLE',  # VTK_DOUBLE,          # float64
@@ -57,6 +58,7 @@ class Converter(object):
         'h': 2,   # VTK_SHORT,           # int16
         'H': 2,  # VTK_UNSIGNED_SHORT,  # uint16
         'i': 4,     # VTK_INT,             # int32
+        'l': 4,     # VTK_INT,             # int32
         'I': 4,    # VTK_UNSIGNED_INT,    # uint32
         'f': 4,   # VTK_FLOAT,           # float32
         'd': 8,  # VTK_DOUBLE,          # float64
@@ -769,8 +771,8 @@ class cilBaseResampleReader(VTKPythonAlgorithmBase):
             shape = list(readshape)[::-1]
 
         chunk_shape = shape.copy()
-        if self._GetSlicePerChunk() is not None:
-            slice_per_chunk = self._GetSlicePerChunk()
+        if self.GetSlicePerChunk() is not None:
+            slice_per_chunk = self.GetSlicePerChunk()
         else:
             slice_per_chunk = shape[2]
         chunk_shape[2] = slice_per_chunk
@@ -803,7 +805,7 @@ class cilBaseResampleReader(VTKPythonAlgorithmBase):
         image_file = self.GetFileName()
         chunk_file_name = self.__ChunkFileName
         file_header_length = self.GetFileHeaderLength()
-        slice_per_chunk = self._GetSlicePerChunk()
+        slice_per_chunk = self.GetSlicePerChunk()
 
         with open(image_file, "rb") as image_file_object:
             if start_slice < 0:
@@ -816,10 +818,10 @@ class cilBaseResampleReader(VTKPythonAlgorithmBase):
                 chunk = image_file_object.read(chunk_length)
                 chunk_file_object.write(chunk)
 
-    def _SetSlicePerChunk(self, value):
+    def SetSlicePerChunk(self, value):
         self.__SlicePerChunk = value
 
-    def _GetSlicePerChunk(self):
+    def GetSlicePerChunk(self):
         return self.__SlicePerChunk
 
     def GetTempDir(self):
@@ -845,10 +847,9 @@ class cilBaseResampleReader(VTKPythonAlgorithmBase):
 
         max_size = self.GetTargetSize()
 
-        #print("typecode", self.GetNumpyTypeCode())
         try:
             if total_size < max_size:  # in this case we don't need to resample
-                self._SetSlicePerChunk(shape[2])
+                self.SetSlicePerChunk(shape[2])
                 reader = self.CreateReader()
                 self.ReadChunk(0)
                 reader.Modified()
@@ -867,7 +868,7 @@ class cilBaseResampleReader(VTKPythonAlgorithmBase):
                     slice_per_chunk = 1
                     xy_axes_magnification = np.power(max_size/total_size, 1/2)
 
-                self._SetSlicePerChunk(slice_per_chunk)
+                self.SetSlicePerChunk(slice_per_chunk)
 
                 # print("Slice per chunk: ", slice_per_chunk)
 
@@ -1085,7 +1086,7 @@ class cilHDF5ImageResampleReader(cilBaseResampleReader):
         return cropped_reader
 
     def ReadChunk(self, start_slice):
-        slice_per_chunk = self._GetSlicePerChunk()
+        slice_per_chunk = self.GetSlicePerChunk()
         end_slice = start_slice + slice_per_chunk - 1
         if start_slice < 0:
             raise ValueError('{} ERROR: Start slice cannot be negative.'
