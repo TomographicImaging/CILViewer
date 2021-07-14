@@ -1,7 +1,7 @@
 # Changelog
 
-## v21.**
-
+## v***
+* fix bug with orientation axes when the input image is updated
 * Allow colormap to be changed in the 3D viewer to any colormap available in matplotlib
 
 ## v21.0.1
