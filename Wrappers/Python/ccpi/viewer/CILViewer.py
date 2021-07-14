@@ -211,12 +211,12 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
         elif ctrl and not (alt and shift):
             # CREATE ROI
             position = interactor.GetEventPosition()
-            print ("3D VIEWER MOUSE POSITION", position)
+            # print ("3D VIEWER MOUSE POSITION", position)
 
 
-        elif alt and not (shift and ctrl):
-            # DELETE ROI
-            print ("DELETE ROI")
+        # elif alt and not (shift and ctrl):
+        #     # DELETE ROI
+        #     print ("DELETE ROI")
 
         elif interactor.GetKeyCode() == "h":
             self.DisplayHelp()
@@ -573,7 +573,7 @@ class CILViewer():
         ia.Update()
         
         cmin, cmax = ia.GetAutoRange()
-        print ("viewer: cmin cmax", cmin, cmax)
+        # print ("viewer: cmin cmax", cmin, cmax)
         # cmin, cmax = (1000,2000)
         # probably the level could be the median of the image within
         # the percentiles 
