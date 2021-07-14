@@ -181,6 +181,7 @@ class Converter(object):
 
 # TODO:  Get rid of the below and make a tiff to vtk method and a tiff resample reader.
 
+
     @staticmethod
     def vtkTiffStack2numpy(filenames):
         '''Reads the TIFF stack with VTK. 
@@ -872,14 +873,12 @@ class cilBaseResampleReader(VTKPythonAlgorithmBase):
 
                 # print("Slice per chunk: ", slice_per_chunk)
 
-                # indices of the first and last slice per chunk
+                # indices of the first slice per chunk
                 # we will read in slice_per_chunk slices at a time
-                end_slice_in_chunks = [i for i in
-                                       range(slice_per_chunk, shape[2], slice_per_chunk)]
+                start_sliceno_in_chunks = [i for i in range(
+                    0, shape[2], slice_per_chunk)]
 
-                # append last slice
-                end_slice_in_chunks.append(shape[2])
-                num_chunks = len(end_slice_in_chunks)
+                num_chunks = len(start_sliceno_in_chunks)
 
                 z_axis_magnification = num_chunks / (shape[2])
 
@@ -890,12 +889,11 @@ class cilBaseResampleReader(VTKPythonAlgorithmBase):
                 resampler = vtk.vtkImageReslice()
 
                 element_spacing = self.GetElementSpacing()
-                #print("Element Spacing", element_spacing)
 
-                resampler.SetOutputSpacing(element_spacing[0] / xy_axes_magnification,
-                                           element_spacing[1] /
-                                           xy_axes_magnification,
-                                           element_spacing[2] / z_axis_magnification)
+                resampler.SetOutputSpacing(
+                    element_spacing[0]/xy_axes_magnification,
+                    element_spacing[1]/xy_axes_magnification,
+                    element_spacing[2]/z_axis_magnification)
                 # resampled data
                 resampled_image = outData
 
@@ -903,12 +901,10 @@ class cilBaseResampleReader(VTKPythonAlgorithmBase):
                                           0, target_image_shape[1]-1,
                                           0, target_image_shape[2]-1)
 
-                resampled_image.SetSpacing(element_spacing[0]/xy_axes_magnification,
-                                           element_spacing[1] /
-                                           xy_axes_magnification,
-                                           element_spacing[2]/z_axis_magnification)
-
-                #print("Z SPACING: ", element_spacing[2]/z_axis_magnification)
+                resampled_image.SetSpacing(
+                    element_spacing[0]/xy_axes_magnification,
+                    element_spacing[1]/xy_axes_magnification,
+                    element_spacing[2]/z_axis_magnification)
 
                 new_spacing = [element_spacing[0]/xy_axes_magnification,
                                element_spacing[1]/xy_axes_magnification,
@@ -926,13 +922,10 @@ class cilBaseResampleReader(VTKPythonAlgorithmBase):
 
                 resampler.SetInputData(reader.GetOutput())
 
-                # print("slice length calculated: ", slice_length)
                 # process each chunk
-                for i, el in enumerate(end_slice_in_chunks):
-                    end_slice = el
-                    start_slice = end_slice - slice_per_chunk
+                for i, start_sliceno in enumerate(start_sliceno_in_chunks):
 
-                    self.ReadChunk(start_slice)
+                    self.ReadChunk(start_sliceno)
 
                     reader.Modified()
                     reader.Update()
@@ -1082,7 +1075,7 @@ class cilHDF5ImageResampleReader(cilBaseResampleReader):
         cropped_reader.SetUpdateExtent(
             (0, dims[0]-1, 0, dims[1]-1, 0, dims[2]-1))
         self.__Reader = cropped_reader
-        
+
         return cropped_reader
 
     def ReadChunk(self, start_slice):

@@ -1,12 +1,11 @@
 import os
 import unittest
 
-import h5py
 import numpy as np
 import vtk
-from ccpi.viewer.utils.conversion import Converter, cilBaseResampleReader, cilNumpyResampleReader, cilMetaImageResampleReader
-from ccpi.viewer.utils.hdf5_io import (HDF5Reader, HDF5SubsetReader,
-                                       write_image_data_to_hdf5)
+from ccpi.viewer.utils.conversion import (Converter, cilBaseResampleReader,
+                                          cilMetaImageResampleReader,
+                                          cilNumpyResampleReader)
 
 
 def calculate_target_downsample_shape(max_size, total_size, shape, acq=False):
@@ -170,8 +169,7 @@ class TestResampleReaders(unittest.TestCase):
                 self.assertEqual(resulting_z_shape, og_z_shape)
 
     def tearDown(self):
-        files = [self.raw_filename_3D]  # ,
-        # self.hdf5_filename_4D]
+        files = [self.raw_filename_3D]
         for f in files:
             os.remove(f)
 
