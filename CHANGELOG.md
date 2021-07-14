@@ -2,6 +2,7 @@
 
 ## v***
 * fix bug with orientation axes when the input image is updated
+* Allow colormap to be changed in the 3D viewer to any colormap available in matplotlib
 
 ## v21.0.1
 * change default orientation of axes
@@ -20,4 +21,4 @@
 
  * Make use of original image origin and spacing when downsampling and cropping images
 
-  * Change default raw datatype to be unit8
+ * Change default raw datatype to be unit8

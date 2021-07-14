@@ -385,6 +385,7 @@ class CILViewer():
         volume.SetMapper(volumeMapper)
         volume.SetProperty(volumeProperty)
         self.volume = volume
+        self.volume_colormap_name = 'viridis'
         self.volume_render_initialised = False
         
         # axis orientation widget
@@ -580,14 +581,14 @@ class CILViewer():
         # accomodates all values between the level an the percentiles
         #window = 2*max(abs(median-cmin),abs(median-cmax))
         window = cmax - cmin
-        viridis = colormaps.CILColorMaps.get_color_transfer_function('viridis', (cmin,cmax))
+        colors = colormaps.CILColorMaps.get_color_transfer_function(self.volume_colormap_name, (cmin,cmax))
 
         x = numpy.linspace(ia.GetMinimum(), ia.GetMaximum(), num=255)
         scaling = 0.1
         opacity = colormaps.CILColorMaps.get_opacity_transfer_function(x, 
           colormaps.relu, cmin, cmax, scaling)
 
-        self.volume_property.SetColor(viridis)
+        self.volume_property.SetColor(colors)
         self.volume_property.SetScalarOpacity(opacity)
         self.volume_property.ShadeOn()
         self.volume_property.SetInterpolationTypeToLinear()
@@ -676,19 +677,26 @@ class CILViewer():
     def updateVolumePipeline(self):
         if self.volume_render_initialised and self.volume.GetVisibility():
             cmin , cmax = self.volume_colormap_limits
-            viridis = colormaps.CILColorMaps.get_color_transfer_function('viridis', (cmin,cmax))
+            colors = colormaps.CILColorMaps.get_color_transfer_function(self.volume_colormap_name, (cmin,cmax))
 
             x = numpy.linspace(self.ia.GetMinimum(), self.ia.GetMaximum(), num=255)
             scaling = 0.1
             opacity = colormaps.CILColorMaps.get_opacity_transfer_function(x, 
             colormaps.relu, cmin, cmax, scaling)
-            self.volume_property.SetColor(viridis)
+            self.volume_property.SetColor(colors)
             self.volume_property.SetScalarOpacity(opacity)
         
 
     def setVolumeColorLevelWindow(self, cmin, cmax):
         self.volume_colormap_limits = (cmin, cmax)
         self.updatePipeline()
+
+    def setVolumeColorName(self, name):
+        self.volume_colormap_name = name
+        self.updatePipeline()
+
+    def getVolumeColorName(self):
+        return self.volume_colormap_name
 
     def adjustCamera(self, resetcamera= False):
 
