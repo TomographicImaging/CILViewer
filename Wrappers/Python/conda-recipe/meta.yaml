@@ -18,7 +18,6 @@ requirements:
     - vtk ==8.1.2
     - pyside2
     - eqt
-    - matplotlib
 
 about:
   home: http://www.ccpi.ac.uk
