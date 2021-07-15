@@ -614,6 +614,7 @@ class cilBaseResampleReader(VTKPythonAlgorithmBase):
         self.__IsAcquisitionData = False
         self.__SlicePerChunk = None
         self.__TempDir = None
+        self.__ChunkReader = None
 
     def SetFileName(self, value):
         if not os.path.exists(value):
@@ -701,9 +702,6 @@ class cilBaseResampleReader(VTKPythonAlgorithmBase):
             raise ValueError("Unexpected Type:  {}".format(value))
         self.__OutputVTKType = value
 
-    def GetNumpyTypeCode(self, value):
-        return self.__NumpyTypeCode
-
     def SetNumpyTypeCode(self, value):
         if value not in ['b', 'B', 'h', 'H', 'i', 'I', 'f', 'd', 'F', 'D']:
             raise ValueError("Unexpected Type:  {}".format(value))
@@ -753,9 +751,9 @@ class cilBaseResampleReader(VTKPythonAlgorithmBase):
     def GetIsAcquisitionData(self):
         return self.__IsAcquisitionData
 
-    def CreateReader(self):
+    def _GetInternalChunkReader(self):
         tmpdir = tempfile.mkdtemp()
-        self.SetTempDir(tmpdir)
+        self._SetTempDir(tmpdir)
         header_filename = os.path.join(tmpdir, "header.mhd")
         reader = vtk.vtkMetaImageReader()
         reader.SetFileName(header_filename)
@@ -772,8 +770,8 @@ class cilBaseResampleReader(VTKPythonAlgorithmBase):
             shape = list(readshape)[::-1]
 
         chunk_shape = shape.copy()
-        if self.GetSlicePerChunk() is not None:
-            slice_per_chunk = self.GetSlicePerChunk()
+        if self._GetSlicePerChunk() is not None:
+            slice_per_chunk = self._GetSlicePerChunk()
         else:
             slice_per_chunk = shape[2]
         chunk_shape[2] = slice_per_chunk
@@ -788,9 +786,10 @@ class cilBaseResampleReader(VTKPythonAlgorithmBase):
             spacing=tuple(self.GetElementSpacing()),
             origin=self.GetOrigin()
         )
+        self.__ChunkReader = reader
         return reader
 
-    def ReadChunk(self, start_slice):
+    def UpdateChunkToRead(self, start_slice):
 
         # slice size in bytes
         nbytes = self.GetBytesPerElement()
@@ -806,7 +805,7 @@ class cilBaseResampleReader(VTKPythonAlgorithmBase):
         image_file = self.GetFileName()
         chunk_file_name = self.__ChunkFileName
         file_header_length = self.GetFileHeaderLength()
-        slice_per_chunk = self.GetSlicePerChunk()
+        slice_per_chunk = self._GetSlicePerChunk()
 
         with open(image_file, "rb") as image_file_object:
             if start_slice < 0:
@@ -819,16 +818,16 @@ class cilBaseResampleReader(VTKPythonAlgorithmBase):
                 chunk = image_file_object.read(chunk_length)
                 chunk_file_object.write(chunk)
 
-    def SetSlicePerChunk(self, value):
+    def _SetSlicePerChunk(self, value):
         self.__SlicePerChunk = value
 
-    def GetSlicePerChunk(self):
+    def _GetSlicePerChunk(self):
         return self.__SlicePerChunk
 
-    def GetTempDir(self):
+    def _GetTempDir(self):
         return self.__TempDir
 
-    def SetTempDir(self, folder):
+    def _SetTempDir(self, folder):
         self.__TempDir = folder
 
     def RequestData(self, request, inInfo, outInfo):
@@ -850,9 +849,9 @@ class cilBaseResampleReader(VTKPythonAlgorithmBase):
 
         try:
             if total_size < max_size:  # in this case we don't need to resample
-                self.SetSlicePerChunk(shape[2])
-                reader = self.CreateReader()
-                self.ReadChunk(0)
+                self._SetSlicePerChunk(shape[2])
+                reader = self._GetInternalChunkReader()
+                self.UpdateChunkToRead(0)
                 reader.Modified()
                 reader.Update()
                 # print(reader.GetOutput().GetScalarComponentAsDouble(0, 0, 0, 0))
@@ -869,7 +868,7 @@ class cilBaseResampleReader(VTKPythonAlgorithmBase):
                     slice_per_chunk = 1
                     xy_axes_magnification = np.power(max_size/total_size, 1/2)
 
-                self.SetSlicePerChunk(slice_per_chunk)
+                self._SetSlicePerChunk(slice_per_chunk)
 
                 # print("Slice per chunk: ", slice_per_chunk)
 
@@ -918,14 +917,14 @@ class cilBaseResampleReader(VTKPythonAlgorithmBase):
 
                 resampled_image.AllocateScalars(self.GetOutputVTKType(), 1)
 
-                reader = self.CreateReader()
+                reader = self._GetInternalChunkReader()
 
                 resampler.SetInputData(reader.GetOutput())
 
                 # process each chunk
                 for i, start_sliceno in enumerate(start_sliceno_in_chunks):
 
-                    self.ReadChunk(start_sliceno)
+                    self.UpdateChunkToRead(start_sliceno)
 
                     reader.Modified()
                     reader.Update()
@@ -948,7 +947,7 @@ class cilBaseResampleReader(VTKPythonAlgorithmBase):
         except Exception as e:
             print(e)
         finally:
-            shutil.rmtree(self.GetTempDir())
+            shutil.rmtree(self._GetTempDir())
 
         return 1
 
@@ -1061,7 +1060,7 @@ class cilHDF5ImageResampleReader(cilBaseResampleReader):
         self.SetOutputVTKType(
             Converter.numpy_dtype_char_to_vtkType[typecode])
 
-    def CreateReader(self):
+    def _GetInternalChunkReader(self):
         reader = HDF5Reader()
         reader.SetFileName(self.GetFileName())
         if self.GetDatasetName() is not None:
@@ -1074,18 +1073,17 @@ class cilHDF5ImageResampleReader(cilBaseResampleReader):
         # Set default extent to full extent:
         cropped_reader.SetUpdateExtent(
             (0, dims[0]-1, 0, dims[1]-1, 0, dims[2]-1))
-        self.__Reader = cropped_reader
-
+        self.__ChunkReader = cropped_reader
         return cropped_reader
 
-    def ReadChunk(self, start_slice):
-        slice_per_chunk = self.GetSlicePerChunk()
+    def UpdateChunkToRead(self, start_slice):
+        slice_per_chunk = self._GetSlicePerChunk()
         end_slice = start_slice + slice_per_chunk - 1
         if start_slice < 0:
             raise ValueError('{} ERROR: Start slice cannot be negative.'
                              .format(self.__class__.__name__))
         dims = self.GetStoredArrayShape()
-        self.__Reader.SetUpdateExtent(
+        self.__ChunkReader.SetUpdateExtent(
             (0, dims[0]-1, 0, dims[1]-1, start_slice, end_slice))
 
 
