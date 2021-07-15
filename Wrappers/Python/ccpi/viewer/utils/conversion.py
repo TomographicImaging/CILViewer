@@ -30,7 +30,6 @@ import tempfile
 import numpy as np
 from ccpi.viewer.utils.hdf5_io import HDF5Reader, HDF5SubsetReader
 
-import pysnooper
 import shutil
 
 
@@ -1010,32 +1009,28 @@ class cilNumpyResampleReader(cilBaseResampleReader):
         return self.__FileName
 
 
-class cilHDF5ImageResampleReader(cilBaseResampleReader):
+class cilHDF5ResampleReader(cilBaseResampleReader):
 
     def __init__(self):
         VTKPythonAlgorithmBase.__init__(self, nInputPorts=0, nOutputPorts=1)
-        super(cilHDF5ImageResampleReader, self).__init__()
+        super(cilHDF5ResampleReader, self).__init__()
 
         # TODO: work out why not set by baseclass constructor
         self.__FileName = 1
         self.__DatasetName = None
-        print("setting up")
 
     def SetDatasetName(self, value):
         print(value, self.__DatasetName)
         if value != self.__DatasetName:
             self.__DatasetName = value
-            print("set dataset name")
             if self.GetFileName() != 1:
                 self.ReadDataSetInfo()
 
     def SetFileName(self, value):
         if value != self.__FileName:
             self.__FileName = value
-            print("set filename")
             if self.GetDatasetName() is not None:
                 self.ReadDataSetInfo()
-        print("finished set")
 
     def GetFileName(self):
         return self.__FileName
@@ -1045,8 +1040,6 @@ class cilHDF5ImageResampleReader(cilBaseResampleReader):
 
     def ReadDataSetInfo(self):
         reader = HDF5Reader()
-        print("file name:")
-        print(self.GetFileName())
         reader.SetFileName(self.GetFileName())
         if self.GetDatasetName() is not None:
             reader.SetDatasetName(self.GetDatasetName())

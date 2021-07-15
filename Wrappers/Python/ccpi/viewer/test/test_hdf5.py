@@ -4,7 +4,7 @@ import unittest
 import h5py
 import numpy as np
 import vtk
-from ccpi.viewer.utils.conversion import Converter, cilHDF5ImageResampleReader
+from ccpi.viewer.utils.conversion import Converter, cilHDF5ResampleReader
 from ccpi.viewer.utils.hdf5_io import (HDF5Reader, HDF5SubsetReader,
                                        write_image_data_to_hdf5)
 
@@ -127,7 +127,7 @@ class TestHDF5IO(unittest.TestCase):
         # Not a great test, but at least checks the resample reader runs
         # without crashing
         # TODO: improve this test
-        readerhdf5 = cilHDF5ImageResampleReader()
+        readerhdf5 = cilHDF5ResampleReader()
         readerhdf5.SetFileName(self.hdf5_filename_3D)
         readerhdf5.SetDatasetName("ImageData")
         target_size = 100
@@ -158,7 +158,7 @@ class TestHDF5IO(unittest.TestCase):
 
         # Now test if we get the correct z extent if we set that we
         # have acquisition data
-        readerhdf5 = cilHDF5ImageResampleReader()
+        readerhdf5 = cilHDF5ResampleReader()
         readerhdf5.SetDatasetName("ImageData")
         readerhdf5.SetFileName(self.hdf5_filename_3D)
         target_size = 100
