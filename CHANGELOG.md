@@ -1,6 +1,7 @@
 # Changelog
 
-## v***
+## v21.1.0
+* Renames kwarg 'tempfolder' to 'output_dir' and uses relative paths in createImageData
 * fix bug with orientation axes when the input image is updated
 * Allow colormap to be changed in the 3D viewer to any colormap available in matplotlib
 
