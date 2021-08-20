@@ -17,7 +17,7 @@ from distutils.core import setup
 import os
 import sys
 
-cil_version = "21.0.0"
+cil_version = "21.1.0"
 if os.environ.get('CONDA_BUILD', None) is not None:
     requires = []
 else:
