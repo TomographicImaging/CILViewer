@@ -46,6 +46,7 @@ class Converter(object):
         'i': 'MET_INT',     # VTK_INT,             # int32
         'l': 'MET_INT',     # VTK_INT,             # int32
         'I': 'MET_UINT',    # VTK_UNSIGNED_INT,    # uint32
+        'L': 'MET_UINT',    # VTK_UNSIGNED_INT,    # uint32
         'f': 'MET_FLOAT',   # VTK_FLOAT,           # float32
         'd': 'MET_DOUBLE',  # VTK_DOUBLE,          # float64
         'F': 'MET_FLOAT',   # VTK_FLOAT,           # float32
@@ -59,6 +60,7 @@ class Converter(object):
         'i': 4,     # VTK_INT,             # int32
         'l': 4,     # VTK_INT,             # int32
         'I': 4,    # VTK_UNSIGNED_INT,    # uint32
+        'L': 4,    # VTK_UNSIGNED_INT,    # uint32
         'f': 4,   # VTK_FLOAT,           # float32
         'd': 8,  # VTK_DOUBLE,          # float64
         'F': 4,   # VTK_FLOAT,           # float32
@@ -71,6 +73,7 @@ class Converter(object):
         'H': vtk.VTK_UNSIGNED_SHORT,  # uint16
         'i': vtk.VTK_INT,             # int32
         'I': vtk.VTK_UNSIGNED_INT,    # uint32
+        'L': vtk.VTK_UNSIGNED_INT,    # uint32
         'f': vtk.VTK_FLOAT,           # float32
         'd': vtk.VTK_DOUBLE,          # float64
         'F': vtk.VTK_FLOAT,           # float32
