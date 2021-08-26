@@ -637,8 +637,6 @@ class cilBaseResampleReader(VTKPythonAlgorithmBase):
     def SetStoredArrayShape(self, value):
         if not isinstance (value , tuple):
             raise ValueError('Expected tuple, got {}'.format(type(value)))
-        if len(value) != 3:
-            raise ValueError('Expected tuple of length 3, got {}'.format(len(value)))
         self.__StoredArrayShape = value
     def SetFileHeaderLength(self, value):
         if not isinstance (value , int):
@@ -964,11 +962,11 @@ class cilMetaImageResampleReader(cilBaseResampleReader):
     
     def ReadMetaImageHeader(self):
         
-        header_length = 0
-        with open(self.__FileName, 'rb') as f:
+       header_length = 0
+       with open(self.__FileName, 'rb') as f:
             for line in f:
                 header_length += len(line)
-                line = str(line, encoding = 'utf-8').strip()
+                line = str(line, encoding='utf-8').strip()
                 if 'BinaryDataByteOrderMSB' in line:
                     if str(line).split('= ')[-1] == "True":
                         self.SetBigEndian(True)
@@ -976,22 +974,22 @@ class cilMetaImageResampleReader(cilBaseResampleReader):
                         self.SetBigEndian(False)
                 elif 'Offset' in line:
                     origin = line.split('= ')[-1].split(' ')[:3]
-                    origin[2].strip()
-                    for i in range(0,len(origin)):
+                    origin[-1].strip()
+                    for i in range(0, len(origin)):
                         origin[i] = float(origin[i])
                     self.SetOrigin(tuple(origin))
                     # print(self.GetBigEndian())
                 elif 'ElementSpacing' in line:
                     spacing = line.split('= ')[-1].split(' ')[:3]
-                    spacing[2].strip()
-                    for i in range(0,len(spacing)):
+                    spacing[-1].strip()
+                    for i in range(0, len(spacing)):
                         spacing[i] = float(spacing[i])
                     self.SetElementSpacing(spacing)
                     # print("Spacing", spacing)
                 elif 'DimSize' in line:
                     shape = line.split('= ')[-1].split(' ')[:3]
-                    shape[2].strip()
-                    for i in range(0,len(shape)):
+                    shape[-1].strip()
+                    for i in range(0, len(shape)):
                         shape[i] = int(shape[i])
                     self.SetStoredArrayShape(tuple(shape))
                     # print(self.GetStoredArrayShape())
@@ -1010,9 +1008,9 @@ class cilMetaImageResampleReader(cilBaseResampleReader):
                     header_size = line.split('= ')[-1]
                     self.SetFileHeaderLength(int(header_size))
 
-                elif 'ElementDataFile' in line: #signifies end of header
+                elif 'ElementDataFile' in line:  # signifies end of header
                     element_data_file = line.split('= ')[-1]
-                    if element_data_file !='LOCAL': #then we have an mhd file with data in another file
+                    if element_data_file != 'LOCAL':  # then we have an mhd file with data in another file
                         file_path = os.path.dirname(self.__FileName)
                         element_data_file = os.path.join(file_path, element_data_file)
                         # print("Filename: ", element_data_file)
