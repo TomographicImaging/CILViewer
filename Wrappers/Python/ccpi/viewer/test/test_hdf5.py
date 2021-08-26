@@ -4,7 +4,7 @@ import unittest
 import h5py
 import numpy as np
 import vtk
-from ccpi.viewer.utils.conversion import Converter, cilHDF5ImageResampleReader
+from ccpi.viewer.utils.conversion import Converter, cilHDF5ResampleReader
 from ccpi.viewer.utils.hdf5_io import (HDF5Reader, HDF5SubsetReader,
                                        write_image_data_to_hdf5)
 
@@ -127,8 +127,9 @@ class TestHDF5IO(unittest.TestCase):
         # Not a great test, but at least checks the resample reader runs
         # without crashing
         # TODO: improve this test
-        readerhdf5 = cilHDF5ImageResampleReader()
+        readerhdf5 = cilHDF5ResampleReader()
         readerhdf5.SetFileName(self.hdf5_filename_3D)
+        readerhdf5.SetDatasetName("ImageData")
         target_size = 100
         readerhdf5.SetTargetSize(target_size)
         readerhdf5.Update()
@@ -145,7 +146,6 @@ class TestHDF5IO(unittest.TestCase):
         # Now test if we get the full image extent if our
         # target size is larger than the size of the image:
         target_size = og_size*2
-        readerhdf5.SetFileName(self.hdf5_filename_3D)
         readerhdf5.SetTargetSize(target_size)
         readerhdf5.Update()
         image = readerhdf5.GetOutput()
@@ -153,10 +153,13 @@ class TestHDF5IO(unittest.TestCase):
         expected_shape = og_shape
         resulting_shape = (extent[1]+1, (extent[3]+1), (extent[5]+1))
         self.assertEqual(resulting_shape, expected_shape)
+        resulting_array = Converter.vtk2numpy(image)
+        np.testing.assert_array_equal(self.input_3D_array, resulting_array)
 
         # Now test if we get the correct z extent if we set that we
         # have acquisition data
-        readerhdf5 = cilHDF5ImageResampleReader()
+        readerhdf5 = cilHDF5ResampleReader()
+        readerhdf5.SetDatasetName("ImageData")
         readerhdf5.SetFileName(self.hdf5_filename_3D)
         target_size = 100
         readerhdf5.SetTargetSize(target_size)
@@ -169,8 +172,6 @@ class TestHDF5IO(unittest.TestCase):
         expected_size = shape_not_acquisition[0] * \
             shape_not_acquisition[1]*shape_not_acquisition[2]
         resulting_shape = (extent[1]+1, (extent[3]+1), (extent[5]+1))
-        print(resulting_shape)
-        print(np.shape(self.input_3D_array))
         resulting_size = resulting_shape[0] * \
             resulting_shape[1]*resulting_shape[2]
         # angle (z direction) is first index in numpy array, and in cil
