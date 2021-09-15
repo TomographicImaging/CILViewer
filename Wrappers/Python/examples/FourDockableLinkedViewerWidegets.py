@@ -1,7 +1,7 @@
 import sys
 import vtk
 import os
-from PyQt5 import QtCore, QtWidgets
+from PySide2 import QtCore, QtWidgets
 from vtk.qt.QVTKRenderWindowInteractor import QVTKRenderWindowInteractor
 from ccpi.viewer.QCILRenderWindowInteractor import QCILRenderWindowInteractor
 from ccpi.viewer import viewer2D, viewer3D
@@ -96,6 +96,6 @@ if __name__ == "__main__":
     data_dir = os.path.abspath('C:/Users/ofn77899/Documents/Projects/PETMR/Publications/2020RS_MCIR/cluster_test/recons')
     
     reader.SetFileName(os.path.join(data_dir, 'ungated_Reg-FGP_TV-alpha5.0_nGates1_nSubsets1_pdhg_wPrecond_gamma1.0_wAC_wNorm_wRands-riters100_noMotion_iters_39.nii'))
-    window = FourLinkedViewersDockableWidget(reader = reader)
+    window = FourLinkedViewersDockableWidget(reader = None)
     
     sys.exit(app.exec_())
