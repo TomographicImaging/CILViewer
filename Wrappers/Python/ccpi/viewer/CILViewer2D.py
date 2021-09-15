@@ -1140,6 +1140,10 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
 
 class CILViewer2D():
     '''Simple Interactive Viewer based on VTK classes'''
+    # visualisation modes
+    IMAGE_WITH_OVERLAY = 0
+    RECTILINEAR_WIPE = 1
+    # BLUE_AND_RED = 2
 
     def __init__(self, dimx=600,dimy=600, ren=None, renWin=None,iren=None, debug=True):
         '''creates the rendering pipeline'''
@@ -1364,6 +1368,8 @@ class CILViewer2D():
         ori.InteractiveOff()
         self.orientation_marker = ori
 
+        self.setVisualisationToImageWithOverlay()
+
 
     def log(self, msg):
         if self.debug:
@@ -1437,6 +1443,10 @@ class CILViewer2D():
         return self.sliceActorNo
 
     def updatePipeline(self, resetcamera = False):
+        if self.method == CILViewer2D.IMAGE_WITH_OVERLAY:
+            self.updateImageWithOverlayPipeline(resetcamera=resetcamera)
+            
+    def updateImageWithOverlayPipeline(self, resetcamera=False):
         extent = [ i for i in self.img3D.GetExtent()]
         extent[self.sliceOrientation * 2] = self.GetActiveSlice()
         extent[self.sliceOrientation * 2 + 1] = self.GetActiveSlice()
@@ -1489,8 +1499,14 @@ class CILViewer2D():
 
         self.renWin.Render()
 
+    def setVisualisationToImageWithOverlay(self):
+        self.method = CILViewer2D.IMAGE_WITH_OVERLAY
 
     def installPipeline(self):
+        if self.method == CILViewer2D.IMAGE_WITH_OVERLAY:
+            self.installImageWithOverlayPipeline()
+
+    def installImageWithOverlayPipeline(self):
         '''Slices a 3D volume and then creates an actor to be rendered'''
         self.log("installPipeline")
         self.ren.AddViewProp(self.cornerAnnotation)
@@ -1574,6 +1590,10 @@ class CILViewer2D():
         #self.iren.Start()
 
     def installPipeline2(self):
+        if self.method == CILViewer2D.IMAGE_WITH_OVERLAY:
+            self.installImageWithOverlayPipeline()
+
+    def installImageWithOverlayPipeline2(self):
         '''Slices a 3D volume and then creates an actor to be rendered'''
         self.log("installPipeline2")
         if self.image2 is not None:
