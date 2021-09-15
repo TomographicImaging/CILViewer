@@ -1,6 +1,6 @@
 import sys
 import vtk
-from PyQt5 import QtCore, QtWidgets
+from PySide2 import QtCore, QtWidgets
 from vtk.qt.QVTKRenderWindowInteractor import QVTKRenderWindowInteractor
 from ccpi.viewer.QCILRenderWindowInteractor import QCILRenderWindowInteractor
 from ccpi.viewer import viewer2D, viewer3D
@@ -73,6 +73,6 @@ if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)
  
     #window = MainWindow3()
-    window = TwoViewers()
+    window = TwoLinkedViewersCenterWidget()
  
     sys.exit(app.exec_())
