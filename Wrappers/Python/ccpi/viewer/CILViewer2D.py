@@ -1591,7 +1591,7 @@ class CILViewer2D():
 
     def installPipeline2(self):
         if self.method == CILViewer2D.IMAGE_WITH_OVERLAY:
-            self.installImageWithOverlayPipeline()
+            self.installImageWithOverlayPipeline2()
 
     def installImageWithOverlayPipeline2(self):
         '''Slices a 3D volume and then creates an actor to be rendered'''
