@@ -553,8 +553,8 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
             
             orientation = self._viewer.sliceOrientation
             
-            extent[orientation * 2] = self._viewer.sliceno
-            extent[orientation * 2 + 1] = self._viewer.sliceno
+            extent[orientation * 2] = self._viewer.GetActiveSlice()
+            extent[orientation * 2 + 1] = self._viewer.GetActiveSlice()
 
             if extent[0] < whole_extent[0]:
                 extent[0] = whole_extent[0]
@@ -613,15 +613,27 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
             # ImageWithOverlay
             self._viewer.setVisualisationToImageWithOverlay()
         elif interactor.GetKeyCode() == '1':
-            # RectilinearWipe
-            self._viewer.setVisualisationToToggleImage1Image2()
+            if self._viewer.method != CILViewer2D.TOGGLE_IMAGE1_IMAGE2:
+                self._viewer.setVisualisationToToggleImage1Image2()
+            print("keycode 1")
+            # self._viewer.removeActor(OVERLAY_ACTOR)
+            # self._viewer.AddActor(self._viewer.sliceActor, SLICE_ACTOR)
+            for k,v in self._viewer.actors.items():
+                print (v.GetVisibility(),k)
             self._viewer.sliceActor.SetVisibility(True)
             self._viewer.sliceActor2.SetVisibility(False)
+            self.Render()
         elif interactor.GetKeyCode() == '2':
-            # 
-            self._viewer.setVisualisationToToggleImage1Image2()
+            if self._viewer.method != CILViewer2D.TOGGLE_IMAGE1_IMAGE2:
+                self._viewer.setVisualisationToToggleImage1Image2()
+            print("keycode 2")
+            for k,v in self._viewer.actors.items():
+                print (v.GetVisibility(),k)
+            # self._viewer.removeActor(SLICE_ACTOR)
+            # self._viewer.AddActor(self._viewer.sliceActor2, OVERLAY_ACTOR)
             self._viewer.sliceActor.SetVisibility(False)
             self._viewer.sliceActor2.SetVisibility(True)
+            self.Render()
         else :
             self.log("Unhandled event %s" % (interactor.GetKeyCode()))
             
