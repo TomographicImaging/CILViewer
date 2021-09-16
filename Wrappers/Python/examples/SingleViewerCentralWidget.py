@@ -15,8 +15,11 @@ class SingleViewerCenterWidget(QtWidgets.QMainWindow):
         reader = vtk.vtkMetaImageReader()
         reader.SetFileName('head.mha')
         reader.Update()
-        
-        self.frame.viewer.setInputData(reader.GetOutput())
+        reader2 = vtk.vtkMetaImageReader()
+        reader2.SetFileName('head_root.mha')
+        reader2.Update()
+        self.frame.viewer.setInputData(reader2.GetOutput())
+        self.frame.viewer.setInputData2(reader.GetOutput())
         
         self.setCentralWidget(self.frame)
     
@@ -28,6 +31,6 @@ if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)
     # can change the behaviour by setting which viewer you want
     # between viewer2D and viewer3D
-    window = SingleViewerCenterWidget(viewer=viewer3D)
+    window = SingleViewerCenterWidget(viewer=viewer2D)
  
     sys.exit(app.exec_())

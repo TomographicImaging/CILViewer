@@ -30,16 +30,17 @@ SLICE_ORIENTATION_XZ = 1 # Y
 SLICE_ORIENTATION_YZ = 0 # X
 
 CONTROL_KEY = 8
-SHIFT_KEY = 4
-ALT_KEY = -128
+SHIFT_KEY   = 4
+ALT_KEY     = -128
 
-SLICE_ACTOR = 'slice_actor'
-OVERLAY_ACTOR = 'overlay_actor'
-HISTOGRAM_ACTOR = 'histogram_actor'
-HELP_ACTOR = 'help_actor'
-CURSOR_ACTOR = 'cursor_actor'
-CROSSHAIR_ACTOR = 'crosshair_actor'
-LINEPLOT_ACTOR = 'lineplot_actor'
+SLICE_ACTOR      = 'slice_actor'
+OVERLAY_ACTOR    = 'overlay_actor'
+HISTOGRAM_ACTOR  = 'histogram_actor'
+HELP_ACTOR       = 'help_actor'
+CURSOR_ACTOR     = 'cursor_actor'
+CROSSHAIR_ACTOR  = 'crosshair_actor'
+LINEPLOT_ACTOR   = 'lineplot_actor'
+WIPE_ACTOR       = 'wipe_actor'
 
 class ViewerEventManager(object):
 
@@ -608,6 +609,19 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
             # toggle interpolation of slice actor
             is_interpolated = self._viewer.sliceActor.GetInterpolate()
             self._viewer.sliceActor.SetInterpolate(not is_interpolated)
+        elif interactor.GetKeyCode() == '0':
+            # ImageWithOverlay
+            self._viewer.setVisualisationToImageWithOverlay()
+        elif interactor.GetKeyCode() == '1':
+            # RectilinearWipe
+            self._viewer.setVisualisationToToggleImage1Image2()
+            self._viewer.sliceActor.SetVisibility(True)
+            self._viewer.sliceActor2.SetVisibility(False)
+        elif interactor.GetKeyCode() == '2':
+            # 
+            self._viewer.setVisualisationToToggleImage1Image2()
+            self._viewer.sliceActor.SetVisibility(False)
+            self._viewer.sliceActor2.SetVisibility(True)
         else :
             self.log("Unhandled event %s" % (interactor.GetKeyCode()))
             
@@ -682,8 +696,9 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
 
         if alt and not (ctrl and shift):
             self.SetEventActive("WINDOW_LEVEL_EVENT")
-            self.log("Event %s is WINDOW_LEVEL_EVENT" % (event))
-            self.HandleWindowLevel(interactor, event)
+            if self._viewer.method == CILViewer2D.IMAGE_WITH_OVERLAY:
+                self.log("Event %s is WINDOW_LEVEL_EVENT" % (event))
+                self.HandleWindowLevel(interactor, event)
         elif shift and not (ctrl and alt):
             self.SetEventActive("ZOOM_EVENT")
             self.SetInitialCameraPosition( self.GetActiveCamera().GetPosition())
@@ -696,8 +711,9 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
     def OnRightButtonReleaseEvent(self, interactor, event):
         self.log (event)
         if self.GetViewerEvent("WINDOW_LEVEL_EVENT"):
-            self.SetInitialLevel( self.GetWindowLevel().GetLevel() )
-            self.SetInitialWindow ( self.GetWindowLevel().GetWindow() )
+            if self._viewer.method == CILViewer2D.IMAGE_WITH_OVERLAY:
+                self.SetInitialLevel( self.GetWindowLevel().GetLevel() )
+                self.SetInitialWindow ( self.GetWindowLevel().GetWindow() )
         elif self.GetViewerEvent("ZOOM_EVENT") or self.GetViewerEvent("PAN_EVENT"):
             self.SetInitialCameraPosition( () )
 
@@ -1143,7 +1159,7 @@ class CILViewer2D():
     # visualisation modes
     IMAGE_WITH_OVERLAY = 0
     RECTILINEAR_WIPE = 1
-    # BLUE_AND_RED = 2
+    TOGGLE_IMAGE1_IMAGE2 = 2
 
     def __init__(self, dimx=600,dimy=600, ren=None, renWin=None,iren=None, debug=True):
         '''creates the rendering pipeline'''
@@ -1445,8 +1461,21 @@ class CILViewer2D():
     def updatePipeline(self, resetcamera = False):
         if self.method == CILViewer2D.IMAGE_WITH_OVERLAY:
             self.updateImageWithOverlayPipeline(resetcamera=resetcamera)
-            
-    def updateImageWithOverlayPipeline(self, resetcamera=False):
+        elif self.method == CILViewer2D.RECTILINEAR_WIPE:
+            self.updateRectilinearWipePipeline(resetcamera=resetcamera)
+        elif self.method == CILViewer2D.TOGGLE_IMAGE1_IMAGE2:
+            self.updateToggleImage1Image2Pipeline(resetcamera=resetcamera)
+        
+        self.AdjustCamera(resetcamera)
+        self.renWin.Render()
+    
+    def updateRectilinearWipePipeline(self, resetcamera=False):
+        pass
+    def updateToggleImage1Image2Pipeline(self, resetcamera=False):
+        pass
+
+    def updateMainVOI(self):
+        # get the current slice
         extent = [ i for i in self.img3D.GetExtent()]
         extent[self.sliceOrientation * 2] = self.GetActiveSlice()
         extent[self.sliceOrientation * 2 + 1] = self.GetActiveSlice()
@@ -1456,6 +1485,10 @@ class CILViewer2D():
         self.log ("extent {0}".format(extent))
         self.voi.Update()
         self.log("VOI dimensions {0}".format(self.voi.GetOutput().GetDimensions()))
+        return extent
+
+    def updateImageWithOverlayPipeline(self, resetcamera=False):
+        extent = self.updateMainVOI()
         self.ia.Update()
         self.wl.Update()
         self.sliceActor.SetDisplayExtent(extent[0], extent[1],
@@ -1490,21 +1523,75 @@ class CILViewer2D():
                          
     # this->input->GetPoint(0)[this->SliceOrientation] + (this->Slice * this->input->GetSpacing()[this->SliceOrientation]));
             
-                self.imageTracer.SetViewProp(self.sliceActor);
+                self.imageTracer.SetViewProp(self.sliceActor)
             else:
                 print ("self.img3D None")
         except Exception as ge:
             print (ge)
-        self.AdjustCamera(resetcamera)
+        
 
-        self.renWin.Render()
+    def setVisualisationPipelineMethodTo(self, method):
+        if self.img3D is not None:
+            self.uninstallPipeline()
+        if self.image2 is not None:
+            self.uninstallPipeline2()
+        self.method = method
+        if self.img3D is not None:
+            self.installPipeline()
+        if self.image2 is not None:
+            self.installPipeline2()
 
     def setVisualisationToImageWithOverlay(self):
-        self.method = CILViewer2D.IMAGE_WITH_OVERLAY
+        self.setVisualisationPipelineMethodTo(CILViewer2D.IMAGE_WITH_OVERLAY)
 
+    def setVisualisationToRectilinearWipe(self):
+        self.setVisualisationPipelineMethodTo(CILViewer2D.RECTILINEAR_WIPE)
+            
+    def setVisualisationToToggleImage1Image2(self):
+        self.setVisualisationPipelineMethodTo(CILViewer2D.TOGGLE_IMAGE1_IMAGE2)
+        
     def installPipeline(self):
         if self.method == CILViewer2D.IMAGE_WITH_OVERLAY:
             self.installImageWithOverlayPipeline()
+        elif self.method == CILViewer2D.RECTILINEAR_WIPE:
+            self.installRectilinearWipePipeline()
+        elif self.method == CILViewer2D.TOGGLE_IMAGE1_IMAGE2:
+            self.installToggleImage1Image2Pipeline()
+    
+        self.ren.ResetCamera()
+        self.ren.Render()
+
+        self.camera.SetViewUp(0,-1,0)
+
+        if not self.axes_initialised:
+            self.camera.Azimuth(180)
+
+        self.AdjustCamera()
+
+        self.ren.AddViewProp(self.cursorActor)
+        self.cursorActor.VisibilityOn()
+        
+        self.iren.Initialize()
+        self.renWin.Render()
+    
+    def installPipeline2(self):
+        if self.image2 is not None:
+            if self.method == CILViewer2D.IMAGE_WITH_OVERLAY:
+                self.installImageWithOverlayPipeline2()
+            elif self.method == CILViewer2D.RECTILINEAR_WIPE:
+                pass
+            elif self.method == CILViewer2D.TOGGLE_IMAGE1_IMAGE2:
+                self.installToggleImage1Image2Pipeline2()
+            
+            self.ren.ResetCamera()
+            self.ren.Render()
+    
+            self.AdjustCamera()
+    
+            self.iren.Initialize()
+            self.renWin.Render()
+        else:
+            self.log("installPipeline2 no data")
 
     def installImageWithOverlayPipeline(self):
         '''Slices a 3D volume and then creates an actor to be rendered'''
@@ -1567,31 +1654,9 @@ class CILViewer2D():
         # actors are added directly to the renderer
         # self.ren.AddActor(self.sliceActor)
         self.AddActor(self.sliceActor, SLICE_ACTOR)
-        
-        
-        self.ren.ResetCamera()
-        self.ren.Render()
-
-        self.camera.SetViewUp(0,-1,0)
-
-        if not self.axes_initialised:
-            self.camera.Azimuth(180)
-
-        self.AdjustCamera()
-
-        self.ren.AddViewProp(self.cursorActor)
-        self.cursorActor.VisibilityOn()
-        
-                
-        self.imageTracer.SetViewProp(self.sliceActor);
-        
-        self.iren.Initialize()
-        self.renWin.Render()
-        #self.iren.Start()
-
-    def installPipeline2(self):
-        if self.method == CILViewer2D.IMAGE_WITH_OVERLAY:
-            self.installImageWithOverlayPipeline2()
+            
+        self.imageTracer.SetViewProp(self.sliceActor)
+            
 
     def installImageWithOverlayPipeline2(self):
         '''Slices a 3D volume and then creates an actor to be rendered'''
@@ -1633,6 +1698,83 @@ class CILViewer2D():
             print ("installPipeline2 no data")
             
         #self.iren.Start()
+    def installRectilinearWipePipeline(self):
+        extent1 = list(self.img3D.GetExtent())
+        extent2 = list(self.image2.GetExtent())
+        #extent is slice number N
+        for i in range(len(self.slicenos)):
+            self.slicenos[i] = round((extent1[i * 2+1] + extent1[i * 2])/2)
+        N1 = self.GetActiveSlice()
+        print ("should go here", N1, self.slicenos)
+        extent1[4] = N1
+        extent1[5] = N1
+        extent2[4] = N1
+        extent2[5] = N1
+
+        self.voi.SetVOI(*extent1)
+        self.voi2.SetVOI(*extent2)
+        
+
+        wipe = vtk.vtkImageRectilinearWipe()
+        wipe.SetInputConnection(0, self.voi.GetOutputPort())
+        wipe.SetInputConnection(1, self.voi2.GetOutputPort())
+        wipe.SetPosition(10,10)
+        wipe.SetWipe(0)
+        self.wipe = wipe
+
+
+        wipeActor = vtk.vtkImageActor()
+        wipeActor.GetMapper().SetInputConnection(wipe.GetOutputPort())
+
+        self.wipeActor = wipeActor
+
+        wipeWidget = vtk.vtkRectilinearWipeWidget()
+        wipeWidget.SetInteractor(self.getInteractor())
+
+        self.wipeWidget = wipeWidget
+
+        wipeWidgetRep = wipeWidget.GetRepresentation()
+        wipeWidgetRep.SetImageActor(wipeActor)
+        wipeWidgetRep.SetRectilinearWipe(wipe)
+        wipeWidgetRep.GetProperty().SetLineWidth(2.0)
+        wipeWidgetRep.GetProperty().SetOpacity(0.75)
+
+        self.wipeWidgetRep = wipeWidgetRep
+
+        self.AddActor(wipeActor, WIPE_ACTOR)
+
+    def installToggleImage1Image2Pipeline(self):
+        self.installImageWithOverlayPipeline()
+
+    def installToggleImage1Image2Pipeline2(self):
+        '''Slices a 3D volume and then creates an actor to be rendered'''
+        
+        self.voi2.SetInputData(self.image2)
+        
+        self.voi2.SetVOI(*self.voi.GetVOI())
+        self.voi2.Update()
+        # set window/level for current slices
+
+        self.wl2 = vtk.vtkImageMapToWindowLevelColors()
+        
+        self.wl2.SetLevel(self.wl.GetLevel())
+        self.wl2.SetWindow(self.wl.GetWindow())
+
+        self.wl2.SetInputData(self.voi.GetOutput())
+        self.wl2.Update()
+
+        self.sliceActor2.SetInputData(self.wl2.GetOutput())
+        self.sliceActor2.SetDisplayExtent(*self.voi2.GetVOI())
+        self.sliceActor2.Update()
+        if self.image_is_downsampled:
+            self.sliceActor2.SetInterpolate(True)
+        else:
+            self.sliceActor2.SetInterpolate(False)
+        # actors are added directly to the renderer
+        # self.ren.AddActor(self.sliceActor)
+        self.AddActor(self.sliceActor2, OVERLAY_ACTOR)
+            
+        self.sliceActor2.SetVisibility(False)
 
     def AdjustCamera(self, resetcamera = False):
         self.ren.ResetCameraClippingRange()
@@ -2049,4 +2191,33 @@ class CILViewer2D():
         else:
             return(None)
 
+    def uninstallPipeline(self):
+        if self.method == CILViewer2D.IMAGE_WITH_OVERLAY:
+            self.removeActor([SLICE_ACTOR, HISTOGRAM_ACTOR])
+        elif self.method == CILViewer2D.RECTILINEAR_WIPE:
+            self.removeActor(WIPE_ACTOR)
+        elif self.method == CILViewer2D.TOGGLE_IMAGE1_IMAGE2:
+            pass
+
+    def removeActor(self, actor):
+        if not isinstance (actor, (list, tuple)):
+            actor = [actor]
+        keys = self.actors.keys()
+        for a in actor:
+            if a in keys:
+                self.ren.RemoveActor(self.actors[a])
+                self.actors.pop(a)
+
+
+    def uninstallPipeline2(self):
+        if self.method == CILViewer2D.IMAGE_WITH_OVERLAY:
+            self.removeActor(OVERLAY_ACTOR)
+        elif self.method == CILViewer2D.RECTILINEAR_WIPE:
+            # rectilinear wipe visualises 2 images in the same pipeline
+            pass
+        elif self.method == CILViewer2D.TOGGLE_IMAGE1_IMAGE2:
+            # TODO think about this later
+            pass
+
     
+
