@@ -468,6 +468,8 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
             elif orientation == SLICE_ORIENTATION_YZ:
                 self.FlipCameraPosition(True)
                 camera.Elevation(90)
+            
+            camera.SetViewUp(0, 0, -1)
 
             self.SetActiveCamera(camera)
             self.SetSliceOrientation(SLICE_ORIENTATION_XZ)
