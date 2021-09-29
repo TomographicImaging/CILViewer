@@ -1,11 +1,15 @@
 package:
   name: ccpi-viewer
-  version: 21.0.0
+  version: {{ environ.get('GIT_DESCRIBE_TAG','v')[1:] }}
 
+source:
+  path: ../../../
 
 build:
-  preserve_egg_dir: False
-  number: 2
+  skip: True # [py==38 and np==115]
+  preserve_egg_dir: False 
+  number: {{ GIT_DESCRIBE_NUMBER }}
+
   
 requirements:
   build:

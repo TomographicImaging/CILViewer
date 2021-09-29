@@ -46,13 +46,14 @@ class ViewerEventManager(object):
     def __init__(self):
         # If all values are false it signifies no event
         self.events = {
-            "PICK_EVENT": False,                # left  mouse
-            "WINDOW_LEVEL_EVENT": False,        # alt + right mouse + move
-            "ZOOM_EVENT": False,                # shift + right mouse + move
-            "PAN_EVENT": False,                 # ctrl + right mouse + move
-            "CREATE_ROI_EVENT": False,          # ctrl + left mouse
-            "DELETE_ROI_EVENT": False,          # alt + left mouse
-            "SHOW_LINE_PROFILE_EVENT": False    # l
+            "PICK_EVENT": False,                       # left  mouse
+            "WINDOW_LEVEL_EVENT": False,               # alt + right mouse + move
+            "ZOOM_EVENT": False,                       # shift + right mouse + move
+            "PAN_EVENT": False,                        # ctrl + right mouse + move
+            "CREATE_ROI_EVENT": False,                 # ctrl + left mouse
+            "DELETE_ROI_EVENT": False,                 # alt + left mouse
+            "SHOW_LINE_PROFILE_EVENT": False,          # l
+            "UPDATE_WINDOW_LEVEL_UNDER_CURSOR": False  # Mouse move + w
         }
 
     def __str__(self):
@@ -87,6 +88,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
         self.AddObserver("MouseWheelForwardEvent" , self.OnMouseWheelForward , priority)
         self.AddObserver("MouseWheelBackwardEvent" , self.OnMouseWheelBackward, priority)
         self.AddObserver('KeyPressEvent', self.OnKeyPress, priority)
+        self.AddObserver('KeyReleaseEvent', self.OnKeyRelease, priority)
         self.AddObserver('LeftButtonPressEvent',
                          self.OnLeftButtonPressEvent,
                          priority)
@@ -165,7 +167,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
     def SetActiveSlice(self, sliceno):
         self._viewer.SetActiveSlice(sliceno)
 
-    def UpdatePipeline(self, reset = False):
+    def UpdatePipeline(self, reset=False):
         self._viewer.updatePipeline(reset)
 
     def GetActiveCamera(self):
@@ -176,6 +178,9 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
 
     def ResetCamera(self):
         self._viewer.ren.ResetCamera()
+
+    def FlipCameraPosition(self, flip=True):
+        self._viewer.flipCameraPosition = flip
 
     def Render(self):
         self._viewer.renWin.Render()
@@ -415,7 +420,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
             self.SetActiveSlice( self.GetActiveSlice() - advance)
             self.UpdatePipeline()
         else:
-            self.log ("minSlice %d request %d" % (minSlice, self.GetActiveSlice() ))
+            self.log ("minSlice %d request %d" % (minSlice, self.GetActiveSlice()))
         if self.GetViewerEvent("SHOW_LINE_PROFILE_EVENT"):
             self.DisplayLineProfile(interactor, event, True)
 
@@ -425,7 +430,6 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
             # Change the camera view point
 
             orientation = self.GetSliceOrientation()
-
             camera = vtk.vtkCamera()
             camera.ParallelProjectionOn()
             camera.SetFocalPoint(self.GetActiveCamera().GetFocalPoint())
@@ -435,15 +439,14 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
 
             # Rotation of camera depends on current orientation:
             if orientation == SLICE_ORIENTATION_XY:
+                camera.Azimuth(270)
+            elif orientation == SLICE_ORIENTATION_XZ:
+                self.FlipCameraPosition(True)
                 camera.Azimuth(90)
+            camera.SetViewUp(0, -1, 0)
 
-            elif  orientation == SLICE_ORIENTATION_XZ:
-                camera.Elevation(90)
-
-            camera.SetViewUp(0,0,1)
             self.SetActiveCamera(camera)
-
-            self.SetSliceOrientation ( SLICE_ORIENTATION_YZ )
+            self.SetSliceOrientation(SLICE_ORIENTATION_YZ)
             self.UpdatePipeline(True)
 
         elif self.reslicing_enabled and interactor.GetKeyCode() == "y":
@@ -461,11 +464,13 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
             # Rotation of camera depends on current orientation:
             if orientation == SLICE_ORIENTATION_XY:
                 camera.Elevation(90)
+                self.FlipCameraPosition(True)
 
             elif orientation == SLICE_ORIENTATION_YZ:
-                camera.Azimuth(90)
-                
-            camera.SetViewUp(1,0,0)
+                self.FlipCameraPosition(True)
+                camera.Elevation(90)
+
+            camera.SetViewUp(0, 0, -1)
             self.SetActiveCamera(camera)
             self.SetSliceOrientation(SLICE_ORIENTATION_XZ)
             self.UpdatePipeline(True)
@@ -474,7 +479,6 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
             # Change the camera view point
 
             orientation = self.GetSliceOrientation()
-
             camera = vtk.vtkCamera()
             camera.ParallelProjectionOn()
             camera.SetPosition(self.GetActiveCamera().GetPosition())
@@ -484,12 +488,13 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
 
             # Rotation of camera depends on current orientation:
             if orientation == SLICE_ORIENTATION_YZ:
-                camera.Elevation(90)
+                camera.Azimuth(90)
 
             elif orientation == SLICE_ORIENTATION_XZ:
-                camera.Azimuth(90)
-                 
-            camera.SetViewUp(0,1,0)
+                camera.Elevation(-90)
+                self.FlipCameraPosition(True)
+
+            camera.SetViewUp(0, -1, 0)
             self.SetActiveCamera(camera)
             self.ResetCamera()
             self.SetSliceOrientation(SLICE_ORIENTATION_XY)
@@ -499,14 +504,13 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
             # reset color/window
             cmin, cmax = self._viewer.ia.GetAutoRange()
 
-            # probably the level could be the median of the image within
-            # the percintiles
-            level = self._viewer.ia.GetMedian()
+            # set the level to the average value between the percintiles
+            level = (cmin + cmax) / 2
             # accommodates all values between the level an the percentiles
-            window = 2*max(abs(level-cmin),abs(level-cmax))
+            window = (cmax - cmin) / 2
 
-            self.SetInitialLevel( level )
-            self.SetInitialWindow( window )
+            self.SetInitialLevel(level)
+            self.SetInitialWindow(window)
 
             self.GetWindowLevel().SetLevel(self.GetInitialLevel())
             self.GetWindowLevel().SetWindow(self.GetInitialWindow())
@@ -538,72 +542,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
         elif interactor.GetKeyCode() == "h":
             self.DisplayHelp()
         elif interactor.GetKeyCode() == "w":
-            x,y = interactor.GetEventPosition()
-            print (x,y)
-            ic = self.display2imageCoordinate((x,y))
-            print (ic)
-            whole_extent = self._viewer.img3D.GetExtent()
-            around = 20
-            extent = [ ic[0]-around, ic[0]+around, 
-                       ic[1]-around, ic[1]+around, 
-                       ic[2]-around, ic[2]+around]
-            
-            
-            orientation = self._viewer.sliceOrientation
-            
-            extent[orientation * 2] = self._viewer.sliceno
-            extent[orientation * 2 + 1] = self._viewer.sliceno
-            
-            print (extent)
-            print (whole_extent)
-            if extent[0] < whole_extent[0]:
-                extent[0] = whole_extent[0]
-            if extent[1] > whole_extent[1]:
-                extent[1] = whole_extent[1]
-            if extent[2] < whole_extent[2]:
-                extent[2] = whole_extent[2]
-            if extent[3] > whole_extent[3]:
-                extent[3] = whole_extent[3]
-            if extent[4] < whole_extent[4]:
-                extent[4] = whole_extent[4]
-            if extent[5] > whole_extent[5]:
-                extent[5] = whole_extent[5]
-
-            print (extent)
-            # get mouse location
-            
-            self._viewer.voicursor.SetInputData(self._viewer.img3D)
-            self._viewer.voicursor.SetVOI(extent[0], extent[1],
-                       extent[2], extent[3],
-                       extent[4], extent[5])
-    
-            self._viewer.voicursor.Update()
-            # set window/level for current slices
-    
-    
-            self._viewer.iacursor.SetInputConnection(self._viewer.voicursor.GetOutputPort())
-            self._viewer.iacursor.SetAutoRangePercentiles(1.0,99.)
-            self._viewer.iacursor.Update()
-            # reset color/window
-            cmin, cmax = self._viewer.iacursor.GetAutoRange()
-
-            # probably the level could be the median of the image within
-            # the percintiles
-            level = self._viewer.iacursor.GetMedian()
-            # accommodates all values between the level an the percentiles
-            window = 2*max(abs(level-cmin),abs(level-cmax))
-
-            self.SetInitialLevel( level )
-            self.SetInitialWindow( window )
-
-            self.GetWindowLevel().SetLevel(self.GetInitialLevel())
-            self.GetWindowLevel().SetWindow(self.GetInitialWindow())
-
-            self.GetWindowLevel().Update()
-
-            self.UpdateSliceActor()
-            self.AdjustCamera()
-            self.Render()
+            self.SetEventActive('UPDATE_WINDOW_LEVEL_UNDER_CURSOR')
         elif interactor.GetKeyCode() == "t":
             # tracing event is captured by widget
             pass
@@ -611,9 +550,13 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
             # toggle interpolation of slice actor
             is_interpolated = self._viewer.sliceActor.GetInterpolate()
             self._viewer.sliceActor.SetInterpolate(not is_interpolated)
-        else :
+        else:
             self.log("Unhandled event %s" % (interactor.GetKeyCode()))
-            
+    
+    def OnKeyRelease(self, interactor, event):
+        if self.GetViewerEvent('UPDATE_WINDOW_LEVEL_UNDER_CURSOR'):
+            self.log ("remove event UPDATE_WINDOW_LEVEL_UNDER_CURSOR")
+            self.SetEventInactive('UPDATE_WINDOW_LEVEL_UNDER_CURSOR')
 
     def OnLeftButtonPressEvent(self, interactor, event):
         # print ("INTERACTOR", interactor)
@@ -955,6 +898,69 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
 
             elif self.GetViewerEvent("SHOW_LINE_PROFILE_EVENT"):
                 self.DisplayLineProfile(interactor, event, True)
+            elif self.GetViewerEvent('UPDATE_WINDOW_LEVEL_UNDER_CURSOR'):
+                print ("event w")
+                x,y = interactor.GetEventPosition()
+                # print (x,y)
+                ic = self.display2imageCoordinate((x,y))
+                print (x,y, ic, "image coordinate")
+                whole_extent = self._viewer.img3D.GetExtent()
+                around = numpy.min(numpy.asarray([whole_extent[1], whole_extent[3], whole_extent[5]])) // 10
+                print (around, "around")
+                extent = [ ic[0]-around, ic[0]+around, 
+                        ic[1]-around, ic[1]+around, 
+                        ic[2]-around, ic[2]+around]
+                
+                
+                orientation = self._viewer.sliceOrientation
+                
+                extent[orientation * 2] = self.GetActiveSlice()
+                extent[orientation * 2 + 1] = self.GetActiveSlice()
+
+                if extent[0] < whole_extent[0]:
+                    extent[0] = whole_extent[0]
+                if extent[1] > whole_extent[1]:
+                    extent[1] = whole_extent[1]
+                if extent[2] < whole_extent[2]:
+                    extent[2] = whole_extent[2]
+                if extent[3] > whole_extent[3]:
+                    extent[3] = whole_extent[3]
+                if extent[4] < whole_extent[4]:
+                    extent[4] = whole_extent[4]
+                if extent[5] > whole_extent[5]:
+                    extent[5] = whole_extent[5]
+                # get mouse location
+                
+                print (*extent, "w extent")
+                self._viewer.voicursor.SetInputData(self._viewer.img3D)
+                self._viewer.voicursor.SetVOI( *extent )
+        
+                self._viewer.voicursor.Update()
+                # set window/level for current slices
+        
+        
+                self._viewer.iacursor.SetInputConnection(self._viewer.voicursor.GetOutputPort())
+                self._viewer.iacursor.SetAutoRangePercentiles(1.0,99.)
+                self._viewer.iacursor.Update()
+                # reset color/window
+                cmin, cmax = self._viewer.iacursor.GetAutoRange()
+
+                # set the level to the average between the percentiles 
+                level = (cmin + cmax)/2
+                # accommodates all values between the level an the percentiles
+                window = (cmax - cmin) / 2
+
+                self.SetInitialLevel( level )
+                self.SetInitialWindow( window )
+
+                self.GetWindowLevel().SetLevel(self.GetInitialLevel())
+                self.GetWindowLevel().SetWindow(self.GetInitialWindow())
+
+                self.GetWindowLevel().Update()
+
+                self.UpdateSliceActor()
+                self.AdjustCamera()
+                self.Render()
 
     def DisplayHelp(self):
         help_actor = self._viewer.helpActor
@@ -1122,7 +1128,6 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
 
     def HandlePickEvent(self, interactor, event):
         position = interactor.GetEventPosition()
-
         vox = self.display2imageCoordinate(position)
         self.last_picked_voxel = vox
         # print ("Pixel %d,%d,%d Value %f" % vox )
@@ -1176,12 +1181,14 @@ class CILViewer2D():
 
         self.camera = vtk.vtkCamera()
         self.camera.ParallelProjectionOn()
+        self.flipCameraPosition = False
         self.ren.SetActiveCamera(self.camera)
 
         # data (input 1)
         self.img3D = None
         self.slicenos = [0,0,0]
         self.sliceOrientation = SLICE_ORIENTATION_XY
+        self.axes_initialised = False
         #Actors
         self.sliceActor = vtk.vtkImageActor()
         self.voi = vtk.vtkExtractVOI()
@@ -1383,10 +1390,12 @@ class CILViewer2D():
         self.log("setInputData")
         self.img3D = imageData
         self.installPipeline()
+        self.axes_initialised = True
+
     def setInputData2 (self, imageData):
         self.image2 = imageData
         # TODO resample on image1
-        print ("setInputData2")
+        # print ("setInputData2")
         self.installPipeline2()
         
     def setInputAsNumpy(self, numpyarray,  origin=(0,0,0), spacing=(1.,1.,1.),
@@ -1515,16 +1524,15 @@ class CILViewer2D():
 
         self.wl = vtk.vtkImageMapToWindowLevelColors()
         self.ia.SetInputData(self.voi.GetOutput())
-        self.ia.SetAutoRangePercentiles(1.0,99.)
+        self.ia.SetAutoRangePercentiles(5.0,95.)
         self.ia.Update()
         #cmax = self.ia.GetMax()[0]
         #cmin = self.ia.GetMin()[0]
         cmin, cmax = self.ia.GetAutoRange()
-        # probably the level could be the median of the image within
-        # the percentiles 
-        level = self.ia.GetMedian()
+        # set the level to the average between the percentiles 
+        level = ( cmin + cmax ) / 2
         # accomodates all values between the level an the percentiles
-        window = 2*max(abs(level-cmin),abs(level-cmax))
+        window = ( cmax - cmin ) / 2
 
         self.InitialLevel = level
         self.InitialWindow = window
@@ -1554,6 +1562,11 @@ class CILViewer2D():
         
         self.ren.ResetCamera()
         self.ren.Render()
+
+        self.camera.SetViewUp(0,-1,0)
+
+        if not self.axes_initialised:
+            self.camera.Azimuth(180)
 
         self.AdjustCamera()
 
@@ -1614,8 +1627,17 @@ class CILViewer2D():
         # adjust camera focal point
         camera = self.getRenderer().GetActiveCamera()
         fp = list (camera.GetFocalPoint())
-        fp[self.sliceOrientation] = self.GetActiveSlice()
+        pos = list(camera.GetPosition())
+        if self.flipCameraPosition:
+            fp[self.sliceOrientation] = -self.GetActiveSlice()
+            pos[self.sliceOrientation] = - pos[self.sliceOrientation]
+            self.flipCameraPosition = False
+            # have to reset to false so it doesn't flip when we scroll.
+        else:
+            fp[self.sliceOrientation] = self.GetActiveSlice()
+        
         camera.SetFocalPoint(fp)
+        camera.SetPosition(pos)
 
         if resetcamera:
             self.ren.ResetCamera()
