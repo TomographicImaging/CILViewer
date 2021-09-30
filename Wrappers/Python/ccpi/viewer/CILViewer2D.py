@@ -76,10 +76,10 @@ class ViewerEventManager(object):
         return all(not x for x in self.events.values())
 
 
-class CILInteractorStyle(vtk.vtkInteractorStyleImage):
+class CILInteractorStyle(vtk.vtkInteractorStyle): #vtk.vtkInteractorStyleImage
 
     def __init__(self, callback):
-        vtk.vtkInteractorStyleImage.__init__(self)
+        #vtk.vtkInteractorStyleImage.__init__(self)
         self.callback = callback
         self._viewer = callback
         priority = 1.0
@@ -96,6 +96,8 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
         self.AddObserver('LeftButtonReleaseEvent', self.OnLeftButtonReleaseEvent, priority)
         self.AddObserver('RightButtonReleaseEvent', self.OnRightButtonReleaseEvent, priority)
         self.AddObserver('MouseMoveEvent', self.OnMouseMoveEvent, priority)
+        self.AddObserver('CharEvent', self.OnCharEvent, priority)
+        self.AddObserver('CharEventRelease', self.OnCharEventRelease, priority)
 
         self.InitialEventPosition = (0,0)
 
@@ -545,7 +547,10 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
             self.SetEventActive('UPDATE_WINDOW_LEVEL_UNDER_CURSOR')
         elif interactor.GetKeyCode() == "t":
             # tracing event is captured by widget
-            pass
+            if (self._viewer.imageTracer.GetEnabled()):
+                self._viewer.imageTracer.Off()
+            else:
+                self._viewer.imageTracer.On()
         elif interactor.GetKeyCode() == "i":
             # toggle interpolation of slice actor
             is_interpolated = self._viewer.sliceActor.GetInterpolate()
@@ -558,9 +563,16 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
             self.log ("remove event UPDATE_WINDOW_LEVEL_UNDER_CURSOR")
             self.SetEventInactive('UPDATE_WINDOW_LEVEL_UNDER_CURSOR')
 
+    def OnCharEvent(self, interactor, event):
+        print("on char event")
+
+    def OnCharEventRelease(self, interactor, event):
+        print("release char")
+
     def OnLeftButtonPressEvent(self, interactor, event):
         # print ("INTERACTOR", interactor)
         # interactor = self._viewer.getInteractor()
+        print("left button event")
 
         alt = interactor.GetAltKey()
         shift = interactor.GetShiftKey()
@@ -618,6 +630,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
         self.SetEventInactive("DELETE_ROI_EVENT")
 
     def OnRightButtonPressEvent(self, interactor, event):
+        print("Right button press")
 
         alt = interactor.GetAltKey()
         shift = interactor.GetShiftKey()
@@ -704,6 +717,9 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
         self.UpdateROIHistogram()
         # self.SetViewerEvent( ViewerEvent.NO_EVENT )
         self.SetEventInactive("CREATE_ROI_EVENT")
+
+    def OnTracerModifiedEvent(self, interactor, event):
+        print("Tracer modified", event)
 
 ###########################  Coordinate conversion methods ############################
 
@@ -1353,14 +1369,12 @@ class CILViewer2D():
         self.imageTracer.GetGlyphSource().SetRotationAngle(45.0)
         self.imageTracer.GetGlyphSource().Modified()
         self.imageTracer.ProjectToPlaneOn()
-        # Set key press activation on
-        self.imageTracer.KeyPressActivationOn()
-        # Use 't' to activate image tracer
-        self.imageTracer.SetKeyPressActivationValue('t')
+        self.imageTracer.SetHandleLeftMouseButton(True)
         
         # Set autoclose to on
         self.imageTracer.AutoCloseOn()
 
+        self.imageTracer.AddObserver(vtk.vtkWidgetEvent.Select, self.style.OnTracerModifiedEvent, 1.0)
         # axis orientation widget
         om = vtk.vtkAxesActor()
         ori = vtk.vtkOrientationMarkerWidget()
