@@ -17,13 +17,8 @@
 import vtk
 import numpy
 import os
-import math
-
 
 from ccpi.viewer.utils import Converter
-from ccpi.viewer.utils import cilClipPolyDataBetweenPlanes
-from ccpi.viewer.utils import cilNumpyMETAImageWriter
-
 
 SLICE_ORIENTATION_XY = 2 # Z
 SLICE_ORIENTATION_XZ = 1 # Y
@@ -548,9 +543,12 @@ class CILInteractorStyle(vtk.vtkInteractorStyle): #vtk.vtkInteractorStyleImage
                 self._viewer.imageTracer.On()
         elif interactor.GetKeyCode() == "i":
             # toggle interpolation of slice actor
-            # is_interpolated = self._viewer.sliceActor.GetInterpolate()
-            # self._viewer.sliceActor.SetInterpolate(not is_interpolated)
-            # TODO: figure out interpolate
+            is_interpolated = self._viewer.imageSlice.GetProperty().GetInterpolationType()
+            if is_interpolated:
+                self._viewer.imageSlice.GetProperty().SetInterpolationTypeToNearest()
+            else:
+                self._viewer.imageSlice.GetProperty().SetInterpolationTypeToLinear()
+            self._viewer.updatePipeline()
             pass
         else:
             self.log("Unhandled event %s" % (interactor.GetKeyCode()))
@@ -561,10 +559,10 @@ class CILInteractorStyle(vtk.vtkInteractorStyle): #vtk.vtkInteractorStyleImage
             self.SetEventInactive('UPDATE_WINDOW_LEVEL_UNDER_CURSOR')
 
     def OnCharEvent(self, interactor, event):
-        print("on char event")
+        pass
 
     def OnCharEventRelease(self, interactor, event):
-        print("release char")
+        pass
 
     def OnLeftButtonPressEvent(self, interactor, event):
         # print ("INTERACTOR", interactor)
@@ -1449,14 +1447,14 @@ class CILViewer2D():
 
         self.installPipeline()
 
-    def displaySlice(self, sliceno = [0]):
-        self.SetActiveSlice(sliceno)
+    # def displaySlice(self, sliceno = [0]):
+    #     self.SetActiveSlice(sliceno)
 
-        self.updatePipeline()
+    #     self.updatePipeline()
 
-        self.renWin.Render()
+    #     self.renWin.Render()
 
-        return self.sliceActorNo
+    #     return self.sliceActorNo
 
     def updatePipeline(self, resetcamera = False):
         print("Prev bounds: ", [self.imageSlice.GetMinXBound(), self.imageSlice.GetMaxXBound(), self.imageSlice.GetMinYBound(), self.imageSlice.GetMaxYBound(), self.imageSlice.GetMinZBound(), self.imageSlice.GetMaxZBound()])
@@ -1471,9 +1469,13 @@ class CILViewer2D():
         self.log("VOI dimensions {0}".format(self.voi.GetOutput().GetDimensions()))
         self.ia.Update()
         self.imageSliceMapper.SetInputConnection(self.voi.GetOutputPort())
+        #self.imageSlice.SetOrientation(self.sliceOrientation)
         self.imageSlice.Update()
         print("New bounds: ", [self.imageSlice.GetMinXBound(), self.imageSlice.GetMaxXBound(), self.imageSlice.GetMinYBound(), self.imageSlice.GetMaxYBound(), self.imageSlice.GetMinZBound(), self.imageSlice.GetMaxZBound()])
 
+
+        print("Camera position: ", self.getRenderer().GetActiveCamera().GetPosition())
+        print("Focal:", self.getRenderer().GetActiveCamera().GetFocalPoint())
         if self.image2 is not None:
             self.voi2.SetVOI(self.voi.GetVOI())
             self.imageSlice2.Update()
@@ -1555,12 +1557,10 @@ class CILViewer2D():
 
         self.imageSlice.GetProperty().SetColorLevel(self.InitialLevel)
         self.imageSlice.GetProperty().SetColorWindow(self.InitialWindow)
-        #TODO: figure out interpolation
-                # if self.image_is_downsampled:
-        #     self.sliceActor.SetInterpolate(True)
-        # else:
-        #     self.sliceActor.SetInterpolate(False)
-        self.imageSlice.GetProperty().SetInterpolationTypeToNearest()
+        if self.image_is_downsampled:  
+            self._viewer.imageSlice.GetProperty().SetInterpolationTypeToLinear()
+        else:
+            self.imageSlice.GetProperty().SetInterpolationTypeToNearest()
         
         self.AddActor(self.imageSlice, SLICE_ACTOR)
         
