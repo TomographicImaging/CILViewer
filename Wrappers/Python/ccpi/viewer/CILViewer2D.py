@@ -187,8 +187,8 @@ class CILInteractorStyle(vtk.vtkInteractorStyle): #vtk.vtkInteractorStyleImage
     def Render(self):
         self._viewer.renWin.Render()
 
-    def UpdateSliceActor(self):
-        self._viewer.sliceActor.Update()
+    def UpdateImageSlice(self):
+        self._viewer.imageSlice.Update()
 
     def AdjustCamera(self):
         self._viewer.AdjustCamera()
@@ -231,9 +231,6 @@ class CILInteractorStyle(vtk.vtkInteractorStyle): #vtk.vtkInteractorStyleImage
 
     def GetInitialWindow(self):
         return self._viewer.InitialWindow
-
-    def GetWindowLevel(self):
-        return self._viewer.wl
 
     def SetROI(self, roi):
         self._viewer.ROI = roi
@@ -514,12 +511,10 @@ class CILInteractorStyle(vtk.vtkInteractorStyle): #vtk.vtkInteractorStyleImage
             self.SetInitialLevel(level)
             self.SetInitialWindow(window)
 
-            self.GetWindowLevel().SetLevel(self.GetInitialLevel())
-            self.GetWindowLevel().SetWindow(self.GetInitialWindow())
+            self._viewer.imageSlice.GetProperty().SetColorLevel(self.GetInitialLevel())
+            self._viewer.imageSlice.GetProperty().SetColorWindow(self.GetInitialWindow())
 
-            self.GetWindowLevel().Update()
-
-            self.UpdateSliceActor()
+            self.UpdateImageSlice()
             self.AdjustCamera()
             self.Render()
 
@@ -553,8 +548,10 @@ class CILInteractorStyle(vtk.vtkInteractorStyle): #vtk.vtkInteractorStyleImage
                 self._viewer.imageTracer.On()
         elif interactor.GetKeyCode() == "i":
             # toggle interpolation of slice actor
-            is_interpolated = self._viewer.sliceActor.GetInterpolate()
-            self._viewer.sliceActor.SetInterpolate(not is_interpolated)
+            # is_interpolated = self._viewer.sliceActor.GetInterpolate()
+            # self._viewer.sliceActor.SetInterpolate(not is_interpolated)
+            # TODO: figure out interpolate
+            pass
         else:
             self.log("Unhandled event %s" % (interactor.GetKeyCode()))
     
@@ -655,8 +652,8 @@ class CILInteractorStyle(vtk.vtkInteractorStyle): #vtk.vtkInteractorStyleImage
     def OnRightButtonReleaseEvent(self, interactor, event):
         self.log (event)
         if self.GetViewerEvent("WINDOW_LEVEL_EVENT"):
-            self.SetInitialLevel( self.GetWindowLevel().GetLevel() )
-            self.SetInitialWindow ( self.GetWindowLevel().GetWindow() )
+            self.SetInitialLevel(self.imageSlice.GetProperty().GetColorLevel())
+            self.SetInitialWindow( self.imageSlice.GetProperty().GetColorWindow())
         elif self.GetViewerEvent("ZOOM_EVENT") or self.GetViewerEvent("PAN_EVENT"):
             self.SetInitialCameraPosition( () )
 
@@ -969,22 +966,20 @@ class CILInteractorStyle(vtk.vtkInteractorStyle): #vtk.vtkInteractorStyleImage
                 self.SetInitialLevel( level )
                 self.SetInitialWindow( window )
 
-                self.GetWindowLevel().SetLevel(self.GetInitialLevel())
-                self.GetWindowLevel().SetWindow(self.GetInitialWindow())
+                self._viewer.imageSlice.GetProperty().SetColorLevel(self.GetInitialLevel())
+                self._viewer.imageSlice.GetProperty().SetColorWindow(self.GetInitialLevel())
 
-                self.GetWindowLevel().Update()
-
-                self.UpdateSliceActor()
+                self.UpdateImageSlice()
                 self.AdjustCamera()
                 self.Render()
 
     def DisplayHelp(self):
         help_actor = self._viewer.helpActor
-        slice_actor = self._viewer.sliceActor
+        image_slice = self._viewer.imageSlice
 
         if help_actor.GetVisibility():
             help_actor.VisibilityOff()
-            slice_actor.VisibilityOn()
+            image_slice.VisibilityOn()
             self.Render()
             return
 
@@ -1041,7 +1036,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyle): #vtk.vtkInteractorStyleImage
 
         help_actor.SetMapper(textMapperC)
         help_actor.VisibilityOn()
-        slice_actor.VisibilityOff()
+        image_slice.VisibilityOff()
         self.Render()
 
     def HandleZoomEvent(self, interactor, event):
@@ -1133,11 +1128,10 @@ class CILInteractorStyle(vtk.vtkInteractorStyle): #vtk.vtkInteractorStyleImage
         if abs(newLevel) < 0.01:
             newLevel = 0.01 * (lambda x: -1 if x <0 else 1)(newLevel)
 
-        self.GetWindowLevel().SetWindow(newWindow)
-        self.GetWindowLevel().SetLevel(newLevel)
+        self.imageSlice.GetProperty().SetColorLevel(newLevel)
+        self.imageSlice.GetProperty().SetColorWindow(newWindow)
         self.log("new level {0} window {1}".format(newLevel,newWindow))
-        self.GetWindowLevel().Update()
-        self.UpdateSliceActor()
+        self.UpdateImageSlice()
         self.AdjustCamera()
 
         self.Render()
@@ -1206,18 +1200,24 @@ class CILViewer2D():
         self.sliceOrientation = SLICE_ORIENTATION_XY
         self.axes_initialised = False
         #Actors
-        self.sliceActor = vtk.vtkImageActor()
         self.voi = vtk.vtkExtractVOI()
-        self.wl = vtk.vtkImageMapToWindowLevelColors()
         self.ia = vtk.vtkImageHistogramStatistics()
         self.iacursor = vtk.vtkImageHistogramStatistics()
         self.voicursor = vtk.vtkExtractVOI()
-        self.sliceActorNo = 0
+        #self.sliceActorNo = 0
+
+        imageSlice = vtk.vtkImageSlice()
+        imageSliceMapper = vtk.vtkImageSliceMapper()
+        imageSlice.SetMapper(imageSliceMapper)
+        imageSlice.GetProperty().SetInterpolationTypeToNearest()
+        self.imageSlice = imageSlice
 
         # input 2
         self.image2 = None
         self.voi2 = vtk.vtkExtractVOI()
         self.sliceActor2 = vtk.vtkImageActor()
+        self.imageSlice2 = vtk.vtkImageSlice()
+        #TODO: add mapper here?
 
         
         # Help text
@@ -1260,7 +1260,7 @@ class CILViewer2D():
         #picker
         self.picker = vtk.vtkPropPicker()
         self.picker.PickFromListOn()
-        self.picker.AddPickList(self.sliceActor)
+        self.picker.AddPickList(self.imageSlice)
 
         self.iren.SetPicker(self.picker)
 
@@ -1459,6 +1459,7 @@ class CILViewer2D():
         return self.sliceActorNo
 
     def updatePipeline(self, resetcamera = False):
+        print("Prev bounds: ", [self.imageSlice.GetMinXBound(), self.imageSlice.GetMaxXBound(), self.imageSlice.GetMinYBound(), self.imageSlice.GetMaxYBound(), self.imageSlice.GetMinZBound(), self.imageSlice.GetMaxZBound()])
         extent = [ i for i in self.img3D.GetExtent()]
         extent[self.sliceOrientation * 2] = self.GetActiveSlice()
         extent[self.sliceOrientation * 2 + 1] = self.GetActiveSlice()
@@ -1469,18 +1470,13 @@ class CILViewer2D():
         self.voi.Update()
         self.log("VOI dimensions {0}".format(self.voi.GetOutput().GetDimensions()))
         self.ia.Update()
-        self.wl.Update()
-        self.sliceActor.SetDisplayExtent(extent[0], extent[1],
-                   extent[2], extent[3],
-                   extent[4], extent[5])
-        self.sliceActor.Update()
+        self.imageSliceMapper.SetInputConnection(self.voi.GetOutputPort())
+        self.imageSlice.Update()
+        print("New bounds: ", [self.imageSlice.GetMinXBound(), self.imageSlice.GetMaxXBound(), self.imageSlice.GetMinYBound(), self.imageSlice.GetMaxYBound(), self.imageSlice.GetMinZBound(), self.imageSlice.GetMaxZBound()])
 
         if self.image2 is not None:
             self.voi2.SetVOI(self.voi.GetVOI())
-            self.sliceActor2.SetDisplayExtent(extent[0], extent[1],
-                   extent[2], extent[3],
-                   extent[4], extent[5])
-            self.sliceActor2.Update()
+            self.imageSlice2.Update()
             
         text = self.createAnnotationText("slice", (self.GetActiveSlice(), self.img3D.GetDimensions()[self.sliceOrientation]-1))
         self.updateCornerAnnotation(text, 0)
@@ -1502,13 +1498,13 @@ class CILViewer2D():
                          
     # this->input->GetPoint(0)[this->SliceOrientation] + (this->Slice * this->input->GetSpacing()[this->SliceOrientation]));
             
-                self.imageTracer.SetViewProp(self.sliceActor);
+                self.imageTracer.SetViewProp(self.imageSlice)
             else:
                 print ("self.img3D None")
         except Exception as ge:
             print (ge)
         self.AdjustCamera(resetcamera)
-
+        #self.ren.AddViewProp(self.imageSlice)
         self.renWin.Render()
 
 
@@ -1535,8 +1531,6 @@ class CILViewer2D():
 
         self.voi.Update()
         # set window/level for current slices
-
-        self.wl = vtk.vtkImageMapToWindowLevelColors()
         self.ia.SetInputData(self.voi.GetOutput())
         self.ia.SetAutoRangePercentiles(5.0,95.)
         self.ia.Update()
@@ -1554,25 +1548,21 @@ class CILViewer2D():
                                             self.InitialWindow))
 
 
-        self.wl.SetLevel(self.InitialLevel)
-        self.wl.SetWindow(self.InitialWindow)
+        self.imageSliceMapper = vtk.vtkImageSliceMapper()
+        self.imageSliceMapper.SetInputConnection(self.voi.GetOutputPort())
+        self.imageSlice.SetMapper(self.imageSliceMapper)
+        self.imageSlice.Update()
 
-        self.wl.SetInputData(self.voi.GetOutput())
-        self.wl.Update()
-
-        self.sliceActor.SetInputData(self.wl.GetOutput())
-        self.sliceActor.SetDisplayExtent(extent[0], extent[1],
-                extent[2], extent[3],
-                extent[4], extent[5])
-        self.sliceActor.Update()
-        if self.image_is_downsampled:
-            self.sliceActor.SetInterpolate(True)
-        else:
-            self.sliceActor.SetInterpolate(False)
-        # actors are added directly to the renderer
-        # self.ren.AddActor(self.sliceActor)
-        self.AddActor(self.sliceActor, SLICE_ACTOR)
+        self.imageSlice.GetProperty().SetColorLevel(self.InitialLevel)
+        self.imageSlice.GetProperty().SetColorWindow(self.InitialWindow)
+        #TODO: figure out interpolation
+                # if self.image_is_downsampled:
+        #     self.sliceActor.SetInterpolate(True)
+        # else:
+        #     self.sliceActor.SetInterpolate(False)
+        self.imageSlice.GetProperty().SetInterpolationTypeToNearest()
         
+        self.AddActor(self.imageSlice, SLICE_ACTOR)
         
         self.ren.ResetCamera()
         self.ren.Render()
@@ -1587,8 +1577,7 @@ class CILViewer2D():
         self.ren.AddViewProp(self.cursorActor)
         self.cursorActor.VisibilityOn()
         
-                
-        self.imageTracer.SetViewProp(self.sliceActor);
+        self.imageTracer.SetViewProp(self.imageSlice)
         
         self.iren.Initialize()
         self.renWin.Render()
@@ -1619,10 +1608,12 @@ class CILViewer2D():
             cov.SetInputConnection(self.voi2.GetOutputPort())
             cov.SetLookupTable(lut)
             cov.Update()
-            self.sliceActor2.GetMapper().SetInputConnection(cov.GetOutputPort())
-            self.sliceActor2.SetDisplayExtent(self.sliceActor.GetDisplayExtent())
-            self.sliceActor2.Update()
-            self.AddActor(self.sliceActor2, OVERLAY_ACTOR)
+
+            imageSliceMapper = vtk.vtkImageSliceMapper()
+            imageSliceMapper.SetInputConnection(cov.GetOutputPort())
+            self.imageSlice2.SetMapper(imageSliceMapper)
+            self.imageSlice2.Update()
+            self.AddActor(self.imageSlice2, OVERLAY_ACTOR)
             self.ren.ResetCamera()
             self.ren.Render()
     
@@ -1692,10 +1683,12 @@ class CILViewer2D():
         self.visualisation_downsampling = value
         if value != [1,1,1]:
             self.image_is_downsampled = True
-            self.sliceActor.SetInterpolate(True)
+            #self.sliceActor.SetInterpolate(True)
+            # TODO: figure out interp
         else:
             self.image_is_downsampled = False
-            self.sliceActor.SetInterpolate(False)
+            #self.sliceActor.SetInterpolate(False)
+            # TODO: figure out interp
 
 
     def getVisualisationDownsampling(self):
@@ -1874,11 +1867,9 @@ class CILViewer2D():
 
 
     def setColourWindowLevel(self, window, level):
-        self.wl.SetWindow(window)
-        self.wl.SetLevel(level)
-        self.wl.Update()
-        self.sliceActor.SetInputData(self.wl.GetOutput())
-        self.sliceActor.Update()
+        self.imageSlice.GetProperty().SetColorLevel(level)
+        self.imageSlice.GetProperty().SetColorWindow(window)
+        self.imageSlice.Update()
         self.ren.Render()
         self.renWin.Render()
 
@@ -2011,10 +2002,11 @@ class CILViewer2D():
             self.renWin.Render()
 
     def getColourWindow(self):
-        return self.wl.GetWindow()
+        return self.imageSlice.GetProperty().GetColorWindow()
+        
 
     def getColourLevel(self):
-        return self.wl.GetLevel()
+        return self.imageSlice.GetProperty().GetColorLevel()
     
     def AddActor(self, actor, name=None):
         '''print("ADDING ACTOR", name)
