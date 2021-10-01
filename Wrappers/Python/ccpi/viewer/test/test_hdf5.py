@@ -44,6 +44,7 @@ class TestHDF5IO(unittest.TestCase):
         # HDF5Reader to read it back:
         reader = HDF5Reader()
         reader.SetFileName(self.hdf5_filename_3D)
+        reader.SetDatasetName("ImageData")
         reader.Update()
         array_image_data = reader.GetOutputDataObject(0)
         read_array = Converter.vtk2numpy(array_image_data)
@@ -54,6 +55,7 @@ class TestHDF5IO(unittest.TestCase):
         channel_index = 5
         reader = HDF5Reader()
         reader.SetFileName(self.hdf5_filename_4D)
+        reader.SetDatasetName("ImageData")
         reader.Set4DIndex(channel_index)
         reader.Update()
         array_image_data = reader.GetOutputDataObject(0)
@@ -66,6 +68,7 @@ class TestHDF5IO(unittest.TestCase):
         cropped_array = self.input_3D_array[1:3, 3:6, 0:3]
         reader = HDF5Reader()
         reader.SetFileName(self.hdf5_filename_3D)
+        reader.SetDatasetName("ImageData")
         cropped_reader = HDF5SubsetReader()
         cropped_reader.SetInputConnection(reader.GetOutputPort())
         # NOTE: the extent is in vtk so is in fortran order, whereas
@@ -85,6 +88,7 @@ class TestHDF5IO(unittest.TestCase):
             f.create_dataset('ImageData', data=self.input_4D_array)
         reader = HDF5Reader()
         reader.SetFileName(self.hdf5_filename_4D)
+        reader.SetDatasetName("ImageData")
         reader.Set4DIndex(channel_index)
         cropped_reader = HDF5SubsetReader()
         cropped_reader.SetInputConnection(reader.GetOutputPort())

@@ -7,7 +7,7 @@ from vtk.numpy_interface import dataset_adapter as dsa
 # Methods for reading and writing HDF5 files:
 
 
-def write_image_data_to_hdf5(filename, data, dataset_name="ImageData", attributes={},
+def write_image_data_to_hdf5(filename, data, dataset_name, attributes={},
                              array_name='vtkarray'):
     '''
     Writes vtkImageData to a dataset in a HDF5 file
@@ -45,6 +45,8 @@ class HDF5Reader(VTKPythonAlgorithmBase):
     vtkAlgorithm for reading vtkImageData from a HDF5 file
     Adapted from:
     https://blog.kitware.com/developing-hdf5-readers-using-vtkpythonalgorithm/
+    To use this, you must set a FileName (the file you are reading), and also a
+    DatasetName (the name of where in the hdf5 file the data will be saved)
     '''
 
     def __init__(self):
@@ -54,7 +56,7 @@ class HDF5Reader(VTKPythonAlgorithmBase):
                                         outputType='vtkImageData')
 
         self.__FileName = ""
-        self.__DatasetName = "ImageData"
+        self.__DatasetName = None
         self.__4DIndex = 0
 
     def RequestData(self, request, inInfo, outInfo):
@@ -179,3 +181,6 @@ class HDF5SubsetReader(VTKPythonAlgorithmBase):
 
     def GetUpdateExtent(self):
         return self.__UpdateExtent
+
+    def GetOutput(self):
+        return self.GetOutputDataObject(0)
