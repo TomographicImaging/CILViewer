@@ -16,7 +16,7 @@ test:
 
   commands:
     - python -c "import os; print ('TESTING IN THIS DIRECTORY' , os.getcwd())"
-    - python -m unittest discover test
+    - python -m unittest -v discover test -v
 
   
 requirements:
