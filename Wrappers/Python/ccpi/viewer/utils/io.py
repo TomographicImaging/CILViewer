@@ -45,13 +45,14 @@ class ImageDataCreator(object):
 
         Whether to resample the image (currently only for np and raw files): resample (bool)
 
-        Folder where to save converted image file: tempfolder (directory path)
+        Folder where to save converted image file. If not set, converted image is saved
+        in same location as input image: output_dir (directory path)
 
         Arguments for the finish_fn: *finish_fn_args, **finish_fn_kwargs
 
         '''
 
-    def createImageData(main_window, image_files, output_image, *finish_fn_args, info_var=None, convert_numpy=False, convert_raw=True,  resample=False, target_size=0.125, crop_image=False, origin=(0, 0, 0), target_z_extent=(0, 0), tempfolder=None, finish_fn=None,  **finish_fn_kwargs):
+    def createImageData(main_window, image_files, output_image, *finish_fn_args, info_var=None, convert_numpy=False, convert_raw=True,  resample=False, target_size=0.125, crop_image=False, origin=(0, 0, 0), target_z_extent=(0, 0), output_dir=None, finish_fn=None,  **finish_fn_kwargs):
         # print("Create image data")
         if len(image_files) == 1:
             image = image_files[0]
@@ -74,7 +75,7 @@ class ImageDataCreator(object):
             createProgressWindow(main_window, "Converting", "Converting Image")
             image_worker = Worker(loadMetaImage, main_window=main_window, image=image, output_image=output_image,
                                   image_info=info_var, resample=resample, target_size=target_size, crop_image=crop_image, origin=origin,
-                                  target_z_extent=target_z_extent, convert_numpy=convert_numpy, convert_raw=convert_raw, tempfolder=tempfolder)
+                                  target_z_extent=target_z_extent, convert_numpy=convert_numpy, convert_raw=convert_raw, output_dir=output_dir)
 
         elif file_extension in ['.npy']:
             createProgressWindow(main_window, "Converting", "Converting Image")
@@ -173,7 +174,7 @@ def warningDialog(main_window, message='', window_title='', detailed_text=''):
 
 # mha and mhd:
 
-# def loadMetaImage(main_window, image, output_image,  image_info = None, resample = False, target_size = 0.125, crop_image = False, origin = (0,0,0), target_z_extent = (0,0), convert_numpy = False, convert_raw = True, tempfolder = None, progress_callback=None):
+# def loadMetaImage(main_window, image, output_image,  image_info = None, resample = False, target_size = 0.125, crop_image = False, origin = (0,0,0), target_z_extent = (0,0), convert_numpy = False, convert_raw = True, output_dir = None, progress_callback=None):
 
 
 def loadMetaImage(**kwargs):
@@ -188,7 +189,7 @@ def loadMetaImage(**kwargs):
     target_z_extent = kwargs.get('target_z_extent', (0, 0))
     convert_numpy = kwargs.get('convert_numpy', False)
     convert_raw = kwargs.get('convert_raw', True)
-    tempfolder = kwargs.get('tempfolder', None)
+    output_dir = kwargs.get('output_dir', None)
     progress_callback = kwargs.get('progress_callback', None)
 
     if resample:
@@ -249,11 +250,11 @@ def loadMetaImage(**kwargs):
         filename = reader.GetFileName()
         if '.mha' in filename:
             headerlength = reader.GetFileHeaderLength()
-            if tempfolder is None:
-                new_filename = os.path.abspath(image)[:-4] + ".raw"
+            if output_dir is None:
+                new_filename = image[:-4] + ".raw"
             else:
-                new_filename = os.path.join(
-                    tempfolder, os.path.basename(image)[:-4] + ".raw")
+                new_filename = os.path.relpath(os.path.join(
+                    output_dir, os.path.basename(image)[:-4] + ".raw"))
 
             with open(image, "rb") as image_file_object:
                 end_slice = loaded_shape[2]
@@ -263,10 +264,11 @@ def loadMetaImage(**kwargs):
                     chunk = image_file_object.read()
                     raw_file_object.write(chunk)
         else:
+            # TODO: fix this?
             file_ext = os.path.splitext(filename)[1]
-            if tempfolder is not None:
+            if output_dir is not None:
                 new_filename = os.path.join(
-                    tempfolder, os.path.basename(filename))
+                    output_dir, os.path.basename(filename))
                 shutil.copyfile(filename, new_filename)
             else:
                 new_filename = filename
@@ -277,11 +279,11 @@ def loadMetaImage(**kwargs):
     if convert_numpy:
         # this is for using in the dvc code
         print("Converting metaimage to numpy")
-        if tempfolder is None:
+        if output_dir is None:
             filename = os.path.abspath(image)[:-4] + ".npy"
         else:
             filename = os.path.join(
-                tempfolder, os.path.basename(image)[:-4] + ".npy")
+                output_dir, os.path.basename(image)[:-4] + ".npy")
         print(filename)
         numpy_array = Converter.vtk2numpy(reader.GetOutput(), order="F")
         numpy.save(filename, numpy_array)
