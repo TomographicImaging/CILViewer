@@ -12,7 +12,7 @@ build:
   
 test:
   source_files:
-    - $SRC_DIR/ccpiviewer/test
+    - ./ccpiviewer/test
 
   commands:
     - python -c "import os; print ('TESTING IN THIS DIRECTORY' , os.getcwd())"
