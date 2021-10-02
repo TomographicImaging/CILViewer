@@ -12,7 +12,7 @@ build:
   
 test:
   source_files:
-    - ../test
+    - ./Wrappers/Python/test
 
   commands:
     - ls
