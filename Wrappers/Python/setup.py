@@ -22,19 +22,19 @@ import subprocess
 cil_version = subprocess.check_output('git describe', shell=True).decode("utf-8").rstrip()
 
 
-# if os.environ.get('CONDA_BUILD', 0) == 0:
-#     cwd = os.getcwd()
-#     requires = []
-# else:
-#     requires = ['numpy','vtk']
-#     cwd = os.path.join(os.environ.get('RECIPE_DIR'),'..')
+if os.environ.get('CONDA_BUILD', 0) == 0:
+    cwd = os.getcwd()
+    requires = []
+else:
+    requires = ['numpy','vtk']
+    cwd = os.path.join(os.environ.get('RECIPE_DIR'),'..')
 
-# fname = os.path.join(cwd, 'ccpi', 'viewer', 'version.py')
+fname = os.path.join(cwd, 'ccpi', 'viewer', 'version.py')
 
-# if os.path.exists(fname):
-#     os.remove(fname)
-# with open(fname, 'w') as f:
-#     f.write('version = \'{}\''.format(cil_version))
+if os.path.exists(fname):
+    os.remove(fname)
+with open(fname, 'w') as f:
+    f.write('version = \'{}\''.format(cil_version))
     
 
 setup(
