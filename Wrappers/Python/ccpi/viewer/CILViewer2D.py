@@ -53,8 +53,9 @@ class ViewerEventManager(object):
             "PAN_EVENT": False,                        # ctrl + right mouse + move
             "CREATE_ROI_EVENT": False,                 # ctrl + left mouse
             "DELETE_ROI_EVENT": False,                 # alt + left mouse
-            "SHOW_LINE_PROFILE_EVENT": False,          # l
-            "UPDATE_WINDOW_LEVEL_UNDER_CURSOR": False  # Mouse move + w
+            "SHOW_LINE_PROFILE_EVENT":          False,           # l
+            "UPDATE_WINDOW_LEVEL_UNDER_CURSOR": False,  # Mouse move + w
+            "RECTILINEAR_WIPE": False
         }
 
     def __str__(self):
@@ -574,14 +575,22 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
             self._viewer.sliceActor.SetVisibility(False)
             self._viewer.sliceActor2.SetVisibility(True)
             self.Render()
+        elif interactor.GetKeyCode() == '3':
+            if self._viewer.method != CILViewer2D.RECTILINEAR_WIPE:
+                self._viewer.setVisualisationToRectilinearWipe()
+            print("keycode 3")
         else :
             self.log("Unhandled event %s" % (interactor.GetKeyCode()))
     
     def OnKeyRelease(self, interactor, event):
-        if self.GetViewerEvent('UPDATE_WINDOW_LEVEL_UNDER_CURSOR'):
-            self.log ("remove event UPDATE_WINDOW_LEVEL_UNDER_CURSOR")
-            self.SetEventInactive('UPDATE_WINDOW_LEVEL_UNDER_CURSOR')
 
+        # remove events on key release
+        events = ['UPDATE_WINDOW_LEVEL_UNDER_CURSOR', 'RECTILINEAR_WIPE']
+        for ev in events:
+            if self.GetViewerEvent(ev):
+                self.log ("remove event {}".format(ev))
+                self.SetEventInactive(ev)
+        
     def OnLeftButtonPressEvent(self, interactor, event):
         # print ("INTERACTOR", interactor)
         # interactor = self._viewer.getInteractor()
@@ -987,6 +996,8 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
                 self.UpdateSliceActor()
                 self.AdjustCamera()
                 self.Render()
+            elif self.GetViewerEvent('RECTILINEAR_WIPE'):
+                do something
 
     def DisplayHelp(self):
         help_actor = self._viewer.helpActor
@@ -1735,6 +1746,7 @@ class CILViewer2D():
         wipe = vtk.vtkImageRectilinearWipe()
         wipe.SetInputConnection(0, self.voi.GetOutputPort())
         wipe.SetInputConnection(1, self.voi2.GetOutputPort())
+        # should set the position to center of viewport
         wipe.SetPosition(10,10)
         wipe.SetWipe(0)
         self.wipe = wipe
@@ -1745,18 +1757,18 @@ class CILViewer2D():
 
         self.wipeActor = wipeActor
 
-        wipeWidget = vtk.vtkRectilinearWipeWidget()
-        wipeWidget.SetInteractor(self.getInteractor())
+        # wipeWidget = vtk.vtkRectilinearWipeWidget()
+        # wipeWidget.SetInteractor(self.getInteractor())
 
-        self.wipeWidget = wipeWidget
+        # self.wipeWidget = wipeWidget
 
-        wipeWidgetRep = wipeWidget.GetRepresentation()
-        wipeWidgetRep.SetImageActor(wipeActor)
-        wipeWidgetRep.SetRectilinearWipe(wipe)
-        wipeWidgetRep.GetProperty().SetLineWidth(2.0)
-        wipeWidgetRep.GetProperty().SetOpacity(0.75)
+        # wipeWidgetRep = wipeWidget.GetRepresentation()
+        # wipeWidgetRep.SetImageActor(wipeActor)
+        # wipeWidgetRep.SetRectilinearWipe(wipe)
+        # wipeWidgetRep.GetProperty().SetLineWidth(2.0)
+        # wipeWidgetRep.GetProperty().SetOpacity(0.75)
 
-        self.wipeWidgetRep = wipeWidgetRep
+        # self.wipeWidgetRep = wipeWidgetRep
 
         self.AddActor(wipeActor, WIPE_ACTOR)
 
