@@ -578,6 +578,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
         elif interactor.GetKeyCode() == '3':
             if self._viewer.method != CILViewer2D.RECTILINEAR_WIPE:
                 self._viewer.setVisualisationToRectilinearWipe()
+                self.SetEventActive('RECTILINEAR_WIPE')
             print("keycode 3")
         else :
             self.log("Unhandled event %s" % (interactor.GetKeyCode()))
@@ -918,6 +919,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
 
     def OnMouseMoveEvent(self, interactor, event):
         if self.GetInputData() is not None:
+            print ("GetInputData not None, event", event)
             if self.GetViewerEvent("WINDOW_LEVEL_EVENT"):
                 self.log ("Event %s is WINDOW_LEVEL_EVENT" % (event))
                 self.HandleWindowLevel(interactor, event)
@@ -997,7 +999,9 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
                 self.AdjustCamera()
                 self.Render()
             elif self.GetViewerEvent('RECTILINEAR_WIPE'):
-                do something
+                print ("Should be in RECTILINEAR_WIPE")
+                self._viewer.wipe.SetPosition(interactor.GetEventPosition())
+                self.UpdatePipeline()
 
     def DisplayHelp(self):
         help_actor = self._viewer.helpActor
@@ -1499,7 +1503,12 @@ class CILViewer2D():
         self.renWin.Render()
     
     def updateRectilinearWipePipeline(self, resetcamera=False):
-        pass
+        extent = self.updateMainVOI()
+        self.voi.SetVOI(*extent)
+        #TODO what happens if image2 has a different sampling?
+        self.voi2.SetVOI(*extent)
+        print ("updateRectilinearWipePipeline", self.wipe.GetPosition())
+        
     def updateToggleImage1Image2Pipeline(self, resetcamera=False):
         pass
 
@@ -1565,10 +1574,13 @@ class CILViewer2D():
         if self.image2 is not None:
             self.uninstallPipeline2()
         self.method = method
-        if self.img3D is not None:
-            self.installPipeline()
-        if self.image2 is not None:
-            self.installPipeline2()
+        if method == 'IMAGE_WITH_OVERLAY':
+            if self.img3D is not None:
+                self.installPipeline()
+            if self.image2 is not None:
+                self.installPipeline2()
+        elif method == 'RECTILINEAR_WIPE':
+            self.installRectilinearWipePipeline()
 
     def setVisualisationToImageWithOverlay(self):
         self.setVisualisationPipelineMethodTo(CILViewer2D.IMAGE_WITH_OVERLAY)
@@ -1771,6 +1783,7 @@ class CILViewer2D():
         # self.wipeWidgetRep = wipeWidgetRep
 
         self.AddActor(wipeActor, WIPE_ACTOR)
+
 
     def installToggleImage1Image2Pipeline(self):
         self.installImageWithOverlayPipeline()
