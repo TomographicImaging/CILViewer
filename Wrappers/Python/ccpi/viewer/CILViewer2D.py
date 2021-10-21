@@ -1573,14 +1573,17 @@ class CILViewer2D():
             self.uninstallPipeline()
         if self.image2 is not None:
             self.uninstallPipeline2()
-        self.method = method
-        if method == 'IMAGE_WITH_OVERLAY':
+        
+        #methods are ints
+        if method == CILViewer2D.IMAGE_WITH_OVERLAY:
             if self.img3D is not None:
                 self.installPipeline()
             if self.image2 is not None:
                 self.installPipeline2()
-        elif method == 'RECTILINEAR_WIPE':
+        elif method == CILViewer2D.RECTILINEAR_WIPE:
             self.installRectilinearWipePipeline()
+        self.method = method
+        
 
     def setVisualisationToImageWithOverlay(self):
         self.setVisualisationPipelineMethodTo(CILViewer2D.IMAGE_WITH_OVERLAY)
@@ -1739,6 +1742,7 @@ class CILViewer2D():
             
         #self.iren.Start()
     def installRectilinearWipePipeline(self):
+        self.log("installRectilinearWipePipeline")
         extent1 = list(self.img3D.GetExtent())
         extent2 = list(self.image2.GetExtent())
         #extent is slice number N
@@ -1783,6 +1787,7 @@ class CILViewer2D():
         # self.wipeWidgetRep = wipeWidgetRep
 
         self.AddActor(wipeActor, WIPE_ACTOR)
+        self.log("wipe? {}".format(self.wipe))
 
 
     def installToggleImage1Image2Pipeline(self):
