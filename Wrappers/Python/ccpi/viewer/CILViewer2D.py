@@ -85,7 +85,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
         self.callback = callback
         self._viewer = callback
         priority = 1.0
-        self.debug = False
+        self.debug = True
 
         self.AddObserver("MouseWheelForwardEvent" , self.OnMouseWheelForward , priority)
         self.AddObserver("MouseWheelBackwardEvent" , self.OnMouseWheelBackward, priority)
@@ -1518,7 +1518,8 @@ class CILViewer2D():
         self.voi.SetVOI(*extent)
         #TODO what happens if image2 has a different sampling?
         self.voi2.SetVOI(*extent)
-        print ("updateRectilinearWipePipeline", self.wipe.GetPosition())
+        # print ("updateRectilinearWipePipeline", self.wipe.GetPosition())
+        self.wipeSliceMapper.SetOrientation(self.sliceOrientation)
         
     def updateToggleImage1Image2Pipeline(self, resetcamera=False):
         pass
@@ -1718,11 +1719,16 @@ class CILViewer2D():
             self.voi2.Update()
             lut = vtk.vtkLookupTable()
             
+            ai = vtk.vtkImageHistogramStatistics()
+            ai.SetInputConnection(self.voi2.GetOutputPort())
+            ai.Update()
+
+
             self.lut2 = lut
-            lut.SetNumberOfColors(7)
-            lut.SetHueRange(.4,.6)
+            lut.SetNumberOfColors(256)
+            lut.SetHueRange(.1,.6)
             lut.SetSaturationRange(1, 1)
-            lut.SetValueRange(0.7, 0.7)
+            lut.SetValueRange(ai.GetMinimum(), ai.GetMaximum())
             lut.SetAlphaRange(0,0.5)
             lut.Build()
             
@@ -1777,12 +1783,23 @@ class CILViewer2D():
         self.wipe = wipe
 
 
-        wipeActor = vtk.vtkImageActor()
-        wipeActor.GetMapper().SetInputConnection(wipe.GetOutputPort())
+        wipeSlice = vtk.vtkImageSlice()
+        
+        wipeSliceMapper = vtk.vtkImageSliceMapper()
+        wipeSliceMapper.SetInputConnection(wipe.GetOutputPort())
+        
+        
+        wipeSlice.SetMapper(wipeSliceMapper)
+        wipeSlice.GetProperty().SetInterpolationTypeToNearest()
+        wipeSlice.GetProperty().SetColorLevel(self.InitialLevel)
+        wipeSlice.GetProperty().SetColorWindow(self.InitialWindow)
 
-        self.wipeActor = wipeActor
+        wipeSliceMapper.SetOrientation(self.sliceOrientation)
+        self.wipeSliceMapper = wipeSliceMapper
+        wipeSlice.Update()
+        self.wipeActor = wipeSlice
 
-        self.AddActor(wipeActor, WIPE_ACTOR)
+        self.AddActor(wipeSlice, WIPE_ACTOR)
         self.log("wipe? {}".format(self.wipe))
 
 
