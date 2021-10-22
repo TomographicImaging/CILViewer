@@ -9,6 +9,14 @@ build:
   skip: True # [py==38 and np==115]
   preserve_egg_dir: False 
   number: {{ GIT_DESCRIBE_NUMBER }}
+  
+test:
+  source_files:
+    - ./Wrappers/Python/test
+
+  commands:
+    - python -c "import os; print ('TESTING IN THIS DIRECTORY' , os.getcwd())"
+    - python -m unittest discover test
 
   
 requirements:
