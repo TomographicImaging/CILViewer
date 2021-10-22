@@ -919,7 +919,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
 
     def OnMouseMoveEvent(self, interactor, event):
         if self.GetInputData() is not None:
-            print ("GetInputData not None, event", event)
+            
             if self.GetViewerEvent("WINDOW_LEVEL_EVENT"):
                 self.log ("Event %s is WINDOW_LEVEL_EVENT" % (event))
                 self.HandleWindowLevel(interactor, event)
@@ -1000,7 +1000,14 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
                 self.Render()
             elif self.GetViewerEvent('RECTILINEAR_WIPE'):
                 print ("Should be in RECTILINEAR_WIPE")
-                self._viewer.wipe.SetPosition(interactor.GetEventPosition())
+                x,y,z,pix = self.display2imageCoordinate(
+                        interactor.GetEventPosition()
+                        )
+                pos = [x,y,z]
+                for i in range(3):
+                    if i == self._viewer.GetSliceOrientation():
+                        pos.pop(i)
+                self._viewer.wipe.SetPosition( *pos )
                 self.UpdatePipeline()
 
     def DisplayHelp(self):
