@@ -15,8 +15,9 @@ test:
     - ./Wrappers/Python/test
 
   commands:
+    - ls
     - python -c "import os; print ('TESTING IN THIS DIRECTORY' , os.getcwd())"
-    - python -m unittest discover test
+    - python -m unittest discover -s Wrappers/Python/test
 
   
 requirements:
@@ -30,6 +31,7 @@ requirements:
     - vtk ==8.1.2
     - pyside2
     - eqt
+    - importlib_metadata    # [py<38]
 
 about:
   home: http://www.ccpi.ac.uk
