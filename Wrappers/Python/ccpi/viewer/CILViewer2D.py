@@ -650,8 +650,8 @@ class CILInteractorStyle(vtk.vtkInteractorStyle): #vtk.vtkInteractorStyleImage
     def OnRightButtonReleaseEvent(self, interactor, event):
         self.log (event)
         if self.GetViewerEvent("WINDOW_LEVEL_EVENT"):
-            self.SetInitialLevel(self.imageSlice.GetProperty().GetColorLevel())
-            self.SetInitialWindow( self.imageSlice.GetProperty().GetColorWindow())
+            self.SetInitialLevel(self._viewer.imageSlice.GetProperty().GetColorLevel())
+            self.SetInitialWindow( self._viewer.imageSlice.GetProperty().GetColorWindow())
         elif self.GetViewerEvent("ZOOM_EVENT") or self.GetViewerEvent("PAN_EVENT"):
             self.SetInitialCameraPosition( () )
 
@@ -714,7 +714,8 @@ class CILInteractorStyle(vtk.vtkInteractorStyle): #vtk.vtkInteractorStyleImage
         self.SetEventInactive("CREATE_ROI_EVENT")
 
     def OnTracerModifiedEvent(self, interactor, event):
-        print("Tracer modified", event)
+        # Makes sure tracer is visible on current slice:
+        self.UpdatePipeline()
 
 ###########################  Coordinate conversion methods ############################
 
@@ -1126,8 +1127,8 @@ class CILInteractorStyle(vtk.vtkInteractorStyle): #vtk.vtkInteractorStyleImage
         if abs(newLevel) < 0.01:
             newLevel = 0.01 * (lambda x: -1 if x <0 else 1)(newLevel)
 
-        self.imageSlice.GetProperty().SetColorLevel(newLevel)
-        self.imageSlice.GetProperty().SetColorWindow(newWindow)
+        self._viewer.imageSlice.GetProperty().SetColorLevel(newLevel)
+        self._viewer.imageSlice.GetProperty().SetColorWindow(newWindow)
         self.log("new level {0} window {1}".format(newLevel,newWindow))
         self.UpdateImageSlice()
         self.AdjustCamera()
@@ -1368,11 +1369,10 @@ class CILViewer2D():
         self.imageTracer.GetGlyphSource().Modified()
         self.imageTracer.ProjectToPlaneOn()
         self.imageTracer.SetHandleLeftMouseButton(True)
-        
         # Set autoclose to on
         self.imageTracer.AutoCloseOn()
-
         self.imageTracer.AddObserver(vtk.vtkWidgetEvent.Select, self.style.OnTracerModifiedEvent, 1.0)
+        
         # axis orientation widget
         om = vtk.vtkAxesActor()
         ori = vtk.vtkOrientationMarkerWidget()
@@ -1447,17 +1447,7 @@ class CILViewer2D():
 
         self.installPipeline()
 
-    # def displaySlice(self, sliceno = [0]):
-    #     self.SetActiveSlice(sliceno)
-
-    #     self.updatePipeline()
-
-    #     self.renWin.Render()
-
-    #     return self.sliceActorNo
-
     def updatePipeline(self, resetcamera = False):
-        print("Prev bounds: ", [self.imageSlice.GetMinXBound(), self.imageSlice.GetMaxXBound(), self.imageSlice.GetMinYBound(), self.imageSlice.GetMaxYBound(), self.imageSlice.GetMinZBound(), self.imageSlice.GetMaxZBound()])
         extent = [ i for i in self.img3D.GetExtent()]
         extent[self.sliceOrientation * 2] = self.GetActiveSlice()
         extent[self.sliceOrientation * 2 + 1] = self.GetActiveSlice()
@@ -1469,13 +1459,9 @@ class CILViewer2D():
         self.log("VOI dimensions {0}".format(self.voi.GetOutput().GetDimensions()))
         self.ia.Update()
         self.imageSliceMapper.SetInputConnection(self.voi.GetOutputPort())
-        #self.imageSlice.SetOrientation(self.sliceOrientation)
+        self.imageSliceMapper.SetOrientation(self.sliceOrientation)
         self.imageSlice.Update()
-        print("New bounds: ", [self.imageSlice.GetMinXBound(), self.imageSlice.GetMaxXBound(), self.imageSlice.GetMinYBound(), self.imageSlice.GetMaxYBound(), self.imageSlice.GetMinZBound(), self.imageSlice.GetMaxZBound()])
 
-
-        print("Camera position: ", self.getRenderer().GetActiveCamera().GetPosition())
-        print("Focal:", self.getRenderer().GetActiveCamera().GetFocalPoint())
         if self.image2 is not None:
             self.voi2.SetVOI(self.voi.GetVOI())
             self.imageSlice2.Update()
@@ -1488,19 +1474,20 @@ class CILViewer2D():
         try:
             if not self.img3D is None:
                 # print ("self.img3D" , self.img3D)
-                # The image actor has an input.
-    
-                # Set the ROI widget's projection normal to the current orientation
+                # Set the tracer widget's projection normal to the current orientation
                 self.imageTracer.SetProjectionNormal(self.sliceOrientation)
                 # Set the Tracer widget's position along the current projection normal,
-                # which should be the same location as the current slice. 
+                # we want this on top of the image so it can be seen above all slices.
+                # On the X and Z axes, slice 0 is at the top as the axis points into 
+                # the screen.
                 slice_coords = [0,0,0]
-                slice_coords[self.GetSliceOrientation()] = self.GetActiveSlice()
+                # When we are viewing the Y direction, the axis goes into the page
+                # so we have to swap which end of the axis the tracer is placed so
+                # that it isn't in the shadow of the slice.
+                if self.GetSliceOrientation() == SLICE_ORIENTATION_XZ:
+                    slice_coords[self.GetSliceOrientation()] = self.img3D.GetDimensions()[SLICE_ORIENTATION_XZ]-1
                 self.imageTracer.SetProjectionPosition(self.style.image2world(slice_coords)[self.GetSliceOrientation()])
-                         
-    # this->input->GetPoint(0)[this->SliceOrientation] + (this->Slice * this->input->GetSpacing()[this->SliceOrientation]));
-            
-                self.imageTracer.SetViewProp(self.imageSlice)
+
             else:
                 print ("self.img3D None")
         except Exception as ge:
@@ -1561,6 +1548,8 @@ class CILViewer2D():
             self._viewer.imageSlice.GetProperty().SetInterpolationTypeToLinear()
         else:
             self.imageSlice.GetProperty().SetInterpolationTypeToNearest()
+
+        self.imageTracer.SetProjectionPosition(self.style.image2world([0,0,0])[self.GetSliceOrientation()])
         
         self.AddActor(self.imageSlice, SLICE_ACTOR)
         
