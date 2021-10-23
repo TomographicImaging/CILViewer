@@ -550,36 +550,15 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
             # toggle interpolation of slice actor
             is_interpolated = self._viewer.sliceActor.GetInterpolate()
             self._viewer.sliceActor.SetInterpolate(not is_interpolated)
-        elif interactor.GetKeyCode() == '0':
+        elif interactor.GetKeyCode() == '1':
             ev = 'RECTILINEAR_WIPE'
             if self.GetViewerEvent(ev):
                 print ("remove event {}".format(ev))
                 self.SetEventInactive(ev)
             # ImageWithOverlay
             self._viewer.setVisualisationToImageWithOverlay()
-        # elif interactor.GetKeyCode() == '1':
-        #     if self._viewer.method != CILViewer2D.TOGGLE_IMAGE1_IMAGE2:
-        #         self._viewer.setVisualisationToToggleImage1Image2()
-        #     print("keycode 1")
-        #     # self._viewer.removeActor(OVERLAY_ACTOR)
-        #     # self._viewer.AddActor(self._viewer.sliceActor, SLICE_ACTOR)
-        #     for k,v in self._viewer.actors.items():
-        #         print (v.GetVisibility(),k)
-        #     self._viewer.sliceActor.SetVisibility(True)
-        #     self._viewer.sliceActor2.SetVisibility(False)
-        #     self.Render()
-        # elif interactor.GetKeyCode() == '2':
-        #     if self._viewer.method != CILViewer2D.TOGGLE_IMAGE1_IMAGE2:
-        #         self._viewer.setVisualisationToToggleImage1Image2()
-        #     print("keycode 2")
-        #     for k,v in self._viewer.actors.items():
-        #         print (v.GetVisibility(),k)
-        #     # self._viewer.removeActor(SLICE_ACTOR)
-        #     # self._viewer.AddActor(self._viewer.sliceActor2, OVERLAY_ACTOR)
-        #     self._viewer.sliceActor.SetVisibility(False)
-        #     self._viewer.sliceActor2.SetVisibility(True)
-        #     self.Render()
-        elif interactor.GetKeyCode() == '3':
+        
+        elif interactor.GetKeyCode() == '2':
             if self._viewer.method != CILViewer2D.RECTILINEAR_WIPE:
                 self._viewer.setVisualisationToRectilinearWipe()
                 self.SetEventActive('RECTILINEAR_WIPE')
