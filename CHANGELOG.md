@@ -1,5 +1,10 @@
 # Changelog
 
+## v**
+* Use vtkImageSlice instead of vtkImageActor and vtkImageMapToWindowLevelColor in the 2D viewer
+* Force requirement of vtk 9.0.3 or greater.
+* Update viewer so it works with vtk9
+
 ## v21.1.2
 * Fix the setting of the view up vector in the y direction, to avoid getting vtk warning messages.
 * The event triggered by the "w" key, (i.e. update the window level) is now based on a smaller area of the image under the cursor. The area is 10% in each direction of the whole image extent.
