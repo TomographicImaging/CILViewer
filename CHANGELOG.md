@@ -1,5 +1,11 @@
 # Changelog
 
+## v21.1.2
+* Fix the setting of the view up vector in the y direction, to avoid getting vtk warning messages.
+* The event triggered by the "w" key, (i.e. update the window level) is now based on a smaller area of the image under the cursor. The area is 10% in each direction of the whole image extent.
+* The auto window level now uses the average value between 1 and 99 percentile as level and the difference for window. Before it was the median.
+* Update examples to use PySide2 instead of PyQt5 
+
 ## v21.1.1
 * fix bug with importing version number
 
