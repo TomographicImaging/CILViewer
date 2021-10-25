@@ -71,10 +71,9 @@ class ViewerEventManager(object):
         return all(not x for x in self.events.values())
 
 
-class CILInteractorStyle(vtk.vtkInteractorStyle): #vtk.vtkInteractorStyleImage
+class CILInteractorStyle(vtk.vtkInteractorStyle):
 
     def __init__(self, callback):
-        #vtk.vtkInteractorStyleImage.__init__(self)
         self.callback = callback
         self._viewer = callback
         priority = 1.0
@@ -566,9 +565,6 @@ class CILInteractorStyle(vtk.vtkInteractorStyle): #vtk.vtkInteractorStyleImage
 
     def OnLeftButtonPressEvent(self, interactor, event):
         # print ("INTERACTOR", interactor)
-        # interactor = self._viewer.getInteractor()
-        print("left button event")
-
         alt = interactor.GetAltKey()
         shift = interactor.GetShiftKey()
         ctrl = interactor.GetControlKey()
@@ -625,14 +621,11 @@ class CILInteractorStyle(vtk.vtkInteractorStyle): #vtk.vtkInteractorStyleImage
         self.SetEventInactive("DELETE_ROI_EVENT")
 
     def OnRightButtonPressEvent(self, interactor, event):
-        print("Right button press")
-
         alt = interactor.GetAltKey()
         shift = interactor.GetShiftKey()
         ctrl = interactor.GetControlKey()
 
         self.SetInitialEventPosition(interactor.GetEventPosition())
-
 
         if alt and not (ctrl and shift):
             self.SetEventActive("WINDOW_LEVEL_EVENT")
@@ -1498,7 +1491,6 @@ class CILViewer2D():
         except Exception as ge:
             print (ge)
         self.AdjustCamera(resetcamera)
-        #self.ren.AddViewProp(self.imageSlice)
         self.renWin.Render()
 
 
