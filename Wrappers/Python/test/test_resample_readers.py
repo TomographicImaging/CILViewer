@@ -27,7 +27,7 @@ class TestResampleReaders(unittest.TestCase):
 
     def setUp(self):
         # Generate random 3D array and write to HDF5:
-        self.input_3D_array = np.random.randint(10, size=(5, 10, 6))
+        self.input_3D_array = np.random.randint(10, size=(5, 10, 6), dtype=np.uint8)
         bytes_3D_array = bytes(self.input_3D_array)
         self.raw_filename_3D = 'test_3D_data.raw'
         with open(self.raw_filename_3D, 'wb') as f:
