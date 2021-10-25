@@ -1447,6 +1447,11 @@ class CILViewer2D():
 
         self.installPipeline()
 
+    def displaySlice(self, sliceno= [0]):
+        self.SetActiveSlice(sliceno)
+        self.updatePipeline()
+        self.renWin.Render()
+
     def updatePipeline(self, resetcamera = False):
         extent = [ i for i in self.img3D.GetExtent()]
         extent[self.sliceOrientation * 2] = self.GetActiveSlice()
@@ -1545,7 +1550,7 @@ class CILViewer2D():
         self.imageSlice.GetProperty().SetColorLevel(self.InitialLevel)
         self.imageSlice.GetProperty().SetColorWindow(self.InitialWindow)
         if self.image_is_downsampled:  
-            self._viewer.imageSlice.GetProperty().SetInterpolationTypeToLinear()
+            self.imageSlice.GetProperty().SetInterpolationTypeToLinear()
         else:
             self.imageSlice.GetProperty().SetInterpolationTypeToNearest()
 
