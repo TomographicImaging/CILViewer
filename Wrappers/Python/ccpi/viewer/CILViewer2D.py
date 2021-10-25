@@ -453,6 +453,8 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
 
             self.SetActiveCamera(camera)
             self.SetSliceOrientation(SLICE_ORIENTATION_YZ)
+            if self.GetViewerEvent('RECTILINEAR_WIPE'):
+                self._viewer.wipeSliceMapper.SetOrientation(SLICE_ORIENTATION_YZ)
             self.UpdatePipeline(True)
 
         elif self.reslicing_enabled and interactor.GetKeyCode() == "y":
@@ -479,6 +481,8 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
             camera.SetViewUp(0, 0, -1)
             self.SetActiveCamera(camera)
             self.SetSliceOrientation(SLICE_ORIENTATION_XZ)
+            if self.GetViewerEvent('RECTILINEAR_WIPE'):
+                self._viewer.wipeSliceMapper.SetOrientation(SLICE_ORIENTATION_XZ)
             self.UpdatePipeline(True)
 
         elif self.reslicing_enabled and interactor.GetKeyCode() == "z":
@@ -504,6 +508,8 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
             self.SetActiveCamera(camera)
             self.ResetCamera()
             self.SetSliceOrientation(SLICE_ORIENTATION_XY)
+            if self.GetViewerEvent('RECTILINEAR_WIPE'):
+                self._viewer.wipeSliceMapper.SetOrientation(SLICE_ORIENTATION_XY)
             self.UpdatePipeline(True)
 
         elif interactor.GetKeyCode() == "a":
@@ -998,10 +1004,14 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
                 x,y,z,pix = self.display2imageCoordinate(
                         interactor.GetEventPosition()
                         )
-                pos = [x,y,z]
-                for i in range(3):
-                    if i == self._viewer.GetSliceOrientation():
-                        pos.pop(i)
+                pos = []
+                slice_orientation = self._viewer.GetSliceOrientation()
+                if slice_orientation == SLICE_ORIENTATION_XY:
+                    pos = [x, y]
+                elif slice_orientation == SLICE_ORIENTATION_XZ:
+                    pos = [x, z]
+                elif slice_orientation == SLICE_ORIENTATION_YZ:
+                    pos = [z, y]
                 self._viewer.wipe.SetPosition( *pos )
                 self.UpdatePipeline()
 
@@ -1585,9 +1595,9 @@ class CILViewer2D():
             self.uninstallPipeline()
             if self.image2 is not None:
                 self.uninstallPipeline2()
-        # install the new pipeline
-        self.method = method
-        self.installPipeline()
+            # install the new pipeline
+            self.method = method
+            self.installPipeline()
         
         
         
@@ -1764,30 +1774,30 @@ class CILViewer2D():
         self.voi.SetVOI(*extent1)
         self.voi2.SetVOI(*extent2)
         
-
-        wipe = vtk.vtkImageRectilinearWipe()
+        wipe            = vtk.vtkImageRectilinearWipe()
+        wipeSliceMapper = vtk.vtkImageSliceMapper()
+        wipeSlice       = vtk.vtkImageSlice()
+        
         wipe.SetInputConnection(0, self.voi.GetOutputPort())
         wipe.SetInputConnection(1, self.voi2.GetOutputPort())
         # should set the position to center of viewport
         wipe.SetPosition(10,10)
         wipe.SetWipe(0)
-        self.wipe = wipe
-
-
-        wipeSlice = vtk.vtkImageSlice()
         
-        wipeSliceMapper = vtk.vtkImageSliceMapper()
+        
+        
         wipeSliceMapper.SetInputConnection(wipe.GetOutputPort())
+        wipeSliceMapper.SetOrientation(orient)
         
         
         wipeSlice.SetMapper(wipeSliceMapper)
         wipeSlice.GetProperty().SetInterpolationTypeToNearest()
         wipeSlice.GetProperty().SetColorLevel(self.InitialLevel)
         wipeSlice.GetProperty().SetColorWindow(self.InitialWindow)
-
-        wipeSliceMapper.SetOrientation(self.sliceOrientation)
-        self.wipeSliceMapper = wipeSliceMapper
         wipeSlice.Update()
+        
+        self.wipe = wipe
+        self.wipeSliceMapper = wipeSliceMapper
         self.wipeActor = wipeSlice
 
         self.AddActor(wipeSlice, WIPE_ACTOR)
