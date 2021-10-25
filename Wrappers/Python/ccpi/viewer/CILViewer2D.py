@@ -85,7 +85,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
         self.callback = callback
         self._viewer = callback
         priority = 1.0
-        self.debug = True
+        self.debug = False
 
         self.AddObserver("MouseWheelForwardEvent" , self.OnMouseWheelForward , priority)
         self.AddObserver("MouseWheelBackwardEvent" , self.OnMouseWheelBackward, priority)
@@ -278,6 +278,10 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
         """
         return self.image2world(self.GetInputData().GetExtent()[1::2])
 
+    def SetCharEvent(self, char):
+        self.GetInteractor().SetKeyCode(char)
+        self.OnKeyPress(self.GetInteractor(), "KeyPressEvent")
+
     def validateValue(self, value, axis):
         return self._viewer.validateValue(value, axis)
 
@@ -427,7 +431,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
             self.DisplayLineProfile(interactor, event, True)
 
     def OnKeyPress(self, interactor, event):
-
+        print (interactor.GetKeyCode())
         if self.reslicing_enabled and interactor.GetKeyCode() == "x":
             # Change the camera view point
 
@@ -526,7 +530,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
             self.SaveRender(filename)
 
         elif interactor.GetKeyCode() == "q":
-            print ("Render loop terminating by pressing %s" % (interactor.GetKeyCode(), ))
+            self.log ("Render loop terminating by pressing %s" % (interactor.GetKeyCode(), ))
             interactor.SetKeyCode("e")
             self.OnKeyPress(interactor, event)
 
@@ -557,15 +561,21 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
                 self.SetEventInactive(ev)
             # ImageWithOverlay
             self._viewer.setVisualisationToImageWithOverlay()
+            self.AdjustCamera()
+            self.Render()
+                
         
         elif interactor.GetKeyCode() == '2':
             if self._viewer.method != CILViewer2D.RECTILINEAR_WIPE:
                 self._viewer.setVisualisationToRectilinearWipe()
+                orient = ['x', 'y', 'z']
+                self.SetCharEvent(orient[self.GetSliceOrientation()])
                 self.SetEventActive('RECTILINEAR_WIPE')
-            print("keycode 3")
         else :
             self.log("Unhandled event %s" % (interactor.GetKeyCode()))
     
+
+
     def OnKeyRelease(self, interactor, event):
 
         # remove events on key release
@@ -1962,7 +1972,7 @@ class CILViewer2D():
             return value
 
     def updateROIHistogram(self):
-        print ("Updating hist")
+        self.log ("Updating hist")
 
         extent = [0 for i in range(6)]
         if self.GetSliceOrientation() == SLICE_ORIENTATION_XY:
