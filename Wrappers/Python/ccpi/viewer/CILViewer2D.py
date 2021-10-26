@@ -53,9 +53,9 @@ class ViewerEventManager(object):
             "PAN_EVENT": False,                        # ctrl + right mouse + move
             "CREATE_ROI_EVENT": False,                 # ctrl + left mouse
             "DELETE_ROI_EVENT": False,                 # alt + left mouse
-            "SHOW_LINE_PROFILE_EVENT":          False,           # l
-            "UPDATE_WINDOW_LEVEL_UNDER_CURSOR": False,  # Mouse move + w
-            "RECTILINEAR_WIPE": False
+            "SHOW_LINE_PROFILE_EVENT": False,          # l
+            "UPDATE_WINDOW_LEVEL_UNDER_CURSOR": False, # Mouse move + w
+            "RECTILINEAR_WIPE": False                  # activated by key 2, updates by mouse move
         }
 
     def __str__(self):
@@ -431,7 +431,6 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
             self.DisplayLineProfile(interactor, event, True)
 
     def OnKeyPress(self, interactor, event):
-        print (interactor.GetKeyCode())
         if self.reslicing_enabled and interactor.GetKeyCode() == "x":
             # Change the camera view point
 
@@ -1207,7 +1206,6 @@ class CILViewer2D():
     # visualisation modes
     IMAGE_WITH_OVERLAY = 0
     RECTILINEAR_WIPE = 1
-    TOGGLE_IMAGE1_IMAGE2 = 2
 
     def __init__(self, dimx=600,dimy=600, ren=None, renWin=None,iren=None, debug=True):
         '''creates the rendering pipeline'''
@@ -1524,9 +1522,6 @@ class CILViewer2D():
         self.voi2.SetVOI(*extent)
         # print ("updateRectilinearWipePipeline", self.wipe.GetPosition())
         self.wipeSliceMapper.SetOrientation(self.sliceOrientation)
-        
-    def updateToggleImage1Image2Pipeline(self, resetcamera=False):
-        pass
 
     def updateMainVOI(self):
         # get the current slice
@@ -1611,9 +1606,6 @@ class CILViewer2D():
     def setVisualisationToRectilinearWipe(self):
         self.setVisualisationPipelineMethodTo(CILViewer2D.RECTILINEAR_WIPE)
             
-    def setVisualisationToToggleImage1Image2(self):
-        self.setVisualisationPipelineMethodTo(CILViewer2D.TOGGLE_IMAGE1_IMAGE2)
-        
     def installPipeline(self):
         if self.method == CILViewer2D.IMAGE_WITH_OVERLAY:
             if self.img3D is not None:
@@ -2248,6 +2240,3 @@ class CILViewer2D():
         elif self.method == CILViewer2D.RECTILINEAR_WIPE:
             # rectilinear wipe visualises 2 images in the same pipeline
             pass
-
-    
-
