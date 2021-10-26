@@ -29,7 +29,9 @@ else:
     requires = ['numpy','vtk']
     cwd = os.path.join(os.environ.get('RECIPE_DIR'),'..')
 
+print(cwd)
 fname = os.path.join(cwd, 'ccpi', 'viewer', 'version.py')
+print("write version at: ", fname)
 
 if os.path.exists(fname):
     os.remove(fname)
