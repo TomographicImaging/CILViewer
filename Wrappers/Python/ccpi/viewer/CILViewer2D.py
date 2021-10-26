@@ -1000,19 +1000,22 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
                 self.AdjustCamera()
                 self.Render()
             elif self.GetViewerEvent('RECTILINEAR_WIPE'):
-                # print ("Should be in RECTILINEAR_WIPE")
+                # get event in image coordinate
                 x,y,z,pix = self.display2imageCoordinate(
                         interactor.GetEventPosition()
                         )
-                pos = []
+                # update the wipe depending on the slice orientation
                 slice_orientation = self._viewer.GetSliceOrientation()
                 if slice_orientation == SLICE_ORIENTATION_XY:
-                    pos = [x, y]
+                    self._viewer.wipe.SetAxis(0, 1)
+                    self._viewer.wipe.SetPosition( x, y )
                 elif slice_orientation == SLICE_ORIENTATION_XZ:
-                    pos = [x, z]
+                    self._viewer.wipe.SetAxis(0, 2)
+                    self._viewer.wipe.SetPosition( x, z )
                 elif slice_orientation == SLICE_ORIENTATION_YZ:
-                    pos = [z, y]
-                self._viewer.wipe.SetPosition( *pos )
+                    self._viewer.wipe.SetAxis(2, 1)
+                    self._viewer.wipe.SetPosition( z, y )
+                
                 self.UpdatePipeline()
 
     def DisplayHelp(self):
