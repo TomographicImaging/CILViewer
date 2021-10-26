@@ -1715,10 +1715,10 @@ class CILViewer2D():
 
 
             self.lut2 = lut
-            lut.SetNumberOfColors(256)
-            lut.SetHueRange(.1,.6)
+            lut.SetNumberOfColors(7)
+            lut.SetHueRange(.4,.6)
             lut.SetSaturationRange(1, 1)
-            lut.SetValueRange(ai.GetMinimum(), ai.GetMaximum())
+            lut.SetValueRange(0.7,0.7)
             lut.SetAlphaRange(0,0.5)
             lut.Build()
             
@@ -1790,10 +1790,7 @@ class CILViewer2D():
         self.wipeActor = wipeSlice
 
         self.AddActor(wipeSlice, WIPE_ACTOR)
-        self.log("wipe? {}".format(self.wipe))
-
-
-    
+            
     def AdjustCamera(self, resetcamera = False):
         self.ren.ResetCameraClippingRange()
 
