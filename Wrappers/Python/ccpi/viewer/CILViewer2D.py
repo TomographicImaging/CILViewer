@@ -936,9 +936,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
             elif self.GetViewerEvent("SHOW_LINE_PROFILE_EVENT"):
                 self.DisplayLineProfile(interactor, event, True)
             elif self.GetViewerEvent('UPDATE_WINDOW_LEVEL_UNDER_CURSOR'):
-                # print ("event w")
                 x,y = interactor.GetEventPosition()
-                # print (x,y)
                 ic = self.display2imageCoordinate((x,y))
                 print (x,y, ic, "image coordinate")
                 whole_extent = self._viewer.img3D.GetExtent()
@@ -1520,7 +1518,6 @@ class CILViewer2D():
         self.voi.SetVOI(*extent)
         #TODO what happens if image2 has a different sampling?
         self.voi2.SetVOI(*extent)
-        # print ("updateRectilinearWipePipeline", self.wipe.GetPosition())
         self.wipeSliceMapper.SetOrientation(self.sliceOrientation)
 
     def updateMainVOI(self):
@@ -1669,8 +1666,6 @@ class CILViewer2D():
         self.ia.SetInputData(self.voi.GetOutput())
         self.ia.SetAutoRangePercentiles(5.0,95.)
         self.ia.Update()
-        #cmax = self.ia.GetMax()[0]
-        #cmin = self.ia.GetMin()[0]
         cmin, cmax = self.ia.GetAutoRange()
         # set the level to the average between the percentiles 
         level = ( cmin + cmax ) / 2
@@ -1699,7 +1694,6 @@ class CILViewer2D():
         else:
             self.sliceActor.SetInterpolate(False)
         # actors are added directly to the renderer
-        # self.ren.AddActor(self.sliceActor)
         self.AddActor(self.sliceActor, SLICE_ACTOR)
             
         self.imageTracer.SetViewProp(self.sliceActor)
