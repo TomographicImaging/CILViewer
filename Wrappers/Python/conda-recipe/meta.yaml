@@ -19,7 +19,7 @@ requirements:
   run:
     - python
     - {{ pin_compatible('numpy', min_pin='x.x', max_pin='x.x') }}
-    - vtk ==8.1.2
+    - vtk >=9.0.3 
     - pyside2
     - eqt
 
