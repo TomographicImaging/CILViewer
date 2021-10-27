@@ -9,6 +9,7 @@ build:
   skip: True # [py==38 and np==115]
   preserve_egg_dir: False 
   number: {{ GIT_DESCRIBE_NUMBER }}
+  noarch: python
   
 test:
   source_files:
@@ -31,7 +32,6 @@ requirements:
     - vtk ==8.1.2
     - pyside2
     - eqt
-    - importlib_metadata    # [py<38]
 
 about:
   home: http://www.ccpi.ac.uk
