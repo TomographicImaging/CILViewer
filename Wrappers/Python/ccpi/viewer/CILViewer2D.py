@@ -1526,7 +1526,6 @@ class CILViewer2D():
         return extent
 
     def updateImageWithOverlayPipeline(self, resetcamera=False):
-        print("update overlay pipe")
         extent = self.updateMainVOI()
         self.ia.Update()
         self.imageSliceMapper.SetOrientation(self.sliceOrientation)
@@ -1562,6 +1561,7 @@ class CILViewer2D():
         except Exception as ge:
             print (ge)
         self.AdjustCamera(resetcamera)
+        self.renWin.Render()
         
     @property
     def vis_mode(self):
@@ -1674,28 +1674,14 @@ class CILViewer2D():
 
         self.imageSlice.Update()
 
+        print("Setting position to: ", self.style.image2world([0,0,0])[self.GetSliceOrientation()])
+
         self.imageTracer.SetProjectionPosition(self.style.image2world([0,0,0])[self.GetSliceOrientation()])
         
         self.AddActor(self.imageSlice, SLICE_ACTOR)
         
-        self.ren.ResetCamera()
-        self.ren.Render()
-
-        self.camera.SetViewUp(0,-1,0)
-
-        if not self.axes_initialised:
-            self.camera.Azimuth(180)
-
-        self.AdjustCamera()
-
-        self.ren.AddViewProp(self.cursorActor)
-        self.cursorActor.VisibilityOn()
-        
         self.imageTracer.SetViewProp(self.imageSlice)
         
-        self.iren.Initialize()
-        self.renWin.Render()
-        #self.iren.Start()
 
     def installImageWithOverlayPipeline2(self):
         '''Slices a 3D volume and then creates an actor to be rendered'''
