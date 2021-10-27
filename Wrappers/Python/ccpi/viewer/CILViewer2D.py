@@ -443,8 +443,6 @@ class CILInteractorStyle(vtk.vtkInteractorStyle):
 
             self.SetActiveCamera(camera)
             self.SetSliceOrientation(SLICE_ORIENTATION_YZ)
-            if self.GetViewerEvent('RECTILINEAR_WIPE'):
-                self._viewer.wipeSliceMapper.SetOrientation(SLICE_ORIENTATION_YZ)
             self.UpdatePipeline(True)
 
         elif self.reslicing_enabled and interactor.GetKeyCode() == "y":
@@ -471,8 +469,6 @@ class CILInteractorStyle(vtk.vtkInteractorStyle):
             camera.SetViewUp(0, 0, -1)
             self.SetActiveCamera(camera)
             self.SetSliceOrientation(SLICE_ORIENTATION_XZ)
-            if self.GetViewerEvent('RECTILINEAR_WIPE'):
-                self._viewer.wipeSliceMapper.SetOrientation(SLICE_ORIENTATION_XZ)
             self.UpdatePipeline(True)
 
         elif self.reslicing_enabled and interactor.GetKeyCode() == "z":
@@ -498,8 +494,6 @@ class CILInteractorStyle(vtk.vtkInteractorStyle):
             self.SetActiveCamera(camera)
             self.ResetCamera()
             self.SetSliceOrientation(SLICE_ORIENTATION_XY)
-            if self.GetViewerEvent('RECTILINEAR_WIPE'):
-                self._viewer.wipeSliceMapper.SetOrientation(SLICE_ORIENTATION_XY)
             self.UpdatePipeline(True)
 
         elif interactor.GetKeyCode() == "a":
@@ -562,7 +556,6 @@ class CILInteractorStyle(vtk.vtkInteractorStyle):
         elif interactor.GetKeyCode() == '1':
             ev = 'RECTILINEAR_WIPE'
             if self.GetViewerEvent(ev):
-                print ("remove event {}".format(ev))
                 self.SetEventInactive(ev)
             # ImageWithOverlay
             self._viewer.setVisualisationToImageWithOverlay()
@@ -916,7 +909,6 @@ class CILInteractorStyle(vtk.vtkInteractorStyle):
 
     def OnMouseMoveEvent(self, interactor, event):
         if self.GetInputData() is not None:
-            
             if self.GetViewerEvent("WINDOW_LEVEL_EVENT"):
                 self.log ("Event %s is WINDOW_LEVEL_EVENT" % (event))
                 self.HandleWindowLevel(interactor, event)
