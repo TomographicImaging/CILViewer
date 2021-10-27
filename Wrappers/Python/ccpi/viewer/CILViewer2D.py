@@ -573,7 +573,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
                 
         
         elif interactor.GetKeyCode() == '2':
-            if self._viewer.method != CILViewer2D.RECTILINEAR_WIPE:
+            if self._viewer.vis_mode != CILViewer2D.RECTILINEAR_WIPE:
                 self._viewer.setVisualisationToRectilinearWipe()
                 orient = ['x', 'y', 'z']
                 self.SetCharEvent(orient[self.GetSliceOrientation()])
@@ -662,7 +662,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
 
         if alt and not (ctrl and shift):
             self.SetEventActive("WINDOW_LEVEL_EVENT")
-            if self._viewer.method == CILViewer2D.IMAGE_WITH_OVERLAY:
+            if self._viewer.vis_mode == CILViewer2D.IMAGE_WITH_OVERLAY:
                 self.log("Event %s is WINDOW_LEVEL_EVENT" % (event))
                 self.HandleWindowLevel(interactor, event)
         elif shift and not (ctrl and alt):
@@ -677,7 +677,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleImage):
     def OnRightButtonReleaseEvent(self, interactor, event):
         self.log (event)
         if self.GetViewerEvent("WINDOW_LEVEL_EVENT"):
-            if self._viewer.method == CILViewer2D.IMAGE_WITH_OVERLAY:
+            if self._viewer.vis_mode == CILViewer2D.IMAGE_WITH_OVERLAY:
                 self.SetInitialLevel( self.GetWindowLevel().GetLevel() )
                 self.SetInitialWindow ( self.GetWindowLevel().GetWindow() )
         elif self.GetViewerEvent("ZOOM_EVENT") or self.GetViewerEvent("PAN_EVENT"):
@@ -1428,7 +1428,7 @@ class CILViewer2D():
         ori.InteractiveOff()
         self.orientation_marker = ori
 
-        self.__method = CILViewer2D.IMAGE_WITH_OVERLAY
+        self.__vis_mode = CILViewer2D.IMAGE_WITH_OVERLAY
         self.setVisualisationToImageWithOverlay()
 
 
@@ -1504,9 +1504,9 @@ class CILViewer2D():
         return self.sliceActorNo
 
     def updatePipeline(self, resetcamera = False):
-        if self.method == CILViewer2D.IMAGE_WITH_OVERLAY:
+        if self.vis_mode == CILViewer2D.IMAGE_WITH_OVERLAY:
             self.updateImageWithOverlayPipeline(resetcamera=resetcamera)
-        elif self.method == CILViewer2D.RECTILINEAR_WIPE:
+        elif self.vis_mode == CILViewer2D.RECTILINEAR_WIPE:
             self.updateRectilinearWipePipeline(resetcamera=resetcamera)
         
         
@@ -1576,22 +1576,22 @@ class CILViewer2D():
             print (ge)
         
     @property
-    def method(self):
-        return self.__method
-    @method.setter
-    def method(self, value):
+    def vis_mode(self):
+        return self.__vis_mode
+    @vis_mode.setter
+    def vis_mode(self, value):
         if value in [CILViewer2D.IMAGE_WITH_OVERLAY, CILViewer2D.RECTILINEAR_WIPE]:
-            self.__method = value
+            self.__vis_mode = value
 
     def setVisualisationPipelineMethodTo(self, method):
         # get the current visualisation mode
-        if self.method != method:
+        if self.vis_mode != method:
             # remove current pipeline
             self.uninstallPipeline()
             if self.image2 is not None:
                 self.uninstallPipeline2()
             # install the new pipeline
-            self.method = method
+            self.vis_mode = method
             self.installPipeline()
         
         
@@ -1604,12 +1604,12 @@ class CILViewer2D():
         self.setVisualisationPipelineMethodTo(CILViewer2D.RECTILINEAR_WIPE)
             
     def installPipeline(self):
-        if self.method == CILViewer2D.IMAGE_WITH_OVERLAY:
+        if self.vis_mode == CILViewer2D.IMAGE_WITH_OVERLAY:
             if self.img3D is not None:
                 self.installImageWithOverlayPipeline()
             if self.image2 is not None:
                 self.installPipeline2()
-        elif self.method == CILViewer2D.RECTILINEAR_WIPE:
+        elif self.vis_mode == CILViewer2D.RECTILINEAR_WIPE:
             self.installRectilinearWipePipeline()
 
         self.ren.ResetCamera()
@@ -1631,9 +1631,9 @@ class CILViewer2D():
     
     def installPipeline2(self):
         if self.image2 is not None:
-            if self.method == CILViewer2D.IMAGE_WITH_OVERLAY:
+            if self.vis_mode == CILViewer2D.IMAGE_WITH_OVERLAY:
                 self.installImageWithOverlayPipeline2()
-            elif self.method == CILViewer2D.RECTILINEAR_WIPE:
+            elif self.vis_mode == CILViewer2D.RECTILINEAR_WIPE:
                 pass
         else:
             self.log("installPipeline2 no data")
@@ -2208,9 +2208,9 @@ class CILViewer2D():
 
     def uninstallPipeline(self):
         '''uninstall the current visualisation pipeline'''
-        if self.method == CILViewer2D.IMAGE_WITH_OVERLAY:
+        if self.vis_mode == CILViewer2D.IMAGE_WITH_OVERLAY:
             self.removeActor([SLICE_ACTOR, HISTOGRAM_ACTOR])
-        elif self.method == CILViewer2D.RECTILINEAR_WIPE:
+        elif self.vis_mode == CILViewer2D.RECTILINEAR_WIPE:
             self.removeActor(WIPE_ACTOR)
         
 
@@ -2226,8 +2226,8 @@ class CILViewer2D():
 
 
     def uninstallPipeline2(self):
-        if self.method == CILViewer2D.IMAGE_WITH_OVERLAY:
+        if self.vis_mode == CILViewer2D.IMAGE_WITH_OVERLAY:
             self.removeActor(OVERLAY_ACTOR)
-        elif self.method == CILViewer2D.RECTILINEAR_WIPE:
+        elif self.vis_mode == CILViewer2D.RECTILINEAR_WIPE:
             # rectilinear wipe visualises 2 images in the same pipeline
             pass
