@@ -1,7 +1,7 @@
 # Changelog
 
 ## v21.x.x
-* Use vtkImageSlice instead of vtkImageActor and vtkImageMapToWindowLevelColor in the 2D viewer
+* Use vtkImageSlice instead of vtkImageActor and vtkImageMapToWindowLevelColor in the 2D and 3D viewers
 * Force requirement of vtk 9.0.3 or greater.
 * Update viewer so it works with vtk9
 * Adds new mode of visualisation that allows the comparison of 2 equally shaped/spaced images with a rectilinear wipe. The visualisation with the wipe can be triggered by typing key 2 and reset to normal (image with overlay) by key 1.
