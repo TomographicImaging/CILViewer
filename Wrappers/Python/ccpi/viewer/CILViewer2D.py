@@ -25,16 +25,17 @@ SLICE_ORIENTATION_XZ = 1 # Y
 SLICE_ORIENTATION_YZ = 0 # X
 
 CONTROL_KEY = 8
-SHIFT_KEY = 4
-ALT_KEY = -128
+SHIFT_KEY   = 4
+ALT_KEY     = -128
 
-SLICE_ACTOR = 'slice_actor'
-OVERLAY_ACTOR = 'overlay_actor'
-HISTOGRAM_ACTOR = 'histogram_actor'
-HELP_ACTOR = 'help_actor'
-CURSOR_ACTOR = 'cursor_actor'
-CROSSHAIR_ACTOR = 'crosshair_actor'
-LINEPLOT_ACTOR = 'lineplot_actor'
+SLICE_ACTOR      = 'slice_actor'
+OVERLAY_ACTOR    = 'overlay_actor'
+HISTOGRAM_ACTOR  = 'histogram_actor'
+HELP_ACTOR       = 'help_actor'
+CURSOR_ACTOR     = 'cursor_actor'
+CROSSHAIR_ACTOR  = 'crosshair_actor'
+LINEPLOT_ACTOR   = 'lineplot_actor'
+WIPE_ACTOR       = 'wipe_actor'
 
 class ViewerEventManager(object):
 
@@ -48,7 +49,8 @@ class ViewerEventManager(object):
             "CREATE_ROI_EVENT": False,                 # ctrl + left mouse
             "DELETE_ROI_EVENT": False,                 # alt + left mouse
             "SHOW_LINE_PROFILE_EVENT": False,          # l
-            "UPDATE_WINDOW_LEVEL_UNDER_CURSOR": False  # Mouse move + w
+            "UPDATE_WINDOW_LEVEL_UNDER_CURSOR": False, # Mouse move + w
+            "RECTILINEAR_WIPE": False                  # activated by key 2, updates by mouse move
         }
 
     def __str__(self):
@@ -267,6 +269,10 @@ class CILInteractorStyle(vtk.vtkInteractorStyle):
         """
         return self.image2world(self.GetInputData().GetExtent()[1::2])
 
+    def SetCharEvent(self, char):
+        self.GetInteractor().SetKeyCode(char)
+        self.OnKeyPress(self.GetInteractor(), "KeyPressEvent")
+
     def validateValue(self, value, axis):
         return self._viewer.validateValue(value, axis)
 
@@ -416,7 +422,6 @@ class CILInteractorStyle(vtk.vtkInteractorStyle):
             self.DisplayLineProfile(interactor, event, True)
 
     def OnKeyPress(self, interactor, event):
-
         if self.reslicing_enabled and interactor.GetKeyCode() == "x":
             # Change the camera view point
 
@@ -438,6 +443,8 @@ class CILInteractorStyle(vtk.vtkInteractorStyle):
 
             self.SetActiveCamera(camera)
             self.SetSliceOrientation(SLICE_ORIENTATION_YZ)
+            if self.GetViewerEvent('RECTILINEAR_WIPE'):
+                self._viewer.wipeSliceMapper.SetOrientation(SLICE_ORIENTATION_YZ)
             self.UpdatePipeline(True)
 
         elif self.reslicing_enabled and interactor.GetKeyCode() == "y":
@@ -464,6 +471,8 @@ class CILInteractorStyle(vtk.vtkInteractorStyle):
             camera.SetViewUp(0, 0, -1)
             self.SetActiveCamera(camera)
             self.SetSliceOrientation(SLICE_ORIENTATION_XZ)
+            if self.GetViewerEvent('RECTILINEAR_WIPE'):
+                self._viewer.wipeSliceMapper.SetOrientation(SLICE_ORIENTATION_XZ)
             self.UpdatePipeline(True)
 
         elif self.reslicing_enabled and interactor.GetKeyCode() == "z":
@@ -489,6 +498,8 @@ class CILInteractorStyle(vtk.vtkInteractorStyle):
             self.SetActiveCamera(camera)
             self.ResetCamera()
             self.SetSliceOrientation(SLICE_ORIENTATION_XY)
+            if self.GetViewerEvent('RECTILINEAR_WIPE'):
+                self._viewer.wipeSliceMapper.SetOrientation(SLICE_ORIENTATION_XY)
             self.UpdatePipeline(True)
 
         elif interactor.GetKeyCode() == "a":
@@ -515,7 +526,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyle):
             self.SaveRender(filename)
 
         elif interactor.GetKeyCode() == "q":
-            print ("Render loop terminating by pressing %s" % (interactor.GetKeyCode(), ))
+            self.log ("Render loop terminating by pressing %s" % (interactor.GetKeyCode(), ))
             interactor.SetKeyCode("e")
             self.OnKeyPress(interactor, event)
 
@@ -547,14 +558,36 @@ class CILInteractorStyle(vtk.vtkInteractorStyle):
                 self._viewer.imageSlice.GetProperty().SetInterpolationTypeToLinear()
             self._viewer.updatePipeline()
             pass
+
+        elif interactor.GetKeyCode() == '1':
+            ev = 'RECTILINEAR_WIPE'
+            if self.GetViewerEvent(ev):
+                print ("remove event {}".format(ev))
+                self.SetEventInactive(ev)
+            # ImageWithOverlay
+            self._viewer.setVisualisationToImageWithOverlay()
+            self.AdjustCamera()
+            self.Render()
+                
+        elif interactor.GetKeyCode() == '2':
+            if self._viewer.vis_mode != CILViewer2D.RECTILINEAR_WIPE:
+                self._viewer.setVisualisationToRectilinearWipe()
+                orient = ['x', 'y', 'z']
+                self.SetCharEvent(orient[self.GetSliceOrientation()])
+                self.SetEventActive('RECTILINEAR_WIPE')
+
         else:
             self.log("Unhandled event %s" % (interactor.GetKeyCode()))
     
-    def OnKeyRelease(self, interactor, event):
-        if self.GetViewerEvent('UPDATE_WINDOW_LEVEL_UNDER_CURSOR'):
-            self.log ("remove event UPDATE_WINDOW_LEVEL_UNDER_CURSOR")
-            self.SetEventInactive('UPDATE_WINDOW_LEVEL_UNDER_CURSOR')
 
+    def OnKeyRelease(self, interactor, event):
+        # remove events on key release
+        events = ['UPDATE_WINDOW_LEVEL_UNDER_CURSOR']
+        for ev in events:
+            if self.GetViewerEvent(ev):
+                # print ("remove event {}".format(ev))
+                self.SetEventInactive(ev)
+        
     def OnLeftButtonPressEvent(self, interactor, event):
         # print ("INTERACTOR", interactor)
         alt = interactor.GetAltKey()
@@ -621,8 +654,9 @@ class CILInteractorStyle(vtk.vtkInteractorStyle):
 
         if alt and not (ctrl and shift):
             self.SetEventActive("WINDOW_LEVEL_EVENT")
-            self.log("Event %s is WINDOW_LEVEL_EVENT" % (event))
-            self.HandleWindowLevel(interactor, event)
+            if self._viewer.vis_mode == CILViewer2D.IMAGE_WITH_OVERLAY:
+                self.log("Event %s is WINDOW_LEVEL_EVENT" % (event))
+                self.HandleWindowLevel(interactor, event)
         elif shift and not (ctrl and alt):
             self.SetEventActive("ZOOM_EVENT")
             self.SetInitialCameraPosition( self.GetActiveCamera().GetPosition())
@@ -635,8 +669,9 @@ class CILInteractorStyle(vtk.vtkInteractorStyle):
     def OnRightButtonReleaseEvent(self, interactor, event):
         self.log (event)
         if self.GetViewerEvent("WINDOW_LEVEL_EVENT"):
-            self.SetInitialLevel(self._viewer.imageSlice.GetProperty().GetColorLevel())
-            self.SetInitialWindow( self._viewer.imageSlice.GetProperty().GetColorWindow())
+            if self._viewer.vis_mode == CILViewer2D.IMAGE_WITH_OVERLAY:
+                self.SetInitialLevel(self._viewer.imageSlice.GetProperty().GetColorLevel())
+                self.SetInitialWindow(self._viewer.imageSlice.GetProperty().GetColorWindow())
         elif self.GetViewerEvent("ZOOM_EVENT") or self.GetViewerEvent("PAN_EVENT"):
             self.SetInitialCameraPosition( () )
 
@@ -880,6 +915,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyle):
 
     def OnMouseMoveEvent(self, interactor, event):
         if self.GetInputData() is not None:
+            
             if self.GetViewerEvent("WINDOW_LEVEL_EVENT"):
                 self.log ("Event %s is WINDOW_LEVEL_EVENT" % (event))
                 self.HandleWindowLevel(interactor, event)
@@ -896,9 +932,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyle):
             elif self.GetViewerEvent("SHOW_LINE_PROFILE_EVENT"):
                 self.DisplayLineProfile(interactor, event, True)
             elif self.GetViewerEvent('UPDATE_WINDOW_LEVEL_UNDER_CURSOR'):
-                print ("event w")
                 x,y = interactor.GetEventPosition()
-                # print (x,y)
                 ic = self.display2imageCoordinate((x,y))
                 print (x,y, ic, "image coordinate")
                 whole_extent = self._viewer.img3D.GetExtent()
@@ -956,6 +990,24 @@ class CILInteractorStyle(vtk.vtkInteractorStyle):
                 self.UpdateImageSlice()
                 self.AdjustCamera()
                 self.Render()
+            elif self.GetViewerEvent('RECTILINEAR_WIPE'):
+                # get event in image coordinate
+                x,y,z,pix = self.display2imageCoordinate(
+                        interactor.GetEventPosition()
+                        )
+                # update the wipe depending on the slice orientation
+                slice_orientation = self._viewer.GetSliceOrientation()
+                if slice_orientation == SLICE_ORIENTATION_XY:
+                    self._viewer.wipe.SetAxis(0, 1)
+                    self._viewer.wipe.SetPosition( x, y )
+                elif slice_orientation == SLICE_ORIENTATION_XZ:
+                    self._viewer.wipe.SetAxis(0, 2)
+                    self._viewer.wipe.SetPosition( x, z )
+                elif slice_orientation == SLICE_ORIENTATION_YZ:
+                    self._viewer.wipe.SetAxis(2, 1)
+                    self._viewer.wipe.SetPosition( z, y )
+                
+                self.UpdatePipeline()
 
     def DisplayHelp(self):
         help_actor = self._viewer.helpActor
@@ -1142,6 +1194,9 @@ class CILInteractorStyle(vtk.vtkInteractorStyle):
 
 class CILViewer2D():
     '''Simple Interactive Viewer based on VTK classes'''
+    # visualisation modes
+    IMAGE_WITH_OVERLAY = 0
+    RECTILINEAR_WIPE = 1
 
     def __init__(self, dimx=600,dimy=600, ren=None, renWin=None,iren=None, debug=True):
         '''creates the rendering pipeline'''
@@ -1369,6 +1424,9 @@ class CILViewer2D():
         ori.InteractiveOff()
         self.orientation_marker = ori
 
+        self.__vis_mode = CILViewer2D.IMAGE_WITH_OVERLAY
+        self.setVisualisationToImageWithOverlay()
+
 
     def log(self, msg):
         if self.debug:
@@ -1438,6 +1496,24 @@ class CILViewer2D():
         self.renWin.Render()
 
     def updatePipeline(self, resetcamera = False):
+        if self.vis_mode == CILViewer2D.IMAGE_WITH_OVERLAY:
+            self.updateImageWithOverlayPipeline(resetcamera=resetcamera)
+        elif self.vis_mode == CILViewer2D.RECTILINEAR_WIPE:
+            self.updateRectilinearWipePipeline(resetcamera=resetcamera)
+        
+        
+        self.AdjustCamera(resetcamera)
+        self.renWin.Render()
+    
+    def updateRectilinearWipePipeline(self, resetcamera=False):
+        extent = self.updateMainVOI()
+        self.voi.SetVOI(*extent)
+        #TODO what happens if image2 has a different sampling?
+        self.voi2.SetVOI(*extent)
+        self.wipeSliceMapper.SetOrientation(self.sliceOrientation)
+
+    def updateMainVOI(self):
+        # get the current slice
         extent = [ i for i in self.img3D.GetExtent()]
         extent[self.sliceOrientation * 2] = self.GetActiveSlice()
         extent[self.sliceOrientation * 2 + 1] = self.GetActiveSlice()
@@ -1447,6 +1523,11 @@ class CILViewer2D():
         self.log ("extent {0}".format(extent))
         self.voi.Update()
         self.log("VOI dimensions {0}".format(self.voi.GetOutput().GetDimensions()))
+        return extent
+
+    def updateImageWithOverlayPipeline(self, resetcamera=False):
+        print("update overlay pipe")
+        extent = self.updateMainVOI()
         self.ia.Update()
         self.imageSliceMapper.SetOrientation(self.sliceOrientation)
         self.imageSlice.Update()
@@ -1476,16 +1557,74 @@ class CILViewer2D():
                 if self.GetSliceOrientation() == SLICE_ORIENTATION_XZ:
                     slice_coords[self.GetSliceOrientation()] = self.img3D.GetDimensions()[SLICE_ORIENTATION_XZ]-1
                 self.imageTracer.SetProjectionPosition(self.style.image2world(slice_coords)[self.GetSliceOrientation()])
-
             else:
                 print ("self.img3D None")
         except Exception as ge:
             print (ge)
         self.AdjustCamera(resetcamera)
+        
+    @property
+    def vis_mode(self):
+        return self.__vis_mode
+    @vis_mode.setter
+    def vis_mode(self, value):
+        if value in [CILViewer2D.IMAGE_WITH_OVERLAY, CILViewer2D.RECTILINEAR_WIPE]:
+            self.__vis_mode = value
+
+    def setVisualisationPipelineMethodTo(self, method):
+        # get the current visualisation mode
+        if self.vis_mode != method:
+            # remove current pipeline
+            self.uninstallPipeline()
+            if self.image2 is not None:
+                self.uninstallPipeline2()
+            # install the new pipeline
+            self.vis_mode = method
+            self.installPipeline()
+        
+
+    def setVisualisationToImageWithOverlay(self):
+        self.setVisualisationPipelineMethodTo(CILViewer2D.IMAGE_WITH_OVERLAY)
+
+    def setVisualisationToRectilinearWipe(self):
+        self.setVisualisationPipelineMethodTo(CILViewer2D.RECTILINEAR_WIPE)
+            
+    def installPipeline(self):
+        if self.vis_mode == CILViewer2D.IMAGE_WITH_OVERLAY:
+            if self.img3D is not None:
+                self.installImageWithOverlayPipeline()
+            if self.image2 is not None:
+                self.installPipeline2()
+        elif self.vis_mode == CILViewer2D.RECTILINEAR_WIPE:
+            self.installRectilinearWipePipeline()
+
+        self.ren.ResetCamera()
+        self.ren.Render()
+
+        self.camera.SetViewUp(0,-1,0)
+
+        if not self.axes_initialised:
+            self.camera.Azimuth(180)
+
+        self.AdjustCamera()
+
+        self.ren.AddViewProp(self.cursorActor)
+        self.cursorActor.VisibilityOn()
+        
+        self.iren.Initialize()
         self.renWin.Render()
 
+    
+    def installPipeline2(self):
+        if self.image2 is not None:
+            if self.vis_mode == CILViewer2D.IMAGE_WITH_OVERLAY:
+                self.installImageWithOverlayPipeline2()
+            elif self.vis_mode == CILViewer2D.RECTILINEAR_WIPE:
+                pass
+        else:
+            self.log("installPipeline2 no data")
 
-    def installPipeline(self):
+    def installImageWithOverlayPipeline(self):
         '''Slices a 3D volume and then creates an actor to be rendered'''
         self.log("installPipeline")
         self.ren.AddViewProp(self.cornerAnnotation)
@@ -1511,8 +1650,6 @@ class CILViewer2D():
         self.ia.SetInputData(self.voi.GetOutput())
         self.ia.SetAutoRangePercentiles(5.0,95.)
         self.ia.Update()
-        #cmax = self.ia.GetMax()[0]
-        #cmin = self.ia.GetMin()[0]
         cmin, cmax = self.ia.GetAutoRange()
         # set the level to the average between the percentiles 
         level = ( cmin + cmax ) / 2
@@ -1560,7 +1697,7 @@ class CILViewer2D():
         self.renWin.Render()
         #self.iren.Start()
 
-    def installPipeline2(self):
+    def installImageWithOverlayPipeline2(self):
         '''Slices a 3D volume and then creates an actor to be rendered'''
         self.log("installPipeline2")
         if self.image2 is not None:
@@ -1570,11 +1707,16 @@ class CILViewer2D():
             self.voi2.Update()
             lut = vtk.vtkLookupTable()
             
+            ai = vtk.vtkImageHistogramStatistics()
+            ai.SetInputConnection(self.voi2.GetOutputPort())
+            ai.Update()
+
+
             self.lut2 = lut
             lut.SetNumberOfColors(7)
             lut.SetHueRange(.4,.6)
             lut.SetSaturationRange(1, 1)
-            lut.SetValueRange(0.7, 0.7)
+            lut.SetValueRange(0.7,0.7)
             lut.SetAlphaRange(0,0.5)
             lut.Build()
             
@@ -1599,7 +1741,53 @@ class CILViewer2D():
             print ("installPipeline2 no data")
             
         #self.iren.Start()
+    def installRectilinearWipePipeline(self):
+        '''Create the pipeline for the rectilinear wipe'''
+        self.log("installRectilinearWipePipeline")
+        extent1 = list(self.img3D.GetExtent())
+        # extent2 = list(self.image2.GetExtent())
+        #extent is slice number N
+        for i in range(len(self.slicenos)):
+            self.slicenos[i] = round((extent1[i * 2+1] + extent1[i * 2])/2)
+        active_slice_num = self.GetActiveSlice()
+        orient = self.GetSliceOrientation()
+        # print ("should go here", active_slice_num, self.slicenos)
+        extent1[orient]   = active_slice_num
+        extent1[orient+1] = active_slice_num
+        extent2 = extent1[:]
 
+
+        self.voi.SetVOI(*extent1)
+        self.voi2.SetVOI(*extent2)
+        
+        wipe            = vtk.vtkImageRectilinearWipe()
+        wipeSliceMapper = vtk.vtkImageSliceMapper()
+        wipeSlice       = vtk.vtkImageSlice()
+        
+        wipe.SetInputConnection(0, self.voi.GetOutputPort())
+        wipe.SetInputConnection(1, self.voi2.GetOutputPort())
+        # should set the position to center of viewport
+        wipe.SetPosition(10,10)
+        wipe.SetWipe(0)
+        
+        
+        
+        wipeSliceMapper.SetInputConnection(wipe.GetOutputPort())
+        wipeSliceMapper.SetOrientation(orient)
+        
+        
+        wipeSlice.SetMapper(wipeSliceMapper)
+        wipeSlice.GetProperty().SetInterpolationTypeToNearest()
+        wipeSlice.GetProperty().SetColorLevel(self.InitialLevel)
+        wipeSlice.GetProperty().SetColorWindow(self.InitialWindow)
+        wipeSlice.Update()
+        
+        self.wipe = wipe
+        self.wipeSliceMapper = wipeSliceMapper
+        self.wipeActor = wipeSlice
+
+        self.AddActor(wipeSlice, WIPE_ACTOR)
+            
     def AdjustCamera(self, resetcamera = False):
         self.ren.ResetCameraClippingRange()
 
@@ -1778,7 +1966,7 @@ class CILViewer2D():
             return value
 
     def updateROIHistogram(self):
-        print ("Updating hist")
+        self.log ("Updating hist")
 
         extent = [0 for i in range(6)]
         if self.GetSliceOrientation() == SLICE_ORIENTATION_XY:
@@ -2013,4 +2201,28 @@ class CILViewer2D():
         else:
             return(None)
 
-    
+    def uninstallPipeline(self):
+        '''uninstall the current visualisation pipeline'''
+        if self.vis_mode == CILViewer2D.IMAGE_WITH_OVERLAY:
+            self.removeActor([SLICE_ACTOR, HISTOGRAM_ACTOR])
+        elif self.vis_mode == CILViewer2D.RECTILINEAR_WIPE:
+            self.removeActor(WIPE_ACTOR)
+        
+
+    def removeActor(self, actor):
+        '''remove named actor'''
+        if not isinstance (actor, (list, tuple)):
+            actor = [actor]
+        keys = self.actors.keys()
+        for a in actor:
+            if a in keys:
+                self.ren.RemoveActor(self.actors[a])
+                self.actors.pop(a)
+
+
+    def uninstallPipeline2(self):
+        if self.vis_mode == CILViewer2D.IMAGE_WITH_OVERLAY:
+            self.removeActor(OVERLAY_ACTOR)
+        elif self.vis_mode == CILViewer2D.RECTILINEAR_WIPE:
+            # rectilinear wipe visualises 2 images in the same pipeline
+            pass
