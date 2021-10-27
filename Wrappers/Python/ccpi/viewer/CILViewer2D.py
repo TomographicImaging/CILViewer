@@ -570,11 +570,12 @@ class CILInteractorStyle(vtk.vtkInteractorStyle):
             self.Render()
                 
         elif interactor.GetKeyCode() == '2':
-            if self._viewer.vis_mode != CILViewer2D.RECTILINEAR_WIPE:
-                self._viewer.setVisualisationToRectilinearWipe()
-                orient = ['x', 'y', 'z']
-                self.SetCharEvent(orient[self.GetSliceOrientation()])
-                self.SetEventActive('RECTILINEAR_WIPE')
+            if self._viewer.image2 is not None:
+                if self._viewer.vis_mode != CILViewer2D.RECTILINEAR_WIPE:
+                    self._viewer.setVisualisationToRectilinearWipe()
+                    orient = ['x', 'y', 'z']
+                    self.SetCharEvent(orient[self.GetSliceOrientation()])
+                    self.SetEventActive('RECTILINEAR_WIPE')
 
         else:
             self.log("Unhandled event %s" % (interactor.GetKeyCode()))
