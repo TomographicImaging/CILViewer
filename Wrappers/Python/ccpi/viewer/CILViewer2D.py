@@ -1207,10 +1207,9 @@ class CILViewer2D():
         # input 2
         self.image2 = None
         self.voi2 = vtk.vtkExtractVOI()
-        self.sliceActor2 = vtk.vtkImageActor()
         self.imageSlice2 = vtk.vtkImageSlice()
-        #TODO: add mapper here?
-
+        self.imageSliceMapper2 = vtk.vtkImageSliceMapper()
+        self.imageSlice2.SetMapper(self.imageSliceMapper2)
         
         # Help text
         self.helpActor = vtk.vtkActor2D()
@@ -1456,7 +1455,6 @@ class CILViewer2D():
         self.voi.Update()
         self.log("VOI dimensions {0}".format(self.voi.GetOutput().GetDimensions()))
         self.ia.Update()
-        self.imageSliceMapper.SetInputConnection(self.voi.GetOutputPort())
         self.imageSliceMapper.SetOrientation(self.sliceOrientation)
         self.imageSlice.Update()
 
@@ -1534,17 +1532,17 @@ class CILViewer2D():
                                             self.InitialWindow))
 
 
-        self.imageSliceMapper = vtk.vtkImageSliceMapper()
         self.imageSliceMapper.SetInputConnection(self.voi.GetOutputPort())
-        self.imageSlice.SetMapper(self.imageSliceMapper)
-        self.imageSlice.Update()
 
         self.imageSlice.GetProperty().SetColorLevel(self.InitialLevel)
         self.imageSlice.GetProperty().SetColorWindow(self.InitialWindow)
+
         if self.image_is_downsampled:  
             self.imageSlice.GetProperty().SetInterpolationTypeToLinear()
         else:
             self.imageSlice.GetProperty().SetInterpolationTypeToNearest()
+
+        self.imageSlice.Update()
 
         self.imageTracer.SetProjectionPosition(self.style.image2world([0,0,0])[self.GetSliceOrientation()])
         
@@ -1587,7 +1585,6 @@ class CILViewer2D():
             lut.SetAlphaRange(0,0.5)
             lut.Build()
             
-            
 
             cov = vtk.vtkImageMapToColors()
             self.image2map = cov
@@ -1595,9 +1592,7 @@ class CILViewer2D():
             cov.SetLookupTable(lut)
             cov.Update()
 
-            imageSliceMapper = vtk.vtkImageSliceMapper()
-            imageSliceMapper.SetInputConnection(cov.GetOutputPort())
-            self.imageSlice2.SetMapper(imageSliceMapper)
+            self.imageSliceMapper2.SetInputConnection(cov.GetOutputPort())
             self.imageSlice2.Update()
             self.AddActor(self.imageSlice2, OVERLAY_ACTOR)
             self.ren.ResetCamera()
@@ -1669,13 +1664,10 @@ class CILViewer2D():
         self.visualisation_downsampling = value
         if value != [1,1,1]:
             self.image_is_downsampled = True
-            #self.sliceActor.SetInterpolate(True)
-            # TODO: figure out interp
+            self.imageSlice.GetProperty().SetInterpolationTypeToLinear()
         else:
             self.image_is_downsampled = False
-            #self.sliceActor.SetInterpolate(False)
-            # TODO: figure out interp
-
+            self.imageSlice.GetProperty().SetInterpolationTypeToNearest()
 
     def getVisualisationDownsampling(self):
         return self.visualisation_downsampling
