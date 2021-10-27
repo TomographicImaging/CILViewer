@@ -90,8 +90,6 @@ class CILInteractorStyle(vtk.vtkInteractorStyle):
         self.AddObserver('LeftButtonReleaseEvent', self.OnLeftButtonReleaseEvent, priority)
         self.AddObserver('RightButtonReleaseEvent', self.OnRightButtonReleaseEvent, priority)
         self.AddObserver('MouseMoveEvent', self.OnMouseMoveEvent, priority)
-        self.AddObserver('CharEvent', self.OnCharEvent, priority)
-        self.AddObserver('CharEventRelease', self.OnCharEventRelease, priority)
 
         self.InitialEventPosition = (0,0)
 
@@ -556,12 +554,6 @@ class CILInteractorStyle(vtk.vtkInteractorStyle):
         if self.GetViewerEvent('UPDATE_WINDOW_LEVEL_UNDER_CURSOR'):
             self.log ("remove event UPDATE_WINDOW_LEVEL_UNDER_CURSOR")
             self.SetEventInactive('UPDATE_WINDOW_LEVEL_UNDER_CURSOR')
-
-    def OnCharEvent(self, interactor, event):
-        pass
-
-    def OnCharEventRelease(self, interactor, event):
-        pass
 
     def OnLeftButtonPressEvent(self, interactor, event):
         # print ("INTERACTOR", interactor)
@@ -1203,6 +1195,7 @@ class CILViewer2D():
         imageSlice.SetMapper(imageSliceMapper)
         imageSlice.GetProperty().SetInterpolationTypeToNearest()
         self.imageSlice = imageSlice
+        self.imageSliceMapper = imageSliceMapper
 
         # input 2
         self.image2 = None
