@@ -23,5 +23,5 @@ jobs:
         AnacondaToken: ${{ secrets.ANACONDA_TOKEN }}
         publish: ${{ github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags') }}
         test_all: ${{(github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')) || (github.ref == 'refs/heads/master')}}
-        convert_win: true
-        convert_osx: true
+        convert_win: false
+        convert_osx: false
