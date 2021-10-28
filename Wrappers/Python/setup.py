@@ -22,7 +22,7 @@ import subprocess
 cil_version = subprocess.check_output('git describe', shell=True).decode("utf-8").rstrip()
 
 
-if os.environ.get('CONDA_BUILD', 0) == 0:
+if os.environ.get('CONDA_BUILD', 0) == '0':
     cwd = os.getcwd()
     requires = []
 else:
