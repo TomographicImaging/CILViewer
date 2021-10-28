@@ -9,16 +9,16 @@ build:
   skip: True # [py==38 and np==115]
   preserve_egg_dir: False 
   number: {{ GIT_DESCRIBE_NUMBER }}
+  noarch: python
 
   
 requirements:
   build:
     - python
-    - numpy {{ numpy }} 
  
   run:
     - python
-    - {{ pin_compatible('numpy', min_pin='x.x', max_pin='x.x') }}
+    - numpy
     - vtk >=9.0.3 
     - pyside2
     - eqt
