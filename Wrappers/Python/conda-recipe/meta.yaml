@@ -16,7 +16,6 @@ test:
     - ./Wrappers/Python/test
 
   commands:
-    - ls
     - python -c "import os; print ('TESTING IN THIS DIRECTORY' , os.getcwd())"
     - python -m unittest discover -s Wrappers/Python/test
 
