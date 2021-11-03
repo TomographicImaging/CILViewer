@@ -1,6 +1,7 @@
 # Changelog
 
 ## v21.x.x
+* set package as noarch and remove variants as not strictly depending on versions of python or numpy
 * Use vtkImageSlice instead of vtkImageActor and vtkImageMapToWindowLevelColor in the 2D and 3D viewers
 * Force requirement of vtk 9.0.3 or greater.
 * Update viewer so it works with vtk9
