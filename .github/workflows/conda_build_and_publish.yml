@@ -16,11 +16,7 @@ jobs:
     steps:
     - uses: actions/checkout@v1
     - name: publish-to-conda
-<<<<<<< HEAD
-      uses: paskino/conda-package-publish-action@v1.4.2
-=======
       uses: paskino/conda-package-publish-action@v1.4.3
->>>>>>> master
       with:
         subDir: 'Wrappers/Python/conda-recipe'
         channels: 'conda-forge -c paskino'
