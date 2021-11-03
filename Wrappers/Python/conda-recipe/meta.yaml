@@ -28,10 +28,9 @@ requirements:
   run:
     - python
     - {{ pin_compatible('numpy', min_pin='x.x', max_pin='x.x') }}
-    - vtk ==8.1.2
+    - vtk == 8.1.2
     - pyside2
     - eqt
-    - importlib_metadata # [py<38]
 
 about:
   home: http://www.ccpi.ac.uk
