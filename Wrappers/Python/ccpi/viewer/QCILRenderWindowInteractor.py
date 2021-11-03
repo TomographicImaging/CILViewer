@@ -1,6 +1,5 @@
 import vtk
-from vtk.qt.QVTKRenderWindowInteractor import QVTKRenderWindowInteractor,\
-        _qt_key_to_key_sym
+from vtk.qt.QVTKRenderWindowInteractor import QVTKRenderWindowInteractor
 from PySide2.QtCore import Qt, QEvent
 
 class QCILRenderWindowInteractor(QVTKRenderWindowInteractor):
