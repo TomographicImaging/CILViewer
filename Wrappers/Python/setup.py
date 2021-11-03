@@ -22,11 +22,7 @@ import subprocess
 cil_version = subprocess.check_output('git describe', shell=True).decode("utf-8").rstrip()
 
 
-<<<<<<< HEAD
-if os.environ.get('CONDA_BUILD', 0) == '0':
-=======
 if os.environ.get('CONDA_BUILD', 0) == '1':
->>>>>>> master
     cwd = os.getcwd()
     # requirements are processed by conda
     requires = []
@@ -34,11 +30,7 @@ else:
     requires = ['numpy','vtk']
     cwd = os.path.join(os.environ.get('RECIPE_DIR'),'..')
 
-<<<<<<< HEAD
-print(cwd)
-=======
 # update the version string
->>>>>>> master
 fname = os.path.join(cwd, 'ccpi', 'viewer', 'version.py')
 print("write version at: ", fname)
 
