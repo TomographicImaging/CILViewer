@@ -22,13 +22,15 @@ import subprocess
 cil_version = subprocess.check_output('git describe', shell=True).decode("utf-8").rstrip()
 
 
-if os.environ.get('CONDA_BUILD', 0) == 0:
+if os.environ.get('CONDA_BUILD', 0) == '1':
     cwd = os.getcwd()
+    # requirements are processed by conda
     requires = []
 else:
     requires = ['numpy','vtk']
     cwd = os.path.join(os.environ.get('RECIPE_DIR'),'..')
 
+# update the version string
 fname = os.path.join(cwd, 'ccpi', 'viewer', 'version.py')
 
 if os.path.exists(fname):
@@ -45,8 +47,8 @@ setup(
     zip_safe = False,
     # metadata for upload to PyPI
     author="Edoardo Pasca",
-    author_email="edo.paskino@gmail.com",
-    description='CCPi Core Imaging Library - VTK Viewer Module',
+    author_email="edoardo.pasca@stfc.ac.uk",
+    description='CCPi CILViewer',
     license="Apache v2.0",
     keywords="3D data viewer",
     url="http://www.ccpi.ac.uk",   # project home page, if any
