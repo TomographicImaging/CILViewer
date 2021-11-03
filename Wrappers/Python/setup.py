@@ -32,7 +32,6 @@ else:
 
 # update the version string
 fname = os.path.join(cwd, 'ccpi', 'viewer', 'version.py')
-print("write version at: ", fname)
 
 if os.path.exists(fname):
     os.remove(fname)
