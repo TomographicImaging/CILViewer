@@ -10,6 +10,14 @@ build:
   preserve_egg_dir: False 
   number: {{ GIT_DESCRIBE_NUMBER }}
   noarch: python
+  
+test:
+  source_files:
+    - ./Wrappers/Python/test
+
+  commands:
+    - python -c "import os; print ('TESTING IN THIS DIRECTORY' , os.getcwd())"
+    - python -m unittest discover -s Wrappers/Python/test
 
   
 requirements:
