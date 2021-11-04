@@ -9,6 +9,7 @@ build:
   skip: True # [py==38 and np==115]
   preserve_egg_dir: False 
   number: {{ GIT_DESCRIBE_NUMBER }}
+  noarch: python
   
 test:
   source_files:
@@ -18,17 +19,15 @@ test:
     - ls
     - python -c "import os; print ('TESTING IN THIS DIRECTORY' , os.getcwd())"
     - python -m unittest discover -s Wrappers/Python/test -v
-
   
 requirements:
   build:
     - python
-    - numpy {{ numpy }} 
  
   run:
     - python
-    - {{ pin_compatible('numpy', min_pin='x.x', max_pin='x.x') }}
-    - vtk ==8.1.2
+    - numpy
+    - vtk >=9.0.3 
     - pyside2
     - eqt
     - importlib_metadata    # [py<38]

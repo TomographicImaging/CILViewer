@@ -1,5 +1,18 @@
 # Changelog
 
+## v21.x.x
+* set package as noarch and remove variants as not strictly depending on versions of python or numpy
+* Use vtkImageSlice instead of vtkImageActor and vtkImageMapToWindowLevelColor in the 2D and 3D viewers
+* Force requirement of vtk 9.0.3 or greater.
+* Update viewer so it works with vtk9
+* Adds new mode of visualisation that allows the comparison of 2 equally shaped/spaced images with a rectilinear wipe. The visualisation with the wipe can be triggered by typing key 2 and reset to normal (image with overlay) by key 1.
+
+## v21.1.2
+* Fix the setting of the view up vector in the y direction, to avoid getting vtk warning messages.
+* The event triggered by the "w" key, (i.e. update the window level) is now based on a smaller area of the image under the cursor. The area is 10% in each direction of the whole image extent.
+* The auto window level now uses the average value between 1 and 99 percentile as level and the difference for window. Before it was the median.
+* Update examples to use PySide2 instead of PyQt5 
+
 ## v21.1.1
 * fix bug with importing version number
 
