@@ -1,6 +1,11 @@
 # Changelog
 
 ## v21.x.x
+
+* Adds HDF5Reader for reading of HDF5 files to vtkImageData, and RequestSubset reads a cropped version of the image
+* Adds write_image_data_to_hdf5 which writes vtkImageData to HDF5 files
+* Resampling of HDF5 with cilHDF5ImageResampleReader
+* Unit tests of the new HDF5 methods
 * Add unit test for importing version number
 * set package as noarch and remove variants as not strictly depending on versions of python or numpy
 * Use vtkImageSlice instead of vtkImageActor and vtkImageMapToWindowLevelColor in the 2D and 3D viewers
