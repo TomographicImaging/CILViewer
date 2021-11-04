@@ -2,7 +2,7 @@
 
 ## v21.x.x
 
-* Adds HDF5Source for reading of HDF5 files to vtkImageData, and RequestSubset reads a cropped version of the image
+* Adds HDF5Reader for reading of HDF5 files to vtkImageData, and RequestSubset reads a cropped version of the image
 * Adds write_image_data_to_hdf5 which writes vtkImageData to HDF5 files
 * Resampling of HDF5 with cilHDF5ImageResampleReader
 * Unit tests of the new HDF5 methods
