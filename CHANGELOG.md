@@ -1,7 +1,7 @@
 # Changelog
 
 ## v21.x.x
-
+* removed the io.py file with the class ImageDataCreator
 * Adds HDF5Reader for reading of HDF5 files to vtkImageData, and RequestSubset reads a cropped version of the image
 * Adds write_image_data_to_hdf5 which writes vtkImageData to HDF5 files
 * Resampling of HDF5 with cilHDF5ImageResampleReader
