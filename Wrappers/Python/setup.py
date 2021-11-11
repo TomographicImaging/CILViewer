@@ -23,12 +23,12 @@ cil_version = subprocess.check_output('git describe', shell=True).decode("utf-8"
 
 
 if os.environ.get('CONDA_BUILD', 0) == '1':
-    cwd = os.getcwd()
+    cwd = os.path.join(os.environ.get('RECIPE_DIR'),'..')
     # requirements are processed by conda
     requires = []
 else:
     requires = ['numpy','vtk']
-    cwd = os.path.join(os.environ.get('RECIPE_DIR'),'..')
+    cwd = os.getcwd()
 
 # update the version string
 fname = os.path.join(cwd, 'ccpi', 'viewer', 'version.py')
