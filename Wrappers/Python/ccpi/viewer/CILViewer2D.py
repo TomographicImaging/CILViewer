@@ -978,7 +978,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyle):
                 self.SetInitialWindow( window )
 
                 self._viewer.imageSlice.GetProperty().SetColorLevel(self.GetInitialLevel())
-                self._viewer.imageSlice.GetProperty().SetColorWindow(self.GetInitialLevel())
+                self._viewer.imageSlice.GetProperty().SetColorWindow(self.GetInitialWindow())
 
                 self.UpdateImageSlice()
                 self.AdjustCamera()
