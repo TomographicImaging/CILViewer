@@ -23,6 +23,7 @@ import h5py
 import qdarkstyle
 import vtk
 from ccpi.viewer import viewer2D, viewer3D
+from ccpi.viewer.CILViewer2D import CILViewer2D
 from ccpi.viewer.iviewer import SingleViewerCenterWidget
 from ccpi.viewer.QCILViewerWidget import QCILDockableWidget
 # from gui.settings_window import create_settings_window
@@ -84,7 +85,7 @@ class StandaloneViewerMainWindow(ViewerMainWindow):
               interactorStyle=interactor_style2)
                 
         # Initially link viewers
-        self.linkedViewersSetup()
+        self.linkedViewersSetUp()
         self.linker.enable()
 
         layout = QtWidgets.QBoxLayout(QtWidgets.QBoxLayout.LeftToRight)
@@ -96,29 +97,31 @@ class StandaloneViewerMainWindow(ViewerMainWindow):
         self.setCentralWidget(cw)
         self.central_widget = cw
 
-        self.viewer_2D = self.frame1.viewer
-        
-        
 
     def create_menu(self):
-        #TODO: allow adding before currently listed actions
-        # try insertmenu
-        # insertAction
-        # https://doc.qt.io/qt-5/qmenubar.html#insertMenu
-
         ViewerMainWindow.create_menu(self)
+
+        # find the settings action which already exists:
+        for action in self.file_menu.actions():
+            action_name = action.text()
+            if 'Settings' in action_name:
+                settings_action = action
+
+            
+        # insert image selection actions before the settings action:
 
         image1_action = QAction("Select Image 1", self)
         image1_action.triggered.connect(lambda: self.set_input(1))
-        self.file_menu.addAction(image1_action)
+        self.file_menu.insertAction(settings_action, image1_action)
 
         image2_action = QAction("Select Image 2", self)
         image2_action.triggered.connect(lambda: self.set_input(2))
-        self.file_menu.addAction(image2_action) 
+        self.file_menu.insertAction(settings_action, image2_action)
 
     def set_input(self, input_num=1):
-        image_file = self.select_image()
-        image_reader = ImageReader(file_name=image_file)
+        image_file, raw_image_attrs, hdf5_image_attrs = self.select_image()
+        print("The image attrs: ", raw_image_attrs)
+        image_reader = ImageReader(file_name=image_file, raw_image_attrs=raw_image_attrs, hdf5_image_attrs=hdf5_image_attrs)
         image_reader_worker = Worker(image_reader.read)
         self.threadpool.start(image_reader_worker)
         if input_num == 1:
@@ -126,13 +129,9 @@ class StandaloneViewerMainWindow(ViewerMainWindow):
         elif input_num == 2:
             # This makes sure the result ends up as image2 not image1 when we call display_image
             image_reader_worker.signals.result.connect(partial(self.display_image, None))
-        image_reader_worker.signals.progress.connect(self.print_progress)
-
-    def print_progress(self, value):
-        print("Progress update: ", value)
         
     
-    def linkedViewersSetup(self):
+    def linkedViewersSetUp(self):
         v1 = self.frame1.viewer
         v2 = self.frame2.viewer
         self.linker = vlink.ViewerLinker(v1, v2)
@@ -149,9 +148,11 @@ class StandaloneViewerMainWindow(ViewerMainWindow):
             self.input_data1 = image1
             self.visualisation_setting_widgets['coords_combobox'].setEnabled(True)
         if image2 is not None:
-            self.frame1.viewer.setInputData2(image2)
+            viewers = [self.frame1.viewer, self.frame2.viewer]
+            for viewer in viewers:
+                if type(viewer) == CILViewer2D:
+                    viewer.setInputData2(image2)
             self.input_data2 = image2
-            #self.frame2.viewer.setInputData2(image2)
 
         
 class standalone_viewer(object):
@@ -161,10 +162,10 @@ class standalone_viewer(object):
         app = QtWidgets.QApplication(sys.argv)
         self.app = app
         
-        self.setUp(title, viewer1_type, viewer2_type, *args, **kwargs)
+        self.set_up(title, viewer1_type, viewer2_type, *args, **kwargs)
         self.show()
 
-    def setUp(self, title, viewer1_type, viewer2_type = None, *args, **kwargs):
+    def set_up(self, title, viewer1_type, viewer2_type = None, *args, **kwargs):
         '''
         viewer1_type: '2D' or '3D'
         viewer2_type: '2D', '3D' or None - if None, only one viewer is displayed
@@ -184,7 +185,6 @@ class standalone_viewer(object):
         window = StandaloneViewerMainWindow(title, viewer1=viewer1, viewer2=viewer2)
 
         self.window = window
-        #self.viewer_type = viewer_type
         self.has_run = None
 
         window.show()
@@ -199,26 +199,10 @@ class standalone_viewer(object):
         '''destructor'''
         self.app.exit()
 
-    def convert_to_vtkImage(self, data):
-        '''convert the data to vtkImageData for the viewer''' 
-        if isinstance(data, vtk.vtkImageData):
-            vtkImage = data
-        
-        elif isinstance(data, np.ndarray):
-            vtkImage = Converter.numpy2vtkImage(data)
-        
-        elif hasattr(data, 'as_array'):
-            # this makes it likely it is a CIL/SIRF DataContainer
-            # currently this will only deal with the actual data
-            # but it will parse the metadata in future
-            return self.convert_to_vtkImage(data.as_array())
-        
-        return vtkImage
-
 if __name__ == "__main__":
 
     err = vtk.vtkFileOutputWindow()
-    err.SetFileName("viewer.log")
+    err.SetFileName("../viewer.log")
     vtk.vtkOutputWindow.SetInstance(err)
     
     #iviewer(reader.GetOutput(), viewer='3D')
