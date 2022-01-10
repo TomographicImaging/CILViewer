@@ -4,5 +4,3 @@ from .conversion import Converter, \
 from .colormaps import *
 
 from .visualisation_pipeline import cilClipPolyDataBetweenPlanes, cilPlaneClipper, cilMaskPolyData
-
-from .io import ImageDataCreator

@@ -978,7 +978,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyle):
                 self.SetInitialWindow( window )
 
                 self._viewer.imageSlice.GetProperty().SetColorLevel(self.GetInitialLevel())
-                self._viewer.imageSlice.GetProperty().SetColorWindow(self.GetInitialLevel())
+                self._viewer.imageSlice.GetProperty().SetColorWindow(self.GetInitialWindow())
 
                 self.UpdateImageSlice()
                 self.AdjustCamera()
@@ -1526,6 +1526,7 @@ class CILViewer2D():
 
         if self.image2 is not None:
             self.voi2.SetVOI(self.voi.GetVOI())
+            self.imageSliceMapper2.SetOrientation(self.sliceOrientation)
             self.imageSlice2.Update()
             
         text = self.createAnnotationText("slice", (self.GetActiveSlice(), self.img3D.GetDimensions()[self.sliceOrientation]-1))

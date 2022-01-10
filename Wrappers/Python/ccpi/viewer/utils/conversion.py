@@ -164,6 +164,7 @@ class Converter(object):
         The function imgdata.GetPointData().GetScalars() returns a pointer to a
         vtk<TYPE>Array where the data is stored as X-Y-Z.
         '''
+
         img_data = numpy_support.vtk_to_numpy(
             imgdata.GetPointData().GetScalars())
 
@@ -508,8 +509,8 @@ class cilNumpyMETAImageWriter(object):
         print("typecode,", typecode)
         #r_type = Converter.numpy_dtype_char_to_MetaImageType[typecode]
         big_endian = 'True' if npyhdr['description']['descr'][0] == '>' else 'False'
-        readshape = descr['description']['shape']
-        is_fortran = descr['description']['fortran_order']
+        readshape = npyhdr['description']['shape']
+        is_fortran = npyhdr['description']['fortran_order']
         if is_fortran:
             shape = list(readshape)
         else:
@@ -1053,6 +1054,7 @@ class cilHDF5ResampleReader(cilBaseResampleReader):
         # get the datatype:
         datatype = reader.GetDataType()
         typecode = np.dtype(datatype).char
+        self.SetNumpyTypeCode(typecode)
         self.SetOutputVTKType(
             Converter.numpy_dtype_char_to_vtkType[typecode])
 
@@ -1129,7 +1131,6 @@ class cilMetaImageResampleReader(cilBaseResampleReader):
                     for i in range(0, len(shape)):
                         shape[i] = int(shape[i])
                     self.SetStoredArrayShape(tuple(shape))
-                    # print(self.GetStoredArrayShape())
                 elif 'ElementType' in line:
                     typecode = line.split('= ')[-1]
                     self.SetMetaImageTypeCode(typecode)
