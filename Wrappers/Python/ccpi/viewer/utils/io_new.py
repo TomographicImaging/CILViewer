@@ -11,6 +11,7 @@ from functools import partial
 import h5py
 import numpy as np
 import vtk
+from ccpi.viewer.iviewer import iviewer
 from ccpi.viewer.utils import Converter
 from ccpi.viewer.utils.conversion import (HDF5SubsetReader,
                                           cilBaseCroppedReader,
@@ -19,7 +20,9 @@ from ccpi.viewer.utils.conversion import (HDF5SubsetReader,
                                           cilMetaImageCroppedReader,
                                           cilMetaImageResampleReader,
                                           cilNumpyCroppedReader,
-                                          cilNumpyResampleReader)
+                                          cilNumpyResampleReader,
+                                          parseNpyHeader)
+from ccpi.viewer.utils.hdf5_io import HDF5Reader
 from ccpi.viewer.version import version
 from schema import Optional, Or, Schema, SchemaError
 from vtk.numpy_interface import dataset_adapter as dsa
@@ -69,8 +72,9 @@ class ImageReader(object):
         raw_image_attrs = kwargs.get('raw_image_attrs', None)
         hdf5_image_attrs = kwargs.get('hdf5_image_attrs', None)
 
-        self.set_up(file_name, resample, target_size,
-                    crop, target_z_extent, raw_image_attrs, hdf5_image_attrs)
+        if file_name is not None:
+            self.set_up(file_name, resample, target_size,
+                        crop, target_z_extent, raw_image_attrs, hdf5_image_attrs)
 
     def set_up(self,  file_name=None, resample=True, target_size=512**3, crop=False,
         target_z_extent=None, raw_image_attrs=None, hdf5_image_attrs=None):
@@ -239,7 +243,7 @@ class ImageReader(object):
 
         elif self.crop:
             reader = cilMetaImageCroppedReader()
-            reader.SetTargetZExtent(self.target_z_extent)
+            reader.SetTargetZExtent(tuple(self.target_z_extent))
             self.loaded_image_attrs['resampled'] = False
 
         else:
@@ -289,7 +293,7 @@ class ImageReader(object):
 
             elif self.crop:
                 reader = cilNumpyCroppedReader()
-                reader.SetTargetZExtent(self.target_z_extent)
+                reader.SetTargetZExtent(tuple(self.target_z_extent))
                 self.loaded_image_attrs['cropped'] = True
 
             reader.SetFileName(self.file_name)
@@ -330,18 +334,8 @@ class ImageReader(object):
             else:
                 vol_bit_depth = None
                 output_image = None
-                return
 
             self.loaded_image_attrs['resampled'] = False
-            if numpy_array.dtype.byteorder == '=':
-                if sys.byteorder == 'big':
-                    self.original_image_attrs['isBigEndian'] = True
-                else:
-                    self.original_image_attrs['isBigEndian'] = False
-            else:
-                self.original_image_attrs['isBigEndian'] = None
-
-                print(self.original_image_attrs['isBigEndian'])
 
             output_image = vtk.vtkImageData()
             Converter.numpy2vtkImage(numpy_array, output=output_image)
@@ -349,10 +343,8 @@ class ImageReader(object):
         self.original_image_attrs["header_length"] = header_length
         self.original_image_attrs["vol_bit_depth"] = vol_bit_depth
         self.original_image_attrs["shape"] = shape
-        self.original_image_attrs['origin'] = reader.GetOrigin()
-        self.original_image_attrs['spacing'] = reader.GetElementSpacing()
-        # TODO: check
-        print("read the numpy image")
+        self.original_image_attrs['origin'] = [0, 0, 0] # Can't save origin to numpy file
+        self.original_image_attrs['spacing'] = [1, 1, 1] # Can't save spacing to numpy file
 
         return output_image
 
@@ -510,43 +502,56 @@ class ImageReader(object):
             reader.SetTargetSize(int(self.target_size))
             reader.SetFileName(self.file_name)
             reader.SetDatasetName(self.original_image_attrs['dataset_name'])
-            reader.SetIsAcquisitionData(True)
+            reader.SetIsAcquisitionData(self.original_image_attrs['is_acquisition_data'])
 
         elif self.crop:
-            full_reader = cilHDF5ResampleReader()
-            full_reader.SetTargetSize(int(self.target_size)*1e12)
+            full_reader = HDF5Reader()
             full_reader.SetFileName(self.file_name)
             full_reader.SetDatasetName(self.original_image_attrs['dataset_name'])
             reader = HDF5SubsetReader()
             reader.SetInputConnection(full_reader.GetOutputPort())
-            extent = [self.target_z_extent[0], self.target_z_extent[1], 0, -1, 0, -1]
+            extent = [0, -1, 0, -1, self.target_z_extent[0], self.target_z_extent[1]]
             reader.SetUpdateExtent(extent)
 
         else:
             reader = cilHDF5ResampleReader()
-            reader.SetTargetSize(int(self.target_size)*1e12)
+            reader.SetTargetSize(int(self.target_size*1e12))
             reader.SetFileName(self.file_name)
             reader.SetDatasetName(self.original_image_attrs['dataset_name'])
         
         
         reader.Update()
 
-        image_size = reader.GetStoredArrayShape(
-        )[0] * reader.GetStoredArrayShape()[1]*reader.GetStoredArrayShape()[2]
+
         if self.resample:
+            image_size = reader.GetStoredArrayShape(
+                )[0] * reader.GetStoredArrayShape()[1]*reader.GetStoredArrayShape()[2]
             target_size = reader.GetTargetSize()
             print("array shape", image_size)
             print("target", target_size)
             if image_size <= target_size:
                 self.loaded_image_attrs['resampled'] = False
 
-        self.original_image_attrs['origin'] = reader.GetOrigin()
-        self.original_image_attrs['spacing'] = reader.GetElementSpacing()
-        self.original_image_attrs['shape'] = reader.GetStoredArrayShape()
-        print("numpy code: ", reader.GetNumpyTypeCode())
-        self.loaded_image_attrs['typecode'] = reader.GetNumpyTypeCode()
-        self.original_image_attrs['typecode'] = reader.GetNumpyTypeCode()
+        if not self.crop:
+            self.original_image_attrs['origin'] = reader.GetOrigin()
+            self.original_image_attrs['spacing'] = reader.GetElementSpacing()
+            self.original_image_attrs['shape'] = reader.GetStoredArrayShape()
+            print("numpy code: ", reader.GetNumpyTypeCode())
+            self.loaded_image_attrs['typecode'] = reader.GetNumpyTypeCode()
+            self.original_image_attrs['typecode'] = reader.GetNumpyTypeCode()
+            print("WE CROPPED")
+        else:
+            self.original_image_attrs['origin'] = full_reader.GetOrigin()
+            # TODO fix getting this stuff:
+            # self.original_image_attrs['spacing'] = full_reader.GetElementSpacing()
+            # self.original_image_attrs['shape'] = full_reader.GetStoredArrayShape()
+            # print("numpy code: ", full_reader.GetNumpyTypeCode())
+            # self.loaded_image_attrs['typecode'] = full_reader.GetNumpyTypeCode()
+            # self.original_image_attrs['typecode'] = full_reader.GetNumpyTypeCode()
+
         self.loaded_image_attrs['vtk_array_name'] = 'entry1/tomo_entry/data/data' # TODO FIX!!
+
+        
 
         return reader.GetOutputDataObject(0)
 
@@ -708,13 +713,22 @@ def h5dump(path, group='/'):
         descend_obj(f[group])
 
 if __name__ == "__main__":
-    reader = ImageReader(file_name=r"C:\Users\lhe97136\Work\Data\24737_fd_normalised.nxs", hdf5_image_attrs={'resampled': True})
+    reader = ImageReader(file_name=r"C:\Users\lhe97136\Work\Data\24737_fd_normalised.nxs", crop=True, resample=False, target_z_extent=[1, 2], hdf5_image_attrs={'is_acquisition_data': False})
     img=reader.read()
+    iviewer(img, img)
     original_image_attrs = reader.get_original_attrs()
     loaded_image_attrs = reader.get_loaded_attrs()
     writer = ImageWriter(file_name='test_empty_dataset.hdf5', datasets=[[None, original_image_attrs], [img, loaded_image_attrs]])
     writer.write()
     h5dump('test_empty_dataset.hdf5')
+
+    # Entrypoint:
+    # - take args
+    # - read file
+    # - write file
+
+
+
 
     # reader2 = ImageReader(file_name=r"C:\Users\lhe97136\Work\Data\24737_fd_normalised.nxs", hdf5_image_attrs={'dataset_name': 'entry2/tomo_entry/data/data'})
     # img2=reader.read()
