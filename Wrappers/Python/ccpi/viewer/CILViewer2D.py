@@ -14,6 +14,7 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
+from ccpi.viewer.utils.colormaps import CILColorMaps
 import vtk
 import numpy
 import os
@@ -1689,22 +1690,27 @@ class CILViewer2D():
             
             ai = vtk.vtkImageHistogramStatistics()
             ai.SetInputConnection(self.voi2.GetOutputPort())
+            ai.SetAutoRangePercentiles(1.0,99.)
             ai.Update()
 
 
-            self.lut2 = lut
-            lut.SetNumberOfColors(7)
-            lut.SetHueRange(.4,.6)
-            lut.SetSaturationRange(1, 1)
-            lut.SetValueRange(0.7,0.7)
-            lut.SetAlphaRange(0,0.5)
-            lut.Build()
+            # self.lut2 = lut
+            # lut.SetNumberOfColors(255)
+            # lut.SetHueRange(.4,.6)
+            # lut.SetSaturationRange(1, 1)
+            # lut.SetValueRange(0.7,0.7)
+            # lut.SetAlphaRange(0,0.5)
+            # lut.Build()
+
+            # self.lut2 = CILColorMaps.get_lookup_table('viridis', (ai.GetMinimum(), ai.GetMaximum()))
+            self.lut2 = CILColorMaps.get_lookup_table('plasma', ai.GetAutoRange(), (ai.GetMinimum(), ai.GetMaximum()))
+            # self.lut2 = CILColorMaps.get_color_transfer_function('inferno', ai.GetAutoRange())
             
 
             cov = vtk.vtkImageMapToColors()
             self.image2map = cov
             cov.SetInputConnection(self.voi2.GetOutputPort())
-            cov.SetLookupTable(lut)
+            cov.SetLookupTable(self.lut2)
             cov.Update()
 
             self.imageSliceMapper2.SetInputConnection(cov.GetOutputPort())

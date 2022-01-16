@@ -1156,7 +1156,7 @@ class CILColorMaps(object):
         return opacity
 
     @staticmethod
-    def get_lookup_table(cmap, color_range):
+    def get_lookup_table(cmap, color_range, whole_range):
 
         tf = vtk.vtkLookupTable()
 
@@ -1167,7 +1167,7 @@ class CILColorMaps(object):
         scaling = 0.1
         
         # opacity = CILColorMaps.get_opacity_transfer_function(x, relu, color_range[0], color_range[1])
-        opacity = relu(color_range[0] + (color_range[1] - color_range[0]) * x/(N-1), color_range[0], color_range[1])
+        opacity = relu(whole_range[0] + (whole_range[1] - whole_range[0]) * x/(N-1), color_range[0], color_range[1])
         max_opacity = 1
         for i in range(N):
             color = colors.GetColor(color_range[0] + (color_range[1] - color_range[0]) * i/(N-1))
