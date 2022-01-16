@@ -1144,7 +1144,18 @@ class CILColorMaps(object):
 
         return tf
 
+    
+    
+
     @staticmethod
+    def get_opacity_transfer_function(x, function, *params):
+        opacity = vtk.vtkPiecewiseFunction()
+        vals = function(x, *params)
+        for _x, _y in zip(x, vals):
+            opacity.AddPoint(_x, _y)
+        return opacity
+
+@staticmethod
     def get_lookup_table(cmap, color_range):
 
         tf = vtk.vtkLookupTable()
@@ -1171,6 +1182,21 @@ class CILColorMaps(object):
                 raise KeyError("Colormap: {} could not be found. \
                      Installing matplotlib might resolve this.".format(e))
 
+            try:
+                from matplotlib import cm
+                
+                colors = []
+                for x in range(0, 255):
+                    color = cm.get_cmap(cmap)(x)
+                    colors.append([color[0], color[1], color[2]])
+            except ImportError:
+                print("To use colormaps other than: ",
+                    "{}, please install matplotlib.".format(
+                        str(list(_color_map_dict.keys()))))
+                        
+        else:
+            colors = _color_map_dict[cmap]
+            
         N = len(colors)
         x = numpy.linspace(0, N, num=N)
         scaling = 0.1
@@ -1182,11 +1208,3 @@ class CILColorMaps(object):
             tf.SetTableValue(i, color[0], color[1], color[2], opacity.GetValue(i))
 
         return tf
-
-    @staticmethod
-    def get_opacity_transfer_function(x, function, *params):
-        opacity = vtk.vtkPiecewiseFunction()
-        vals = function(x, *params)
-        for _x, _y in zip(x, vals):
-            opacity.AddPoint(_x, _y)
-        return opacity
