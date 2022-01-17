@@ -754,11 +754,14 @@ class cilBaseResampleReader(VTKPythonAlgorithmBase):
         return self.__IsAcquisitionData
 
     def ReadDataSetInfo(self):
-        '''Not implemented for Base class
-        Tries to read info about dataset from given file
+        '''Tries to read info about dataset
         Will raise specific errors if inputs required for 
         file type are not set.'''
-        pass
+        if self.__StoredArrayShape is None:
+            raise Exception("StoredArrayShape must be set.")
+        
+        if self.__OutputVTKType is None:
+            raise Exception("Typecode must be set.")
 
     def _GetInternalChunkReader(self):
         tmpdir = tempfile.mkdtemp()
