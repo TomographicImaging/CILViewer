@@ -600,7 +600,7 @@ class cilBaseResampleReader(VTKPythonAlgorithmBase):
     def __init__(self):
         VTKPythonAlgorithmBase.__init__(self, nInputPorts=0, nOutputPorts=1)
 
-        self.__FileName = 1
+        self.__FileName = None
         self.__TargetSize = 256*256*256
         self.__IsFortran = False
         self.__BigEndian = False
@@ -753,6 +753,9 @@ class cilBaseResampleReader(VTKPythonAlgorithmBase):
     def GetIsAcquisitionData(self):
         return self.__IsAcquisitionData
 
+    def ReadDataSetInfo(self):
+        pass
+
     def _GetInternalChunkReader(self):
         tmpdir = tempfile.mkdtemp()
         self._SetTempDir(tmpdir)
@@ -833,23 +836,27 @@ class cilBaseResampleReader(VTKPythonAlgorithmBase):
         self.__TempDir = folder
 
     def RequestData(self, request, inInfo, outInfo):
-        # print("RequestData BaseResampleReader")
-        outData = vtk.vtkImageData.GetData(outInfo)
-
-        # get basic info
-        readshape = self.GetStoredArrayShape()
-        is_fortran = self.GetIsFortran()
-
-        if is_fortran:
-            shape = list(readshape)
-        else:
-            shape = list(readshape)[::-1]
-
-        total_size = shape[0] * shape[1] * shape[2]
-
-        max_size = self.GetTargetSize()
-
         try:
+            outData = vtk.vtkImageData.GetData(outInfo)
+
+            if self.GetFileName() is None:
+                raise Exception("FileName must be set.")
+
+            self.ReadDataSetInfo()
+
+            # get basic info
+            readshape = self.GetStoredArrayShape()
+            is_fortran = self.GetIsFortran()
+
+            if is_fortran:
+                shape = list(readshape)
+            else:
+                shape = list(readshape)[::-1]
+
+            total_size = shape[0] * shape[1] * shape[2]
+
+            max_size = self.GetTargetSize()
+
             if total_size < max_size:  # in this case we don't need to resample
                 self._SetSlicePerChunk(shape[2])
                 reader = self._GetInternalChunkReader()
@@ -945,11 +952,12 @@ class cilBaseResampleReader(VTKPythonAlgorithmBase):
                     resampled_image.CopyAndCastFrom(
                         resampler.GetOutput(), extent)
                     self.UpdateProgress(i / num_chunks)
-
         except Exception as e:
-            print(e)
+            raise Exception(e)
+
         finally:
-            shutil.rmtree(self._GetTempDir())
+            if self._GetTempDir() is not None:
+                shutil.rmtree(self._GetTempDir())
 
         return 1
 
@@ -967,7 +975,7 @@ class cilNumpyResampleReader(cilBaseResampleReader):
         VTKPythonAlgorithmBase.__init__(self, nInputPorts=0, nOutputPorts=1)
         super(cilNumpyResampleReader, self).__init__()
 
-        self.__FileName = 1
+        self.__FileName = None
 
     def ReadNpyHeader(self):
         # extract info from the npy header
@@ -1011,22 +1019,23 @@ class cilNumpyResampleReader(cilBaseResampleReader):
     def GetFileName(self):
         return self.__FileName
 
+    def ReadDataSetInfo(self):
+        self.ReadNpyHeader()
+
 
 class cilHDF5ResampleReader(cilBaseResampleReader):
 
     def __init__(self):
         VTKPythonAlgorithmBase.__init__(self, nInputPorts=0, nOutputPorts=1)
         super(cilHDF5ResampleReader, self).__init__()
-
-        # TODO: work out why not set by baseclass constructor
-        self.__FileName = 1
+        self.__FileName = None
         self.__DatasetName = None
 
     def SetDatasetName(self, value):
         print(value, self.__DatasetName)
         if value != self.__DatasetName:
             self.__DatasetName = value
-            if self.GetFileName() != 1:
+            if self.GetFileName() is not None:
                 self.ReadDataSetInfo()
 
     def SetFileName(self, value):
@@ -1046,6 +1055,8 @@ class cilHDF5ResampleReader(cilBaseResampleReader):
         reader.SetFileName(self.GetFileName())
         if self.GetDatasetName() is not None:
             reader.SetDatasetName(self.GetDatasetName())
+        else:
+            raise Exception("DataSetName must be set.")
         shape = reader.GetDimensions()
         # This is because the HDF5Reader already swaps the order:
         self.SetIsFortran(True)
@@ -1061,6 +1072,8 @@ class cilHDF5ResampleReader(cilBaseResampleReader):
         reader.SetFileName(self.GetFileName())
         if self.GetDatasetName() is not None:
             reader.SetDatasetName(self.GetDatasetName())
+        else:
+            raise Exception("DataSetName must be set.")
         self.SetOrigin(reader.GetOrigin())
         # Here we read just the chunk from the hdf5 file:
         cropped_reader = HDF5SubsetReader()
@@ -1093,7 +1106,7 @@ class cilMetaImageResampleReader(cilBaseResampleReader):
         VTKPythonAlgorithmBase.__init__(self, nInputPorts=0, nOutputPorts=1)
         super(cilMetaImageResampleReader, self).__init__()
 
-        self.__FileName = 1
+        self.__FileName = None
         self.__CompressedData = False
         self.__ElementSpacing = [1, 1, 1]
 
@@ -1183,6 +1196,9 @@ class cilMetaImageResampleReader(cilBaseResampleReader):
     def SetCompressedData(self, value):
         self.__CompressedData = value
 
+    def ReadDataSetInfo(self):
+        self.ReadMetaImageHeader()
+
 
 class cilBaseCroppedReader(VTKPythonAlgorithmBase):
     '''vtkAlgorithm to crop in  the z direction
@@ -1193,7 +1209,7 @@ class cilBaseCroppedReader(VTKPythonAlgorithmBase):
     def __init__(self):
         VTKPythonAlgorithmBase.__init__(self, nInputPorts=0, nOutputPorts=1)
 
-        self.__FileName = 1
+        self.__FileName = None
         self.__IsFortran = False
         self.__BigEndian = False
         self.__FileHeaderLength = 0
@@ -1466,7 +1482,7 @@ class cilNumpyCroppedReader(cilBaseCroppedReader):
         VTKPythonAlgorithmBase.__init__(self, nInputPorts=0, nOutputPorts=1)
         super(cilNumpyCroppedReader, self).__init__()
 
-        self.__FileName = 1
+        self.__FileName = None
         self.__TargetSize = 256*256*256
         self.__IsFortran = False
         self.__BigEndian = False
@@ -1552,7 +1568,7 @@ class cilMetaImageCroppedReader(cilBaseCroppedReader):
         VTKPythonAlgorithmBase.__init__(self, nInputPorts=0, nOutputPorts=1)
         super(cilMetaImageCroppedReader, self).__init__()
 
-        self.__FileName = 1
+        self.__FileName = None
         self.__TargetSize = 256*256*256
         self.__IsFortran = False
         self.__BigEndian = False
