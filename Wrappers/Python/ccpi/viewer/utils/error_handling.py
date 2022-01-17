@@ -19,8 +19,7 @@ class ErrorObserver:
     def __call__(self, obj, event, message):
         self.__error_occurred = True
         self.__get_error_message = message
-        #self.callback_fn(self.__get_error_message)
-        print(self.__get_error_message)
+        self.callback_fn(self.__get_error_message)
 
     def error_occurred(self):
         occ = self.__error_occurred
