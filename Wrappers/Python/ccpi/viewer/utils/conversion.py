@@ -755,9 +755,9 @@ class cilBaseResampleReader(VTKPythonAlgorithmBase):
 
     def ReadDataSetInfo(self):
         '''Not implemented for Base class
-        Tries to read info for about dataset from given file
+        Tries to read info about dataset from given file
         Will raise specific errors if inputs required for 
-        filetype are not set.'''
+        file type are not set.'''
         pass
 
     def _GetInternalChunkReader(self):
