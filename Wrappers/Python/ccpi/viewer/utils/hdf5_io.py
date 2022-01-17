@@ -60,6 +60,8 @@ class HDF5Reader(VTKPythonAlgorithmBase):
         self.__4DIndex = 0
 
     def RequestData(self, request, inInfo, outInfo):
+        if self.__DatasetName is None:
+            raise Exception("DataSetName must be set.")
         with h5py.File(self.__FileName, 'r') as f:
             info = outInfo.GetInformationObject(0)
             shape = np.shape(f[self.__DatasetName])
@@ -108,6 +110,8 @@ class HDF5Reader(VTKPythonAlgorithmBase):
             # Note that we flip the shape because VTK is Fortran order
             # whereas h5py reads in C order. When writing we pretend that the
             # data was C order so we have to flip the extents/dimensions.
+            if self.__DatasetName is None:
+                raise Exception("DataSetName must be set.")
             return f[self.__DatasetName].shape[::-1]
 
     def GetOrigin(self):
