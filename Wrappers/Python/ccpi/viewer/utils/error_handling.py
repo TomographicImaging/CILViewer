@@ -1,3 +1,6 @@
+# See examples/error_observer.py for an example of using the ErrorObserver
+# and EndObserver.
+
 class ErrorObserver:
 
     def __init__(self, callback_fn=print):
