@@ -1716,6 +1716,20 @@ class cilHDF5CroppedReader(cilBaseCroppedReader):
     def GetDatasetName(self):
         return self.__DatasetName
 
+    def GetStoredArrayShape(self):
+        self.ReadDataSetInfo()
+        return self.__StoredArrayShape
+
+    def GetBytesPerElement(self):
+        return self.__BytesPerElement
+
+    def GetIsFortran(self):
+        return self.__IsFortran
+
+    def GetOutputVTKType(self):
+        self.ReadDataSetInfo()
+        return self.__OutputVTKType
+
     def ReadDataSetInfo(self):
         reader = HDF5Reader()
         reader.SetFileName(self.GetFileName())
@@ -1730,20 +1744,6 @@ class cilHDF5CroppedReader(cilBaseCroppedReader):
         self.SetBytesPerElement(nbytes)
         self.SetOutputVTKType(
             Converter.numpy_dtype_char_to_vtkType[typecode])
-
-    def GetStoredArrayShape(self):
-        self.ReadDataSetInfo()
-        return self.__StoredArrayShape
-
-    def GetBytesPerElement(self):
-        return self.__BytesPerElement
-
-    def GetIsFortran(self):
-        return self.__IsFortran
-
-    def GetOutputVTKType(self):
-        self.ReadDataSetInfo()
-        return self.__OutputVTKType
 
     def RequestData(self, request, inInfo, outInfo):
         outData = vtk.vtkImageData.GetData(outInfo)
