@@ -823,7 +823,7 @@ class cilBaseHDF5Reader(cilBaseReader):
 
     def SetFileName(self, value):
         if value != self.GetFileName():
-            super(cilHDF5ResampleReader, self).SetFileName(value)
+            super(cilBaseHDF5Reader, self).SetFileName(value)
             if self.GetDatasetName() is not None:
                 self.ReadDataSetInfo()
 

@@ -115,7 +115,7 @@ class HDF5Reader(VTKPythonAlgorithmBase):
             return f[self.__DatasetName].shape[::-1]
 
     def GetOrigin(self):
-        print("Not yet implemented, set to (0,0,0) by default.")
+        # print("Not yet implemented, set to (0,0,0) by default.")
         return (0, 0, 0)
 
     def GetDataType(self):
