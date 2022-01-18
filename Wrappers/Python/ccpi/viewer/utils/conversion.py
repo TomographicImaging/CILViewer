@@ -590,16 +590,15 @@ def parseNpyHeader(filename):
             'header_length': HEADER_LEN + 6 + 2 + HEADER_LEN_SIZE,
             'description': eval(descr)}
 
+# BASE READERS -----------------------------------------------------------------------------------------
 
-class cilBaseResampleReader(VTKPythonAlgorithmBase):
-    '''vtkAlgorithm to load and resample a  file to an approximate memory footprint
-    '''
-
+class cilBaseReader(VTKPythonAlgorithmBase):
+    '''baseclass with methods for reading files'''
+    
     def __init__(self):
         VTKPythonAlgorithmBase.__init__(self, nInputPorts=0, nOutputPorts=1)
 
         self.__FileName = None
-        self.__TargetSize = 256*256*256
         self.__IsFortran = False
         self.__BigEndian = False
         self.__FileHeaderLength = 0
@@ -611,8 +610,6 @@ class cilBaseResampleReader(VTKPythonAlgorithmBase):
         self.__ElementSpacing = [1, 1, 1]
         self.__Origin = (0., 0., 0.)
         self.__IsAcquisitionData = False
-        self.__SlicePerChunk = None
-        self.__TempDir = None
 
     def SetFileName(self, value):
         if not os.path.exists(value):
@@ -624,16 +621,6 @@ class cilBaseResampleReader(VTKPythonAlgorithmBase):
 
     def GetFileName(self):
         return self.__FileName
-
-    def SetTargetSize(self, value):
-        if not isinstance(value, int):
-            raise ValueError('Expected an integer. Got {}', type(value))
-        if not value == self.__TargetSize:
-            self.__TargetSize = value
-            self.Modified()
-
-    def GetTargetSize(self):
-        return self.__TargetSize
 
     def FillInputPortInformation(self, port, info):
         '''This is a reader so no input'''
@@ -744,6 +731,239 @@ class cilBaseResampleReader(VTKPythonAlgorithmBase):
         Will raise specific errors if inputs required for 
         file type are not set.'''
         raise NotImplementedError("ReadDataSetInfo is not implemented in base class.")
+
+class cilBaseRawReader(cilBaseReader):
+    '''baseclass with methods for reading raw files'''
+    def __init__(self):
+        VTKPythonAlgorithmBase.__init__(self, nInputPorts=0, nOutputPorts=1)
+        super(cilBaseRawReader, self).__init__()
+        self.__RawTypeCode = None
+
+
+    def ReadDataSetInfo(self):
+        '''Tries to read info about dataset
+        Will raise specific errors if inputs required for 
+        reading raw image are not set.'''
+        if self.GetStoredArrayShape() is None:
+            raise Exception("StoredArrayShape must be set.")
+        
+        if self.GetOutputVTKType() is None:
+            raise Exception("Typecode must be set.")
+
+    def GetRawTypeCode(self):
+        return self.__RawTypeCode
+
+    def SetRawTypeCode(self, value):
+        if value not in ['int8', 'uint8', 'int16', 'uint16', 'int32', 'uint32', 'float32', 'float64']:
+            raise ValueError("Unexpected Type: got {}".format(value))
+        self.__RawTypeCode = value
+        self.SetMetaImageTypeCode(
+            Converter.raw_dtype_char_to_MetaImageType[value])
+
+class cilBaseNumpyReader(cilBaseReader):
+    ''' baseclass with methods for reading numpy files'''
+    def __init__(self):
+        VTKPythonAlgorithmBase.__init__(self, nInputPorts=0, nOutputPorts=1)
+        super(cilBaseNumpyReader, self).__init__()
+
+    def ReadNpyHeader(self):
+        # extract info from the npy header
+        descr = parseNpyHeader(self.GetFileName())
+        # find the typecode of the data and the number of bytes per pixel
+        typecode = ''
+        nbytes = 0
+        for t in [np.uint8, np.int8, np.int16, np.uint16, np.int32, np.uint32, np.float16, np.float32, np.float64]:
+            array_descr = descr['description']['descr'][1:]
+            if array_descr == np.dtype(t).descr[0][1][1:]:
+                typecode = np.dtype(t).char
+                nbytes = Converter.numpy_dtype_char_to_bytes[typecode]
+                break
+
+        big_endian = True if descr['description']['descr'][0] == '>' else False
+        readshape = descr['description']['shape']
+        is_fortran = descr['description']['fortran_order']
+        file_header_length = descr['header_length']
+
+        self.SetIsFortran(is_fortran)
+        self.SetBigEndian(big_endian)
+        self.SetFileHeaderLength(file_header_length)
+        self.SetBytesPerElement(nbytes)
+        self.SetStoredArrayShape(readshape)
+        self.SetMetaImageTypeCode(
+            Converter.numpy_dtype_char_to_MetaImageType[typecode])
+
+        self.Modified()
+
+    def SetFileName(self, value):
+        # in the case of an mha file, data is stored in the same file.
+        if value != 'LOCAL':
+            if not os.path.exists(value):
+                raise ValueError('File does not exist!', value)
+
+        if value != self.GetFileName():
+            super(cilBaseNumpyReader, self).SetFileName(value)
+            self.ReadNpyHeader()
+            self.Modified()
+
+    def ReadDataSetInfo(self):
+        self.ReadNpyHeader()
+
+class cilBaseHDF5Reader(cilBaseReader):
+    ''' baseclass with methods for reading hdf5 files'''
+    def __init__(self):
+        VTKPythonAlgorithmBase.__init__(self, nInputPorts=0, nOutputPorts=1)
+        super(cilBaseHDF5Reader, self).__init__()
+        self.__DatasetName = None
+
+    def SetDatasetName(self, value):
+        if value != self.__DatasetName:
+            self.__DatasetName = value
+            if self.GetFileName() is not None:
+                self.ReadDataSetInfo()
+
+    def SetFileName(self, value):
+        if value != self.GetFileName():
+            super(cilHDF5ResampleReader, self).SetFileName(value)
+            if self.GetDatasetName() is not None:
+                self.ReadDataSetInfo()
+
+    def GetDatasetName(self):
+        return self.__DatasetName
+
+    def ReadDataSetInfo(self):
+        reader = HDF5Reader()
+        reader.SetFileName(self.GetFileName())
+        if self.GetDatasetName() is not None:
+            reader.SetDatasetName(self.GetDatasetName())
+        else:
+            raise Exception("DataSetName must be set.")
+        shape = reader.GetDimensions()
+        # This is because the HDF5Reader already swaps the order:
+        self.SetIsFortran(True)
+        self.SetStoredArrayShape(shape)
+        # get the datatype:
+        datatype = reader.GetDataType()
+        typecode = np.dtype(datatype).char
+        self.SetOutputVTKType(
+            Converter.numpy_dtype_char_to_vtkType[typecode])
+
+class cilBaseMetaImageReader(cilBaseReader):
+
+    def __init__(self):
+        VTKPythonAlgorithmBase.__init__(self, nInputPorts=0, nOutputPorts=1)
+        super(cilBaseMetaImageReader, self).__init__()
+        self.__CompressedData = False
+        
+
+    def ReadMetaImageHeader(self):
+        header_length = 0
+        with open(self.GetFileName(), 'rb') as f:
+            for line in f:
+                header_length += len(line)
+                line = str(line, encoding='utf-8').strip()
+                if 'BinaryDataByteOrderMSB' in line:
+                    if str(line).split('= ')[-1] == "True":
+                        self.SetBigEndian(True)
+                    else:
+                        self.SetBigEndian(False)
+                elif 'Offset' in line:
+                    origin = line.split('= ')[-1].split(' ')[:3]
+                    origin[2].strip()
+                    for i in range(0, len(origin)):
+                        origin[i] = float(origin[i])
+                    self.SetOrigin(tuple(origin))
+                    # print(self.GetBigEndian())
+                elif 'ElementSpacing' in line:
+                    spacing = line.split('= ')[-1].split(' ')[:3]
+                    spacing[2].strip()
+                    for i in range(0, len(spacing)):
+                        spacing[i] = float(spacing[i])
+                    self.SetElementSpacing(spacing)
+                    # print("Spacing", spacing)
+                elif 'DimSize' in line:
+                    shape = line.split('= ')[-1].split(' ')[:3]
+                    shape[2].strip()
+                    for i in range(0, len(shape)):
+                        shape[i] = int(shape[i])
+                    self.SetStoredArrayShape(tuple(shape))
+                    # print(self.GetStoredArrayShape())
+                elif 'ElementType' in line:
+                    typecode = line.split('= ')[-1]
+                    self.SetMetaImageTypeCode(typecode)
+                    # print(self.GetMetaImageTypeCode())
+                elif 'CompressedData' in line:
+                    compressed = line.split('= ')[-1]
+                    self.SetIsCompressedData(eval(compressed))
+                    if self.GetIsCompressedData():
+                        print("Cannot resample compressed image")
+                        raise Exception("Cannot resample compressed image")
+
+                elif 'HeaderSize' in line:
+                    header_size = line.split('= ')[-1]
+                    self.SetFileHeaderLength(int(header_size))
+
+                elif 'ElementDataFile' in line:  # signifies end of header
+                    element_data_file = line.split('= ')[-1]
+                    if element_data_file != 'LOCAL':  # then we have an mhd file with data in another file
+                        file_path = os.path.dirname(self.GetFileName())
+                        element_data_file = os.path.join(
+                            file_path, element_data_file)
+                        # print("Filename: ", element_data_file)
+                        super(type(self), self).SetFileName(element_data_file)
+                    else:
+                        self.SetFileHeaderLength(header_length)
+                    break
+
+        self.SetIsFortran(True)
+        self.SetBytesPerElement(
+            Converter.MetaImageType_to_bytes[self.GetMetaImageTypeCode()])
+
+        self.Modified()
+
+    def SetFileName(self, value):
+        # in the case of an mha file, data is stored in the same file.
+        if value != 'LOCAL':
+            if not os.path.exists(value):
+                raise ValueError('File does not exist!', value)
+
+        if value != self.GetFileName():
+            super(cilBaseMetaImageReader, self).SetFileName(value)
+            self.ReadMetaImageHeader()
+            self.Modified()
+
+    def GetIsCompressedData(self):
+        return self.__CompressedData
+
+    def SetIsCompressedData(self, value):
+        self.__CompressedData = value
+
+    def ReadDataSetInfo(self):
+        self.ReadMetaImageHeader()
+
+# ---------------------- RESAMPLE READERS -------------------------------------------------------------
+
+class cilBaseResampleReader(cilBaseReader):
+    '''vtkAlgorithm to load and resample a file to an approximate memory footprint
+    '''
+    def __init__(self):
+        VTKPythonAlgorithmBase.__init__(self, nInputPorts=0, nOutputPorts=1)
+        super(cilBaseReader, self).__init__()
+
+        self.__TargetSize = 256**3
+        self.__SlicePerChunk = None
+        self.__TempDir = None
+        self.__ChunkReader = None
+        
+
+    def SetTargetSize(self, value):
+        if not isinstance(value, int):
+            raise ValueError('Expected an integer. Got {}', type(value))
+        if not value == self.GetTargetSize():
+            self.__TargetSize = value
+            self.Modified()
+
+    def GetTargetSize(self):
+        return self.__TargetSize
 
     def _GetInternalChunkReader(self):
         tmpdir = tempfile.mkdtemp()
@@ -953,132 +1173,35 @@ class cilBaseResampleReader(VTKPythonAlgorithmBase):
     def GetOutput(self):
         return self.GetOutputDataObject(0)
 
-
-class cilRawResampleReader(cilBaseResampleReader):
+class cilRawResampleReader(cilBaseResampleReader, cilBaseRawReader):
     '''vtkAlgorithm to load and resample a raw file to an approximate memory footprint
     '''
 
     def __init__(self):
         VTKPythonAlgorithmBase.__init__(self, nInputPorts=0, nOutputPorts=1)
-        super(cilRawResampleReader, self).__init__()
-
-        self.__RawTypeCode = None
-
-
-    def ReadDataSetInfo(self):
-        '''Tries to read info about dataset
-        Will raise specific errors if inputs required for 
-        reading raw image are not set.'''
-        if self.GetStoredArrayShape() is None:
-            raise Exception("StoredArrayShape must be set.")
-        
-        if self.GetOutputVTKType() is None:
-            raise Exception("Typecode must be set.")
-
-    def GetRawTypeCode(self):
-        return self.__RawTypeCode
-
-    def SetRawTypeCode(self, value):
-        if value not in ['int8', 'uint8', 'int16', 'uint16', 'int32', 'uint32', 'float32', 'float64']:
-            raise ValueError("Unexpected Type: got {}".format(value))
-        self.__RawTypeCode = value
-        self.SetMetaImageTypeCode(
-            Converter.raw_dtype_char_to_MetaImageType[value])
+        cilBaseReader.__init__(self)
+        cilBaseResampleReader.__init__(self)
+        cilBaseRawReader.__init__(self)
 
 
-
-class cilNumpyResampleReader(cilBaseResampleReader):
+class cilNumpyResampleReader(cilBaseResampleReader, cilBaseNumpyReader):
     '''vtkAlgorithm to load and resample a numpy file to an approximate memory footprint
-
-
     '''
+    def __init__(self):
+        VTKPythonAlgorithmBase.__init__(self, nInputPorts=0, nOutputPorts=1)
+        #super(cilBaseNumpyReader, self).__init__()
+        cilBaseReader.__init__(self)
+        cilBaseResampleReader.__init__(self)
+        cilBaseNumpyReader.__init__(self)
+    
+
+class cilHDF5ResampleReader(cilBaseResampleReader, cilBaseHDF5Reader):
 
     def __init__(self):
         VTKPythonAlgorithmBase.__init__(self, nInputPorts=0, nOutputPorts=1)
-        super(cilNumpyResampleReader, self).__init__()
-
-    def ReadNpyHeader(self):
-        # extract info from the npy header
-        descr = parseNpyHeader(self.GetFileName())
-        # find the typecode of the data and the number of bytes per pixel
-        typecode = ''
-        nbytes = 0
-        for t in [np.uint8, np.int8, np.int16, np.uint16, np.int32, np.uint32, np.float16, np.float32, np.float64]:
-            array_descr = descr['description']['descr'][1:]
-            if array_descr == np.dtype(t).descr[0][1][1:]:
-                typecode = np.dtype(t).char
-                nbytes = Converter.numpy_dtype_char_to_bytes[typecode]
-                break
-
-        big_endian = True if descr['description']['descr'][0] == '>' else False
-        readshape = descr['description']['shape']
-        is_fortran = descr['description']['fortran_order']
-        file_header_length = descr['header_length']
-
-        self.SetIsFortran(is_fortran)
-        self.SetBigEndian(big_endian)
-        self.SetFileHeaderLength(file_header_length)
-        self.SetBytesPerElement(nbytes)
-        self.SetStoredArrayShape(readshape)
-        self.SetMetaImageTypeCode(
-            Converter.numpy_dtype_char_to_MetaImageType[typecode])
-
-        self.Modified()
-
-    def SetFileName(self, value):
-        # in the case of an mha file, data is stored in the same file.
-        if value != 'LOCAL':
-            if not os.path.exists(value):
-                raise ValueError('File does not exist!', value)
-
-        if value != self.GetFileName():
-            super(cilNumpyResampleReader, self).SetFileName(value)
-            self.ReadNpyHeader()
-            self.Modified()
-
-    def ReadDataSetInfo(self):
-        self.ReadNpyHeader()
-
-
-class cilHDF5ResampleReader(cilBaseResampleReader):
-
-    def __init__(self):
-        VTKPythonAlgorithmBase.__init__(self, nInputPorts=0, nOutputPorts=1)
-        super(cilHDF5ResampleReader, self).__init__()
-        self.__DatasetName = None
-
-    def SetDatasetName(self, value):
-        print(value, self.__DatasetName)
-        if value != self.__DatasetName:
-            self.__DatasetName = value
-            if self.GetFileName() is not None:
-                self.ReadDataSetInfo()
-
-    def SetFileName(self, value):
-        if value != self.GetFileName():
-            super(cilHDF5ResampleReader, self).SetFileName(value)
-            if self.GetDatasetName() is not None:
-                self.ReadDataSetInfo()
-
-    def GetDatasetName(self):
-        return self.__DatasetName
-
-    def ReadDataSetInfo(self):
-        reader = HDF5Reader()
-        reader.SetFileName(self.GetFileName())
-        if self.GetDatasetName() is not None:
-            reader.SetDatasetName(self.GetDatasetName())
-        else:
-            raise Exception("DataSetName must be set.")
-        shape = reader.GetDimensions()
-        # This is because the HDF5Reader already swaps the order:
-        self.SetIsFortran(True)
-        self.SetStoredArrayShape(shape)
-        # get the datatype:
-        datatype = reader.GetDataType()
-        typecode = np.dtype(datatype).char
-        self.SetOutputVTKType(
-            Converter.numpy_dtype_char_to_vtkType[typecode])
+        cilBaseReader.__init__(self)
+        cilBaseResampleReader.__init__(self)
+        cilBaseHDF5Reader.__init__(self)
 
     def _GetInternalChunkReader(self):
         reader = HDF5Reader()
@@ -1109,104 +1232,18 @@ class cilHDF5ResampleReader(cilBaseResampleReader):
             (0, dims[0]-1, 0, dims[1]-1, start_slice, end_slice))
 
 
-class cilMetaImageResampleReader(cilBaseResampleReader):
+class cilMetaImageResampleReader(cilBaseResampleReader, cilBaseMetaImageReader):
     '''vtkAlgorithm to load and resample a metaimage file to an approximate memory footprint
-
-
     '''
 
     def __init__(self):
         VTKPythonAlgorithmBase.__init__(self, nInputPorts=0, nOutputPorts=1)
-        super(cilMetaImageResampleReader, self).__init__()
+        cilBaseReader.__init__(self)
+        cilBaseResampleReader.__init__(self)
+        cilBaseMetaImageReader.__init__(self)
 
-        self.__CompressedData = False
-        
 
-    def ReadMetaImageHeader(self):
-        header_length = 0
-        with open(self.GetFileName(), 'rb') as f:
-            for line in f:
-                header_length += len(line)
-                line = str(line, encoding='utf-8').strip()
-                if 'BinaryDataByteOrderMSB' in line:
-                    if str(line).split('= ')[-1] == "True":
-                        self.SetBigEndian(True)
-                    else:
-                        self.SetBigEndian(False)
-                elif 'Offset' in line:
-                    origin = line.split('= ')[-1].split(' ')[:3]
-                    origin[2].strip()
-                    for i in range(0, len(origin)):
-                        origin[i] = float(origin[i])
-                    self.SetOrigin(tuple(origin))
-                    # print(self.GetBigEndian())
-                elif 'ElementSpacing' in line:
-                    spacing = line.split('= ')[-1].split(' ')[:3]
-                    spacing[2].strip()
-                    for i in range(0, len(spacing)):
-                        spacing[i] = float(spacing[i])
-                    self.SetElementSpacing(spacing)
-                    # print("Spacing", spacing)
-                elif 'DimSize' in line:
-                    shape = line.split('= ')[-1].split(' ')[:3]
-                    shape[2].strip()
-                    for i in range(0, len(shape)):
-                        shape[i] = int(shape[i])
-                    self.SetStoredArrayShape(tuple(shape))
-                    # print(self.GetStoredArrayShape())
-                elif 'ElementType' in line:
-                    typecode = line.split('= ')[-1]
-                    self.SetMetaImageTypeCode(typecode)
-                    # print(self.GetMetaImageTypeCode())
-                elif 'CompressedData' in line:
-                    compressed = line.split('= ')[-1]
-                    self.SetIsCompressedData(compressed)
-                    if(self.GetIsCompressedData() == "True"):
-                        print("Cannot resample compressed image")
-                        raise Exception("Cannot resample compressed image")
-
-                elif 'HeaderSize' in line:
-                    header_size = line.split('= ')[-1]
-                    self.SetFileHeaderLength(int(header_size))
-
-                elif 'ElementDataFile' in line:  # signifies end of header
-                    element_data_file = line.split('= ')[-1]
-                    if element_data_file != 'LOCAL':  # then we have an mhd file with data in another file
-                        file_path = os.path.dirname(self.GetFileName())
-                        element_data_file = os.path.join(
-                            file_path, element_data_file)
-                        # print("Filename: ", element_data_file)
-                        super(type(self), self).SetFileName(element_data_file)
-                    else:
-                        self.SetFileHeaderLength(header_length)
-                    break
-
-        self.SetIsFortran(True)
-        self.SetBytesPerElement(
-            Converter.MetaImageType_to_bytes[self.GetMetaImageTypeCode()])
-
-        self.Modified()
-
-    def SetFileName(self, value):
-        # in the case of an mha file, data is stored in the same file.
-        if value != 'LOCAL':
-            if not os.path.exists(value):
-                raise ValueError('File does not exist!', value)
-
-        if value != self.GetFileName():
-            super(cilMetaImageResampleReader, self).SetFileName(value)
-            self.ReadMetaImageHeader()
-            self.Modified()
-
-    def GetIsCompressedData(self):
-        return self.__CompressedData
-
-    def SetIsCompressedData(self, value):
-        self.__CompressedData = value
-
-    def ReadDataSetInfo(self):
-        self.ReadMetaImageHeader()
-
+# CROPPED READERS -----------------------------------------------------------------------------------
 
 class cilBaseCroppedReader(VTKPythonAlgorithmBase):
     '''vtkAlgorithm to crop in  the z direction
