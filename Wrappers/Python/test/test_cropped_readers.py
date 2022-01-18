@@ -3,7 +3,7 @@ import unittest
 
 import numpy as np
 import vtk
-from ccpi.viewer.utils.conversion import (Converter, cilBaseCroppedReader,
+from ccpi.viewer.utils.conversion import (Converter, cilRawCroppedReader,
                                           cilMetaImageCroppedReader,
                                           cilNumpyCroppedReader)
 
@@ -43,7 +43,7 @@ class TestCroppedReaders(unittest.TestCase):
 
     def test_raw_cropped_reader(self):
         target_z_extent = [1, 3]
-        reader = cilBaseCroppedReader()
+        reader = cilRawCroppedReader()
         og_shape = np.shape(self.input_3D_array)
         reader.SetFileName(self.raw_filename_3D)
         reader.SetTargetZExtent(tuple(target_z_extent))
