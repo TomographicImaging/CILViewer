@@ -1183,7 +1183,6 @@ class cilRawResampleReader(cilBaseResampleReader, cilBaseRawReader):
         cilBaseResampleReader.__init__(self)
         cilBaseRawReader.__init__(self)
 
-
 class cilNumpyResampleReader(cilBaseResampleReader, cilBaseNumpyReader):
     '''vtkAlgorithm to load and resample a numpy file to an approximate memory footprint
     '''
@@ -1194,7 +1193,6 @@ class cilNumpyResampleReader(cilBaseResampleReader, cilBaseNumpyReader):
         cilBaseResampleReader.__init__(self)
         cilBaseNumpyReader.__init__(self)
     
-
 class cilHDF5ResampleReader(cilBaseResampleReader, cilBaseHDF5Reader):
 
     def __init__(self):
@@ -1231,7 +1229,6 @@ class cilHDF5ResampleReader(cilBaseResampleReader, cilBaseHDF5Reader):
         self.__ChunkReader.SetUpdateExtent(
             (0, dims[0]-1, 0, dims[1]-1, start_slice, end_slice))
 
-
 class cilMetaImageResampleReader(cilBaseResampleReader, cilBaseMetaImageReader):
     '''vtkAlgorithm to load and resample a metaimage file to an approximate memory footprint
     '''
@@ -1246,7 +1243,7 @@ class cilMetaImageResampleReader(cilBaseResampleReader, cilBaseMetaImageReader):
 # CROPPED READERS -----------------------------------------------------------------------------------
 
 class cilBaseCroppedReader(VTKPythonAlgorithmBase):
-    '''vtkAlgorithm to crop in  the z direction
+    '''vtkAlgorithm to crop in the z direction
 
 
     '''
