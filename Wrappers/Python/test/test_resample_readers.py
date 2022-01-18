@@ -3,7 +3,7 @@ import unittest
 
 import numpy as np
 import vtk
-from ccpi.viewer.utils.conversion import (Converter, cilBaseResampleReader,
+from ccpi.viewer.utils.conversion import (Converter, cilRawResampleReader,
                                           cilMetaImageResampleReader,
                                           cilNumpyResampleReader)
 
@@ -11,7 +11,7 @@ from ccpi.viewer.utils.conversion import (Converter, cilBaseResampleReader,
 def calculate_target_downsample_shape(max_size, total_size, shape, acq=False):
     if not acq:
         xy_axes_magnification = np.power(max_size/total_size, 1/3)
-        slice_per_chunk = np.int(1/xy_axes_magnification)
+        slice_per_chunk = int(1/xy_axes_magnification)
     else:
         slice_per_chunk = 1
         xy_axes_magnification = np.power(max_size/total_size, 1/2)
@@ -49,7 +49,7 @@ class TestResampleReaders(unittest.TestCase):
         # Not a great test, but at least checks the resample reader runs
         # without crashing
         # TODO: improve this test
-        reader = cilBaseResampleReader()
+        reader = cilRawResampleReader()
         og_shape = np.shape(self.input_3D_array)
         reader.SetFileName(self.raw_filename_3D)
         target_size = 100
@@ -84,7 +84,7 @@ class TestResampleReaders(unittest.TestCase):
 
         # # Now test if we get the correct z extent if we set that we
         # # have acquisition data
-        # reader = cilBaseResampleReader()
+        # reader = cilRawResampleReader()
         # reader.SetDatasetName("ImageData")
         target_size = 100
         reader.SetTargetSize(target_size)
