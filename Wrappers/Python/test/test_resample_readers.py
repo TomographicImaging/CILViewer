@@ -54,7 +54,6 @@ class TestResampleReaders(unittest.TestCase):
         reader.SetFileName(self.raw_filename_3D)
         target_size = 100
         reader.SetTargetSize(target_size)
-        reader.SetBytesPerElement(4)
         reader.SetBigEndian(False)
         reader.SetIsFortran(False)
         reader.SetRawTypeCode(str(self.input_3D_array.dtype))
