@@ -598,29 +598,29 @@ class cilBaseReader(VTKPythonAlgorithmBase):
     def __init__(self):
         VTKPythonAlgorithmBase.__init__(self, nInputPorts=0, nOutputPorts=1)
 
-        self.__FileName = None
-        self.__IsFortran = False
-        self.__BigEndian = False
-        self.__FileHeaderLength = 0
-        self.__BytesPerElement = 1
-        self.__StoredArrayShape = None
-        self.__OutputVTKType = None
-        self.__NumpyTypeCode = None
-        self.__MetaImageTypeCode = None
-        self.__ElementSpacing = [1, 1, 1]
-        self.__Origin = (0., 0., 0.)
-        self.__IsAcquisitionData = False
+        self._FileName = None
+        self._IsFortran = False
+        self._BigEndian = False
+        self._FileHeaderLength = 0
+        self._BytesPerElement = 1
+        self._StoredArrayShape = None
+        self._OutputVTKType = None
+        self._NumpyTypeCode = None
+        self._MetaImageTypeCode = None
+        self._ElementSpacing = [1, 1, 1]
+        self._Origin = (0., 0., 0.)
+        self._IsAcquisitionData = False
 
     def SetFileName(self, value):
         if not os.path.exists(value):
             raise ValueError('File does not exist!', value)
 
-        if value != self.__FileName:
-            self.__FileName = value
+        if value != self.GetFileName():
+            self._FileName = value
             self.Modified()
 
     def GetFileName(self):
-        return self.__FileName
+        return self._FileName
 
     def FillInputPortInformation(self, port, info):
         '''This is a reader so no input'''
@@ -632,25 +632,25 @@ class cilBaseReader(VTKPythonAlgorithmBase):
         return 1
 
     def GetStoredArrayShape(self):
-        return self.__StoredArrayShape
+        return self._StoredArrayShape
 
     def GetFileHeaderLength(self):
-        return self.__FileHeaderLength
+        return self._FileHeaderLength
 
     def GetBytesPerElement(self):
-        return self.__BytesPerElement
+        return self._BytesPerElement
 
     def GetBigEndian(self):
-        return self.__BigEndian
+        return self._BigEndian
 
     def GetIsFortran(self):
-        return self.__IsFortran
+        return self._IsFortran
 
     def GetOutputVTKType(self):
-        return self.__OutputVTKType
+        return self._OutputVTKType
 
     def GetNumpyTypeCode(self):
-        return self.__NumpyTypeCode
+        return self._NumpyTypeCode
 
     def SetStoredArrayShape(self, value):
         if not isinstance(value, tuple):
@@ -658,73 +658,73 @@ class cilBaseReader(VTKPythonAlgorithmBase):
         if len(value) != 3:
             raise ValueError(
                 'Expected tuple of length 3, got {}'.format(len(value)))
-        self.__StoredArrayShape = value
+        self._StoredArrayShape = value
 
     def SetFileHeaderLength(self, value):
         if not isinstance(value, int):
             raise ValueError('Expected int, got {}'.format(type(value)))
-        self.__FileHeaderLength = value
+        self._FileHeaderLength = value
 
     def SetBytesPerElement(self, value):
         if not isinstance(value, int):
             raise ValueError('Expected int, got {}'.format(type(value)))
-        self.__BytesPerElement = value
+        self._BytesPerElement = value
 
     def SetBigEndian(self, value):
         if not isinstance(value, bool):
             raise ValueError('Expected bool, got {}'.format(type(value)))
-        self.__BigEndian = value
+        self._BigEndian = value
 
     def SetIsFortran(self, value):
         if not isinstance(value, bool):
             raise ValueError('Expected bool, got {}'.format(type(value)))
-        self.__IsFortran = value
+        self._IsFortran = value
 
     def SetOutputVTKType(self, value):
         if value not in [vtk.VTK_SIGNED_CHAR, vtk.VTK_UNSIGNED_CHAR,  vtk.VTK_SHORT,  vtk.VTK_UNSIGNED_SHORT,
                          vtk.VTK_INT, vtk.VTK_UNSIGNED_INT,  vtk.VTK_FLOAT, vtk.VTK_DOUBLE, vtk.VTK_FLOAT,
                          vtk.VTK_DOUBLE]:
             raise ValueError("Unexpected Type:  {}".format(value))
-        self.__OutputVTKType = value
+        self._OutputVTKType = value
 
     def SetNumpyTypeCode(self, value):
         if value not in ['b', 'B', 'h', 'H', 'i', 'I', 'f', 'd', 'F', 'D']:
             raise ValueError("Unexpected Type:  {}".format(value))
-        self.__NumpyTypeCode = value
+        self._NumpyTypeCode = value
         self.SetMetaImageTypeCode(
             Converter.numpy_dtype_char_to_MetaImageType[value])
 
     def GetMetaImageTypeCode(self):
-        return self.__MetaImageTypeCode
+        return self._MetaImageTypeCode
 
     def SetMetaImageTypeCode(self, value):
         if value not in ['MET_CHAR',  'MET_UCHAR', 'MET_SHORT', 'MET_USHORT', 'MET_INT', 'MET_UINT', 'MET_FLOAT', 'MET_DOUBLE', 'MET_FLOAT', 'MET_DOUBLE']:
             raise ValueError("Unexpected Type:  {}".format(value))
-        self.__MetaImageTypeCode = value
+        self._MetaImageTypeCode = value
         self.SetOutputVTKType(Converter.MetaImageType_to_vtkType[value])
 
     def GetElementSpacing(self):
-        return self.__ElementSpacing
+        return self._ElementSpacing
 
     def SetElementSpacing(self, value):
-        self.__ElementSpacing = value
+        self._ElementSpacing = value
 
     def SetOrigin(self, value):
         if not isinstance(value, tuple):
             raise ValueError('Expected a tuple. Got {}', type(value))
 
-        if not value == self.__Origin:
-            self.__Origin = value
+        if not value == self._Origin:
+            self._Origin = value
             self.Modified()
 
     def GetOrigin(self):
-        return self.__Origin
+        return self._Origin
 
     def SetIsAcquisitionData(self, value):
-        self.__IsAcquisitionData = value
+        self._IsAcquisitionData = value
 
     def GetIsAcquisitionData(self):
-        return self.__IsAcquisitionData
+        return self._IsAcquisitionData
 
     def ReadDataSetInfo(self):
         '''Tries to read info about dataset
@@ -740,7 +740,7 @@ class cilBaseRawReader(cilBaseReader):
     def __init__(self):
         VTKPythonAlgorithmBase.__init__(self, nInputPorts=0, nOutputPorts=1)
         super(cilBaseRawReader, self).__init__()
-        self.__RawTypeCode = None
+        self._RawTypeCode = None
 
 
     def ReadDataSetInfo(self):
@@ -754,12 +754,12 @@ class cilBaseRawReader(cilBaseReader):
             raise Exception("Typecode must be set.")
 
     def GetRawTypeCode(self):
-        return self.__RawTypeCode
+        return self._RawTypeCode
 
     def SetRawTypeCode(self, value):
         if value not in ['int8', 'uint8', 'int16', 'uint16', 'int32', 'uint32', 'float32', 'float64']:
             raise ValueError("Unexpected Type: got {}".format(value))
-        self.__RawTypeCode = value
+        self._RawTypeCode = value
         self.SetMetaImageTypeCode(
             Converter.raw_dtype_char_to_MetaImageType[value])
 
@@ -804,7 +804,7 @@ class cilBaseNumpyReader(cilBaseReader):
                 raise ValueError('File does not exist!', value)
 
         if value != self.GetFileName():
-            super(cilBaseNumpyReader, self).SetFileName(value)
+            self._FileName = value
             self.ReadNpyHeader()
             self.Modified()
 
@@ -816,22 +816,22 @@ class cilBaseHDF5Reader(cilBaseReader):
     def __init__(self):
         VTKPythonAlgorithmBase.__init__(self, nInputPorts=0, nOutputPorts=1)
         super(cilBaseHDF5Reader, self).__init__()
-        self.__DatasetName = None
+        self._DatasetName = None
 
     def SetDatasetName(self, value):
-        if value != self.__DatasetName:
-            self.__DatasetName = value
+        if value != self._DatasetName:
+            self._DatasetName = value
             if self.GetFileName() is not None:
                 self.ReadDataSetInfo()
 
     def SetFileName(self, value):
         if value != self.GetFileName():
-            super(cilBaseHDF5Reader, self).SetFileName(value)
+            self._FileName = value
             if self.GetDatasetName() is not None:
                 self.ReadDataSetInfo()
 
     def GetDatasetName(self):
-        return self.__DatasetName
+        return self._DatasetName
 
     def ReadDataSetInfo(self):
         reader = HDF5Reader()
@@ -857,7 +857,7 @@ class cilBaseMetaImageReader(cilBaseReader):
     def __init__(self):
         VTKPythonAlgorithmBase.__init__(self, nInputPorts=0, nOutputPorts=1)
         super(cilBaseMetaImageReader, self).__init__()
-        self.__CompressedData = False
+        self._CompressedData = False
         
 
     def ReadMetaImageHeader(self):
@@ -914,7 +914,7 @@ class cilBaseMetaImageReader(cilBaseReader):
                         element_data_file = os.path.join(
                             file_path, element_data_file)
                         # print("Filename: ", element_data_file)
-                        super(type(self), self).SetFileName(element_data_file)
+                        self.SetFileName(element_data_file)
                     else:
                         self.SetFileHeaderLength(header_length)
                     break
@@ -932,15 +932,15 @@ class cilBaseMetaImageReader(cilBaseReader):
                 raise ValueError('File does not exist!', value)
 
         if value != self.GetFileName():
-            super(cilBaseMetaImageReader, self).SetFileName(value)
+            self._FileName = value
             self.ReadMetaImageHeader()
             self.Modified()
 
     def GetIsCompressedData(self):
-        return self.__CompressedData
+        return self._CompressedData
 
     def SetIsCompressedData(self, value):
-        self.__CompressedData = value
+        self._CompressedData = value
 
     def ReadDataSetInfo(self):
         self.ReadMetaImageHeader()
@@ -952,23 +952,23 @@ class cilBaseResampleReader(cilBaseReader):
     '''
     def __init__(self):
         VTKPythonAlgorithmBase.__init__(self, nInputPorts=0, nOutputPorts=1)
-        super(cilBaseReader, self).__init__()
+        super(cilBaseResampleReader, self).__init__()
 
-        self.__TargetSize = 256**3
-        self.__SlicePerChunk = None
-        self.__TempDir = None
-        self.__ChunkReader = None
+        self._TargetSize = 256**3
+        self._SlicePerChunk = None
+        self._TempDir = None
+        self._ChunkReader = None
         
 
     def SetTargetSize(self, value):
         if not isinstance(value, int):
             raise ValueError('Expected an integer. Got {}', type(value))
         if not value == self.GetTargetSize():
-            self.__TargetSize = value
+            self._TargetSize = value
             self.Modified()
 
     def GetTargetSize(self):
-        return self.__TargetSize
+        return self._TargetSize
 
     def _GetInternalChunkReader(self):
         tmpdir = tempfile.mkdtemp()
@@ -978,7 +978,7 @@ class cilBaseResampleReader(cilBaseReader):
         reader.SetFileName(header_filename)
 
         chunk_file_name = os.path.join(tmpdir, "chunk.raw")
-        self.__ChunkFileName = chunk_file_name
+        self._ChunkFileName = chunk_file_name
 
         readshape = self.GetStoredArrayShape()
         is_fortran = self.GetIsFortran()
@@ -1005,7 +1005,7 @@ class cilBaseResampleReader(cilBaseReader):
             spacing=tuple(self.GetElementSpacing()),
             origin=self.GetOrigin()
         )
-        self.__ChunkReader = reader
+        self._ChunkReader = reader
         return reader
 
     def UpdateChunkToRead(self, start_slice):
@@ -1022,7 +1022,7 @@ class cilBaseResampleReader(cilBaseReader):
         slice_length = shape[1] * shape[0] * nbytes
 
         image_file = self.GetFileName()
-        chunk_file_name = self.__ChunkFileName
+        chunk_file_name = self._ChunkFileName
         file_header_length = self.GetFileHeaderLength()
         slice_per_chunk = self._GetSlicePerChunk()
 
@@ -1038,16 +1038,16 @@ class cilBaseResampleReader(cilBaseReader):
                 chunk_file_object.write(chunk)
 
     def _SetSlicePerChunk(self, value):
-        self.__SlicePerChunk = value
+        self._SlicePerChunk = value
 
     def _GetSlicePerChunk(self):
-        return self.__SlicePerChunk
+        return self._SlicePerChunk
 
     def _GetTempDir(self):
-        return self.__TempDir
+        return self._TempDir
 
     def _SetTempDir(self, folder):
-        self.__TempDir = folder
+        self._TempDir = folder
 
     def RequestData(self, request, inInfo, outInfo):
         try:
@@ -1185,23 +1185,18 @@ class cilRawResampleReader(cilBaseResampleReader, cilBaseRawReader):
         cilBaseResampleReader.__init__(self)
         cilBaseRawReader.__init__(self)
 
-class cilNumpyResampleReader(cilBaseResampleReader, cilBaseNumpyReader):
+class cilNumpyResampleReader( cilBaseNumpyReader, cilBaseResampleReader):
     '''vtkAlgorithm to load and resample a numpy file to an approximate memory footprint
     '''
     def __init__(self):
         VTKPythonAlgorithmBase.__init__(self, nInputPorts=0, nOutputPorts=1)
-        #super(cilBaseNumpyReader, self).__init__()
-        cilBaseReader.__init__(self)
-        cilBaseResampleReader.__init__(self)
-        cilBaseNumpyReader.__init__(self)
+        super(cilNumpyResampleReader, self).__init__()
     
 class cilHDF5ResampleReader(cilBaseResampleReader, cilBaseHDF5Reader):
 
     def __init__(self):
         VTKPythonAlgorithmBase.__init__(self, nInputPorts=0, nOutputPorts=1)
-        cilBaseReader.__init__(self)
-        cilBaseResampleReader.__init__(self)
-        cilBaseHDF5Reader.__init__(self)
+        super(cilHDF5ResampleReader, self).__init__()
 
     def _GetInternalChunkReader(self):
         reader = HDF5Reader()
@@ -1218,7 +1213,7 @@ class cilHDF5ResampleReader(cilBaseResampleReader, cilBaseHDF5Reader):
         # Set default extent to full extent:
         cropped_reader.SetUpdateExtent(
             (0, dims[0]-1, 0, dims[1]-1, 0, dims[2]-1))
-        self.__ChunkReader = cropped_reader
+        self._ChunkReader = cropped_reader
         return cropped_reader
 
     def UpdateChunkToRead(self, start_slice):
@@ -1228,7 +1223,7 @@ class cilHDF5ResampleReader(cilBaseResampleReader, cilBaseHDF5Reader):
             raise ValueError('{} ERROR: Start slice cannot be negative.'
                              .format(self.__class__.__name__))
         dims = self.GetStoredArrayShape()
-        self.__ChunkReader.SetUpdateExtent(
+        self._ChunkReader.SetUpdateExtent(
             (0, dims[0]-1, 0, dims[1]-1, start_slice, end_slice))
 
 class cilMetaImageResampleReader(cilBaseResampleReader, cilBaseMetaImageReader):
@@ -1237,9 +1232,7 @@ class cilMetaImageResampleReader(cilBaseResampleReader, cilBaseMetaImageReader):
 
     def __init__(self):
         VTKPythonAlgorithmBase.__init__(self, nInputPorts=0, nOutputPorts=1)
-        cilBaseReader.__init__(self)
-        cilBaseResampleReader.__init__(self)
-        cilBaseMetaImageReader.__init__(self)
+        super(cilMetaImageResampleReader, self).__init__()
 
 
 # CROPPED READERS -----------------------------------------------------------------------------------
@@ -1250,19 +1243,19 @@ class cilBaseCroppedReader(cilBaseReader):
 
     def __init__(self):
         VTKPythonAlgorithmBase.__init__(self, nInputPorts=0, nOutputPorts=1)
-
-        self.__TargetZExtent = (0, 0)
+        super(cilBaseCroppedReader, self).__init__()
+        self._TargetZExtent = (0, 0)
 
     def SetTargetZExtent(self, value):
         if not isinstance(value, tuple):
             raise ValueError('Expected a tuple. Got {}', type(value))
 
         if not value == self.GetTargetZExtent():
-            self.__TargetZExtent = value
+            self._TargetZExtent = value
             self.Modified()
 
     def GetTargetZExtent(self):
-        return self.__TargetZExtent
+        return self._TargetZExtent
 
     def RequestData(self, request, inInfo, outInfo):
         outData = vtk.vtkImageData.GetData(outInfo)
@@ -1384,14 +1377,11 @@ class cilBaseCroppedReader(cilBaseReader):
 
 class cilRawCroppedReader(cilBaseCroppedReader, cilBaseRawReader):
     '''vtkAlgorithm to load and crop a raw file
-
     '''
 
     def __init__(self):
         VTKPythonAlgorithmBase.__init__(self, nInputPorts=0, nOutputPorts=1)
-        cilBaseReader.__init__(self)
-        cilBaseCroppedReader.__init__(self)
-        cilBaseRawReader.__init__(self)
+        super(cilRawCroppedReader, self).__init__()
 
 
 class cilNumpyCroppedReader(cilBaseCroppedReader, cilBaseNumpyReader):
@@ -1400,9 +1390,7 @@ class cilNumpyCroppedReader(cilBaseCroppedReader, cilBaseNumpyReader):
 
     def __init__(self):
         VTKPythonAlgorithmBase.__init__(self, nInputPorts=0, nOutputPorts=1)
-        cilBaseReader.__init__(self)
-        cilBaseCroppedReader.__init__(self)
-        cilBaseNumpyReader.__init__(self)
+        super(cilNumpyCroppedReader, self).__init__()
 
 
 class cilMetaImageCroppedReader(cilBaseCroppedReader, cilBaseMetaImageReader):
@@ -1410,9 +1398,7 @@ class cilMetaImageCroppedReader(cilBaseCroppedReader, cilBaseMetaImageReader):
     '''
     def __init__(self):
         VTKPythonAlgorithmBase.__init__(self, nInputPorts=0, nOutputPorts=1)
-        cilBaseReader.__init__(self)
-        cilBaseCroppedReader.__init__(self)
-        cilBaseMetaImageReader.__init__(self)
+        super(cilMetaImageCroppedReader, self).__init__()
 
 
 class cilHDF5CroppedReader(cilBaseCroppedReader, cilBaseHDF5Reader):
@@ -1422,16 +1408,14 @@ class cilHDF5CroppedReader(cilBaseCroppedReader, cilBaseHDF5Reader):
 
     def __init__(self):
         VTKPythonAlgorithmBase.__init__(self, nInputPorts=0, nOutputPorts=1)
-        cilBaseReader.__init__(self)
-        cilBaseCroppedReader.__init__(self)
-        cilBaseHDF5Reader.__init__(self)
-        self.__TargetExtent = None
+        super(cilHDF5CroppedReader, self).__init__()
+        self._TargetExtent = None
 
     def SetTargetExtent(self, value):
-        self.__TargetExtent = value
+        self._TargetExtent = value
 
     def GetTargetExtent(self):
-        return self.__TargetExtent
+        return self._TargetExtent
 
     def RequestData(self, request, inInfo, outInfo):
         outData = vtk.vtkImageData.GetData(outInfo)
