@@ -57,9 +57,12 @@ class TestResampleReaders(unittest.TestCase):
         reader.SetTargetSize(target_size)
         reader.SetBigEndian(False)
         reader.SetIsFortran(False)
-        reader.SetRawTypeCode(str(self.input_3D_array.dtype))
+        raw_type_code = str(self.input_3D_array.dtype)
+        reader.SetTypeCodeName(raw_type_code)
         reader.SetStoredArrayShape(og_shape)
         reader.Update()
+        # Check raw type code was set correctly:
+        self.assertEqual(raw_type_code, reader.GetTypeCodeName())
         image = reader.GetOutput()
         extent = image.GetExtent()
         resulting_shape = (extent[1]+1, (extent[3]+1), (extent[5]+1))

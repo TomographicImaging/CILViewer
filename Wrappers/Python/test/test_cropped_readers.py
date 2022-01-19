@@ -50,9 +50,12 @@ class TestCroppedReaders(unittest.TestCase):
         reader.SetTargetZExtent(tuple(target_z_extent))
         reader.SetBigEndian(False)
         reader.SetIsFortran(False)
-        reader.SetRawTypeCode(str(self.input_3D_array.dtype))
+        raw_type_code = str(self.input_3D_array.dtype)
+        reader.SetTypeCodeName(raw_type_code)
         reader.SetStoredArrayShape(og_shape)
         self.check_extent(reader, target_z_extent)
+        # Check raw type code was set correctly:
+        self.assertEqual(raw_type_code, reader.GetTypeCodeName())
 
 
     def test_meta_and_numpy_cropped_readers(self):

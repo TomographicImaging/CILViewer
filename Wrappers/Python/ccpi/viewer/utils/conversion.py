@@ -38,70 +38,44 @@ class Converter(object):
     # inspired by
     # https://github.com/vejmarie/vtk-7/blob/master/Wrapping/Python/vtk/util/vtkImageImportFromArray.py
     # and metaTypes.h in VTK source code
-    numpy_dtype_char_to_MetaImageType = {
-        'b': 'MET_CHAR',    # VTK_SIGNED_CHAR,     # int8
-        'B': 'MET_UCHAR',   # VTK_UNSIGNED_CHAR,   # uint8
-        'h': 'MET_SHORT',   # VTK_SHORT,           # int16
-        'H': 'MET_USHORT',  # VTK_UNSIGNED_SHORT,  # uint16
-        'i': 'MET_INT',     # VTK_INT,             # int32
-        'l': 'MET_INT',     # VTK_INT,             # int32
-        'I': 'MET_UINT',    # VTK_UNSIGNED_INT,    # uint32
-        'L': 'MET_UINT',    # VTK_UNSIGNED_INT,    # uint32
-        'f': 'MET_FLOAT',   # VTK_FLOAT,           # float32
-        'd': 'MET_DOUBLE',  # VTK_DOUBLE,          # float64
-        'F': 'MET_FLOAT',   # VTK_FLOAT,           # float32
-        'D': 'MET_DOUBLE'   # VTK_DOUBLE,          # float64
-    }
-    numpy_dtype_char_to_bytes = {
-        'b': 1,    # VTK_SIGNED_CHAR,     # int8
-        'B': 1,   # VTK_UNSIGNED_CHAR,   # uint8
-        'h': 2,   # VTK_SHORT,           # int16
-        'H': 2,  # VTK_UNSIGNED_SHORT,  # uint16
-        'i': 4,     # VTK_INT,             # int32
-        'l': 4,     # VTK_INT,             # int32
-        'I': 4,    # VTK_UNSIGNED_INT,    # uint32
-        'L': 4,    # VTK_UNSIGNED_INT,    # uint32
-        'f': 4,   # VTK_FLOAT,           # float32
-        'd': 8,  # VTK_DOUBLE,          # float64
-        'F': 4,   # VTK_FLOAT,           # float32
-        'D': 8   # VTK_DOUBLE,          # float64
-    }
-    numpy_dtype_char_to_vtkType = {
-        'b': vtk.VTK_SIGNED_CHAR,     # int8
-        'B': vtk.VTK_UNSIGNED_CHAR,   # uint8
-        'h': vtk.VTK_SHORT,           # int16
-        'H': vtk.VTK_UNSIGNED_SHORT,  # uint16
-        'i': vtk.VTK_INT,             # int32
-        'I': vtk.VTK_UNSIGNED_INT,    # uint32
-        'L': vtk.VTK_UNSIGNED_INT,    # uint32
-        'f': vtk.VTK_FLOAT,           # float32
-        'd': vtk.VTK_DOUBLE,          # float64
-        'F': vtk.VTK_FLOAT,           # float32
-        'D': vtk.VTK_DOUBLE           # float64
-    }
+
+    # Converting to vtk: --------------------------------
+
     MetaImageType_to_vtkType = {
-        'MET_CHAR': vtk.VTK_SIGNED_CHAR,     # int8
+        'MET_CHAR': vtk.VTK_SIGNED_CHAR,      # int8
         'MET_UCHAR': vtk.VTK_UNSIGNED_CHAR,   # uint8
         'MET_SHORT': vtk.VTK_SHORT,           # int16
-        'MET_USHORT': vtk.VTK_UNSIGNED_SHORT,  # uint16
-        'MET_INT': vtk.VTK_INT,             # int32
-        'MET_UINT': vtk.VTK_UNSIGNED_INT,    # uint32
+        'MET_USHORT': vtk.VTK_UNSIGNED_SHORT, # uint16
+        'MET_INT': vtk.VTK_INT,               # int32
+        'MET_UINT': vtk.VTK_UNSIGNED_INT,     # uint32
         'MET_FLOAT': vtk.VTK_FLOAT,           # float32
-        'MET_DOUBLE': vtk.VTK_DOUBLE,          # float64
+        'MET_DOUBLE': vtk.VTK_DOUBLE,         # float64
     }
 
-    MetaImageType_to_bytes = {
-        'MET_CHAR': 1,    # VTK_SIGNED_CHAR,     # int8
-        'MET_UCHAR': 1,   # VTK_UNSIGNED_CHAR,   # uint8
-        'MET_SHORT': 2,   # VTK_SHORT,           # int16
-        'MET_USHORT': 2,  # VTK_UNSIGNED_SHORT,  # uint16
-        'MET_INT': 4,     # VTK_INT,             # int32
-        'MET_UINT': 4,    # VTK_UNSIGNED_INT,    # uint32
-        'MET_FLOAT': 4,   # VTK_FLOAT,           # float32
-        'MET_DOUBLE': 8,  # VTK_DOUBLE,          # float64
+    dtype_name_to_vtkType  = {
+        'int8': vtk.VTK_SIGNED_CHAR,
+        'uint8': vtk.VTK_UNSIGNED_CHAR,
+        'int16': vtk.VTK_SHORT,
+        'uint16': vtk.VTK_UNSIGNED_SHORT,
+        'int32': vtk.VTK_INT,
+        'uint32': vtk.VTK_UNSIGNED_INT,
+        'float32': vtk.VTK_FLOAT,
+        'float64': vtk.VTK_DOUBLE,
     }
 
-    raw_dtype_char_to_MetaImageType = {
+    # Converting from vtk to bytes: -------------------------------------------
+    vtkType_to_bytes = {
+        vtk.VTK_SIGNED_CHAR: 1,    # int8
+        vtk.VTK_UNSIGNED_CHAR: 1,  # uint8
+        vtk.VTK_SHORT: 2,          # int16
+        vtk.VTK_UNSIGNED_SHORT: 2, # uint16
+        vtk.VTK_INT: 4,            # int32
+        vtk.VTK_UNSIGNED_INT: 4,   # uint32
+        vtk.VTK_FLOAT: 4,          # float32
+        vtk.VTK_DOUBLE: 8,         # float64
+    }
+
+    dtype_name_to_MetaImageType = {
         'int8': 'MET_CHAR',    # VTK_SIGNED_CHAR,     # int8
         'uint8': 'MET_UCHAR',   # VTK_UNSIGNED_CHAR,   # uint8
         'int16': 'MET_SHORT',   # VTK_SHORT,           # int16
@@ -111,6 +85,7 @@ class Converter(object):
         'float32': 'MET_FLOAT',   # VTK_FLOAT,           # float32
         'float64': 'MET_DOUBLE',  # VTK_DOUBLE,          # float64
     }
+
     # Utility functions to transform numpy arrays to vtkImageData and viceversa
 
     @staticmethod
@@ -456,12 +431,18 @@ class cilNumpyMETAImageWriter(object):
                              header_length, shape, spacing=(1., 1., 1.), origin=(0., 0., 0.)):
         '''Writes a NumPy array and a METAImage text header so that the npy file can be used as data file
 
-        :param filename: name of the single file containing the data
-        :param typecode: numpy typecode or metaimage type
+        Parameters:
+        ============
+        filename
+            name of the single file containing the data
+        typecode
+            metaimage typecode, or one of : 
+            ['int8', 'uint8', 'int16', 'uint16', 'int32', 'uint32', 'float32', 'float64']
+
         '''
 
-        if typecode not in ['MET_CHAR',  'MET_UCHAR', 'MET_SHORT', 'MET_USHORT', 'MET_INT', 'MET_UINT', 'MET_FLOAT', 'MET_DOUBLE', 'MET_FLOAT', 'MET_DOUBLE']:
-            ar_type = Converter.numpy_dtype_char_to_MetaImageType[typecode]
+        if typecode not in Converter.MetaImageType_to_vtkType.keys():
+            ar_type = Converter.dtype_name_to_MetaImageType[typecode]
         else:
             ar_type = typecode
 
@@ -506,7 +487,6 @@ class cilNumpyMETAImageWriter(object):
 
         typecode = array.dtype.char
         print("typecode,", typecode)
-        #r_type = Converter.numpy_dtype_char_to_MetaImageType[typecode]
         big_endian = 'True' if npyhdr['description']['descr'][0] == '>' else 'False'
         readshape = npyhdr['description']['shape']
         is_fortran = npyhdr['description']['fortran_order']
@@ -593,7 +573,7 @@ def parseNpyHeader(filename):
 # BASE READERS -----------------------------------------------------------------------------------------
 
 class cilBaseReader(VTKPythonAlgorithmBase):
-    '''baseclass with methods for reading files'''
+    '''baseclass with methods for setting and getting information about image data'''
     
     def __init__(self):
         VTKPythonAlgorithmBase.__init__(self, nInputPorts=0, nOutputPorts=1)
@@ -638,7 +618,7 @@ class cilBaseReader(VTKPythonAlgorithmBase):
         return self._FileHeaderLength
 
     def GetBytesPerElement(self):
-        return self._BytesPerElement
+        return Converter.vtkType_to_bytes[self.GetOutputVTKType()]
 
     def GetBigEndian(self):
         return self._BigEndian
@@ -648,9 +628,6 @@ class cilBaseReader(VTKPythonAlgorithmBase):
 
     def GetOutputVTKType(self):
         return self._OutputVTKType
-
-    def GetNumpyTypeCode(self):
-        return self._NumpyTypeCode
 
     def SetStoredArrayShape(self, value):
         if not isinstance(value, tuple):
@@ -665,11 +642,6 @@ class cilBaseReader(VTKPythonAlgorithmBase):
             raise ValueError('Expected int, got {}'.format(type(value)))
         self._FileHeaderLength = value
 
-    def SetBytesPerElement(self, value):
-        if not isinstance(value, int):
-            raise ValueError('Expected int, got {}'.format(type(value)))
-        self._BytesPerElement = value
-
     def SetBigEndian(self, value):
         if not isinstance(value, bool):
             raise ValueError('Expected bool, got {}'.format(type(value)))
@@ -681,26 +653,17 @@ class cilBaseReader(VTKPythonAlgorithmBase):
         self._IsFortran = value
 
     def SetOutputVTKType(self, value):
-        if value not in [vtk.VTK_SIGNED_CHAR, vtk.VTK_UNSIGNED_CHAR,  vtk.VTK_SHORT,  vtk.VTK_UNSIGNED_SHORT,
-                         vtk.VTK_INT, vtk.VTK_UNSIGNED_INT,  vtk.VTK_FLOAT, vtk.VTK_DOUBLE, vtk.VTK_FLOAT,
-                         vtk.VTK_DOUBLE]:
+        if value not in Converter.MetaImageType_to_vtkType.values():
             raise ValueError("Unexpected Type:  {}".format(value))
         self._OutputVTKType = value
 
-    def SetNumpyTypeCode(self, value):
-        if value not in ['b', 'B', 'h', 'H', 'i', 'I', 'f', 'd', 'F', 'D']:
-            raise ValueError("Unexpected Type:  {}".format(value))
-        self._NumpyTypeCode = value
-        self.SetMetaImageTypeCode(
-            Converter.numpy_dtype_char_to_MetaImageType[value])
-
     def GetMetaImageTypeCode(self):
-        return self._MetaImageTypeCode
+        conversion_dict = {value : key for (key, value) in Converter.MetaImageType_to_vtkType.items()}
+        return conversion_dict[self.GetOutputVTKType()]
 
     def SetMetaImageTypeCode(self, value):
-        if value not in ['MET_CHAR',  'MET_UCHAR', 'MET_SHORT', 'MET_USHORT', 'MET_INT', 'MET_UINT', 'MET_FLOAT', 'MET_DOUBLE', 'MET_FLOAT', 'MET_DOUBLE']:
+        if value not in Converter.MetaImageType_to_vtkType.keys():
             raise ValueError("Unexpected Type:  {}".format(value))
-        self._MetaImageTypeCode = value
         self.SetOutputVTKType(Converter.MetaImageType_to_vtkType[value])
 
     def GetElementSpacing(self):
@@ -726,6 +689,15 @@ class cilBaseReader(VTKPythonAlgorithmBase):
     def GetIsAcquisitionData(self):
         return self._IsAcquisitionData
 
+    def GetTypeCodeName(self):
+        conversion_dict = {value : key for (key, value) in Converter.dtype_name_to_vtkType.items()}
+        return conversion_dict[self.GetOutputVTKType()]
+
+    def SetTypeCodeName(self, value):
+        if value not in Converter.dtype_name_to_vtkType.keys():
+            raise ValueError("Unexpected Type: got {}. Please choose one of: {}".format(value, Converter.dtype_name_to_vtkType.keys()))
+        self.SetOutputVTKType(Converter.dtype_name_to_vtkType[value])
+
     def ReadDataSetInfo(self):
         '''Tries to read info about dataset
         Will raise specific errors if inputs required for 
@@ -740,7 +712,6 @@ class cilBaseRawReader(cilBaseReader):
     def __init__(self):
         VTKPythonAlgorithmBase.__init__(self, nInputPorts=0, nOutputPorts=1)
         super(cilBaseRawReader, self).__init__()
-        self._RawTypeCode = None
 
 
     def ReadDataSetInfo(self):
@@ -753,15 +724,6 @@ class cilBaseRawReader(cilBaseReader):
         if self.GetOutputVTKType() is None:
             raise Exception("Typecode must be set.")
 
-    def GetRawTypeCode(self):
-        return self._RawTypeCode
-
-    def SetRawTypeCode(self, value):
-        if value not in ['int8', 'uint8', 'int16', 'uint16', 'int32', 'uint32', 'float32', 'float64']:
-            raise ValueError("Unexpected Type: got {}".format(value))
-        self._RawTypeCode = value
-        self.SetMetaImageTypeCode(
-            Converter.raw_dtype_char_to_MetaImageType[value])
 
 class cilBaseNumpyReader(cilBaseReader):
     ''' baseclass with methods for reading numpy files'''
@@ -773,15 +735,12 @@ class cilBaseNumpyReader(cilBaseReader):
         # extract info from the npy header
         descr = parseNpyHeader(self.GetFileName())
         # find the typecode of the data and the number of bytes per pixel
-        typecode = ''
-        nbytes = 0
-        for t in [np.uint8, np.int8, np.int16, np.uint16, np.int32, np.uint32, np.float16, np.float32, np.float64]:
+        for t in Converter.dtype_name_to_vtkType.keys():
             array_descr = descr['description']['descr'][1:]
             if array_descr == np.dtype(t).descr[0][1][1:]:
-                typecode = np.dtype(t).char
-                nbytes = Converter.numpy_dtype_char_to_bytes[typecode]
+                typecode = t
                 break
-
+        
         big_endian = True if descr['description']['descr'][0] == '>' else False
         readshape = descr['description']['shape']
         is_fortran = descr['description']['fortran_order']
@@ -790,18 +749,13 @@ class cilBaseNumpyReader(cilBaseReader):
         self.SetIsFortran(is_fortran)
         self.SetBigEndian(big_endian)
         self.SetFileHeaderLength(file_header_length)
-        self.SetBytesPerElement(nbytes)
         self.SetStoredArrayShape(readshape)
-        self.SetMetaImageTypeCode(
-            Converter.numpy_dtype_char_to_MetaImageType[typecode])
-
+        self.SetTypeCodeName(typecode)
         self.Modified()
 
     def SetFileName(self, value):
-        # in the case of an mha file, data is stored in the same file.
-        if value != 'LOCAL':
-            if not os.path.exists(value):
-                raise ValueError('File does not exist!', value)
+        if not os.path.exists(value):
+            raise ValueError('File does not exist!', value)
 
         if value != self.GetFileName():
             self._FileName = value
@@ -845,12 +799,9 @@ class cilBaseHDF5Reader(cilBaseReader):
         self.SetIsFortran(True)
         self.SetStoredArrayShape(shape)
         # get the datatype:
-        datatype = reader.GetDataType()
-        typecode = np.dtype(datatype).char
-        nbytes = Converter.numpy_dtype_char_to_bytes[typecode]
-        self.SetBytesPerElement(nbytes)
+        typecode = str(np.dtype(reader.GetDataType()))
         self.SetOutputVTKType(
-            Converter.numpy_dtype_char_to_vtkType[typecode])
+            Converter.dtype_name_to_vtkType[typecode])
 
 class cilBaseMetaImageReader(cilBaseReader):
 
@@ -920,9 +871,6 @@ class cilBaseMetaImageReader(cilBaseReader):
                     break
 
         self.SetIsFortran(True)
-        self.SetBytesPerElement(
-            Converter.MetaImageType_to_bytes[self.GetMetaImageTypeCode()])
-
         self.Modified()
 
     def SetFileName(self, value):
@@ -1181,9 +1129,7 @@ class cilRawResampleReader(cilBaseResampleReader, cilBaseRawReader):
 
     def __init__(self):
         VTKPythonAlgorithmBase.__init__(self, nInputPorts=0, nOutputPorts=1)
-        cilBaseReader.__init__(self)
-        cilBaseResampleReader.__init__(self)
-        cilBaseRawReader.__init__(self)
+        super(cilRawResampleReader, self).__init__()
 
 class cilNumpyResampleReader( cilBaseNumpyReader, cilBaseResampleReader):
     '''vtkAlgorithm to load and resample a numpy file to an approximate memory footprint
