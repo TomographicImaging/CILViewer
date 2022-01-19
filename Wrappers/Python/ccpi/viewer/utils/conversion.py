@@ -508,8 +508,8 @@ class cilNumpyMETAImageWriter(object):
         print("typecode,", typecode)
         #r_type = Converter.numpy_dtype_char_to_MetaImageType[typecode]
         big_endian = 'True' if npyhdr['description']['descr'][0] == '>' else 'False'
-        readshape = descr['description']['shape']
-        is_fortran = descr['description']['fortran_order']
+        readshape = npyhdr['description']['shape']
+        is_fortran = npyhdr['description']['fortran_order']
         if is_fortran:
             shape = list(readshape)
         else:
@@ -847,6 +847,8 @@ class cilBaseHDF5Reader(cilBaseReader):
         # get the datatype:
         datatype = reader.GetDataType()
         typecode = np.dtype(datatype).char
+        nbytes = Converter.numpy_dtype_char_to_bytes[typecode]
+        self.SetBytesPerElement(nbytes)
         self.SetOutputVTKType(
             Converter.numpy_dtype_char_to_vtkType[typecode])
 
@@ -1411,6 +1413,42 @@ class cilMetaImageCroppedReader(cilBaseCroppedReader, cilBaseMetaImageReader):
         cilBaseReader.__init__(self)
         cilBaseCroppedReader.__init__(self)
         cilBaseMetaImageReader.__init__(self)
+
+
+class cilHDF5CroppedReader(cilBaseCroppedReader, cilBaseHDF5Reader):
+    '''vtkAlgorithm to load and crop a hdf5 file
+
+    '''
+
+    def __init__(self):
+        VTKPythonAlgorithmBase.__init__(self, nInputPorts=0, nOutputPorts=1)
+        cilBaseReader.__init__(self)
+        cilBaseCroppedReader.__init__(self)
+        cilBaseHDF5Reader.__init__(self)
+        self.__TargetExtent = None
+
+    def SetTargetExtent(self, value):
+        self.__TargetExtent = value
+
+    def GetTargetExtent(self):
+        return self.__TargetExtent
+
+    def RequestData(self, request, inInfo, outInfo):
+        outData = vtk.vtkImageData.GetData(outInfo)
+
+        full_reader = HDF5Reader()
+        full_reader.SetFileName(self.GetFileName())
+        full_reader.SetDatasetName(self.GetDatasetName())
+        reader = HDF5SubsetReader()
+        reader.SetInputConnection(full_reader.GetOutputPort())
+        if self.GetTargetExtent() is None:
+            extent = [0, -1, 0, -1, self.GetTargetZExtent[0], self.GetTargetZExtent[1]]
+        else:
+            extent = self.GetTargetExtent()
+        reader.SetUpdateExtent(extent)
+
+        read_data = reader.GetOutput()
+        outData.ShallowCopy(read_data)
 
 if __name__ == '__main__':
     '''this represent a good base to perform a test for the numpy-metaimage writer'''
