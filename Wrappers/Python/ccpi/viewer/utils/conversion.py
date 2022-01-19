@@ -573,7 +573,7 @@ def parseNpyHeader(filename):
 # BASE READERS -----------------------------------------------------------------------------------------
 
 class cilBaseReader(VTKPythonAlgorithmBase):
-    '''baseclass with methods for setting and getting information about image data'''
+    '''Base class with methods for setting and getting information about image data'''
     
     def __init__(self):
         VTKPythonAlgorithmBase.__init__(self, nInputPorts=0, nOutputPorts=1)
@@ -592,6 +592,12 @@ class cilBaseReader(VTKPythonAlgorithmBase):
         self._IsAcquisitionData = False
 
     def SetFileName(self, value):
+        ''' Set the file name or path from which to read the image data
+        Parameters
+        ===========
+        value: (str)
+            file name or path
+        '''
         if not os.path.exists(value):
             raise ValueError('File does not exist!', value)
 
@@ -600,6 +606,7 @@ class cilBaseReader(VTKPythonAlgorithmBase):
             self.Modified()
 
     def GetFileName(self):
+        ''' get the file name or path from which the image data is read '''
         return self._FileName
 
     def FillInputPortInformation(self, port, info):
@@ -612,24 +619,35 @@ class cilBaseReader(VTKPythonAlgorithmBase):
         return 1
 
     def GetStoredArrayShape(self):
+        ''' returns the shape of the data in self._FileName'''
         return self._StoredArrayShape
 
     def GetFileHeaderLength(self):
+        ''' returns the length of the header in self._FileName, in bytes.
+        If no header exists, the length is 0.'''
         return self._FileHeaderLength
 
     def GetBytesPerElement(self):
+        ''' returns the number of bytes per element in self._FileName.
+        The resampled data will also have this many bytes per element.'''
         return Converter.vtkType_to_bytes[self.GetOutputVTKType()]
 
     def GetBigEndian(self):
+        ''' returns whether the data in self._FileName is big endian''' 
         return self._BigEndian
 
     def GetIsFortran(self):
+        ''' returns whether the data in self._FileName is saved in fortran order''' 
         return self._IsFortran
 
     def GetOutputVTKType(self):
+        ''' returns the VTK datatype the read data set will be returned in''' 
         return self._OutputVTKType
 
     def SetStoredArrayShape(self, value):
+        ''' Sets the shape of the dataset in self._FileName
+        Currently only supports 3D datasets.
+        TODO: support 2D and 4D datasets too.'''
         if not isinstance(value, tuple):
             raise ValueError('Expected tuple, got {}'.format(type(value)))
         if len(value) != 3:
@@ -661,11 +679,6 @@ class cilBaseReader(VTKPythonAlgorithmBase):
         conversion_dict = {value : key for (key, value) in Converter.MetaImageType_to_vtkType.items()}
         return conversion_dict[self.GetOutputVTKType()]
 
-    def SetMetaImageTypeCode(self, value):
-        if value not in Converter.MetaImageType_to_vtkType.keys():
-            raise ValueError("Unexpected Type:  {}".format(value))
-        self.SetOutputVTKType(Converter.MetaImageType_to_vtkType[value])
-
     def GetElementSpacing(self):
         return self._ElementSpacing
 
@@ -684,12 +697,22 @@ class cilBaseReader(VTKPythonAlgorithmBase):
         return self._Origin
 
     def SetIsAcquisitionData(self, value):
+        '''
+        Parameters
+        ==========
+        value: bool, default=False
+            whether the dataset in self._FileName is acquisition data.
+        '''
         self._IsAcquisitionData = value
 
     def GetIsAcquisitionData(self):
+        '''
+        returns whether the dataset in self._FileName is acquisition data.
+        '''
         return self._IsAcquisitionData
 
     def GetTypeCodeName(self):
+        ''' returns a human-readable string containing the data type'''
         conversion_dict = {value : key for (key, value) in Converter.dtype_name_to_vtkType.items()}
         return conversion_dict[self.GetOutputVTKType()]
 
@@ -708,6 +731,23 @@ class cilBaseReader(VTKPythonAlgorithmBase):
 
     def GetOutput(self):
         return self.GetOutputDataObject(0)
+
+    def _GetSliceLengthInFile(self):
+        ''' Returns the length of each slice in
+        the file, in bytes.'''
+        nbytes = self.GetBytesPerElement()
+        readshape = self.GetStoredArrayShape()
+        is_fortran = self.GetIsFortran()
+
+        if is_fortran:
+            shape = list(readshape)
+        else:
+            shape = list(readshape)[::-1]
+
+        # This is the length of each slice in the file:
+        slice_length = shape[1] * shape[0] * nbytes
+
+        return slice_length
 
 class cilBaseRawReader(cilBaseReader):
     '''Baseclass with methods for reading information about raw files.'''
@@ -756,6 +796,12 @@ class cilBaseNumpyReader(cilBaseReader):
         self.Modified()
 
     def SetFileName(self, value):
+        ''' Set the file name or path from which to read the image data
+        Parameters
+        ===========
+        value: (str)
+            file name or path
+        '''
         if not os.path.exists(value):
             raise ValueError('File does not exist!', value)
 
@@ -867,7 +913,9 @@ class cilBaseMetaImageReader(cilBaseReader):
                     # print(self.GetStoredArrayShape())
                 elif 'ElementType' in line:
                     typecode = line.split('= ')[-1]
-                    self.SetMetaImageTypeCode(typecode)
+                    if typecode not in Converter.MetaImageType_to_vtkType.keys():
+                        raise ValueError("Unexpected Type:  {}".format(typecode))
+                    self.SetOutputVTKType(Converter.MetaImageType_to_vtkType[typecode])
                 elif 'CompressedData' in line:
                     compressed = line.split('= ')[-1]
                     self.SetIsCompressedData(eval(compressed))
@@ -954,8 +1002,9 @@ class cilBaseResampleReader(cilBaseReader):
         ''''
         Parameters
         ==========
-        value (int): 
-            Total target size to downsample image to, in bytes.'''
+        value (int), default=256*256*256:
+            Total target size to downsample image to, in bytes.
+            The resampler will aim for this approximate memory footprint.'''
         if not isinstance(value, int):
             raise ValueError('Expected an integer. Got {}', type(value))
         if not value == self.GetTargetSize():
@@ -1016,23 +1065,6 @@ class cilBaseResampleReader(cilBaseReader):
         self._ChunkReader = reader
         return reader
 
-    def _GetSliceLengthInFile(self):
-        ''' Returns the length of each slice in
-        the file, in bytes.'''
-        nbytes = self.GetBytesPerElement()
-        readshape = self.GetStoredArrayShape()
-        is_fortran = self.GetIsFortran()
-
-        if is_fortran:
-            shape = list(readshape)
-        else:
-            shape = list(readshape)[::-1]
-
-        # This is the length of each slice in the file:
-        slice_length = shape[1] * shape[0] * nbytes
-
-        return slice_length
-
 
     def UpdateChunkToRead(self, start_slice):
         '''Read the next chunk from the image file,
@@ -1068,9 +1100,11 @@ class cilBaseResampleReader(cilBaseReader):
         return self._SlicePerChunk
 
     def _GetTempDir(self):
+        '''get the temporary directory where we save the chunks as they are being read'''
         return self._TempDir
 
     def _SetTempDir(self, folder):
+        '''set the temporary directory where we save the chunks as they are being read'''
         self._TempDir = folder
 
     def RequestData(self, request, inInfo, outInfo):
@@ -1291,6 +1325,13 @@ class cilBaseCroppedReader(cilBaseReader):
         self._TargetZExtent = (0, 0)
 
     def SetTargetZExtent(self, value):
+        ''' 
+        Set the target extent to crop to on the z axis.
+        Parameters
+        ==========
+        value: list of len 2
+            the extent on the z axis to crop the dataset to
+        '''
         if not isinstance(value, tuple):
             raise ValueError('Expected a tuple. Got {}', type(value))
 
@@ -1299,13 +1340,15 @@ class cilBaseCroppedReader(cilBaseReader):
             self.Modified()
 
     def GetTargetZExtent(self):
+        ''' 
+        Get the target extent to crop to on the z axis.
+        '''
         return self._TargetZExtent
 
     def RequestData(self, request, inInfo, outInfo):
         outData = vtk.vtkImageData.GetData(outInfo)
 
         # get basic info
-        nbytes = self.GetBytesPerElement()
         big_endian = self.GetBigEndian()
         readshape = self.GetStoredArrayShape()
         file_header_length = self.GetFileHeaderLength()
@@ -1316,32 +1359,37 @@ class cilBaseCroppedReader(cilBaseReader):
         else:
             shape = list(readshape)[::-1]
 
-        slice_length = shape[1] * shape[0] * nbytes
-
+        
         tmpdir = tempfile.mkdtemp()
         header_filename = os.path.join(tmpdir, "header.mhd")
         reader = vtk.vtkMetaImageReader()
         reader.SetFileName(header_filename)
 
-        # in this case we don't need to crop
-        if self.GetTargetZExtent()[1] >= shape[2]:
-            try:
+        slice_length = self._GetSliceLengthInFile()
+
+        
+        try:
+            if self.GetTargetZExtent()[1] >= shape[2] and self.GetTargetZExtent() <= 0:
+                # in this case we don't need to crop, so we read the whole dataset
                 # print("Don't crop")
 
                 chunk_file_name = os.path.join(tmpdir, "chunk.raw")
 
+                # Creates a metaimageheader which will be used to read a file containing the
+                # data - chunk_file_name which we will fill below.
+
                 cilNumpyMETAImageWriter.WriteMETAImageHeader(chunk_file_name,
-                                                             header_filename,
-                                                             self.GetMetaImageTypeCode(),
-                                                             big_endian,
-                                                             0,
-                                                             tuple(shape),
-                                                             spacing=tuple(
-                                                                 self.GetElementSpacing()),
-                                                             origin=self.GetOrigin())
+                                                            header_filename,
+                                                            self.GetMetaImageTypeCode(),
+                                                            big_endian,
+                                                            0,
+                                                            tuple(shape),
+                                                            spacing=tuple(
+                                                                self.GetElementSpacing()),
+                                                            origin=self.GetOrigin())
 
                 image_file = self.GetFileName()
-
+                # Writes the entire dataset to chunk_file_name
                 with open(image_file, "rb") as image_file_object:
                     end_slice = shape[2]
                     chunk_location = file_header_length
@@ -1353,21 +1401,19 @@ class cilBaseCroppedReader(cilBaseReader):
 
                 reader.Modified()
                 reader.Update()
-                print(reader.GetOutput().GetScalarComponentAsDouble(0, 0, 0, 0))
+                # print(reader.GetOutput().GetScalarComponentAsDouble(0, 0, 0, 0))
                 outData.ShallowCopy(reader.GetOutput())
 
-            finally:
-                os.remove(header_filename)
-                os.remove(chunk_file_name)
-                os.rmdir(tmpdir)
+                return 1
 
-            return 1
+            # In the case we do need to crop: ---------------------------------------------
 
-        try:
             shape[2] = self.GetTargetZExtent()[1] + 1
 
             chunk_file_name = os.path.join(tmpdir, "chunk.raw")
 
+            # Creates a metaimageheader which will be used to read a file just containing the cropped
+            # data - chunk_file_name which we will fill below.
             cilNumpyMETAImageWriter.WriteMETAImageHeader(chunk_file_name,
                                                          header_filename,
                                                          self.GetMetaImageTypeCode(),
@@ -1379,10 +1425,11 @@ class cilBaseCroppedReader(cilBaseReader):
                                                          origin=self.GetOrigin())
 
             image_file = self.GetFileName()
-
             chunk_location = file_header_length + \
                 (self.GetTargetZExtent()[0]) * slice_length
 
+            # Reads the data as a single chunk.
+            # Copies the chunk from the original file to chunk_file_name:
             with open(chunk_file_name, "wb") as chunk_file_object:
                 with open(image_file, "rb") as image_file_object:
                     image_file_object.seek(chunk_location)
@@ -1394,6 +1441,8 @@ class cilBaseCroppedReader(cilBaseReader):
             reader.Modified()
             reader.Update()
 
+            # Once we have read the data, update the extent to reflect where
+            # we have cut the cropped dataset out of the original image
             Data = vtk.vtkImageData()
             extent = (0, shape[0]-1, 0, shape[1]-1,
                       self.GetTargetZExtent()[0], self.GetTargetZExtent()[1])
@@ -1412,9 +1461,9 @@ class cilBaseCroppedReader(cilBaseReader):
             print("Exception", e)
             raise Exception(e)
         finally:
-            os.remove(header_filename)
-            os.remove(chunk_file_name)
-            os.rmdir(tmpdir)
+            for file_name in [header_filename, chunk_file_name, tmpdir]:
+                if os.path.exists(file_name):
+                    os.remove(file_name)
         return 1
 
 
@@ -1447,7 +1496,6 @@ class cilMetaImageCroppedReader(cilBaseCroppedReader, cilBaseMetaImageReader):
 
 class cilHDF5CroppedReader(cilBaseCroppedReader, cilBaseHDF5Reader):
     '''vtkAlgorithm to load and crop a hdf5 file
-
     '''
 
     def __init__(self):
@@ -1456,9 +1504,19 @@ class cilHDF5CroppedReader(cilBaseCroppedReader, cilBaseHDF5Reader):
         self._TargetExtent = None
 
     def SetTargetExtent(self, value):
+        ''' 
+        Set the target extent to crop to. Unlike other cropped readers,
+        the HDF5CroppedReader can crop in all dimensions
+        Parameters
+        ==========
+        value: list of len 5
+            the extent to crop the dataset to
+        '''
         self._TargetExtent = value
 
     def GetTargetExtent(self):
+        ''' Returns the target extent to crop to. Unlike other cropped readers,
+        the HDF5CroppedReader can crop in all dimensions'''
         return self._TargetExtent
 
     def RequestData(self, request, inInfo, outInfo):
@@ -1469,6 +1527,8 @@ class cilHDF5CroppedReader(cilBaseCroppedReader, cilBaseHDF5Reader):
         full_reader.SetDatasetName(self.GetDatasetName())
         reader = HDF5SubsetReader()
         reader.SetInputConnection(full_reader.GetOutputPort())
+        # Either the TargetExtent or TargetZExtent should have been set.
+        # We prioritise the TargetExtent
         if self.GetTargetExtent() is None:
             extent = [0, -1, 0, -1, self.GetTargetZExtent[0], self.GetTargetZExtent[1]]
         else:
