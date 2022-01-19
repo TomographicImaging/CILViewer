@@ -4,7 +4,7 @@ import unittest
 import h5py
 import numpy as np
 import vtk
-from ccpi.viewer.utils.conversion import Converter, cilHDF5ResampleReader
+from ccpi.viewer.utils.conversion import Converter, cilHDF5ResampleReader, cilHDF5CroppedReader
 from ccpi.viewer.utils.hdf5_io import (HDF5Reader, HDF5SubsetReader,
                                        write_image_data_to_hdf5)
 
@@ -64,6 +64,7 @@ class TestHDF5IO(unittest.TestCase):
             self.input_4D_array[channel_index], read_array)
 
     def test_read_cropped_hdf5(self):
+        # With the subset reader: -----------------------------
         # Test cropping the extent of a dataset
         cropped_array = self.input_3D_array[1:3, 3:6, 0:3]
         reader = HDF5Reader()
@@ -78,7 +79,16 @@ class TestHDF5IO(unittest.TestCase):
         array_image_data = cropped_reader.GetOutputDataObject(0)
         read_cropped_array = Converter.vtk2numpy(array_image_data)
         np.testing.assert_array_equal(cropped_array, read_cropped_array)
-
+        # With the Cropped reader: -----------------------------
+        reader = cilHDF5CroppedReader()
+        reader.SetFileName(self.hdf5_filename_3D)
+        reader.SetDatasetName("ImageData")
+        reader.SetTargetExtent((0, 2, 3, 5, 1, 2))
+        reader.Update()
+        array_image_data = cropped_reader.GetOutput()
+        read_cropped_array = Converter.vtk2numpy(array_image_data)
+        np.testing.assert_array_equal(cropped_array, read_cropped_array)
+    
     def test_read_cropped_hdf5_channel(self):
         # Test cropping the extent of a dataset
         channel_index = 5
