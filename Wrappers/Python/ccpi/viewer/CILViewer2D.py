@@ -827,9 +827,18 @@ class CILInteractorStyle(vtk.vtkInteractorStyle):
 
         # Translate the world coordinates to an image index
         imagePosition = self.world2imageCoordinate(world_coordinates)
+        whole_extent = self.GetInputData().GetExtent()
+
+        imagePosition[0] = whole_extent[0] if imagePosition[0] < whole_extent[0] else imagePosition[0] 
+        imagePosition[0] = whole_extent[1] if imagePosition[0] > whole_extent[1] else imagePosition[0] 
+        imagePosition[1] = whole_extent[2] if imagePosition[1] < whole_extent[2] else imagePosition[1] 
+        imagePosition[1] = whole_extent[3] if imagePosition[1] > whole_extent[3] else imagePosition[1] 
+        imagePosition[2] = whole_extent[4] if imagePosition[2] < whole_extent[4] else imagePosition[2] 
+        imagePosition[2] = whole_extent[5] if imagePosition[2] > whole_extent[5] else imagePosition[2] 
 
         pixelValue = self.GetInputData().GetScalarComponentAsDouble(
             imagePosition[0], imagePosition[1], imagePosition[2], 0)
+        print("image position {}".format(imagePosition))
         if self._viewer.rescale[0]:
             scale, shift = self._viewer.rescale[1]
             pixelValue = (-shift + pixelValue) / scale
@@ -1656,8 +1665,18 @@ class CILViewer2D():
         self.log("level {0} window {1}".format(self.InitialLevel,
                                             self.InitialWindow))
 
-
         self.imageSliceMapper.SetInputConnection(self.voi.GetOutputPort())
+
+        # The following lines allow to use a different colormap on the main 
+        # image displayed, however the window and level needs to be checked.
+
+        # self.lut1 = CILColorMaps.get_color_transfer_function('inferno', self.ia.GetAutoRange())
+        # cov = vtk.vtkImageMapToColors()
+        # cov.SetInputConnection(self.voi.GetOutputPort())
+        # cov.SetLookupTable(self.lut1)
+        # cov.Update()
+        # self.imagemaptocolors1 = cov
+        # self.imageSliceMapper.SetInputConnection(self.imagemaptocolors1.GetOutputPort())
 
         self.imageSlice.GetProperty().SetColorLevel(self.InitialLevel)
         self.imageSlice.GetProperty().SetColorWindow(self.InitialWindow)
@@ -1703,8 +1722,8 @@ class CILViewer2D():
             # lut.Build()
 
             # self.lut2 = CILColorMaps.get_lookup_table('viridis', (ai.GetMinimum(), ai.GetMaximum()))
-            self.lut2 = CILColorMaps.get_lookup_table('plasma', ai.GetAutoRange(), (ai.GetMinimum(), ai.GetMaximum()))
-            # self.lut2 = CILColorMaps.get_color_transfer_function('inferno', ai.GetAutoRange())
+            # self.lut2 = CILColorMaps.get_lookup_table('plasma', ai.GetAutoRange(), (ai.GetMinimum(), ai.GetMaximum()))
+            self.lut2 = CILColorMaps.get_color_transfer_function('inferno', ai.GetAutoRange())
             
 
             cov = vtk.vtkImageMapToColors()
@@ -1954,36 +1973,46 @@ class CILViewer2D():
     def updateROIHistogram(self):
         self.log ("Updating hist")
 
-        extent = [0 for i in range(6)]
+        # extent = [0 for i in range(6)]
+        extent = list(self.getROIExtent())
         if self.GetSliceOrientation() == SLICE_ORIENTATION_XY:
             self.log("slice orientation : XY")
-            extent[0] = self.validateValue(min(self.ROI[0][0], self.ROI[1][0]), 'x')
-            extent[1] = self.validateValue(max(self.ROI[0][0], self.ROI[1][0]), 'x')
-            extent[2] = self.validateValue(min(self.ROI[0][1], self.ROI[1][1]), 'y')
-            extent[3] = self.validateValue(max(self.ROI[0][1], self.ROI[1][1]), 'y')
+            # extent[0] = self.validateValue(min(self.ROI[0][0], self.ROI[1][0]), 'x')
+            # extent[1] = self.validateValue(max(self.ROI[0][0], self.ROI[1][0]), 'x')
+            # extent[2] = self.validateValue(min(self.ROI[0][1], self.ROI[1][1]), 'y')
+            # extent[3] = self.validateValue(max(self.ROI[0][1], self.ROI[1][1]), 'y')
             extent[4] = self.GetActiveSlice()
             extent[5] = self.GetActiveSlice()
             # y = abs(roi[1][1] - roi[0][1])
         elif self.GetSliceOrientation() == SLICE_ORIENTATION_XZ:
             self.log("slice orientation : XZ")
-            extent[0] = self.validateValue(min(self.ROI[0][0], self.ROI[1][0]), 'x')
-            extent[1] = self.validateValue(max(self.ROI[0][0], self.ROI[1][0]), 'x')
-            # x = abs(roi[1][0] - roi[0][0])
-            extent[4] = self.validateValue(min(self.ROI[0][2], self.ROI[1][2]), 'z')
-            extent[5] = self.validateValue(max(self.ROI[0][2], self.ROI[1][2]), 'z')
+            # extent[0] = self.validateValue(min(self.ROI[0][0], self.ROI[1][0]), 'x')
+            # extent[1] = self.validateValue(max(self.ROI[0][0], self.ROI[1][0]), 'x')
+            # # x = abs(roi[1][0] - roi[0][0])
+            # extent[4] = self.validateValue(min(self.ROI[0][2], self.ROI[1][2]), 'z')
+            # extent[5] = self.validateValue(max(self.ROI[0][2], self.ROI[1][2]), 'z')
             # y = abs(roi[1][2] - roi[0][2])
             extent[2] = self.GetActiveSlice()
             extent[3] = self.GetActiveSlice()
         elif self.GetSliceOrientation() == SLICE_ORIENTATION_YZ:
             self.log("slice orientation : YZ")
-            extent[2] = self.validateValue(min(self.ROI[0][1], self.ROI[1][1]), 'y')
-            extent[3] = self.validateValue(max(self.ROI[0][1], self.ROI[1][1]), 'y')
-            # x = abs(roi[1][1] - roi[0][1])
-            extent[4] = self.validateValue(min(self.ROI[0][2], self.ROI[1][2]), 'z')
-            extent[5] = self.validateValue(max(self.ROI[0][2], self.ROI[1][2]), 'z')
+            # extent[2] = self.validateValue(min(self.ROI[0][1], self.ROI[1][1]), 'y')
+            # extent[3] = self.validateValue(max(self.ROI[0][1], self.ROI[1][1]), 'y')
+            # # x = abs(roi[1][1] - roi[0][1])
+            # extent[4] = self.validateValue(min(self.ROI[0][2], self.ROI[1][2]), 'z')
+            # extent[5] = self.validateValue(max(self.ROI[0][2], self.ROI[1][2]), 'z')
             # y = abs(roi[1][2] - roi[0][2])
             extent[0] = self.GetActiveSlice()
             extent[1] = self.GetActiveSlice()
+
+        whole_extent = self.img3D.GetExtent()
+        self.log ("whole extent {} {}".format(whole_extent, extent))
+        extent[0] = whole_extent[0] if extent[0] < whole_extent[0] else extent[0] 
+        extent[1] = whole_extent[1] if extent[1] > whole_extent[1] else extent[1] 
+        extent[2] = whole_extent[2] if extent[2] < whole_extent[2] else extent[2] 
+        extent[3] = whole_extent[3] if extent[3] > whole_extent[3] else extent[3] 
+        extent[4] = whole_extent[4] if extent[4] < whole_extent[4] else extent[4] 
+        extent[5] = whole_extent[5] if extent[5] > whole_extent[5] else extent[5] 
 
         self.log("updateROIHistogram {0}".format(extent))
         self.roiVOI.SetVOI(extent)
