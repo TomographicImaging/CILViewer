@@ -1369,7 +1369,7 @@ class cilBaseCroppedReader(cilBaseReader):
 
         
         try:
-            if self.GetTargetZExtent()[1] >= shape[2] and self.GetTargetZExtent() <= 0:
+            if self.GetTargetZExtent()[1] >= shape[2] and self.GetTargetZExtent()[0] <= 0:
                 # in this case we don't need to crop, so we read the whole dataset
                 # print("Don't crop")
 
@@ -1408,7 +1408,7 @@ class cilBaseCroppedReader(cilBaseReader):
 
             # In the case we do need to crop: ---------------------------------------------
 
-            shape[2] = self.GetTargetZExtent()[1] + 1
+            shape[2] = self.GetTargetZExtent()[1] - self.GetTargetZExtent()[0] + 1
 
             chunk_file_name = os.path.join(tmpdir, "chunk.raw")
 
@@ -1423,7 +1423,6 @@ class cilBaseCroppedReader(cilBaseReader):
                                                          spacing=tuple(
                                                              self.GetElementSpacing()),
                                                          origin=self.GetOrigin())
-
             image_file = self.GetFileName()
             chunk_location = file_header_length + \
                 (self.GetTargetZExtent()[0]) * slice_length
@@ -1461,9 +1460,8 @@ class cilBaseCroppedReader(cilBaseReader):
             print("Exception", e)
             raise Exception(e)
         finally:
-            for file_name in [header_filename, chunk_file_name, tmpdir]:
-                if os.path.exists(file_name):
-                    os.remove(file_name)
+            if os.path.exists(tmpdir):
+                shutil.rmtree(tmpdir)
         return 1
 
 
