@@ -42,6 +42,11 @@ class TestCroppedReaders(unittest.TestCase):
         expected_extent[5] = target_z_extent[1]
         self.assertEqual(extent, expected_extent)
 
+    def check_values(self, target_z_extent, read_cropped_image):
+        read_cropped_array = Converter.vtk2numpy(read_cropped_image)
+        cropped_array = self.input_3D_array[target_z_extent[0]:target_z_extent[1]+1, :, :]
+        np.testing.assert_array_equal(cropped_array, read_cropped_array)
+
     def test_raw_cropped_reader(self):
         target_z_extent = [1, 3]
         reader = cilRawCroppedReader()
@@ -54,6 +59,7 @@ class TestCroppedReaders(unittest.TestCase):
         reader.SetTypeCodeName(raw_type_code)
         reader.SetStoredArrayShape(og_shape)
         self.check_extent(reader, target_z_extent)
+        self.check_values(target_z_extent, reader.GetOutput())
         # Check raw type code was set correctly:
         self.assertEqual(raw_type_code, reader.GetTypeCodeName())
 
@@ -67,10 +73,10 @@ class TestCroppedReaders(unittest.TestCase):
             with self.subTest(reader=subtest_labels[i]):
                 filename = filenames[i]
                 target_z_extent = [1, 3]
-                og_shape = np.shape(self.input_3D_array)
                 reader.SetFileName(filename)
                 reader.SetTargetZExtent(tuple(target_z_extent))
                 self.check_extent(reader, target_z_extent)
+                self.check_values(target_z_extent, reader.GetOutput())
 
     def tearDown(self):
         files = [self.raw_filename_3D]
