@@ -1532,7 +1532,7 @@ class cilHDF5CroppedReader(cilBaseCroppedReader, cilBaseHDF5Reader):
         else:
             extent = self.GetTargetExtent()
         reader.SetUpdateExtent(extent)
-
+        reader.Update()
         read_data = reader.GetOutput()
         outData.ShallowCopy(read_data)
 

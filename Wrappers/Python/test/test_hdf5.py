@@ -86,7 +86,7 @@ class TestHDF5IO(unittest.TestCase):
         reader.SetDatasetName("ImageData")
         reader.SetTargetExtent((0, 2, 3, 5, 1, 2))
         reader.Update()
-        array_image_data = cropped_reader.GetOutput()
+        array_image_data = reader.GetOutput()
         read_cropped_array = Converter.vtk2numpy(array_image_data)
         np.testing.assert_array_equal(cropped_array, read_cropped_array)
     
