@@ -111,14 +111,14 @@ class StandaloneViewerMainWindow(ViewerMainWindow):
         # insert image selection actions before the settings action:
 
         image1_action = QAction("Select Image 1", self)
-        image1_action.triggered.connect(lambda: self.set_input(1))
+        image1_action.triggered.connect(lambda: self.set_viewer_input(1))
         self.file_menu.insertAction(settings_action, image1_action)
 
         image2_action = QAction("Select Image 2", self)
-        image2_action.triggered.connect(lambda: self.set_input(2))
+        image2_action.triggered.connect(lambda: self.set_viewer_input(2))
         self.file_menu.insertAction(settings_action, image2_action)
 
-    def set_input(self, input_num=1):
+    def set_viewer_input(self, input_num=1):
         image_file, raw_image_attrs, hdf5_image_attrs = self.select_image()
         print("The image attrs: ", raw_image_attrs)
         image_reader = ImageReader(file_name=image_file, raw_image_attrs=raw_image_attrs, hdf5_image_attrs=hdf5_image_attrs)

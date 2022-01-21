@@ -11,7 +11,7 @@ from ccpi.viewer.utils.io_new import ImageReader, ImageWriter
 def calculate_target_downsample_shape(max_size, total_size, shape, acq=False):
     if not acq:
         xy_axes_magnification = np.power(max_size/total_size, 1/3)
-        slice_per_chunk = np.int(1/xy_axes_magnification)
+        slice_per_chunk = int(1/xy_axes_magnification)
     else:
         slice_per_chunk = 1
         xy_axes_magnification = np.power(max_size/total_size, 1/2)
