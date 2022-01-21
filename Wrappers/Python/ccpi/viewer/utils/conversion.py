@@ -1309,11 +1309,11 @@ class cilRawResampleReader(cilBaseResampleReader, cilBaseRawReader):
 
     Example
     -------
-    This example reads a numpy dataset from the file: data.npy and downsamples
+    This example reads a raw dataset from the file: data.raw and downsamples
     it to an approx. size of 1GB:
 
     reader = cilRawResampleReader()
-    reader.SetFileName('data.npy')
+    reader.SetFileName('data.raw')
     reader.SetTargetSize(1024*1024*1024)
     reader.SetBigEndian(False)
     reader.SetIsFortran(False)
