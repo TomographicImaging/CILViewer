@@ -14,14 +14,14 @@ import vtk
 from ccpi.viewer.iviewer import iviewer
 from ccpi.viewer.utils import Converter
 from ccpi.viewer.utils.conversion import (HDF5SubsetReader,
-                                          cilBaseCroppedReader,
-                                          cilBaseResampleReader,
+                                          cilRawCroppedReader,
+                                          cilRawResampleReader,
+                                          cilHDF5CroppedReader,
                                           cilHDF5ResampleReader,
                                           cilMetaImageCroppedReader,
                                           cilMetaImageResampleReader,
                                           cilNumpyCroppedReader,
-                                          cilNumpyResampleReader,
-                                          parseNpyHeader)
+                                          cilNumpyResampleReader)
 from ccpi.viewer.utils.hdf5_io import HDF5Reader
 from ccpi.viewer.version import version
 from schema import Optional, Or, Schema, SchemaError
@@ -90,11 +90,7 @@ class ImageReader(object):
         self.target_size = target_size
         self.crop = crop
         self.target_z_extent = target_z_extent
-        if self.crop and self.resample:
-            # TODO: check if this is true
-            print("WARNING: Both cropping and resampling is not yet implemented.")
-            print("Image will just be resampled and not cropped.")
-            self.crop = False
+
         # validate image attributes
         raw_attrs = None
         hdf5_attrs=None
@@ -112,7 +108,13 @@ class ImageReader(object):
         self.original_image_attrs = self._generate_image_attrs(raw_attrs, hdf5_attrs)
         self.loaded_image_attrs = {'resampled': self.resample, 'cropped': self.crop}
 
-            
+        if self.crop and self.resample:
+            # TODO: check if this is true
+            print("WARNING: Both cropping and resampling is not yet implemented.")
+            print("Image will just be cropped and not resampled.")
+            self.resample = False
+        
+       
     def _validate_raw_attrs(self, raw_image_attrs):
         if raw_image_attrs is None:
             return
@@ -121,7 +123,6 @@ class ImageReader(object):
                                    'is_fortran': bool,
                                    'is_big_endian': bool,
                                    'typecode': str})
-        # TODO: add list of possible typecodes to schema
         raw_attrs_schema.validate(raw_attrs)
         return raw_attrs
 
@@ -156,206 +157,101 @@ class ImageReader(object):
         # identifies file type
         # uses appropriate reader based on file type and cropping or resampling
 
-        self._data = None  # overwrite any previously read data
+        # progress_callback = kwargs.get('progress_callback')
+        # print("The progress callback: ", progress_callback)
 
         if os.path.isfile(self.file_name):
             file_extension = os.path.splitext(self.file_name)[1]
 
             if file_extension in ['.mha', '.mhd']:
-                self._data = self._read_meta_image()
+                reader = self._get_meta_image_reader()
 
             elif file_extension in ['.npy']:
-                self._data = self._read_numpy_image()
-
-            elif file_extension in ['tif', 'tiff', '.tif', '.tiff']:
-                self._data = self._read_tiff_images()
+                reader = self._get_numpy_image_reader()
 
             elif file_extension in ['.raw']:
-                self._data = self._read_raw_image()
+                reader = self._read_raw_image()
 
             elif file_extension in ['.nxs', '.h5', '.hdf5']:
-                self._data = self._read_hdf5_image()
+                reader = self._get_hdf5_image_reader()
 
-            elif file_extension in ['.tif', '.tiff']:
-                image_files = glob.glob(os.path.join(os.path.dirname(self.file_name), '*.{}'.format(file_extension)))
-                if len(image_files) == 0:
-                    raise Exception('No tiff files were found in: {}'.format(self.file_name))
-                self._data = self._read_tiff_images(image_files)
+            # elif file_extension in ['.tif', '.tiff']:
+            #     image_files = glob.glob(os.path.join(os.path.dirname(self.file_name), '*.{}'.format(file_extension)))
+            #     if len(image_files) == 0:
+            #         raise Exception('No tiff files were found in: {}'.format(self.file_name))
+            #     self._data = self._read_tiff_images(image_files)
 
             else:
-                raise Exception(
-                    'File format is not supported. Accepted formats include: .mhd, .mha, .npy, .tif, .raw')
-        
+                raise Exception('File format is not supported. Accepted formats include: .mhd, .mha, .npy, .tif, .raw')
         else: # If we are given a folder, not a file, look for tiff files and try to read them
             image_files = glob.glob(os.path.join(self.file_name, '*.tif')) + glob.glob(os.path.join(self.file_name, '*.tiff'))
             if len(image_files) == 0:
                 raise Exception('No tiff files were found in: {}'.format(self.file_name))
             self._data = self._read_tiff_images(image_files)
 
-        self.loaded_image_attrs['origin'] = self._data.GetOrigin()
-        self.loaded_image_attrs['spacing'] = self._data.GetSpacing()
-        self.loaded_image_attrs['shape'] = self._data.GetDimensions()
-        print(self._data)
-        
-
-        return self._data
-
-    def write(self, out_fname):
-        ''' writes to a file the image data produced by the read method
-        Parameters
-        ----------
-        outfname: str
-            filename or path where to save output image file.
-            File extension will determine the type of file written.
-        '''
-        if not hasattr(self, '_data_read') or self._data is None:
-            raise Exception(
-                "Can't write before reading the data. Call read() first.")
-
-        # we may have just unmodified read in data
-        # or we may have cropped data
-        # or resampled data
-        # HDF5 structure
-        # have a single dataset saved with attributes:
-        # DONE attrs['original_fname'] = filepath to og data
-        # DONE attrs['original_shape'] = shape of og data
-        # DONE attrs['original_origin']
-        # DONE attrs['original_spacing']
-        # DONE attrs['resampled'] = bool
-        # DONE attrs['cropped'] = bool
-        # attrs['spacing']
-        # attrs['origin']
-
-        # these will all be used in self.original_image_attrs
-        # i.e. if no original_ prefix then they are about the saved dataset
-
-    # just write to a hdf5 file or tiff + json
-
-    # we want to save:
-    # - downsampled image
-    # - attributes about downsampled image which will include origin and spacing
-    # - attributes of original image which will include original size
-
-    def _read_meta_image(self):
-        if self.resample:
-            reader = cilMetaImageResampleReader()
-            reader.SetTargetSize(int(self.target_size))
-
-        elif self.crop:
-            reader = cilMetaImageCroppedReader()
-            reader.SetTargetZExtent(tuple(self.target_z_extent))
-            self.loaded_image_attrs['resampled'] = False
-
-        else:
-            reader = cilMetaImageResampleReader()
-            # Forces use of resample reader but does not resample
-            reader.SetTargetSize(int(1e12))
-
         reader.SetFileName(self.file_name)
-        # reader.AddObserver(vtk.vtkCommand.ProgressEvent, partial(
-        #             self._report_progress, progress_callback=progress_callback))
+        if not self.crop:
+            if self.resample:
+                target_size = self.target_size
+            else:
+                # forced use of resample reader in the case that we 
+                # don't want to crop or resample,
+                # but the large target size means we don't resample
+                target_size = 1e12
+            reader.SetTargetSize(int(target_size))
         reader.Update()
-
-        # output_image.ShallowCopy(reader.GetOutput())
-
+        data = reader.GetOutput()
+        
+        # Make sure whether we did resample or not:
         if self.resample:
             original_image_size = reader.GetStoredArrayShape(
             )[0] * reader.GetStoredArrayShape()[1] * reader.GetStoredArrayShape()[2]
             resampled_image_size = reader.GetTargetSize()
             if original_image_size <= resampled_image_size:
                 self.loaded_image_attrs['resampled'] = False
-
-        original_shape = reader.GetStoredArrayShape()
-
-        if not reader.GetIsFortran():
-            original_shape = original_shape[::-1]
-
-        self.original_image_attrs['shape'] = original_shape
-        self.original_image_attrs['vol_bit_depth'] = str(reader.GetBytesPerElement()*8)
-        self.original_image_attrs['is_big_endian'] = reader.GetBigEndian()
-        self.original_image_attrs['header_length'] = 0
-        self.original_image_attrs['origin'] = reader.GetOrigin()
-
-        return reader.GetOutput()
-
-    def _read_numpy_image(self):
-        ''' Reads a self.file_name as a numpy image file and may resample or
-         crop depending on whether self.resample or self.crop are set.
-        Returns
-        -------
-        vtkImageData:
-            containing the image data.'''
-        print("going to read numpy")
-        if self.resample or self.crop:
-            if self.resample:
-                reader = cilNumpyResampleReader()
-                reader.SetTargetSize(int(self.target_size))
-
-            elif self.crop:
-                reader = cilNumpyCroppedReader()
-                reader.SetTargetZExtent(tuple(self.target_z_extent))
-                self.loaded_image_attrs['cropped'] = True
-
-            reader.SetFileName(self.file_name)
-            # reader.AddObserver(vtk.vtkCommand.ProgressEvent, partial(
-            #         self._report_progress, progress_callback=progress_callback))
-            reader.Update()
-            # output_image.ShallowCopy(reader.GetOutput())
-            header_length = reader.GetFileHeaderLength()
-            vol_bit_depth = reader.GetBytesPerElement()*8
-            shape = reader.GetStoredArrayShape()
-            if not reader.GetIsFortran():
-                shape = shape[::-1]
-            self.loaded_image_attrs['isBigEndian'] = reader.GetBigEndian()
-
-            if self.resample:
-                image_size = reader.GetStoredArrayShape(
-                )[0] * reader.GetStoredArrayShape()[1]*reader.GetStoredArrayShape()[2]
-                target_size = reader.GetTargetSize()
-
-                if image_size <= target_size:
-                    self.loaded_image_attrs['resampled'] = False
-
-            output_image = reader.GetOutput()
-
-        else:
-            with open(self.file_name, 'rb') as f:
-                header = f.readline()
-            header_length = len(header)
-            print("Length of header: ", len(header))
-
-            numpy_array = np.load(self.file_name)
-            shape = np.shape(numpy_array)
-
-            if (isinstance(numpy_array[0][0][0], np.uint8)):
-                vol_bit_depth = '8'
-            elif(isinstance(numpy_array[0][0][0], np.uint16)):
-                vol_bit_depth = '16'
             else:
-                vol_bit_depth = None
-                output_image = None
+                self.loaded_image_attrs['resampled'] = True
 
-            self.loaded_image_attrs['resampled'] = False
+        # info about original dataset:
+        self.original_image_attrs['shape'] = reader.GetStoredArrayShape()
+        self.original_image_attrs['spacing'] = reader.GetElementSpacing()
+        self.original_image_attrs['origin'] = reader.GetOrigin()
+        self.original_image_attrs['bit_depth'] = str(reader.GetBytesPerElement()*8)
+        self.original_image_attrs['is_big_endian'] = reader.GetBigEndian()
+        self.original_image_attrs['header_length'] = reader.GetFileHeaderLength()
 
-            output_image = vtk.vtkImageData()
-            Converter.numpy2vtkImage(numpy_array, output=output_image)
+        # info about new dataset:
+        self.loaded_image_attrs['spacing'] = data.GetSpacing()
+        self.loaded_image_attrs['origin'] = data.GetOrigin()
+        
+        return data
 
-        self.original_image_attrs["header_length"] = header_length
-        self.original_image_attrs["vol_bit_depth"] = vol_bit_depth
-        self.original_image_attrs["shape"] = shape
-        self.original_image_attrs['origin'] = [0, 0, 0] # Can't save origin to numpy file
-        self.original_image_attrs['spacing'] = [1, 1, 1] # Can't save spacing to numpy file
 
-        return output_image
+    def _get_meta_image_reader(self, progress_callback=None):
+        if self.crop:
+            reader = cilMetaImageCroppedReader()
+            reader.SetTargetZExtent(tuple(self.target_z_extent))
+        else:
+            reader = cilMetaImageResampleReader()
+        return reader
 
-    def _read_tiff_images(self, filenames):
+    def _get_numpy_image_reader(self, progress_callback=None):
+        if self.crop:
+            reader = cilNumpyCroppedReader()
+            reader.SetTargetZExtent(tuple(self.target_z_extent))
+        else:
+            reader = cilNumpyResampleReader()
+
+        return reader
+
+
+    def _read_tiff_images(self, progress_callback=None):
+        # TODO!!!!!!!!!!!
         reader = vtk.vtkTIFFReader()
+        filenames = glob.glob(os.path.join(self.file_name, '*'))
 
         if self.resample:
-            # raise NotImplementedError(
-            #     "Tiff resampling not yet implemented in this class")
-            print("WARNING: Tiff resampling is not yet implemented, so image won't be resampled.")
-            self.resample = False
+            raise NotImplementedError("Tiff resampling not yet implemented in this class")
 
         sa = vtk.vtkStringArray()
         for fname in filenames:
@@ -376,184 +272,50 @@ class ImageReader(object):
                 self.original_image_attrs['vol_bit_depth'] = '16'
             print(self.original_image_attrs['vol_bit_depth'])
 
-        self.loaded_image_attrs['resampled'] = False
-
         return reader.GetOutput()
 
-    def _read_raw_image(self):
-        print("when we read: ", self.original_image_attrs)
+    def _read_raw_image(self, progress_callback=None):
         if self.original_image_attrs is None or 'dimensions' not in self.original_image_attrs.keys():
             raise Exception(
                 "To read a raw image, raw_image_attrs must be set.")
 
-        # TODO: add checks of retrieval:
-        dimensionality = len(self.original_image_attrs['dimensions'])
-        dimX = self.original_image_attrs['dimensions'][0]
-        dimY = self.original_image_attrs['dimensions'][1]
-        if dimensionality == 3:
-            dimZ = self.original_image_attrs['dimensions'][2]
         isFortran = self.original_image_attrs['is_fortran']
         isBigEndian = self.original_image_attrs['is_big_endian']
         typecode = self.original_image_attrs['typecode']
+        shape = tuple(self.original_image_attrs['dimensions'])
 
-        if dimensionality == 3:
-            if isFortran:
-                shape = (dimX, dimY, dimZ)
-            else:
-                shape = (dimZ, dimY, dimX)
+        if self.crop:
+            reader = cilRawCroppedReader()
+            reader.SetTargetZExtent(tuple(self.target_z_extent))
         else:
-            if isFortran:
-                shape = (dimX, dimY)
-            else:
-                shape = (dimY, dimX)
+            reader = cilRawResampleReader()
+        
+        reader.SetBigEndian(isBigEndian)
+        reader.SetIsFortran(isFortran)
+        reader.SetTypeCodeName(typecode)
+        reader.SetStoredArrayShape(shape)
 
-        self.original_image_attrs["original_shape"] = shape
-
-        if typecode == 0 or 1:
-            self.original_image_attrs['vol_bit_depth'] = '8'
-            bytes_per_element = 1
-        else:
-            self.original_image_attrs['vol_bit_depth'] = '16'
-            bytes_per_element = 2
-
-        # basic sanity check
-        file_size = os.stat(self.file_name).st_size
-
-        expected_size = 1
-        for el in shape:
-            expected_size *= el
-
-        if typecode in ["uint8", "int8"]:
-            mul = 1
-        elif typecode in ["uint16", "int16"]:
-            mul = 2
-        elif typecode in ["uint32", "int32"]:
-            mul = 4
-        else:
-            mul = 8
-        expected_size *= mul
-        if file_size != expected_size:
-            errors = {"type": "size", "file_size": file_size,
-                      "expected_size": expected_size}
-            raise Exception("Error with loading file: {}. Expected size: {}, Actual Size: {}.".format(self.file_name, file_size, expected_size))
-
-        if self.resample:
-            reader = cilBaseResampleReader()
-            reader.SetFileName(self.file_name)
-            reader.SetTargetSize(int(self.target_size))
-            reader.SetBytesPerElement(bytes_per_element)
-            reader.SetBigEndian(isBigEndian)
-            reader.SetIsFortran(isFortran)
-            reader.SetRawTypeCode(typecode)
-            reader.SetStoredArrayShape(shape)
-
-        elif self.crop:
-            reader = cilBaseCroppedReader()
-            reader.SetFileName(self.file_name)
-            reader.SetTargetZExtent(self.target_z_extent)
-            # reader.SetOrigin(tuple(origin))
-            reader.SetBytesPerElement(bytes_per_element)
-            reader.SetBigEndian(isBigEndian)
-            reader.SetIsFortran(isFortran)
-            reader.SetRawTypeCode(typecode)
-            reader.SetStoredArrayShape(shape)
-
-            self.original_image_attrs['cropped'] = True
-
-        else:
-            self.original_image_attrs['resampled'] = False
-
-            reader = cilBaseResampleReader()
-            reader.SetFileName(self.file_name)
-            reader.SetTargetSize(1e12)
-            reader.SetBytesPerElement(bytes_per_element)
-            reader.SetBigEndian(isBigEndian)
-            reader.SetIsFortran(isFortran)
-            reader.SetRawTypeCode(typecode)
-            reader.SetStoredArrayShape(shape)
-
-        # reader.AddObserver(vtk.vtkCommand.ProgressEvent, partial(
-        #             self._report_progress, progress_callback=progress_callback))
-        reader.Update()
-
-        image_size = reader.GetStoredArrayShape(
-        )[0] * reader.GetStoredArrayShape()[1]*reader.GetStoredArrayShape()[2]
-        if self.resample:
-            target_size = reader.GetTargetSize()
-            print("array shape", image_size)
-            print("target", target_size)
-            if image_size <= target_size:
-                self.original_image_attrs['resampled'] = False
-            else:
-                self.original_image_attrs['resampled'] = True
-
-        return reader.GetOutput()
-
-    def _read_hdf5_image(self):
+        return reader
+    
+    def _get_hdf5_image_reader(self):
         if self.original_image_attrs is None or 'dataset_name' not in self.original_image_attrs.keys():
             # Fall back to default hdf5 attributes if none have been set.
             hdf5_attrs = self._validate_hdf5_attrs({})
-            print("the h5 attrs: ", self.original_image_attrs)
             self.original_image_attrs = self._generate_image_attrs(hdf5_image_attrs=hdf5_attrs)
-            print("the h5 attrs: ", self.original_image_attrs)
 
-        if self.resample:
-            reader = cilHDF5ResampleReader()
-            reader.SetTargetSize(int(self.target_size))
-            reader.SetFileName(self.file_name)
-            reader.SetDatasetName(self.original_image_attrs['dataset_name'])
-            reader.SetIsAcquisitionData(self.original_image_attrs['is_acquisition_data'])
-
-        elif self.crop:
-            full_reader = HDF5Reader()
-            full_reader.SetFileName(self.file_name)
-            full_reader.SetDatasetName(self.original_image_attrs['dataset_name'])
-            reader = HDF5SubsetReader()
-            reader.SetInputConnection(full_reader.GetOutputPort())
-            extent = [0, -1, 0, -1, self.target_z_extent[0], self.target_z_extent[1]]
-            reader.SetUpdateExtent(extent)
+        if self.crop:
+            reader = cilHDF5CroppedReader()
+            reader.SetTargetExtent([0, -1, 0, -1, self.target_z_extent[0], self.target_z_extent[1]])
 
         else:
             reader = cilHDF5ResampleReader()
-            reader.SetTargetSize(int(self.target_size*1e12))
-            reader.SetFileName(self.file_name)
-            reader.SetDatasetName(self.original_image_attrs['dataset_name'])
-        
-        
-        reader.Update()
 
-
-        if self.resample:
-            image_size = reader.GetStoredArrayShape(
-                )[0] * reader.GetStoredArrayShape()[1]*reader.GetStoredArrayShape()[2]
-            target_size = reader.GetTargetSize()
-            print("array shape", image_size)
-            print("target", target_size)
-            if image_size <= target_size:
-                self.loaded_image_attrs['resampled'] = False
-
-        if not self.crop:
-            self.original_image_attrs['origin'] = reader.GetOrigin()
-            self.original_image_attrs['spacing'] = reader.GetElementSpacing()
-            self.original_image_attrs['shape'] = reader.GetStoredArrayShape()
-            print("numpy code: ", reader.GetNumpyTypeCode())
-            self.loaded_image_attrs['typecode'] = reader.GetNumpyTypeCode()
-            self.original_image_attrs['typecode'] = reader.GetNumpyTypeCode()
-            print("WE CROPPED")
-        else:
-            self.original_image_attrs['origin'] = full_reader.GetOrigin()
-            # TODO fix getting this stuff:
-            # self.original_image_attrs['spacing'] = full_reader.GetElementSpacing()
-            # self.original_image_attrs['shape'] = full_reader.GetStoredArrayShape()
-            # print("numpy code: ", full_reader.GetNumpyTypeCode())
-            # self.loaded_image_attrs['typecode'] = full_reader.GetNumpyTypeCode()
-            # self.original_image_attrs['typecode'] = full_reader.GetNumpyTypeCode()
+        reader.SetDatasetName(self.original_image_attrs['dataset_name'])
+        reader.SetIsAcquisitionData(self.original_image_attrs['is_acquisition_data'])
 
         self.loaded_image_attrs['vtk_array_name'] = 'entry1/tomo_entry/data/data' # TODO FIX!!
 
-        
-
-        return reader.GetOutputDataObject(0)
+        return reader
 
 
     # TODO: test logger
@@ -575,6 +337,8 @@ class ImageReader(object):
 
         if progress_callback is not None:
             progress_callback.emit(int(caller.getProgress()*100))
+
+    # TODO: should we just print the progress if progress_callback is not None?
 
 
 class ImageWriter(object):
