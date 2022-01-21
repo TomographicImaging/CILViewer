@@ -431,8 +431,8 @@ class cilNumpyMETAImageWriter(object):
                              header_length, shape, spacing=(1., 1., 1.), origin=(0., 0., 0.)):
         '''Writes a NumPy array and a METAImage text header so that the npy file can be used as data file
 
-        Parameters:
-        ============
+        Parameters
+        -----------
         filename
             name of the single file containing the data
         typecode
@@ -593,8 +593,9 @@ class cilBaseReader(VTKPythonAlgorithmBase):
 
     def SetFileName(self, value):
         ''' Set the file name or path from which to read the image data
+
         Parameters
-        ===========
+        -----------
         value: (str)
             file name or path
         '''
@@ -647,8 +648,9 @@ class cilBaseReader(VTKPythonAlgorithmBase):
     def SetStoredArrayShape(self, value):
         ''' Sets the shape of the dataset in self._FileName
         Currently only supports 3D datasets.
+
         Parameters
-        ==========
+        -----------
         value: tuple
             shape of the dataset to be read from self._FileName,
             must be a tuple with length 3
@@ -662,8 +664,9 @@ class cilBaseReader(VTKPythonAlgorithmBase):
 
     def SetFileHeaderLength(self, value):
         ''' Sets the length of the header in self._FileName
+
         Parameters
-        ==========
+        -----------
         value: int, default: 0
             the length of the header in bytes
         '''
@@ -673,8 +676,9 @@ class cilBaseReader(VTKPythonAlgorithmBase):
 
     def SetBigEndian(self, value):
         ''' Sets the endianness of the data in self._FileName
+
         Parameters
-        ==========
+        -----------
         value: bool, default: False
             whether the dataset is big endian
         '''
@@ -685,8 +689,9 @@ class cilBaseReader(VTKPythonAlgorithmBase):
     def SetIsFortran(self, value):
         ''' Sets whether the data in self._FileName is stored in fortran
         order.
+
         Parameters
-        ==========
+        -----------
         value: bool, default: False
             whether the dataset is in fortran order
         '''
@@ -696,8 +701,9 @@ class cilBaseReader(VTKPythonAlgorithmBase):
 
     def SetOutputVTKType(self, value):
         ''' Sets the VTK type the produced vtkImageData will be.
+
         Parameters
-        ==========
+        ----------
         value:
             must be one of the values in this list:
             [vtk.VTK_SIGNED_CHAR,vtk.VTK_UNSIGNED_CHAR,
@@ -723,8 +729,9 @@ class cilBaseReader(VTKPythonAlgorithmBase):
 
     def SetOrigin(self, value):
         ''' Sets the origin of the dataset in self._FileName.
+
         Parameters
-        ==========
+        -----------
         value: tuple of length 3, default: (0, 0, 0)
             origin of the data set
         '''
@@ -743,7 +750,7 @@ class cilBaseReader(VTKPythonAlgorithmBase):
     def SetIsAcquisitionData(self, value):
         '''
         Parameters
-        ==========
+        -----------
         value: bool, default=False
             whether the dataset in self._FileName is acquisition data.
         '''
@@ -840,8 +847,9 @@ class cilBaseNumpyReader(cilBaseReader):
 
     def SetFileName(self, value):
         ''' Set the file name or path from which to read the image data
+        
         Parameters
-        ===========
+        -----------
         value: (str)
             file name or path
         '''
@@ -865,8 +873,9 @@ class cilBaseHDF5Reader(cilBaseReader):
 
     def SetDatasetName(self, value):
         ''' Set the dataset name from which to read the image data
+
         Parameters
-        ===========
+        -----------
         value: (str)
             dataset name
         '''
@@ -877,8 +886,9 @@ class cilBaseHDF5Reader(cilBaseReader):
 
     def SetFileName(self, value):
         ''' Set the file name or path from which to read the image data
+
         Parameters
-        ===========
+        -----------
         value: (str)
             file name or path
         '''
@@ -988,7 +998,7 @@ class cilBaseMetaImageReader(cilBaseReader):
         This may be a .mha or .mhd file. 
         
         Parameters
-        ===========
+        -----------
         value: (str)
             file name or path
         '''
@@ -1015,8 +1025,9 @@ class cilBaseMetaImageReader(cilBaseReader):
     def SetIsCompressedData(self, value):
         ''' Sets whether the image file is compressed.
         If True then we can't resample it.
+
         Parameters
-        ==========
+        -----------
         value: bool
             whether the file is compressed'''
         self._CompressedData = value
@@ -1044,7 +1055,7 @@ class cilBaseResampleReader(cilBaseReader):
     def SetTargetSize(self, value):
         ''''
         Parameters
-        ==========
+        -----------
         value (int), default=256*256*256:
             Total target size to downsample image to, in bytes.
             The resampler will aim for this approximate memory footprint.'''
@@ -1133,7 +1144,7 @@ class cilBaseResampleReader(cilBaseReader):
     def _SetNumSlicesPerChunk(self, value):
         '''
         Parameters
-        ==========
+        -----------
         value: (int)
             number of slices in the z direction we are resampling together'''
         self._SlicePerChunk = value
@@ -1295,8 +1306,9 @@ class cilBaseResampleReader(cilBaseReader):
 
 class cilRawResampleReader(cilBaseResampleReader, cilBaseRawReader):
     '''vtkAlgorithm to load and resample a raw file to an approximate memory footprint
+
     Example
-    ========
+    -------
     This example reads a numpy dataset from the file: data.npy and downsamples
     it to an approx. size of 1GB:
 
@@ -1320,7 +1332,7 @@ class cilNumpyResampleReader(cilBaseNumpyReader, cilBaseResampleReader):
     '''vtkAlgorithm to load and resample a numpy file to an approximate memory footprint
     
     Example
-    ========
+    -------
     This example reads a numpy dataset from the file: data.npy and downsamples
     it to an approx. size of 1GB:
 
@@ -1339,7 +1351,7 @@ class cilHDF5ResampleReader(cilBaseResampleReader, cilBaseHDF5Reader):
     '''vtkAlgorithm to load and resample a HDF5 file to an approximate memory footprint
 
     Example
-    ========
+    -------
     This example reads a HDF5 image from the 'entry1/tomo_entry/data/data'
     dataset of the file: data.nxs and downsamples it to an approx. size of 1GB:
 
@@ -1391,7 +1403,7 @@ class cilMetaImageResampleReader(cilBaseResampleReader, cilBaseMetaImageReader):
     '''vtkAlgorithm to load and resample a metaimage file to an approximate memory footprint
     
     Example
-    ========
+    --------
     This example reads a metaimage dataset from the file: data.mha and downsamples
     it to an approx. size of 1GB:
 
@@ -1422,8 +1434,9 @@ class cilBaseCroppedReader(cilBaseReader):
     def SetTargetZExtent(self, value):
         ''' 
         Set the target extent to crop to on the z axis.
+        
         Parameters
-        ==========
+        -----------
         value: list of len 2
             the extent on the z axis to crop the dataset to
         '''
@@ -1563,8 +1576,9 @@ class cilBaseCroppedReader(cilBaseReader):
 
 class cilRawCroppedReader(cilBaseCroppedReader, cilBaseRawReader):
     '''vtkAlgorithm to load and crop a raw file
+
     Example
-    ========
+    --------
     This example reads a raw image from the file: data.raw and crops it
     to exetnt [1, 3] on the z axis:
 
@@ -1589,7 +1603,7 @@ class cilNumpyCroppedReader(cilBaseCroppedReader, cilBaseNumpyReader):
     '''vtkAlgorithm to load and crop a numpy file
 
     Example
-    ========
+    --------
     This example reads a raw image from the file: data.npy and crops it
     to extent [1, 3] on the z axis:
 
@@ -1609,7 +1623,7 @@ class cilMetaImageCroppedReader(cilBaseCroppedReader, cilBaseMetaImageReader):
     '''vtkAlgorithm to load and resample a metaimage file to an approximate memory footprint
 
     Example
-    ========
+    -------
     This example reads a raw image from the file: data.mha and crops it
     to extent [1, 3] on the z axis:
 
@@ -1629,7 +1643,7 @@ class cilHDF5CroppedReader(cilBaseCroppedReader, cilBaseHDF5Reader):
     '''vtkAlgorithm to load and crop a hdf5 file
 
     Example
-    ========
+    -------
     This example reads a HDF5 image from the
     'entry1/tomo_entry/data/data' dataset of the
     file: data.nxs and crops it to extent (0, 2, 3, 5, 1, 2):
@@ -1652,8 +1666,9 @@ class cilHDF5CroppedReader(cilBaseCroppedReader, cilBaseHDF5Reader):
         ''' 
         Set the target extent to crop to. Unlike other cropped readers,
         the HDF5CroppedReader can crop in all dimensions
+
         Parameters
-        ==========
+        -----------
         value: list of len 5
             the extent to crop the dataset to
         '''
