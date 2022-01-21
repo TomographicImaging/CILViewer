@@ -803,12 +803,26 @@ class cilBaseRawReader(cilBaseReader):
     def ReadDataSetInfo(self):
         '''Tries to read info about dataset
         Will raise specific errors if inputs required for 
-        reading raw image are not set.'''
-        if self.GetStoredArrayShape() is None:
+        reading raw image are not set or size of file is
+        not as expected.'''
+        shape = self.GetStoredArrayShape()
+        if shape is None:
             raise Exception("StoredArrayShape must be set.")
         
         if self.GetOutputVTKType() is None:
             raise Exception("Typecode must be set.")
+
+        # Check the filesize is as we expect:
+        file_size = os.stat(self.GetFileName()).st_size
+        expected_size = self.GetBytesPerElement()
+        for el in shape:
+            expected_size *= el
+        if file_size != expected_size:
+            raise Exception(
+                "Error with loading file: {}. Expected size: {}, Actual Size: {}."
+                "Please check you have input the correct shape and typecode."
+                "Current input shape: {}, Current input typecode: {}.".format(
+                    self.GetFileName(), file_size, expected_size, str(shape), self.GetTypeCodeName()))
 
 class cilBaseNumpyReader(cilBaseReader):
     ''' Baseclass with methods for reading information about numpy files'''
@@ -1652,6 +1666,7 @@ class cilHDF5CroppedReader(cilBaseCroppedReader, cilBaseHDF5Reader):
         ''' 
         Set the target extent to crop to. Unlike other cropped readers,
         the HDF5CroppedReader can crop in all dimensions
+
         Parameters
         ==========
         value: list of len 5
