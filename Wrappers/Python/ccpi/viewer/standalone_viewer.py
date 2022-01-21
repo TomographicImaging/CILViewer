@@ -56,6 +56,8 @@ from ccpi.viewer.utils.io_new import ImageReader
 
 from eqt.threading import Worker
 
+from ccpi.viewer.utils.conversion import cilNumpyMETAImageWriter
+
 # TODO next - get progress from Worker
 
 # TODO: see line 654 in iDVC to get resample rate from returned image from io
@@ -121,6 +123,16 @@ class StandaloneViewerMainWindow(ViewerMainWindow):
     def set_viewer_input(self, input_num=1):
         image_file, raw_image_attrs, hdf5_image_attrs = self.select_image()
         print("The image attrs: ", raw_image_attrs)
+        # cilNumpyMETAImageWriter.WriteMETAImageHeader(
+        #     image_file,
+        #     image_file + '.mhd',
+        #     Converter.dtype_name_to_MetaImageType(raw_image_attrs['typecode']),
+        #     raw_image_attrs['is_big_endian'],
+        #     0,
+        #     tuple(raw_image_attrs['dimensions']),
+        #     spacing=tuple([1,1,1]),
+        #     origin=(0,0,0)
+        # )
         image_reader = ImageReader(file_name=image_file, raw_image_attrs=raw_image_attrs, hdf5_image_attrs=hdf5_image_attrs)
         image_reader_worker = Worker(image_reader.read)
         self.threadpool.start(image_reader_worker)
