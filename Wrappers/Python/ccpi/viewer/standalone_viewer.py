@@ -85,6 +85,8 @@ class StandaloneViewerMainWindow(ViewerMainWindow):
               interactorStyle=interactor_style1)
         self.frame2 = QCILViewerWidget(viewer=viewer2, shape=(600,600),
               interactorStyle=interactor_style2)
+
+        self.viewer_2D = self.frame1.viewer
                 
         # Initially link viewers
         self.linkedViewersSetUp()
@@ -126,7 +128,7 @@ class StandaloneViewerMainWindow(ViewerMainWindow):
         # cilNumpyMETAImageWriter.WriteMETAImageHeader(
         #     image_file,
         #     image_file + '.mhd',
-        #     Converter.dtype_name_to_MetaImageType(raw_image_attrs['typecode']),
+        #     Converter.dtype_name_to_MetaImageType[raw_image_attrs['typecode']],
         #     raw_image_attrs['is_big_endian'],
         #     0,
         #     tuple(raw_image_attrs['dimensions']),
