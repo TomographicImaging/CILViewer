@@ -438,6 +438,9 @@ class cilNumpyMETAImageWriter(object):
         typecode
             metaimage typecode, or one of : 
             ['int8', 'uint8', 'int16', 'uint16', 'int32', 'uint32', 'float32', 'float64']
+        shape
+            the shape of the data in data_filename:
+            NOTE: if the data is not stored in fortran order then you must set this to shape[::-1]
 
         '''
 
@@ -484,9 +487,7 @@ class cilNumpyMETAImageWriter(object):
         else:
             numpy.save(datafname, numpy.asfortranarray(array))
         npyhdr = parseNpyHeader(datafname)
-
-        typecode = array.dtype.char
-        print("typecode,", typecode)
+        typecode = str(array.dtype)
         big_endian = 'True' if npyhdr['description']['descr'][0] == '>' else 'False'
         readshape = npyhdr['description']['shape']
         is_fortran = npyhdr['description']['fortran_order']
@@ -498,31 +499,6 @@ class cilNumpyMETAImageWriter(object):
 
         cilNumpyMETAImageWriter.WriteMETAImageHeader(datafname, hdrfname, typecode, big_endian,
                                                      header_length, shape, spacing=spacing, origin=origin)
-        # # save header
-        # # minimal header structure
-        # # NDims = 3
-        # # DimSize = 181 217 181
-        # # ElementType = MET_UCHAR
-        # # ElementSpacing = 1.0 1.0 1.0
-        # # ElementByteOrderMSB = False
-        # # ElementDataFile = brainweb1.raw
-        # header = 'ObjectType = Image\n'
-        # header = ''
-        # header += 'NDims = {0}\n'.format(len(array.shape))
-        # header += 'DimSize = {} {} {}\n'.format(array.shape[0], array.shape[1], array.shape[2])
-        # header += 'ElementType = {}\n'.format(ar_type)
-        # header += 'ElementSpacing = {} {} {}\n'.format(spacing[0], spacing[1], spacing[2])
-        # header += 'Position = {} {} {}\n'.format(origin[0], origin[1], origin[2])
-        # # MSB (aka big-endian)
-        # descr = npyhdr['description']
-        # MSB = 'True' if descr['descr'][0] == '>' else 'False'
-        # header += 'ElementByteOrderMSB = {}\n'.format(MSB)
-
-        # header += 'HeaderSize = {}\n'.format(npyhdr['header_length'])
-        # header += 'ElementDataFile = {}'.format(os.path.basename(datafname))
-
-        # with open(hdrfname , 'w') as hdr:
-        #     hdr.write(header)
 
 
 def WriteNumpyAsMETAImage(array, filename, spacing=(1., 1., 1.), origin=(0., 0., 0.)):
@@ -993,30 +969,6 @@ class cilBaseMetaImageReader(cilBaseReader):
         self.SetIsFortran(True)
         self.Modified()
 
-    def SetFileName(self, value):
-        ''' Set the file name or path where the metaimage header is located.
-        This may be a .mha or .mhd file. 
-        
-        Parameters
-        -----------
-        value: (str)
-            file name or path
-        '''
-        # Note, as well as the user using this method to set the name of the file,
-        # it is called again in ReadMetaImageHeader to replace the header filename
-        # with the name of the file where the data is saved.
-        # In the case of an mha file, data is stored in the same file,
-        # so the value is set to 'LOCAL' which indicates the data is saved in the 
-        # same file as the metaimage header.
-        if value != 'LOCAL':
-            if not os.path.exists(value):
-                raise ValueError('File does not exist!', value)
- 
-        if value != self.GetFileName():
-            self._FileName = value
-            self.ReadMetaImageHeader()
-            self.Modified()
-
     def GetIsCompressedData(self):
         ''' Gets whether the image file is compressed.
         If True then we can't resample it.'''
@@ -1299,7 +1251,7 @@ class cilBaseResampleReader(cilBaseReader):
             raise Exception(e)
 
         finally:
-            if self._GetTempDir() is not None:
+            if os.path.exists(self._GetTempDir()):
                 shutil.rmtree(self._GetTempDir())
 
         return 1
@@ -1455,6 +1407,8 @@ class cilBaseCroppedReader(cilBaseReader):
 
     def RequestData(self, request, inInfo, outInfo):
         outData = vtk.vtkImageData.GetData(outInfo)
+
+        self.ReadDataSetInfo()
 
         # get basic info
         big_endian = self.GetBigEndian()

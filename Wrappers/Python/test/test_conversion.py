@@ -22,32 +22,10 @@ class TestConversion(unittest.TestCase):
         # Generate random 3D array and write to HDF5:
         np.random.seed(1)
         self.input_3D_array = np.random.randint(10, size=(5, 10, 6), dtype=np.uint8)
-        self.input_3D_array_fortran = np.asfortranarray(np.random.randint(10, size=(5, 10, 6), dtype=np.uint8))
         bytes_3D_array = bytes(self.input_3D_array)
         self.raw_filename_3D = 'test_3D_data.raw'
         with open(self.raw_filename_3D, 'wb') as f:
             f.write(bytes_3D_array)
-
-
-    def test_cilNumpyMETAImageWriter(self):
-        ''' Tests using cilNumpyMETAImageWriter to write
-        a numpy array with a metaimage header. Tests a numpy array
-        in contiguous order and in fortran order.'''
-
-        # test write fortran numpy array:
-        self.meta_header_filename_3D_fortran = 'test_3D_data_fortran.mhd'
-        self.numpy_filename_3D_fortran = 'test_3D_data_fortran.npy'
-        writer = cilNumpyMETAImageWriter()
-        writer.SetInputData(self.input_3D_array_fortran)
-        writer.SetFileName('test_3D_data_fortran')
-        writer.Write()    
-
-        reader = vtk.vtkMetaImageReader()
-        reader.SetFileName(self.meta_header_filename_3D_fortran)
-        reader.Update()
-        read_mhd_fortran = Converter.vtk2numpy(reader.GetOutput(), order='F')
-
-        np.testing.assert_array_equal(read_mhd_fortran, self.input_3D_array_fortran)
 
     def test_WriteMETAImageHeader(self):
         '''writes a mhd file to go with a raw 
