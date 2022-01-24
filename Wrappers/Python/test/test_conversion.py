@@ -34,6 +34,21 @@ class TestConversion(unittest.TestCase):
         a numpy array with a metaimage header. Tests a numpy array
         in contiguous order and in fortran order.'''
 
+        # test write contiguous numpy array:
+        self.meta_header_filename_3D = 'test_3D_data.mhd'
+        self.numpy_filename_3D = 'test_3D_data.npy'
+        writer = cilNumpyMETAImageWriter()
+        writer.SetInputData(self.input_3D_array)
+        writer.SetFileName('test_3D_data')
+        writer.Write()    
+
+        reader = vtk.vtkMetaImageReader()
+        reader.SetFileName(self.meta_header_filename_3D)
+        reader.Update()
+        # An issue here is we have to convert enforcing fortran order:
+        read_mhd = Converter.vtk2numpy(reader.GetOutput(), order='F')
+        np.testing.assert_array_equal(read_mhd, self.input_3D_array)
+
         # test write fortran numpy array:
         self.meta_header_filename_3D_fortran = 'test_3D_data_fortran.mhd'
         self.numpy_filename_3D_fortran = 'test_3D_data_fortran.npy'
