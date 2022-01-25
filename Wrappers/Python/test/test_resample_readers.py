@@ -135,9 +135,13 @@ class TestResampleReaders(unittest.TestCase):
         filenames = [self.numpy_filename_3D, self.meta_filename_3D, self.meta_header_filename_3D, self.meta_header_filename_3D_fortran]
         subtest_labels = ['cilNumpyResampleReader', 'cilMetaImageResampleReader - mha', 'cilMetaImageResampleReader - mhd c-order', 'cilMetaImageResampleReader - mhd f-order']
         for i, reader in enumerate(readers):
+            if i<3:
+                original_array = self.input_3D_array
+            else:
+                original_array = self.input_3D_array_fortran
             with self.subTest(reader=subtest_labels[i]):
                 filename = filenames[i]
-                og_shape = np.shape(self.input_3D_array)
+                og_shape = np.shape(original_array)
                 reader.SetFileName(filename)
                 target_size = 100
                 reader.SetTargetSize(target_size)
@@ -163,7 +167,7 @@ class TestResampleReaders(unittest.TestCase):
                 self.assertEqual(resulting_shape, expected_shape)
                 resulting_array = Converter.vtk2numpy(image)
                 np.testing.assert_array_equal(
-                    self.input_3D_array, resulting_array)
+                    original_array, resulting_array)
 
                 # # # Now test if we get the correct z extent if we set that we
                 # # # have acquisition data
@@ -183,7 +187,7 @@ class TestResampleReaders(unittest.TestCase):
                 # angle (z direction) is first index in numpy array, and in cil
                 # but it is the last in vtk.
                 resulting_z_shape = extent[5]+1
-                og_z_shape = np.shape(self.input_3D_array)[0]
+                og_z_shape = np.shape(original_array)[0]
                 self.assertEqual(resulting_size, expected_size)
                 self.assertEqual(resulting_z_shape, og_z_shape)
 
