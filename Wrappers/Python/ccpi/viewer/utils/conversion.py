@@ -910,62 +910,64 @@ class cilBaseMetaImageReader(cilBaseReader):
         including endianness, origin, spacing, shape and typecode,
         and save as attributes of the class'''
         header_length = 0
-        with open(self.GetFileName(), 'rb') as f:
-            for line in f:
-                header_length += len(line)
-                line = str(line, encoding='utf-8').strip()
-                if 'BinaryDataByteOrderMSB' in line:
-                    if str(line).split('= ')[-1] == "True":
-                        self.SetBigEndian(True)
-                    else:
-                        self.SetBigEndian(False)
-                elif 'Offset' in line:
-                    origin = line.split('= ')[-1].split(' ')[:3]
-                    origin[2].strip()
-                    for i in range(0, len(origin)):
-                        origin[i] = float(origin[i])
-                    self.SetOrigin(tuple(origin))
-                    # print(self.GetBigEndian())
-                elif 'ElementSpacing' in line:
-                    spacing = line.split('= ')[-1].split(' ')[:3]
-                    spacing[2].strip()
-                    for i in range(0, len(spacing)):
-                        spacing[i] = float(spacing[i])
-                    self.SetElementSpacing(spacing)
-                    # print("Spacing", spacing)
-                elif 'DimSize' in line:
-                    shape = line.split('= ')[-1].split(' ')[:3]
-                    shape[2].strip()
-                    for i in range(0, len(shape)):
-                        shape[i] = int(shape[i])
-                    #shape = shape[::-1]
-                    self.SetStoredArrayShape(tuple(shape))
-                    # print(self.GetStoredArrayShape())
-                elif 'ElementType' in line:
-                    typecode = line.split('= ')[-1]
-                    if typecode not in Converter.MetaImageType_to_vtkType.keys():
-                        raise ValueError("Unexpected Type:  {}".format(typecode))
-                    self.SetOutputVTKType(Converter.MetaImageType_to_vtkType[typecode])
-                elif 'CompressedData' in line:
-                    compressed = line.split('= ')[-1]
-                    self.SetIsCompressedData(eval(compressed))
-                    if self.GetIsCompressedData():
-                        print("Cannot resample compressed image")
-                        raise Exception("Cannot resample compressed image")
-                elif 'HeaderSize' in line:
-                    header_size = line.split('= ')[-1]
-                    self.SetFileHeaderLength(int(header_size))
-                elif 'ElementDataFile' in line:  # signifies end of header
-                    element_data_file = line.split('= ')[-1]
-                    if element_data_file != 'LOCAL':  # then we have an mhd file with data in another file
-                        file_path = os.path.dirname(self.GetFileName())
-                        element_data_file = os.path.join(
-                            file_path, element_data_file)
-                        # print("Filename: ", element_data_file)
-                        self.SetFileName(element_data_file)
-                    else:
-                        self.SetFileHeaderLength(header_length)
-                    break
+        if '.mhd' or '.mha' in self.GetFileName():
+            print("read the header ", self.GetFileName())
+            with open(self.GetFileName(), 'rb') as f:
+                for line in f:
+                    header_length += len(line)
+                    line = str(line, encoding='utf-8').strip()
+                    if 'BinaryDataByteOrderMSB' in line:
+                        if str(line).split('= ')[-1] == "True":
+                            self.SetBigEndian(True)
+                        else:
+                            self.SetBigEndian(False)
+                    elif 'Offset' in line:
+                        origin = line.split('= ')[-1].split(' ')[:3]
+                        origin[2].strip()
+                        for i in range(0, len(origin)):
+                            origin[i] = float(origin[i])
+                        self.SetOrigin(tuple(origin))
+                        # print(self.GetBigEndian())
+                    elif 'ElementSpacing' in line:
+                        spacing = line.split('= ')[-1].split(' ')[:3]
+                        spacing[2].strip()
+                        for i in range(0, len(spacing)):
+                            spacing[i] = float(spacing[i])
+                        self.SetElementSpacing(spacing)
+                        # print("Spacing", spacing)
+                    elif 'DimSize' in line:
+                        shape = line.split('= ')[-1].split(' ')[:3]
+                        shape[2].strip()
+                        for i in range(0, len(shape)):
+                            shape[i] = int(shape[i])
+                        #shape = shape[::-1]
+                        self.SetStoredArrayShape(tuple(shape))
+                        #print(self.GetStoredArrayShape())
+                    elif 'ElementType' in line:
+                        typecode = line.split('= ')[-1]
+                        if typecode not in Converter.MetaImageType_to_vtkType.keys():
+                            raise ValueError("Unexpected Type:  {}".format(typecode))
+                        self.SetOutputVTKType(Converter.MetaImageType_to_vtkType[typecode])
+                    elif 'CompressedData' in line:
+                        compressed = line.split('= ')[-1]
+                        self.SetIsCompressedData(eval(compressed))
+                        if self.GetIsCompressedData():
+                            print("Cannot resample compressed image")
+                            raise Exception("Cannot resample compressed image")
+                    elif 'HeaderSize' in line:
+                        header_size = line.split('= ')[-1]
+                        self.SetFileHeaderLength(int(header_size))
+                    elif 'ElementDataFile' in line:  # signifies end of header
+                        element_data_file = line.split('= ')[-1]
+                        if element_data_file != 'LOCAL':  # then we have an mhd file with data in another file
+                            file_path = os.path.dirname(self.GetFileName())
+                            element_data_file = os.path.join(
+                                file_path, element_data_file)
+                            # print("Filename: ", element_data_file)
+                            self.SetFileName(element_data_file)
+                        else:
+                            self.SetFileHeaderLength(header_length)
+                        break
 
         self.SetIsFortran(True)
         self.Modified()
@@ -1252,7 +1254,7 @@ class cilBaseResampleReader(cilBaseReader):
             raise Exception(e)
 
         finally:
-            if self._GetTempDir() is not None:
+            if os.path.isdir(self._GetTempDir()):
                 shutil.rmtree(self._GetTempDir())
 
         return 1

@@ -5,7 +5,7 @@ import numpy as np
 import vtk
 from ccpi.viewer.utils.conversion import (Converter, cilRawCroppedReader,
                                           cilMetaImageCroppedReader,
-                                          cilNumpyCroppedReader)
+                                          cilNumpyCroppedReader, cilNumpyMETAImageWriter)
 
 
 
@@ -29,6 +29,12 @@ class TestCroppedReaders(unittest.TestCase):
         writer.SetFileName(self.meta_filename_3D)
         writer.SetInputData(vtk_image)
         writer.SetCompression(False)
+        writer.Write()
+
+        self.meta_header_filename_3D = 'test_3D_data_mhd.mhd'
+        writer = cilNumpyMETAImageWriter()
+        writer.SetInputData(self.input_3D_array)
+        writer.SetFileName('test_3D_data_mhd')
         writer.Write()
 
     def check_extent(self, reader, target_z_extent):
@@ -77,6 +83,24 @@ class TestCroppedReaders(unittest.TestCase):
                 reader.SetTargetZExtent(tuple(target_z_extent))
                 self.check_extent(reader, target_z_extent)
                 self.check_values(target_z_extent, reader.GetOutput())
+
+    def test_mhd_cropped_reader(self):
+        reader = cilMetaImageCroppedReader()
+        filename = self.meta_header_filename_3D
+        target_z_extent = [1, 3]
+        reader.SetFileName(filename)
+        reader.SetTargetZExtent(tuple(target_z_extent))
+        # These fail due to wrong ordering:
+        #self.check_extent(reader, target_z_extent)
+        # self.check_values(target_z_extent, reader.GetOutput())
+        reader.Update()
+
+        # Shows we have the wrong axis being cropped:
+        read_cropped_array = Converter.vtk2numpy(reader.GetOutput())
+        cropped_array = self.input_3D_array[target_z_extent[0]:target_z_extent[1]+1, :, :]
+        np.testing.assert_array_equal(cropped_array, read_cropped_array)
+
+
 
     def tearDown(self):
         files = [self.raw_filename_3D]

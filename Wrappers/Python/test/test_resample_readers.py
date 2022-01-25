@@ -37,7 +37,8 @@ class TestResampleReaders(unittest.TestCase):
         with open(self.raw_filename_3D, 'wb') as f:
             f.write(bytes_3D_array)
 
-        #np.save(self.numpy_filename_3D, self.input_3D_array)
+        self.numpy_filename_3D = 'test_3D_data.npy'
+        np.save(self.numpy_filename_3D, self.input_3D_array)
 
         self.meta_filename_3D = 'test_3D_data.mha'
         vtk_image = Converter.numpy2vtkImage(self.input_3D_array)
@@ -47,11 +48,10 @@ class TestResampleReaders(unittest.TestCase):
         writer.SetCompression(False)
         writer.Write()
 
-        self.meta_header_filename_3D = 'test_3D_data.mhd'
-        self.numpy_filename_3D = 'test_3D_data.npy'
+        self.meta_header_filename_3D = 'test_3D_data_mhd.mhd'
         writer = cilNumpyMETAImageWriter()
         writer.SetInputData(self.input_3D_array)
-        writer.SetFileName('test_3D_data')
+        writer.SetFileName('test_3D_data_mhd')
         writer.Write()
 
         self.meta_header_filename_3D_fortran = 'test_3D_data_fortran.mhd'
