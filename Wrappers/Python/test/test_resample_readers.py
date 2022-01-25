@@ -182,7 +182,7 @@ class TestResampleReaders(unittest.TestCase):
                 self.assertEqual(resulting_z_shape, og_z_shape)
 
     def tearDown(self):
-        files = [self.raw_filename_3D]
+        files = [self.raw_filename_3D, self.numpy_filename_3D, self.meta_filename_3D, self.mhd_filename_3D]
         for f in files:
             os.remove(f)
 

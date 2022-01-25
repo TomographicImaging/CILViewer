@@ -79,7 +79,7 @@ class TestCroppedReaders(unittest.TestCase):
                 self.check_values(target_z_extent, reader.GetOutput())
 
     def tearDown(self):
-        files = [self.raw_filename_3D]
+        files = [self.raw_filename_3D, self.numpy_filename_3D, self.meta_filename_3D]
         for f in files:
             os.remove(f)
 
