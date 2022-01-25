@@ -100,7 +100,8 @@ class TestConversion(unittest.TestCase):
         numpy_reader.SetFileName(self.numpy_filename_3D_fortran)
         numpy_reader.Update()
         read_numpy_as_vtk = numpy_reader.GetOutput()
-        read_numpy = Converter.vtk2numpy(read_numpy_as_vtk)
+        read_numpy = Converter.vtk2numpy(read_numpy_as_vtk, order='F')
+        np.testing.assert_array_equal(self.input_3D_array_fortran, read_numpy)
 
         # Now we want to save a mhd file to go with it:
         writer = cilNumpyMETAImageWriter()
@@ -114,7 +115,7 @@ class TestConversion(unittest.TestCase):
         reader.SetFileName('test_3D_data_mhd_np.mhd')
         reader.Update()
         read_mhd_vtk = reader.GetOutput()
-        # all our tests fail if we  specify order F or not
+        # tests only pass if we specify F order
         read_mhd = Converter.vtk2numpy(read_mhd_vtk, order='F')
 
         # This would show the vtkMetaImageReader reads our written mhd fine:
@@ -130,15 +131,15 @@ class TestConversion(unittest.TestCase):
         reader.SetFileName('test_3D_data_mhd_np.mhd')
         reader.Update()
         read_mhd_vtk = reader.GetOutput()
-        # all our tests fail if we  specify order F or not
-        read_mhd = Converter.vtk2numpy(read_mhd_vtk)
+        # tests only pass if we specify F order
+        read_mhd = Converter.vtk2numpy(read_mhd_vtk, order='F')
 
         # This would show our cilMetaImageResampleReader reads our written mhd fine:
         # This fails due to wrong ordering:
         #self.assertEqual(read_numpy_as_vtk.GetExtent(), read_mhd_vtk.GetExtent())
         print("cilMetaImageResampleReader test passed")
         np.testing.assert_array_equal(read_numpy, read_mhd)
-        np.testing.assert_array_equal(self.numpy_filename_3D_fortran, read_mhd)
+        np.testing.assert_array_equal(self.input_3D_array, read_mhd)
 
 
     def test_WriteMETAImageHeader(self):
