@@ -483,18 +483,15 @@ class cilNumpyMETAImageWriter(object):
         datafname = os.path.abspath(filename) + '.npy'
         hdrfname = os.path.abspath(filename) + '.mhd'
         if (numpy.isfortran(array)):
-            numpy.save(datafname, array)
+            shape = numpy.shape(array)
         else:
-            numpy.save(datafname, numpy.asfortranarray(array))
+            shape = numpy.shape(array)[::-1]
+        numpy.save(datafname, array)
         npyhdr = parseNpyHeader(datafname)
         typecode = str(array.dtype)
         big_endian = 'True' if npyhdr['description']['descr'][0] == '>' else 'False'
         readshape = npyhdr['description']['shape']
         is_fortran = npyhdr['description']['fortran_order']
-        if is_fortran:
-            shape = list(readshape)
-        else:
-            shape = list(readshape)[::-1]
         header_length = npyhdr['header_length']
 
         cilNumpyMETAImageWriter.WriteMETAImageHeader(datafname, hdrfname, typecode, big_endian,
@@ -910,7 +907,7 @@ class cilBaseMetaImageReader(cilBaseReader):
         including endianness, origin, spacing, shape and typecode,
         and save as attributes of the class'''
         header_length = 0
-        if '.mhd' or '.mha' in self.GetFileName():
+        if '.mhd' in self.GetFileName() or '.mha' in self.GetFileName():
             print("read the header ", self.GetFileName())
             with open(self.GetFileName(), 'rb') as f:
                 for line in f:
@@ -1254,7 +1251,7 @@ class cilBaseResampleReader(cilBaseReader):
             raise Exception(e)
 
         finally:
-            if os.path.isdir(self._GetTempDir()):
+            if self._GetTempDir() is not None and os.path.isdir(self._GetTempDir()):
                 shutil.rmtree(self._GetTempDir())
 
         return 1

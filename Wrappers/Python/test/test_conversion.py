@@ -58,7 +58,7 @@ class TestConversion(unittest.TestCase):
         reader.Update()
         read_mhd_vtk = reader.GetOutput()
         # all our tests fail if we don't specify order F
-        read_mhd = Converter.vtk2numpy(read_mhd_vtk, order='F')
+        read_mhd = Converter.vtk2numpy(read_mhd_vtk)
 
         # This would show the vtkMetaImageReader reads our written mhd fine:
         # This fails due to wrong ordering
@@ -74,7 +74,7 @@ class TestConversion(unittest.TestCase):
         reader.Update()
         read_mhd_vtk = reader.GetOutput()
         # all our tests fail if we don't specify order F
-        read_mhd = Converter.vtk2numpy(read_mhd_vtk, order='F')
+        read_mhd = Converter.vtk2numpy(read_mhd_vtk)
 
         # This would show our cilMetaImageResampleReader reads our written mhd fine:
         # This fails due to wrong ordering:
