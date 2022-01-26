@@ -1,4 +1,5 @@
 import sys
+from ccpi.viewer.utils.conversion import cilNumpyResampleReader, cilHDF5ResampleReader
 import vtk
 from PySide2 import QtCore, QtWidgets
 from vtk.qt.QVTKRenderWindowInteractor import QVTKRenderWindowInteractor
@@ -8,6 +9,7 @@ from ccpi.viewer.QCILViewerWidget import QCILViewerWidget
 # Import linking class to join 2D and 3D viewers
 import ccpi.viewer.viewerLinker as vlink
 
+import os
 
 class SingleViewerCenterWidget(QtWidgets.QMainWindow):
 
@@ -34,16 +36,35 @@ class TwoLinkedViewersCenterWidget(QtWidgets.QMainWindow):
         #self.resize(800,600)
         
         self.frame1 = QCILViewerWidget(viewer=viewer2D, shape=(600,600),
+              interactorStyle=vlink.Linked2DInteractorStyle, debug=True)
+        self.frame2 = QCILViewerWidget(viewer=viewer2D, shape=(600,600),
               interactorStyle=vlink.Linked2DInteractorStyle)
-        self.frame2 = QCILViewerWidget(viewer=viewer3D, shape=(600,600),
-              interactorStyle=vlink.Linked3DInteractorStyle)
                 
-        reader = vtk.vtkMetaImageReader()
-        reader.SetFileName('head.mha')
+        # reader = vtk.vtkMetaImageReader()
+        # reader.SetFileName('head.mha')
+        # reader.Update()
+        # reader = cilNumpyResampleReader()
+        # reader.SetFileName("C:/Users/ofn77899/Data/Final_data/pipe_small.npy")
+        # reader.Update()
+        fpath = 'C:/Users/ofn77899/Data/CTMeeting2022/'
+        # fpath = 'C:/Users/ofn77899/Data/LizardHead'
+        reader = cilHDF5ResampleReader()
+        reader.SetFileName(os.path.join(fpath, "PDHG_iTV_alpha_0.0005_it_1000.nxs"))
+        # reader.SetFileName(os.path.join(fpath, "lizard_TVTGV_ch_40.nxs"))
+        reader.SetDatasetName('entry1/tomo_entry/data/data')
         reader.Update()
         
+        reader2 = cilHDF5ResampleReader()
+        # reader2.SetFileName(os.path.join(fpath, "lizard_TVTGV_ch_50.nxs"))
+        reader2.SetFileName("C:/Users/ofn77899/Data/CTMeeting2022/PDHG_iTV_alpha_0.001_it_1000.nxs")
+        reader2.SetDatasetName('entry1/tomo_entry/data/data')
+        # reader.ReadDataSetInfo()
+        reader2.Update()
+
         self.frame1.viewer.setInputData(reader.GetOutput())
-        self.frame2.viewer.setInputData(reader.GetOutput())
+        # self.frame1.viewer.setInputData2(reader2.GetOutput())
+        
+        self.frame2.viewer.setInputData(reader2.GetOutput())
         
         # Initially link viewers
         self.linkedViewersSetup()
@@ -63,8 +84,8 @@ class TwoLinkedViewersCenterWidget(QtWidgets.QMainWindow):
         v2d = self.frame1.viewer
         v3d = self.frame2.viewer
         self.link2D3D = vlink.ViewerLinker(v2d, v3d)
-        self.link2D3D.setLinkPan(False)
-        self.link2D3D.setLinkZoom(False)
+        self.link2D3D.setLinkPan(True)
+        self.link2D3D.setLinkZoom(True)
         self.link2D3D.setLinkWindowLevel(True)
         self.link2D3D.setLinkSlice(True)
 
