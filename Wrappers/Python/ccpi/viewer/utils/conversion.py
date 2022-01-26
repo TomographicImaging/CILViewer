@@ -1251,8 +1251,10 @@ class cilBaseResampleReader(cilBaseReader):
             raise Exception(e)
 
         finally:
-            if os.path.exists(self._GetTempDir()):
-                shutil.rmtree(self._GetTempDir())
+            tmpdir = self._GetTempDir()
+            if tmpdir is not None:
+                if os.path.exists(tmpdir):
+                    shutil.rmtree(self._GetTempDir())
 
         return 1
 
