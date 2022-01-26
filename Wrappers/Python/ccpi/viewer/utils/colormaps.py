@@ -1137,41 +1137,6 @@ class CILColorMaps(object):
             colors = _color_map_dict[cmap]
             
         N = len(colors)
-        for i, color in enumerate(colors):
-            level = color_range[0] + \
-                (color_range[1] - color_range[0]) * i / (N-1)
-            tf.AddRGBPoint(level, color[0], color[1], color[2])
-
-        return tf
-
-    @staticmethod
-    def get_lookup_table(cmap, color_range):
-
-        tf = vtk.vtkLookupTable()
-
-
-        if not cmap in _color_map_dict.keys():
-
-            try:
-                from matplotlib import cm
-                
-                colors = []
-                for x in range(0, 255):
-                    color = cm.get_cmap(cmap)(x)
-                    colors.append([color[0], color[1], color[2]])
-            except ImportError:
-                print("To use colormaps other than: ",
-                    "{}, please install matplotlib.".format(
-                        str(list(_color_map_dict.keys()))))
-                        
-        else:
-            try:
-                colors = _color_map_dict[cmap]
-            except KeyError as e:
-                raise KeyError("Colormap: {} could not be found. \
-                     Installing matplotlib might resolve this.".format(e))
-
-        N = len(colors)
         x = numpy.linspace(0, N, num=N)
         scaling = 0.1
         opacity = CILColorMaps.get_opacity_transfer_function(x, relu, color_range[0], color_range[1], scaling)
@@ -1182,6 +1147,8 @@ class CILColorMaps(object):
             tf.SetTableValue(i, color[0], color[1], color[2], opacity.GetValue(i))
 
         return tf
+
+    
 
     @staticmethod
     def get_opacity_transfer_function(x, function, *params):
