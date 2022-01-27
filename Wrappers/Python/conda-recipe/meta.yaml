@@ -27,7 +27,7 @@ requirements:
   run:
     - python
     - numpy
-    - vtk ==8.1.2 
+    - vtk >=9.0.3
     - pyside2
     - eqt
     - importlib_metadata    # [py<38]

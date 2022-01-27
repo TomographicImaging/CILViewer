@@ -1,5 +1,8 @@
 # Changelog
 
+## v22.0.1
+* requires vtk version >= 9.0.3
+
 ## v22.0.0
 * requires vtk 8.1.2
 * Adds HDF5Reader for reading of HDF5 files to vtkImageData, and RequestSubset reads a cropped version of the image
