@@ -5,7 +5,7 @@ import numpy as np
 import vtk
 from ccpi.viewer.utils.conversion import (Converter, cilRawResampleReader,
                                           cilMetaImageResampleReader,
-                                          cilNumpyResampleReader)
+                                          cilNumpyResampleReader, cilNumpyMETAImageWriter)
 
 
 def calculate_target_downsample_shape(max_size, total_size, shape, acq=False):
@@ -33,6 +33,16 @@ class TestResampleReaders(unittest.TestCase):
         self.raw_filename_3D = 'test_3D_data.raw'
         with open(self.raw_filename_3D, 'wb') as f:
             f.write(bytes_3D_array)
+
+        # write header to go with raw file
+        self.mhd_filename_3D = 'raw_header.mhd'
+        typecode = 'uint8'
+        big_endian = False
+        header_length = 0
+        shape = np.shape(self.input_3D_array)
+        shape_to_write = shape[::-1] # because it is not a fortran order array we have to swap
+        cilNumpyMETAImageWriter.WriteMETAImageHeader(self.raw_filename_3D, self.mhd_filename_3D, typecode, big_endian,
+                             header_length, shape_to_write, spacing=(1., 1., 1.), origin=(0., 0., 0.))
 
         self.numpy_filename_3D = 'test_3D_data.npy'
         np.save(self.numpy_filename_3D, self.input_3D_array)
@@ -114,10 +124,10 @@ class TestResampleReaders(unittest.TestCase):
         # Not a great test, but at least checks the resample reader runs
         # without crashing
         # TODO: improve this test
-        readers = [cilNumpyResampleReader(), cilMetaImageResampleReader()]
-        filenames = [self.numpy_filename_3D, self.meta_filename_3D]
+        readers = [cilNumpyResampleReader(), cilMetaImageResampleReader(), cilMetaImageResampleReader()]
+        filenames = [self.numpy_filename_3D, self.meta_filename_3D, self.mhd_filename_3D]
         subtest_labels = ['cilNumpyResampleReader',
-                          'cilMetaImageResampleReader']
+                          'cilMetaImageResampleReader - mha', 'cilMetaImageResampleReader - mhd']
         for i, reader in enumerate(readers):
             with self.subTest(reader=subtest_labels[i]):
                 filename = filenames[i]
@@ -172,7 +182,7 @@ class TestResampleReaders(unittest.TestCase):
                 self.assertEqual(resulting_z_shape, og_z_shape)
 
     def tearDown(self):
-        files = [self.raw_filename_3D]
+        files = [self.raw_filename_3D, self.numpy_filename_3D, self.meta_filename_3D, self.mhd_filename_3D]
         for f in files:
             os.remove(f)
 
