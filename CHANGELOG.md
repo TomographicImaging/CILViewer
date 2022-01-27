@@ -1,13 +1,7 @@
 # Changelog
 
-## v21.x.x
-* Adds cilHDF5CroppedReader
-* Fix bug in cropped readers which was causing a warning about the incorrect number of bytes being read from a metaimage file
-* Moves functionality for reading raw images out of the base classes for cropped and resample readers
-* Restructures readers to have a base class for each filetype we read so that methods are shared between the cropped readers and resample readers
-* Improved error reporting in resample and cropped readers
-* Adds ErrorObserver and EndObserver for handling errors in our readers
-* removed the io.py file with the class ImageDataCreator
+## v22.0.0
+* requires vtk 8.1.2
 * Adds HDF5Reader for reading of HDF5 files to vtkImageData, and RequestSubset reads a cropped version of the image
 * Adds write_image_data_to_hdf5 which writes vtkImageData to HDF5 files
 * Resampling of HDF5 with cilHDF5ImageResampleReader
@@ -15,9 +9,15 @@
 * Add unit test for importing version number
 * set package as noarch and remove variants as not strictly depending on versions of python or numpy
 * Use vtkImageSlice instead of vtkImageActor and vtkImageMapToWindowLevelColor in the 2D and 3D viewers
-* Force requirement of vtk 9.0.3 or greater.
-* Update viewer so it works with vtk9
+* Update viewer so it can work with vtk9
 * Adds new mode of visualisation that allows the comparison of 2 equally shaped/spaced images with a rectilinear wipe. The visualisation with the wipe can be triggered by typing key 2 and reset to normal (image with overlay) by key 1.
+* Adds cilHDF5CroppedReader
+* Fix bug in cropped readers which was causing a warning about the incorrect number of bytes being read from a metaimage file
+* Moves functionality for reading raw images out of the base classes for cropped and resample readers
+* Restructures readers to have a base class for each filetype we read so that methods are shared between the cropped readers and resample readers
+* Improved error reporting in resample and cropped readers
+* Adds ErrorObserver and EndObserver for handling errors in our readers
+* removed the io.py file with the class ImageDataCreator
 
 ## v21.1.2
 * Fix the setting of the view up vector in the y direction, to avoid getting vtk warning messages.
