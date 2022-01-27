@@ -1,6 +1,12 @@
 # Changelog
 
 ## v21.x.x
+* Adds cilHDF5CroppedReader
+* Fix bug in cropped readers which was causing a warning about the incorrect number of bytes being read from a metaimage file
+* Moves functionality for reading raw images out of the base classes for cropped and resample readers
+* Restructures readers to have a base class for each filetype we read so that methods are shared between the cropped readers and resample readers
+* Improved error reporting in resample and cropped readers
+* Adds ErrorObserver and EndObserver for handling errors in our readers
 * removed the io.py file with the class ImageDataCreator
 * Adds HDF5Reader for reading of HDF5 files to vtkImageData, and RequestSubset reads a cropped version of the image
 * Adds write_image_data_to_hdf5 which writes vtkImageData to HDF5 files
