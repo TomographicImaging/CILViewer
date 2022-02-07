@@ -1,6 +1,6 @@
 # Changelog
 
-## v22.0.1
+## v22.1.0
 * requires vtk version >= 9.0.3
 
 ## v22.0.0
