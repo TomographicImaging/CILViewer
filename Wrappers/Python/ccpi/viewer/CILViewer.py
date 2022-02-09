@@ -703,15 +703,12 @@ class CILViewer():
 
     # Set interpolation on
     def setInterpolateOn(self):
-        # toggle interpolation of slice actor 
         self._viewer.imageSlice.GetProperty().SetInterpolationTypeToLinear()
         self.renWin.Render()
 
     # Set interpolation off
     def setInterpolateOff(self):
-        # toggle interpolation of slice actor 
-        self._viewer.imageSlice.GetProperty().SetInterpolationTypeToLinear()
-        # self.sliceActor.SetInterpolate(False)
+        self._viewer.imageSlice.GetProperty().SetInterpolationTypeToNearest()
         self.renWin.Render()
 
     def setColourWindowLevel(self, window, level):
