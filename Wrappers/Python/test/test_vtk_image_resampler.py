@@ -22,7 +22,7 @@ def calculate_target_downsample_shape(max_size, total_size, shape, acq=False):
 class TestVTKImageResampler(unittest.TestCase):
 
     def setUp(self):
-        # Generate random 3D array and write to HDF5:
+        # Generate random 3D array and convert to VTK Image Data:
         np.random.seed(1)
         self.input_3D_array = np.random.randint(10, size=(50, 10, 60), dtype=np.uint8)
         self.input_vtk_image = Converter.numpy2vtkImage(self.input_3D_array)
@@ -64,8 +64,6 @@ class TestVTKImageResampler(unittest.TestCase):
 
         # # Now test if we get the correct z extent if we set that we
         # # have acquisition data
-        # reader = cilRawResampleReader()
-        # reader.SetDatasetName("ImageData")
         target_size = 100
         reader.SetTargetSize(target_size)
         reader.SetIsAcquisitionData(True)
