@@ -232,10 +232,10 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
         elif interactor.GetKeyCode() == "s":
             # toggle visibility of the slice 
             
-            if self._viewer.sliceActor.GetVisibility():
-                self._viewer.sliceActor.VisibilityOff()
+            if self._viewer.imageSlice.GetVisibility():
+                self._viewer.imageSlice.VisibilityOff()
             else:
-                self._viewer.sliceActor.VisibilityOn()
+                self._viewer.imageSlice.VisibilityOn()
             self._viewer.updatePipeline()
         elif interactor.GetKeyCode() == "i":
             # toggle interpolation of image slice
@@ -703,12 +703,12 @@ class CILViewer():
 
     # Set interpolation on
     def setInterpolateOn(self):
-        self.sliceActor.SetInterpolate(True)
+        self._viewer.imageSlice.GetProperty().SetInterpolationTypeToLinear()
         self.renWin.Render()
 
     # Set interpolation off
     def setInterpolateOff(self):
-        self.sliceActor.SetInterpolate(False)
+        self._viewer.imageSlice.GetProperty().SetInterpolationTypeToNearest()
         self.renWin.Render()
 
     def setColourWindowLevel(self, window, level):
