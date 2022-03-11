@@ -34,7 +34,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
         self._viewer = callback
         self.AddObserver('MouseWheelForwardEvent', self.mouseInteraction, 1.0)
         self.AddObserver('MouseWheelBackwardEvent', self.mouseInteraction, 1.0)
-        self.AddObserver('KeyPressEvent', self.keyPress, 1.0)
+        self.AddObserver('KeyPressEvent', self.OnKeyPress, 1.0)
         self.AddObserver('LeftButtonPressEvent', self.OnLeftMouseClick)
         self.AddObserver('LeftButtonReleaseEvent', self.OnLeftMouseRelease)
         #self.AddObserver('RightButtonPressEvent', self.OnRightMousePress, -0.5)
@@ -167,7 +167,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
         if not (alt and ctrl and shift):
             self.SetEventInactive("ZOOM_EVENT")
 
-    def keyPress(self, interactor, event):
+    def OnKeyPress(self, interactor, event):
 
         ctrl = interactor.GetControlKey()
         shift = interactor.GetAltKey()
@@ -247,9 +247,55 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
             else:
                 self._viewer.imageSlice.GetProperty().SetInterpolationTypeToLinear()
             self._viewer.updatePipeline()
+        elif interactor.GetKeyCode() == "c" and self._viewer.volume_render_initialised:
+            viewer = self._viewer
+            # clip a volume render if available
+            if hasattr(self._viewer, 'planew'):   
+                is_enabled = viewer.planew.GetEnabled()
+                viewer.planew.SetEnabled(not is_enabled)
+                # print ("should set to not", is_enabled)
+                viewer.getRenderer().Render()
+            else:
+                # print ("handling c")
+                planew = vtk.vtkImplicitPlaneWidget2()
+                
+                rep = vtk.vtkImplicitPlaneRepresentation()
+                planew.SetInteractor(viewer.getInteractor())
+                planew.SetRepresentation(rep)
 
+                plane = vtk.vtkPlane()
+                # should be in the focal point
+                cam = self.GetActiveCamera()
+                foc = cam.GetFocalPoint()
+                plane.SetOrigin( *foc )
+                proj = cam.GetDirectionOfProjection()
+                plane.SetNormal( *proj )
+                rep.GetPlane(plane)
+                rep.UpdatePlacement()
+                rep.PlaceWidget(viewer.volume.GetBounds())
+                viewer.volume.GetMapper().AddClippingPlane(plane)
+                viewer.volume.Modified()
+                planew.On()
+                viewer.plane = plane
+                viewer.planew = planew
+                planew.AddObserver('InteractionEvent', self.update_clipping_plane, 0.5)
         else:
             print("Unhandled event %s" % interactor.GetKeyCode())
+    def update_clipping_plane(self, interactor, event):
+        # event translator should you want to filter events
+        # event_translator = planew.GetEventTranslator()
+        # pevent = event_translator.GetTranslation(event)
+        planew = self._viewer.planew
+        viewer = self._viewer
+        rep = planew.GetRepresentation()
+        plane = vtk.vtkPlane()
+        rep.GetPlane(plane)
+        
+        viewer.volume.GetMapper().RemoveAllClippingPlanes()
+        viewer.volume.GetMapper().AddClippingPlane(plane)
+        viewer.volume.Modified()
+        viewer.getRenderer().Render()
+
 
     def DisplayHelp(self):
         help_actor = self._viewer.helpActor
