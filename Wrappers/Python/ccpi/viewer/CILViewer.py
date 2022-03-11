@@ -336,13 +336,15 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
                              "\n"
                              "Keyboard Interactions:\n"
                              "\n"
-                             "  - YZ Plane: x\n"
-                             "  - XZ Plane: y\n"
-                             "  - XY Plane: z\n"
-                             "  - Save render to current_render.png: r\n"
-                             "  - Toggle visibility of volume render: v\n"
-                             "  - Toggle visibility of slice: s\n"
-                             "  - Whole image Auto Window/Level: a\n"
+                             "h: Display this help\n"
+                             "x:  YZ Plane\n"
+                             "y:  XZ Plane\n"
+                             "z:  XY Plane\n"
+                             "r:  Save render to current_render.png\n"
+                             "s:  Toggle visibility of slice\n"
+                             "v:  Toggle visibility of volume render\n"
+                             "c:  Activates volume render clipping plane widget\n"
+                             "a:  Whole image Auto Window/Level\n"
                              )
         tprop = textMapperC.GetTextProperty()
         tprop.ShallowCopy(multiLineTextProp)
