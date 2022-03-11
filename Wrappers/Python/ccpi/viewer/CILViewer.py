@@ -226,8 +226,10 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
 
             if self._viewer.volume.GetVisibility():
                 self._viewer.volume.VisibilityOff()
+                self._viewer.light.SwitchOff()
             else:
                 self._viewer.volume.VisibilityOn()
+                self._viewer.light.SwitchOn()
             self._viewer.updatePipeline()
         elif interactor.GetKeyCode() == "s":
             # toggle visibility of the slice 
@@ -575,17 +577,11 @@ class CILViewer():
 
         ia = vtk.vtkImageHistogramStatistics()
         ia.SetInputData(self.img3D)
-        ia.SetAutoRangePercentiles(90.,99.)
+        ia.SetAutoRangePercentiles(80.,99.)
         ia.Update()
         
         cmin, cmax = ia.GetAutoRange()
-        # print ("viewer: cmin cmax", cmin, cmax)
-        # cmin, cmax = (1000,2000)
-        # probably the level could be the median of the image within
-        # the percentiles 
-        median = ia.GetMedian()
         # accomodates all values between the level an the percentiles
-        #window = 2*max(abs(median-cmin),abs(median-cmax))
         window = cmax - cmin
         colors = colormaps.CILColorMaps.get_color_transfer_function(self.volume_colormap_name, (cmin,cmax))
 
@@ -595,7 +591,8 @@ class CILViewer():
           colormaps.relu, cmin, cmax, scaling)
 
         self.volume_property.SetColor(colors)
-        self.volume_property.SetScalarOpacity(opacity)
+        # self.volume_property.SetScalarOpacity(opacity)
+        self.volume_property.SetGradientOpacity(opacity)
         self.volume_property.ShadeOn()
         self.volume_property.SetInterpolationTypeToLinear()
 
@@ -603,6 +600,11 @@ class CILViewer():
         self.volume_colormap_limits = (cmin, cmax)
         self.volume_render_initialised = True
         self.volume.VisibilityOff()
+        lgt = vtk.vtkLight()
+        lgt.SetLightTypeToHeadlight()
+        lgt.SwitchOff()
+        self.getRenderer().AddLight(lgt)
+        self.light = lgt
 
     def installSliceActorPipeline(self):
         self.voi.SetInputData(self.img3D)
