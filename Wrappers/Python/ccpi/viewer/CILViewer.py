@@ -575,36 +575,81 @@ class CILViewer():
         
         self.volume_mapper.SetInputData(self.img3D)
 
-        ia = vtk.vtkImageHistogramStatistics()
-        ia.SetInputData(self.img3D)
-        ia.SetAutoRangePercentiles(80.,99.)
-        ia.Update()
-        
-        cmin, cmax = ia.GetAutoRange()
-        # accomodates all values between the level an the percentiles
-        window = cmax - cmin
-        colors = colormaps.CILColorMaps.get_color_transfer_function(self.volume_colormap_name, (cmin,cmax))
-
-        x = numpy.linspace(ia.GetMinimum(), ia.GetMaximum(), num=255)
-        scaling = 0.1
-        opacity = colormaps.CILColorMaps.get_opacity_transfer_function(x, 
-          colormaps.relu, cmin, cmax, scaling)
+        # define colors and opacity with default values
+        colors, opacity = self.getColorOpacityForVolumeRender()
 
         self.volume_property.SetColor(colors)
-        # self.volume_property.SetScalarOpacity(opacity)
-        self.volume_property.SetGradientOpacity(opacity)
+        if self.getVolumeRenderOpacityMethod() == 'gradient':
+            self.volume_property.SetGradientOpacity(opacity)
+        elif self.getVolumeRenderOpacityMethod() == 'scalar':
+            self.volume_property.SetScalarOpacity(opacity)
+        else:
+            # currently this is not relevant, but in the future one may want to do 
+            # something fancier
+            # see also https://www.kitware.com/new-in-paraview-5-9-volume-rendering-with-a-separate-opacity-array/
+            self.volume_property.SetGradientOpacity(opacity)
+                        
         self.volume_property.ShadeOn()
         self.volume_property.SetInterpolationTypeToLinear()
 
         self.ren.AddVolume(self.volume)
-        self.volume_colormap_limits = (cmin, cmax)
         self.volume_render_initialised = True
         self.volume.VisibilityOff()
+        self.addHeadlight()
+        
+    def addHeadlight(self):
         lgt = vtk.vtkLight()
         lgt.SetLightTypeToHeadlight()
         lgt.SwitchOff()
         self.getRenderer().AddLight(lgt)
         self.light = lgt
+    
+    def getVolumeRenderOpacityMethod(self):
+        if not hasattr(self, '_vol_render_opacity_method'):
+            self.setVolumeRenderOpacityMethod('gradient')
+        return self._vol_render_opacity_method
+    def setVolumeRenderOpacityMethod(self, method='gradient'):
+        if method in ['scalar', 'gradient']:
+            self._vol_render_opacity_method = method
+        # if the method is not supported it does nothing???
+
+    def getColorOpacityForVolumeRender(self, percentiles=(80.,99.), color_num=255, max_opacity=0.1):
+        '''Defines the color and opacity tables
+        
+        Parameters:
+        :param percentiles: tuple
+        :color_num: int, number of colors in the map
+        :max_opacity: float in [0,1] representing the maximum rendered opacity'''
+
+        ia = vtk.vtkImageHistogramStatistics()
+        ia.SetInputData(self.img3D)
+        ia.SetAutoRangePercentiles( *percentiles )
+        ia.Update()
+        
+        cmin, cmax = ia.GetAutoRange()
+        self.volume_colormap_limits = (cmin, cmax)
+        
+        # accomodates all values between the level an the percentiles
+        colors = colormaps.CILColorMaps.get_color_transfer_function(self.getVolumeColorMapName(), (cmin,cmax))
+
+        x = numpy.linspace(ia.GetMinimum(), ia.GetMaximum(), num=color_num)
+        
+        opacity = colormaps.CILColorMaps.get_opacity_transfer_function(x, 
+          colormaps.relu, cmin, cmax, max_opacity)
+
+        return colors, opacity
+    
+    def setVolumeColorMapName(self, cmap='magma'):
+        '''set the volume color map name
+        
+        :param cmap: string with one of ['viridis', 'plasma', 'magma', 'inferno'], or matplotlib's cmaps if available'''
+        self.volume_colormap_name = cmap
+
+
+    def getVolumeColorMapName(self):
+        '''get the volume color map name'''
+        return self.volume_colormap_name
+        
 
     def installSliceActorPipeline(self):
         self.voi.SetInputData(self.img3D)
