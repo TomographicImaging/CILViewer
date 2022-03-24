@@ -249,6 +249,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
             self._viewer.updatePipeline()
         elif interactor.GetKeyCode() == "c" and self._viewer.volume_render_initialised:
             viewer = self._viewer
+            viewer.imageSlice.VisibilityOff() 
             # clip a volume render if available
             if hasattr(self._viewer, 'planew'):   
                 is_enabled = viewer.planew.GetEnabled()
@@ -260,25 +261,32 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
                 planew = vtk.vtkImplicitPlaneWidget2()
                 
                 rep = vtk.vtkImplicitPlaneRepresentation()
+                extent = viewer.img3D.GetExtent()
+                rep.SetWidgetBounds(*extent)
                 planew.SetInteractor(viewer.getInteractor())
                 planew.SetRepresentation(rep)
+
+                rep.SetNormalToCamera()
+                rep.SetOutlineTranslation(False) # this means user can't move bounding box
 
                 plane = vtk.vtkPlane()
                 # should be in the focal point
                 cam = self.GetActiveCamera()
                 foc = cam.GetFocalPoint()
                 plane.SetOrigin( *foc )
+                
                 proj = cam.GetDirectionOfProjection()
                 plane.SetNormal( *proj )
-                rep.GetPlane(plane)
+                rep.SetPlane(plane)
                 rep.UpdatePlacement()
-                rep.PlaceWidget(viewer.volume.GetBounds())
+
                 viewer.volume.GetMapper().AddClippingPlane(plane)
                 viewer.volume.Modified()
                 planew.On()
                 viewer.plane = plane
                 viewer.planew = planew
                 planew.AddObserver('InteractionEvent', self.update_clipping_plane, 0.5)
+            viewer.updatePipeline()
         else:
             print("Unhandled event %s" % interactor.GetKeyCode())
     def update_clipping_plane(self, interactor, event):
