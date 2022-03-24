@@ -831,12 +831,20 @@ class CILViewer():
         w2if.SetInput(renWin)
         w2if.Update()
 
-        # Check if user has supplied an extension
-        extn = os.path.splitext(filename)[1]
-        if extn.lower() == '.png':
-                saveFilename = filename
-        else:
-            saveFilename = filename+'.png'
+        if not hasattr(self, 'saved_renders'):
+            self.saved_renders = 0
+
+        basename = os.path.splitext(filename)[0]
+        first_attempt = True
+        
+        while first_attempt or os.path.exists(saveFilename):
+            str_number = str(self.saved_renders)
+            while len(str_number) < 3:
+                str_number = '0' + str_number
+ 
+            saveFilename = basename + str_number + '.png'
+            first_attempt = False
+            self.saved_renders +=1
 
         writer = vtk.vtkPNGWriter()
         writer.SetFileName(saveFilename)
