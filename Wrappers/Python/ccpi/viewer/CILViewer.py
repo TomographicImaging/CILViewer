@@ -276,6 +276,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
                 plane.SetOrigin( *foc )
                 
                 proj = cam.GetDirectionOfProjection()
+                proj = [x + 0.3 for x in list(proj)]
                 plane.SetNormal( *proj )
                 rep.SetPlane(plane)
                 rep.UpdatePlacement()
