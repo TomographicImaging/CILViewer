@@ -20,7 +20,6 @@ import re
 
 import numpy
 import vtk
-#from ccpi.viewer import ViewerEventManager
 from ccpi.viewer.CILViewer2D import (ALT_KEY, CONTROL_KEY, CROSSHAIR_ACTOR,
                                      CURSOR_ACTOR, HELP_ACTOR, HISTOGRAM_ACTOR,
                                      LINEPLOT_ACTOR, OVERLAY_ACTOR, SHIFT_KEY,
