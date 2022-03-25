@@ -51,10 +51,12 @@ class ViewerMainWindow(MainWindow):
     def __init__(self, title="", viewer2_type=None, *args, **kwargs):  # viewer1_type
         MainWindow.__init__(self, title)
 
-        # Note: does not create a viewer as we don't know whether the user would like it to exist in a
-        # dockwidget or central widget
-        # Instead it creates a main window with many of the tools needed for a window
-        # that will house a viewer.
+        ''' Creates a window which is designed to house one or more viewers.
+        Note: does not create a viewer as we don't know whether the user would like it to exist in a
+        dockwidget or central widget
+        Instead it creates a main window with many of the tools needed for a window
+        that will house a viewer. '''
+
         self.e = ErrorObserver()  # only needed with old io module
 
         self.CreateViewerSettingsPanel()
@@ -114,9 +116,10 @@ class ViewerMainWindow(MainWindow):
             settings_dialog.fw.widgets['vis_size_field'].value()))
 
     def select_image(self, label=None):
-        #print("In select image")
+        ''' This selects the images and gets the user to enter
+        relevant data, but does not load them on a viewer yet.'''
         dialog = QFileDialog()
-        file = dialog.getOpenFileName(self, "Load Images")[0]
+        file = dialog.getOpenFileName(self, "Select Images")[0]
         file_extension = Path(file).suffix.lower()
         self.raw_attrs = {}
         self.hdf5_attrs = {}
