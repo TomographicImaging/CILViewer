@@ -1,5 +1,12 @@
 # Changelog
 
+
+## v22.x.x
+* Fixes enabling and disabling slice with 's' key in 3D viewer
+* Adds widget for slicing a volume with the 'c' key in the 3D viewer
+* Add light to 3D viewer
+* Add a few utility methods for volume rendering in 3D viewer
+
 ## v22.1.0
 * requires vtk version >= 9.0.3
 
