@@ -17,6 +17,7 @@
 import vtk
 import numpy
 import os
+import glob, re
 
 from ccpi.viewer.utils import Converter
 
@@ -1911,20 +1912,18 @@ class CILViewer2D():
         w2if.SetInput(renWin)
         w2if.Update()
 
-        if not hasattr(self, 'saved_renders'):
-            self.saved_renders = 0
+        basename = os.path.splitext(os.path.basename(filename))[0]
+        # Note regex matching is different to glob matching:
+        regex = '{}_([0-9]*)\.png'.format(basename)
+        fname_string = '{}_{}.png'.format(basename, '[0-9]*')
+        directory = os.path.dirname(filename)
+        slist = []
 
-        basename = os.path.splitext(filename)[0]
-        first_attempt = True
-        
-        while first_attempt or os.path.exists(saveFilename):
-            str_number = str(self.saved_renders)
-            while len(str_number) < 3:
-                str_number = '0' + str_number
- 
-            saveFilename = basename + str_number + '.png'
-            first_attempt = False
-            self.saved_renders +=1
+        for el in glob.glob(os.path.join(directory, fname_string)):
+            el = os.path.basename(el)
+            slist.append(int(re.search(regex, el).group(1)))
+
+        saveFilename = '{}_{:04d}.png'.format(os.path.join(directory, basename), max(slist)+1)
 
         writer = vtk.vtkPNGWriter()
         writer.SetFileName(saveFilename)

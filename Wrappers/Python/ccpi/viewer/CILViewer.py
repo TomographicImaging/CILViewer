@@ -14,18 +14,21 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
    
-import vtk
-import numpy
+import glob
 import os
+import re
+
+import numpy
+import vtk
 #from ccpi.viewer import ViewerEventManager
-from ccpi.viewer.CILViewer2D import ViewerEventManager
-
-from ccpi.viewer.CILViewer2D import SLICE_ORIENTATION_XY, SLICE_ORIENTATION_XZ, \
-   SLICE_ORIENTATION_YZ, CONTROL_KEY, SHIFT_KEY, ALT_KEY, SLICE_ACTOR, \
-   OVERLAY_ACTOR, HISTOGRAM_ACTOR, HELP_ACTOR, CURSOR_ACTOR, CROSSHAIR_ACTOR,\
-   LINEPLOT_ACTOR
-
+from ccpi.viewer.CILViewer2D import (ALT_KEY, CONTROL_KEY, CROSSHAIR_ACTOR,
+                                     CURSOR_ACTOR, HELP_ACTOR, HISTOGRAM_ACTOR,
+                                     LINEPLOT_ACTOR, OVERLAY_ACTOR, SHIFT_KEY,
+                                     SLICE_ACTOR, SLICE_ORIENTATION_XY,
+                                     SLICE_ORIENTATION_XZ,
+                                     SLICE_ORIENTATION_YZ, ViewerEventManager)
 from ccpi.viewer.utils import colormaps
+
 
 class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
 
@@ -831,20 +834,18 @@ class CILViewer():
         w2if.SetInput(renWin)
         w2if.Update()
 
-        if not hasattr(self, 'saved_renders'):
-            self.saved_renders = 0
+        basename = os.path.splitext(os.path.basename(filename))[0]
+        # Note regex matching is different to glob matching:
+        regex = '{}_([0-9]*)\.png'.format(basename)
+        fname_string = '{}_{}.png'.format(basename, '[0-9]*')
+        directory = os.path.dirname(filename)
+        slist = []
 
-        basename = os.path.splitext(filename)[0]
-        first_attempt = True
-        
-        while first_attempt or os.path.exists(saveFilename):
-            str_number = str(self.saved_renders)
-            while len(str_number) < 3:
-                str_number = '0' + str_number
- 
-            saveFilename = basename + str_number + '.png'
-            first_attempt = False
-            self.saved_renders +=1
+        for el in glob.glob(os.path.join(directory, fname_string)):
+            el = os.path.basename(el)
+            slist.append(int(re.search(regex, el).group(1)))
+
+        saveFilename = '{}_{:04d}.png'.format(os.path.join(directory, basename), max(slist)+1)
 
         writer = vtk.vtkPNGWriter()
         writer.SetFileName(saveFilename)
