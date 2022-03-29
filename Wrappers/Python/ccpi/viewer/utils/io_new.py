@@ -55,29 +55,31 @@ class ImageReader(object):
             target size after downsampling
         target_z_extent: list [,], default None
             desired extent after cropping on z axis
+        is_acquisition_data: bool, default False
+            whether the input dataset is acquisition data, if True, we do not
+            resample on the z axis
         raw_image_attrs: dict, default None
             Attributes of the raw image data, must have the format:
             {'dimensions': 2D or 3D array, 'is_fortran':bool, 'is_big_endian':bool
             'type_code':info_var['typcode']}
-        hdf5_image_attrs: dict, default {'dataset_name': entry1/tomo_entry/data/data, 'is_acquisition_data': True}
-            Attributes of the hdf5 image data, all entries are optional - if not set they will fall back to
-            defaults. Format: {'dataset_name': str, 'is_acquisition_data':bool}, 
-            
+        hdf5_dataset_name: string, default "entry1/tomo_entry/data/data"
+            Name of the hdf5 dataset to be read, if file format is hdf5            
         '''
         file_name = kwargs.get('file_name', None)
         resample = kwargs.get('resample', True)
         target_size = kwargs.get('target_size', 512**3)
         crop = kwargs.get('crop', False)
         target_z_extent = kwargs.get('target_z_extent', None)
+        is_acquisition_data = kwargs.get('is_acquisition_data', False)
         raw_image_attrs = kwargs.get('raw_image_attrs', None)
-        hdf5_image_attrs = kwargs.get('hdf5_image_attrs', None)
+        hdf5_dataset_name = kwargs.get('hdf5_dataset_name', "entry1/tomo_entry/data/data")
 
         if file_name is not None:
             self.set_up(file_name, resample, target_size,
-                        crop, target_z_extent, raw_image_attrs, hdf5_image_attrs)
+                        crop, target_z_extent, is_acquisition_data, raw_image_attrs, hdf5_dataset_name)
 
     def set_up(self,  file_name=None, resample=True, target_size=512**3, crop=False,
-        target_z_extent=None, raw_image_attrs=None, hdf5_image_attrs=None):
+        target_z_extent=None, is_acquisition_data=False, raw_image_attrs=None, hdf5_dataset_name="entry1/tomo_entry/data/data"):
 
         if file_name is None:
             raise Exception('Path to file is required.')
@@ -90,22 +92,19 @@ class ImageReader(object):
         self.target_size = target_size
         self.crop = crop
         self.target_z_extent = target_z_extent
+        self.is_acquisition_data = is_acquisition_data
+        self.hdf5_dataset_name = hdf5_dataset_name
 
         # validate image attributes
         raw_attrs = None
-        hdf5_attrs=None
+        print("the raw image attrs: ", raw_image_attrs)
         if raw_image_attrs is not None and raw_image_attrs != {}:
             try:
                 raw_attrs = self._validate_raw_attrs(raw_image_attrs)
             except SchemaError as e:
                 raise ValueError("Error: Raw image attributes were not input correctly: ", e)
-        if hdf5_image_attrs is not None and hdf5_image_attrs != {}:
-            try:
-                hdf5_attrs = self._validate_hdf5_attrs(hdf5_image_attrs)
-            except SchemaError as e:
-                raise ValueError("Error: HDF5 image attributes were not input correctly: ", e)
 
-        self.original_image_attrs = self._generate_image_attrs(raw_attrs, hdf5_attrs)
+        self.original_image_attrs = self._generate_image_attrs(raw_attrs)
         self.loaded_image_attrs = {'resampled': self.resample, 'cropped': self.crop}
 
         if self.crop and self.resample:
@@ -126,23 +125,13 @@ class ImageReader(object):
         raw_attrs_schema.validate(raw_attrs)
         return raw_attrs
 
-    def _validate_hdf5_attrs(self, hdf5_image_attrs):
-        if hdf5_image_attrs is None:
-            return
-        hdf5_attrs = hdf5_image_attrs.copy()
-        hdf5_attrs_schema = Schema({Optional('dataset_name', default="entry1/tomo_entry/data/data"): str,
-                                   Optional('is_acquisition_data', default=True): bool, Optional(str): object})
-        hdf5_attrs = hdf5_attrs_schema.validate(hdf5_attrs)
-        return hdf5_attrs
-
 
     def _generate_image_attrs(self, raw_image_attrs=None, hdf5_image_attrs=None):
         image_attrs = {}
         if raw_image_attrs is not None:
             image_attrs.update(raw_image_attrs)
-        if hdf5_image_attrs is not None:
-            image_attrs.update(hdf5_image_attrs)
         image_attrs['file_name'] = self.file_name
+        image_attrs['is_acquisition_data'] = self.is_acquisition_data
         return image_attrs
 
     def get_original_attrs(self):
@@ -174,6 +163,7 @@ class ImageReader(object):
 
             elif file_extension in ['.nxs', '.h5', '.hdf5']:
                 reader = self._get_hdf5_image_reader()
+                self.original_image_attrs['dataset_name'] = self.hdf5_dataset_name
 
             # elif file_extension in ['.tif', '.tiff']:
             #     image_files = glob.glob(os.path.join(os.path.dirname(self.file_name), '*.{}'.format(file_extension)))
@@ -190,6 +180,8 @@ class ImageReader(object):
             self._data = self._read_tiff_images(image_files)
 
         reader.SetFileName(self.file_name)
+        print("is it acq? : ", self.is_acquisition_data)
+        reader.SetIsAcquisitionData(self.is_acquisition_data)
         if not self.crop:
             if self.resample:
                 target_size = self.target_size
@@ -226,6 +218,11 @@ class ImageReader(object):
         
         return data
 
+    def get_original_image_attributes(self):
+        return self.original_image_attrs
+
+    def get_loaded_image_attrs(self):
+        return self.loaded_image_attrs
 
     def _get_meta_image_reader(self, progress_callback=None):
         if self.crop:
@@ -298,10 +295,6 @@ class ImageReader(object):
         return reader
     
     def _get_hdf5_image_reader(self):
-        if self.original_image_attrs is None or 'dataset_name' not in self.original_image_attrs.keys():
-            # Fall back to default hdf5 attributes if none have been set.
-            hdf5_attrs = self._validate_hdf5_attrs({})
-            self.original_image_attrs = self._generate_image_attrs(hdf5_image_attrs=hdf5_attrs)
 
         if self.crop:
             reader = cilHDF5CroppedReader()
@@ -310,8 +303,7 @@ class ImageReader(object):
         else:
             reader = cilHDF5ResampleReader()
 
-        reader.SetDatasetName(self.original_image_attrs['dataset_name'])
-        reader.SetIsAcquisitionData(self.original_image_attrs['is_acquisition_data'])
+        reader.SetDatasetName(self.hdf5_dataset_name)
 
         self.loaded_image_attrs['vtk_array_name'] = 'entry1/tomo_entry/data/data' # TODO FIX!!
 
