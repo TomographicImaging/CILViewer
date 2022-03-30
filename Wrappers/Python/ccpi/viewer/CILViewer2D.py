@@ -20,6 +20,7 @@ import os
 import glob, re
 
 from ccpi.viewer.utils import Converter
+from ccpi.viewer.utils.io import SaveRenderToPNG
 
 SLICE_ORIENTATION_XY = 2 # Z
 SLICE_ORIENTATION_XZ = 1 # Y
@@ -1906,29 +1907,10 @@ class CILViewer2D():
     def saveRender(self, filename, renWin=None):
         '''Save the render window to PNG file'''
         # screenshot code:
-        w2if = vtk.vtkWindowToImageFilter()
+        
         if renWin == None:
             renWin = self.renWin
-        w2if.SetInput(renWin)
-        w2if.Update()
-
-        basename = os.path.splitext(os.path.basename(filename))[0]
-        # Note regex matching is different to glob matching:
-        regex = '{}_([0-9]*)\.png'.format(basename)
-        fname_string = '{}_{}.png'.format(basename, '[0-9]*')
-        directory = os.path.dirname(filename)
-        slist = []
-
-        for el in glob.glob(os.path.join(directory, fname_string)):
-            el = os.path.basename(el)
-            slist.append(int(re.search(regex, el).group(1)))
-
-        saveFilename = '{}_{:04d}.png'.format(os.path.join(directory, basename), max(slist)+1)
-
-        writer = vtk.vtkPNGWriter()
-        writer.SetFileName(saveFilename)
-        writer.SetInputConnection(w2if.GetOutputPort())
-        writer.Write()
+        SaveRenderToPNG(self.renWin, filename)
 
     def validateValue(self,value, axis):
         dims = self.img3D.GetDimensions()
