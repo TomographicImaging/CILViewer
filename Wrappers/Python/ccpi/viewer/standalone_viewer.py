@@ -50,7 +50,7 @@ from eqt.ui.UIMainWindow import MainWindow
 
 from ccpi.viewer.viewer_main_window import ViewerMainWindow
 
-from ccpi.viewer.utils.io import ImageDataCreator
+#from ccpi.viewer.utils.io import ImageDataCreator
 
 from ccpi.viewer.utils.io_new import ImageReader
 
@@ -65,7 +65,7 @@ from ccpi.viewer.utils.conversion import cilNumpyMETAImageWriter
 # instead look at how to get the resample rate of downsampled images
 
 class StandaloneViewerMainWindow(ViewerMainWindow):
-    def __init__(self, title = "", viewer1=viewer2D, viewer2=viewer3D):
+    def __init__(self, title = "StandaloneViewer", viewer1=viewer2D, viewer2=viewer3D):
         ViewerMainWindow.__init__(self, title)
 
         self.input_data1 = None
@@ -125,17 +125,9 @@ class StandaloneViewerMainWindow(ViewerMainWindow):
     def set_viewer_input(self, input_num=1):
         image_file, raw_image_attrs, hdf5_image_attrs = self.select_image()
         print("The image attrs: ", raw_image_attrs)
-        # cilNumpyMETAImageWriter.WriteMETAImageHeader(
-        #     image_file,
-        #     image_file + '.mhd',
-        #     Converter.dtype_name_to_MetaImageType[raw_image_attrs['typecode']],
-        #     raw_image_attrs['is_big_endian'],
-        #     0,
-        #     tuple(raw_image_attrs['dimensions']),
-        #     spacing=tuple([1,1,1]),
-        #     origin=(0,0,0)
-        # )
-        image_reader = ImageReader(file_name=image_file, raw_image_attrs=raw_image_attrs, hdf5_image_attrs=hdf5_image_attrs)
+        target_size = self.get_target_image_size()
+        print("The target size is: ", target_size)
+        image_reader = ImageReader(file_name=image_file, target_size=target_size, raw_image_attrs=raw_image_attrs, hdf5_image_attrs=hdf5_image_attrs)
         image_reader_worker = Worker(image_reader.read)
         self.threadpool.start(image_reader_worker)
         if input_num == 1:
@@ -154,13 +146,21 @@ class StandaloneViewerMainWindow(ViewerMainWindow):
         self.linker.setLinkWindowLevel(True)
         self.linker.setLinkSlice(True)
 
+    def get_downsampled_size(self):
+        # original_image_attrs
+        # TODO: here we need to get the size the image was downsampled to
+        # and original image size
+        # and feed in necessary data to viewer so that our dropdown works
+        # see what happens in idvc
+        pass
+
 
     def display_image(self, image1=None, image2=None, **kwargs):
         if image1 is not None:
             self.frame1.viewer.setInputData(image1)
             self.frame2.viewer.setInputData(image1)
             self.input_data1 = image1
-            self.visualisation_setting_widgets['coords_combobox'].setEnabled(True)
+            self.viewer_coords_dock.getWidgets()['coords_combo_field'].setEnabled(True)
         if image2 is not None:
             viewers = [self.frame1.viewer, self.frame2.viewer]
             for viewer in viewers:
