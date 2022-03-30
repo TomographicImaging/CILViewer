@@ -16,9 +16,9 @@ test:
     - ./Wrappers/Python/test
 
   commands:
-    - ls
-    - python -c "import os; print ('TESTING IN THIS DIRECTORY' , os.getcwd())"
-    - python -m unittest discover -s Wrappers/Python/test -v
+    - ls # [not win]
+    - python -c "import os; print ('TESTING IN THIS DIRECTORY' , os.getcwd())" # [not win]
+    - python -m unittest discover -s Wrappers/Python/test -v # [not win]
   
 requirements:
   build:
@@ -27,7 +27,7 @@ requirements:
   run:
     - python
     - numpy
-    - vtk >=9.0.3 
+    - vtk >=9.0.3
     - pyside2
     - eqt
     - importlib_metadata    # [py<38]
