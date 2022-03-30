@@ -26,7 +26,7 @@ from ccpi.viewer.utils.hdf5_io import HDF5Reader
 from eqt.threading import Worker
 from eqt.threading.QtThreading import ErrorObserver
 from eqt.ui import FormDialog, UIFormFactory
-from eqt.ui.UIFormWidget import UIFormFactory
+from eqt.ui.UIFormWidget import UIFormFactory, FormDockWidget
 from eqt.ui.UIMainWindow import MainWindow, SettingsDialog
 from eqt.ui.UIStackedWidget import StackedWidgetFactory
 # from eqt.ui.UIFormWidget import UIFormFactory
@@ -48,7 +48,7 @@ from PySide2.QtWidgets import (QAction, QApplication, QCheckBox, QComboBox,
 
 class ViewerMainWindow(MainWindow):
 
-    def __init__(self, title="", viewer2_type=None, *args, **kwargs):  # viewer1_type
+    def __init__(self, title="ViewerMainWindow", viewer2_type=None, *args, **kwargs):  # viewer1_type
         MainWindow.__init__(self, title)
 
         ''' Creates a window which is designed to house one or more viewers.
@@ -58,11 +58,12 @@ class ViewerMainWindow(MainWindow):
         that will house a viewer. '''
 
         self.e = ErrorObserver()  # only needed with old io module
+        self.default_downsampled_size = 512**3
 
-        self.CreateViewerSettingsPanel()
+        self.create_viewer_settings_panel()
         # could get rid of this:
         self.addDockWidget(QtCore.Qt.BottomDockWidgetArea,
-                           self.viewer_settings_dock)
+                           self.viewer_coords_dock)
 
         self.viewer_2D = None
 
@@ -83,13 +84,13 @@ class ViewerMainWindow(MainWindow):
             sw['vis_size_field'].setValue(
                 float(self.settings.value("vis_size")))
         else:
-            sw['vis_size_field'].setValue(1.0)
+            sw['vis_size_field'].setValue(self.get_default_downsampled_size()/(1024**3))
 
         if self.settings.value("gpu_size") is not None:
             sw['gpu_size_field'].setValue(
                 float(self.settings.value("gpu_size")))
         else:
-            sw['gpu_size_field'].setValue(1.0)
+            sw['gpu_size_field'].setValue(self.get_default_downsampled_size()/(1024**3))
 
     def settings_dialog_accept(self, settings_dialog):
         MainWindow.settings_dialog_accept(self, settings_dialog)
@@ -153,92 +154,129 @@ class ViewerMainWindow(MainWindow):
         self.hdf5_attrs = dialog.get_hdf5_attrs()
         dialog.close()
 
-    def CreateViewerSettingsPanel(self):
-        print("make panel")
-        dock = UIFormFactory.getQDockWidget()
-        form = dock.widget()
-        self.viewer_settings_dock = dock
+    def create_viewer_settings_panel(self):
+        dock = ViewerCoordinatesDockWidget(self)
+        self.viewer_coords_dock = dock
+        dock.getWidgets()['coords_combo_field'].currentIndexChanged.connect(self.update_coordinates)
 
-        vs_widgets = {}
 
-        vs_widgets['coords_info_label'] = QLabel()
-        vs_widgets['coords_info_label'].setText(
-            "The viewer displays a downsampled image for visualisation purposes: ")
-        vs_widgets['coords_info_label'].setVisible(False)
-
-        form.addSpanningWidget(vs_widgets['coords_info_label'], 'coords_info')
-
-        vs_widgets['loaded_image_dims_label'] = QLabel()
-        vs_widgets['loaded_image_dims_label'].setText("Loaded Image Size: ")
-        vs_widgets['loaded_image_dims_label'].setVisible(True)
-
-        vs_widgets['loaded_image_dims_value'] = QLabel()
-        vs_widgets['loaded_image_dims_value'].setText("")
-        vs_widgets['loaded_image_dims_value'].setVisible(False)
-
-        form.addWidget(vs_widgets['loaded_image_dims_value'],
-                       vs_widgets['loaded_image_dims_label'],
-                       'loaded_image_dims')
-
-        vs_widgets['displayed_image_dims_label'] = QLabel()
-        vs_widgets['displayed_image_dims_label'].setText(
-            "Displayed Image Size: ")
-        vs_widgets['displayed_image_dims_label'].setVisible(False)
-
-        vs_widgets['displayed_image_dims_value'] = QLabel()
-        vs_widgets['displayed_image_dims_value'].setText("")
-        vs_widgets['displayed_image_dims_value'].setVisible(False)
-
-        form.addWidget(vs_widgets['displayed_image_dims_value'],
-                       vs_widgets['displayed_image_dims_label'],
-                       'displayed_image_dims')
-
-        vs_widgets['coords_label'] = QLabel()
-        vs_widgets['coords_label'].setText("Display viewer coordinates in: ")
-
-        vs_widgets['coords_combobox'] = QComboBox()
-        vs_widgets['coords_combobox'].addItems(
-            ["Loaded Image", "Downsampled Image"])
-        vs_widgets['coords_combobox'].setEnabled(False)
-        vs_widgets['coords_combobox'].currentIndexChanged.connect(
-            self.updateCoordinates)
-        form.addWidget(vs_widgets['coords_combobox'],
-                       vs_widgets['coords_label'], 'cords_combo')
-
-        vs_widgets['coords_warning_label'] = QLabel()
-        vs_widgets['coords_warning_label'].setText(
-            "Warning: These coordinates are approximate.")
-        vs_widgets['coords_warning_label'].setVisible(False)
-
-        form.addSpanningWidget(
-            vs_widgets['coords_warning_label'], 'coords_warning')
-
-        self.visualisation_setting_widgets = vs_widgets
-
-    def updateCoordinates(self):
-        vs_widgets = self.visualisation_setting_widgets
+    def update_coordinates(self):
+        viewer_coords_widgets = self.viewer_coords_dock.widgets()
         viewer = self.viewer_2D
         if viewer.img3D is not None:
             viewer.setVisualisationDownsampling(self.resample_rate)
             shown_resample_rate = self.resample_rate
-            vs_widgets['loaded_image_dims_label'].setVisible(True)
-            vs_widgets['loaded_image_dims_value'].setVisible(True)
+            viewer_coords_widgets['loaded_image_dims_label'].setVisible(True)
+            viewer_coords_widgets['loaded_image_dims_value'].setVisible(True)
 
-            if vs_widgets['coords_combobox'].currentIndex() == 0:
+            if viewer_coords_widgets['coords_combobox'].currentIndex() == 0:
                 viewer.setDisplayUnsampledCoordinates(True)
                 if shown_resample_rate != [1, 1, 1]:
-                    vs_widgets['coords_warning_label'].setVisible(True)
+                    viewer_coords_widgets['coords_warning_label'].setVisible(True)
                 else:
-                    vs_widgets['coords_warning_label'].setVisible(False)
+                    viewer_coords_widgets['coords_warning_label'].setVisible(False)
 
             else:
                 viewer.setDisplayUnsampledCoordinates(False)
-                vs_widgets['coords_warning_label'].setVisible(False)
+                viewer_coords_widgets['coords_warning_label'].setVisible(False)
 
             viewer.updatePipeline()
 
+    def get_target_image_size(self):
+        if self.settings.value("gpu_size") is not None and self.settings.value("volume_mapper") == "gpu":
+            if self.settings.value("vis_size") is not None:
+                if float(self.settings.value("vis_size")) < float(self.settings.value("gpu_size")):
+                    target_size = float(self.settings.value("vis_size"))*(1024**3)
+                else:
+                    target_size = (float(self.settings.value("gpu_size")))*(1024**3)
+            else:
+                target_size = (float(self.settings.value("gpu_size")))*(1024**3)
+        else:
+            if self.settings.value("vis_size") is not None:
+                target_size = float(self.settings.value("vis_size"))*(1024**3)
+            else:
+                target_size = self.get_default_downsampled_size()
+        
+        return target_size
+
+    def set_default_downsampled_size(self, value):
+        ''' Set the default size for an image to be displayed in bytes'''
+        self.default_downsampled_size = int(value) 
+
+    def get_default_downsampled_size(self):
+        ''' Get the default size for an image to be displayed in bytes'''
+        return self.default_downsampled_size
+
+
+class ViewerCoordinatesDockWidget(FormDockWidget):
+    ''' This is the dockwidget which
+    shows the original and downsampled image
+    size and the user can select whether coordinates
+    are displayed in system of original or downsampled image'''
+
+    def __init__(self, parent):
+        super(ViewerCoordinatesDockWidget, self).__init__(parent)
+
+        form = self.widget()
+        
+        viewer_coords_widgets = {}
+
+        viewer_coords_widgets['coords_info_label'] = QLabel()
+        viewer_coords_widgets['coords_info_label'].setText(
+            "The viewer displays a downsampled image for visualisation purposes: ")
+        viewer_coords_widgets['coords_info_label'].setVisible(False)
+
+        form.addSpanningWidget(viewer_coords_widgets['coords_info_label'], 'coords_info')
+
+        viewer_coords_widgets['loaded_image_dims_label'] = QLabel()
+        viewer_coords_widgets['loaded_image_dims_label'].setText("Loaded Image Size: ")
+        viewer_coords_widgets['loaded_image_dims_label'].setVisible(True)
+
+        viewer_coords_widgets['loaded_image_dims_value'] = QLabel()
+        viewer_coords_widgets['loaded_image_dims_value'].setText("")
+        viewer_coords_widgets['loaded_image_dims_value'].setVisible(False)
+
+        form.addWidget(viewer_coords_widgets['loaded_image_dims_value'],
+                       viewer_coords_widgets['loaded_image_dims_label'],
+                       'loaded_image_dims')
+
+        viewer_coords_widgets['displayed_image_dims_label'] = QLabel()
+        viewer_coords_widgets['displayed_image_dims_label'].setText(
+            "Displayed Image Size: ")
+        viewer_coords_widgets['displayed_image_dims_label'].setVisible(False)
+
+        viewer_coords_widgets['displayed_image_dims_value'] = QLabel()
+        viewer_coords_widgets['displayed_image_dims_value'].setText("")
+        viewer_coords_widgets['displayed_image_dims_value'].setVisible(False)
+
+        form.addWidget(viewer_coords_widgets['displayed_image_dims_value'],
+                       viewer_coords_widgets['displayed_image_dims_label'],
+                       'displayed_image_dims')
+
+        viewer_coords_widgets['coords_label'] = QLabel()
+        viewer_coords_widgets['coords_label'].setText("Display viewer coordinates in: ")
+
+        viewer_coords_widgets['coords_combobox'] = QComboBox()
+        viewer_coords_widgets['coords_combobox'].addItems(
+            ["Loaded Image", "Downsampled Image"])
+        viewer_coords_widgets['coords_combobox'].setEnabled(False)
+        form.addWidget(viewer_coords_widgets['coords_combobox'],
+                       viewer_coords_widgets['coords_label'], 'coords_combo')
+
+        viewer_coords_widgets['coords_warning_label'] = QLabel()
+        viewer_coords_widgets['coords_warning_label'].setText(
+            "Warning: These coordinates are approximate.")
+        viewer_coords_widgets['coords_warning_label'].setVisible(False)
+
+        form.addSpanningWidget(
+            viewer_coords_widgets['coords_warning_label'], 'coords_warning')
 
 class ViewerSettingsDialog(SettingsDialog):
+    ''' This is a dialog window which allows the user to set:
+    - whether they would like copies of the images to be saved in session
+    - maximum size to downsample images to for display
+    - GPU memory
+    - TODO: checkbox for using GPU for volume render'''
 
     def __init__(self, parent):
         super(ViewerSettingsDialog, self).__init__(parent)
@@ -391,9 +429,9 @@ def main():
     app = QApplication(sys.argv)
     window = create_main_window()
     window.show()
-    r = RawInputDialog(window, 'fname')
-    r.show()
-    print(r.get_raw_attrs())
+    # r = RawInputDialog(window, 'fname')
+    # r.show()
+    # print(r.get_raw_attrs())
     app.exec_()
 
 
