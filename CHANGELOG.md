@@ -6,6 +6,8 @@
 * Adds widget for slicing a volume with the 'c' key in the 3D viewer
 * Add light to 3D viewer
 * Add a few utility methods for volume rendering in 3D viewer
+* Moves saving of render to PNG into utils/io.py
+* Increments number in name of file when saving render to PNG, so multiple captures can be made without them overwriting each other.
 
 ## v22.1.0
 * requires vtk version >= 9.0.3
