@@ -55,9 +55,10 @@ class ImageReader(object):
             target size after downsampling
         target_z_extent: list [,], default None
             desired extent after cropping on z axis
-        is_acquisition_data: bool, default False
-            whether the input dataset is acquisition data, if True, we do not
-            resample on the z axis
+        resample_z: bool, default True
+            whether to resample on the z axis. E.g. in the case we have
+            acquisition data, the projections would be on the z axis, so
+            we would not want to resample in that direction.
         raw_image_attrs: dict, default None
             Attributes of the raw image data, must have the format:
             {'dimensions': 2D or 3D array, 'is_fortran':bool, 'is_big_endian':bool
@@ -70,16 +71,16 @@ class ImageReader(object):
         target_size = kwargs.get('target_size', 512**3)
         crop = kwargs.get('crop', False)
         target_z_extent = kwargs.get('target_z_extent', None)
-        is_acquisition_data = kwargs.get('is_acquisition_data', False)
+        resample_z = kwargs.get('resample_z', False)
         raw_image_attrs = kwargs.get('raw_image_attrs', None)
         hdf5_dataset_name = kwargs.get('hdf5_dataset_name', "entry1/tomo_entry/data/data")
 
         if file_name is not None:
             self.set_up(file_name, resample, target_size,
-                        crop, target_z_extent, is_acquisition_data, raw_image_attrs, hdf5_dataset_name)
+                        crop, target_z_extent, resample_z, raw_image_attrs, hdf5_dataset_name)
 
     def set_up(self,  file_name=None, resample=True, target_size=512**3, crop=False,
-        target_z_extent=None, is_acquisition_data=False, raw_image_attrs=None, hdf5_dataset_name="entry1/tomo_entry/data/data"):
+        target_z_extent=None, resample_z=False, raw_image_attrs=None, hdf5_dataset_name="entry1/tomo_entry/data/data"):
 
         if file_name is None:
             raise Exception('Path to file is required.')
@@ -92,12 +93,11 @@ class ImageReader(object):
         self.target_size = target_size
         self.crop = crop
         self.target_z_extent = target_z_extent
-        self.is_acquisition_data = is_acquisition_data
+        self.resample_z = resample_z
         self.hdf5_dataset_name = hdf5_dataset_name
 
         # validate image attributes
         raw_attrs = None
-        print("the raw image attrs: ", raw_image_attrs)
         if raw_image_attrs is not None and raw_image_attrs != {}:
             try:
                 raw_attrs = self._validate_raw_attrs(raw_image_attrs)
@@ -108,7 +108,6 @@ class ImageReader(object):
         self.loaded_image_attrs = {'resampled': self.resample, 'cropped': self.crop}
 
         if self.crop and self.resample:
-            # TODO: check if this is true
             print("WARNING: Both cropping and resampling is not yet implemented.")
             print("Image will just be cropped and not resampled.")
             self.resample = False
@@ -131,7 +130,7 @@ class ImageReader(object):
         if raw_image_attrs is not None:
             image_attrs.update(raw_image_attrs)
         image_attrs['file_name'] = self.file_name
-        image_attrs['is_acquisition_data'] = self.is_acquisition_data
+        image_attrs['resample_z'] = self.resample_z
         return image_attrs
 
     def get_original_attrs(self):
@@ -180,8 +179,8 @@ class ImageReader(object):
             self._data = self._read_tiff_images(image_files)
 
         reader.SetFileName(self.file_name)
-        print("is it acq? : ", self.is_acquisition_data)
-        reader.SetIsAcquisitionData(self.is_acquisition_data)
+        print("is it acq? : ", self.resample_z)
+        reader.SetIsAcquisitionData(self.resample_z)
         if not self.crop:
             if self.resample:
                 target_size = self.target_size
@@ -418,6 +417,8 @@ class ImageWriter(object):
                 
 
                 for key, value in dataset_info.items():
+                    # we want to save all the attributes except for the 
+                    # vtk array name and the typecode
                     if 'vtk_array_name' not in key and 'typecode' not in key:
                         dset.attrs[key] = value
 
@@ -469,7 +470,7 @@ def h5dump(path, group='/'):
         descend_obj(f[group])
 
 if __name__ == "__main__":
-    reader = ImageReader(file_name=r"C:\Users\lhe97136\Work\Data\24737_fd_normalised.nxs", crop=True, resample=False, target_z_extent=[1, 2], hdf5_image_attrs={'is_acquisition_data': False})
+    reader = ImageReader(file_name=r"C:\Users\lhe97136\Work\Data\24737_fd_normalised.nxs", crop=True, resample=False, target_z_extent=[1, 2], hdf5_image_attrs={'resample_z': False})
     img=reader.read()
     iviewer(img, img)
     original_image_attrs = reader.get_original_attrs()
