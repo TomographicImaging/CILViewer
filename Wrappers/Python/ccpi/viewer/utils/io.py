@@ -214,12 +214,13 @@ class ImageReader(object):
         self.original_image_attrs['bit_depth'] = str(reader.GetBytesPerElement()*8)
         self.original_image_attrs['is_big_endian'] = reader.GetBigEndian()
         self.original_image_attrs['header_length'] = reader.GetFileHeaderLength()
+        # TODO: here we need to save the filepath of the original dataset
 
         # info about new dataset:
         self.loaded_image_attrs['spacing'] = data.GetSpacing()
         self.loaded_image_attrs['origin'] = data.GetOrigin()
         self.loaded_image_attrs['vtk_array_name'] = 'ImageScalars'
-        # TODO: need to set typecode in case we want to write to hdf5 self.loaded_image_attrs['typecode'] 
+        # TODO: do we need to set typecode in case we want to write to hdf5 self.loaded_image_attrs['typecode']  ??
         
         return data
 
@@ -358,6 +359,7 @@ class ImageWriter(object):
         # self.original_image_attrs['bit_depth'] = str(reader.GetBytesPerElement()*8)
         # self.original_image_attrs['is_big_endian'] = reader.GetBigEndian()
         # self.original_image_attrs['header_length'] = reader.GetFileHeaderLength()
+        # TODO: here we need to save the filepath of the original dataset
 
         # # info about new dataset:
         # self.loaded_image_attrs['spacing'] = data.GetSpacing()
