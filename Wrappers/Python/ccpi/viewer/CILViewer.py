@@ -14,18 +14,21 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
    
-import vtk
-import numpy
+import glob
 import os
-#from ccpi.viewer import ViewerEventManager
-from ccpi.viewer.CILViewer2D import ViewerEventManager
+import re
 
-from ccpi.viewer.CILViewer2D import SLICE_ORIENTATION_XY, SLICE_ORIENTATION_XZ, \
-   SLICE_ORIENTATION_YZ, CONTROL_KEY, SHIFT_KEY, ALT_KEY, SLICE_ACTOR, \
-   OVERLAY_ACTOR, HISTOGRAM_ACTOR, HELP_ACTOR, CURSOR_ACTOR, CROSSHAIR_ACTOR,\
-   LINEPLOT_ACTOR
-
+import numpy
+import vtk
+from ccpi.viewer.CILViewer2D import (ALT_KEY, CONTROL_KEY, CROSSHAIR_ACTOR,
+                                     CURSOR_ACTOR, HELP_ACTOR, HISTOGRAM_ACTOR,
+                                     LINEPLOT_ACTOR, OVERLAY_ACTOR, SHIFT_KEY,
+                                     SLICE_ACTOR, SLICE_ORIENTATION_XY,
+                                     SLICE_ORIENTATION_XZ,
+                                     SLICE_ORIENTATION_YZ, ViewerEventManager)
 from ccpi.viewer.utils import colormaps
+from ccpi.viewer.utils.io import SaveRenderToPNG
+
 
 class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
 
@@ -824,21 +827,6 @@ class CILViewer():
         
     def saveRender(self, filename, renWin=None):
         '''Save the render window to PNG file'''
-        # screenshot code:
-        w2if = vtk.vtkWindowToImageFilter()
         if renWin == None:
             renWin = self.renWin
-        w2if.SetInput(renWin)
-        w2if.Update()
-
-        # Check if user has supplied an extension
-        extn = os.path.splitext(filename)[1]
-        if extn.lower() == '.png':
-                saveFilename = filename
-        else:
-            saveFilename = filename+'.png'
-
-        writer = vtk.vtkPNGWriter()
-        writer.SetFileName(saveFilename)
-        writer.SetInputConnection(w2if.GetOutputPort())
-        writer.Write()
+        SaveRenderToPNG(self.renWin, filename)
