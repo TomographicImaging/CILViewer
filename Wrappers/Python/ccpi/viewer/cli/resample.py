@@ -8,6 +8,25 @@ from ccpi.viewer.utils.io import ImageReader
 
 # SO FAR THIS READS AND DOWNSAMPLES BUT DOESN'T WRITE
 
+#### EXAMPLE INPUT YAML:
+### works with 24737_fd_normalised.nxs
+### which doesn't use the shape, is_fortran and other raw attrs
+'''
+array:
+  shape: (1024,1024,1024)
+  is_fortran: False
+  is_big_endian: True
+  typecode: 'float32'
+  group_name: '/entry1/tomo_entry/data/data' # valid for HDF5 and Zarr
+resample:
+  target_size: 100000
+  resample_z: True
+output:
+  filename: 'this_fname.nxs'
+  format: 'hdf5' # npy, METAImage, NIFTI (or Zarr to come)
+  '''
+
+
 
 schema = Schema(
         {

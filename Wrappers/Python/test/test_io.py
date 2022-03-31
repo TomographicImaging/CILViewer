@@ -58,7 +58,7 @@ class TestImageReaderAndWriter(unittest.TestCase):
         self.raw_filename_3D = 'test_3D_data.raw'
         with open(self.raw_filename_3D, 'wb') as f:
             f.write(bytes_3D_array)
-        self.raw_image_attrs = {'dimensions': np.shape(self.input_3D_array), 
+        self.raw_image_attrs = {'shape': np.shape(self.input_3D_array), 
             'is_fortran': False, 'is_big_endian': False, 
             'typecode': str(self.input_3D_array.dtype)}
 

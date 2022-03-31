@@ -61,7 +61,7 @@ class ImageReader(object):
             we would not want to resample in that direction.
         raw_image_attrs: dict, default None
             Attributes of the raw image data, must have the format:
-            {'dimensions': 2D or 3D array, 'is_fortran':bool, 'is_big_endian':bool
+            {'shape': 2D or 3D array, 'is_fortran':bool, 'is_big_endian':bool
             'type_code':info_var['typcode']}
         hdf5_dataset_name: string, default "entry1/tomo_entry/data/data"
             Name of the hdf5 dataset to be read, if file format is hdf5            
@@ -117,7 +117,7 @@ class ImageReader(object):
         if raw_image_attrs is None:
             return
         raw_attrs = raw_image_attrs.copy()
-        raw_attrs_schema = Schema({'dimensions': Or(list, np.ndarray, tuple),
+        raw_attrs_schema = Schema({'shape': Or(list, np.ndarray, tuple),
                                    'is_fortran': bool,
                                    'is_big_endian': bool,
                                    'typecode': str})
@@ -271,14 +271,14 @@ class ImageReader(object):
         return reader.GetOutput()
 
     def _read_raw_image(self, progress_callback=None):
-        if self.original_image_attrs is None or 'dimensions' not in self.original_image_attrs.keys():
+        if self.original_image_attrs is None or 'shape' not in self.original_image_attrs.keys():
             raise Exception(
                 "To read a raw image, raw_image_attrs must be set.")
 
         isFortran = self.original_image_attrs['is_fortran']
         isBigEndian = self.original_image_attrs['is_big_endian']
         typecode = self.original_image_attrs['typecode']
-        shape = tuple(self.original_image_attrs['dimensions'])
+        shape = tuple(self.original_image_attrs['shape'])
 
         if self.crop:
             reader = cilRawCroppedReader()
@@ -397,10 +397,10 @@ class ImageWriter(object):
                 if data is not None:
                     wdata = dsa.WrapDataObject(data)
                     array = wdata.PointData[vtk_array_name]
-                    # Note that we flip the dimensions here because
+                    # Note that we flip the shape here because
                     # VTK's order is Fortran whereas h5py writes in
                     # C order. We don't want to do deep copies so we write
-                    # with dimensions flipped and pretend the array is
+                    # with shape flipped and pretend the array is
                     # C order.
                     array = array.reshape(wdata.GetDimensions()[::-1])
                 else:
