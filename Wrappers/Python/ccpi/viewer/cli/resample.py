@@ -4,9 +4,9 @@ import yaml
 import schema
 from schema import SchemaError, Schema, Optional
 
-from ccpi.viewer.utils.io import ImageReader
+from ccpi.viewer.utils.io import ImageReader, ImageWriter
 
-# SO FAR THIS READS AND DOWNSAMPLES BUT DOESN'T WRITE
+# SO FAR THIS READS AND DOWNSAMPLES AND WRITES TO HDF5
 
 #### EXAMPLE INPUT YAML:
 ### works with 24737_fd_normalised.nxs
@@ -22,7 +22,7 @@ resample:
   target_size: 100000
   resample_z: True
 output:
-  filename: 'this_fname.nxs'
+  file_name: 'this_fname.nxs'
   format: 'hdf5' # npy, METAImage, NIFTI (or Zarr to come)
   '''
 
@@ -37,7 +37,7 @@ schema = Schema(
                                 Optional('group_name'): str}, # only for hdf5 # set default
             'resample': {'target_size': int, 
                          'resample_z' : bool},
-            'output': {'filename': str,
+            'output': {'file_name': str,
                        'format': str}
         }
     )
@@ -83,6 +83,13 @@ def main():
     reader = ImageReader(file_name=args.input_dataset, resample=True, target_size=params['resample']['target_size'],
              resample_z=params['resample']['resample_z'], raw_image_attrs=raw_attrs, hdf5_dataset_name=group_name)
     downsampled_image = reader.read()
+    #print(downsampled_image)
+    original_image_attrs = reader.get_original_attrs()
+    loaded_image_attrs = reader.get_loaded_attrs()
+    datasets = [[None, original_image_attrs], [downsampled_image, loaded_image_attrs]]
+
+    writer = ImageWriter(file_name=params['output']['file_name'], datasets=datasets)
+    writer.write()
 
     # now we need to write out
 

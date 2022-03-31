@@ -31,10 +31,14 @@ from vtk.numpy_interface import dataset_adapter as dsa
 # If set both to true then it resamples and doesn't crop
 
 
-# TODO: make auto progress bar instead of from readers
+# TODO: progress reporting
+# supporting tiffs
+# logger
 
-# write:
-#
+
+# write other filetypes
+# possibly change structure of how it's written out
+# make a reader for our data format that we write out
 
 
 class ImageReader(object):
@@ -214,6 +218,8 @@ class ImageReader(object):
         # info about new dataset:
         self.loaded_image_attrs['spacing'] = data.GetSpacing()
         self.loaded_image_attrs['origin'] = data.GetOrigin()
+        self.loaded_image_attrs['vtk_array_name'] = 'ImageScalars'
+        # TODO: need to set typecode in case we want to write to hdf5 self.loaded_image_attrs['typecode'] 
         
         return data
 
@@ -304,8 +310,6 @@ class ImageReader(object):
 
         reader.SetDatasetName(self.hdf5_dataset_name)
 
-        self.loaded_image_attrs['vtk_array_name'] = 'entry1/tomo_entry/data/data' # TODO FIX!! What do we want this to be?
-
         return reader
 
 
@@ -334,15 +338,34 @@ class ImageReader(object):
 
 class ImageWriter(object):
 
+    # TODO take filename and format as separate inputs
+
     def __init__(self, **kwargs):
         file_name = kwargs.get('file_name', None)
-        datasets = kwargs.get('datasets', True)
+        datasets = kwargs.get('datasets', None)
 
         # can have multiple datasets
         # so we want to input list of datasets and their attributes and optionally the data
         # so we have
         # datasets = [[dataset, attributes], [dataset1, attributes1]] and they're auto written to entry1, entry2 etc.
         # if dataset entry is None we must have an attribute filename
+
+        # Attributes will be like:
+        # info about original dataset:
+        # self.original_image_attrs['shape'] = reader.GetStoredArrayShape()
+        # self.original_image_attrs['spacing'] = reader.GetElementSpacing()
+        # self.original_image_attrs['origin'] = reader.GetOrigin()
+        # self.original_image_attrs['bit_depth'] = str(reader.GetBytesPerElement()*8)
+        # self.original_image_attrs['is_big_endian'] = reader.GetBigEndian()
+        # self.original_image_attrs['header_length'] = reader.GetFileHeaderLength()
+
+        # # info about new dataset:
+        # self.loaded_image_attrs['spacing'] = data.GetSpacing()
+        # self.loaded_image_attrs['origin'] = data.GetOrigin()
+        # self.loaded_image_attrs['vtk_array_name'] = 'ImageScalars'
+
+        # we want to then make a reader so that the viewer uses the spacing etc that has been 
+        # written out to this file
 
         self.set_up(file_name, datasets)
 
@@ -392,9 +415,10 @@ class ImageWriter(object):
                 dataset_info = dataset[1]
                 dataset_name = 'entry{}/tomo_entry/data/data'.format(entry_num)
 
-                vtk_array_name = dataset_info.get('vtk_array_name', 'vtkarray')
+                vtk_array_name = dataset_info.get('vtk_array_name', 'ImageScalars')#'vtkarray')
 
                 if data is not None:
+                    print(data, vtk_array_name)
                     wdata = dsa.WrapDataObject(data)
                     array = wdata.PointData[vtk_array_name]
                     # Note that we flip the shape here because
@@ -407,9 +431,9 @@ class ImageWriter(object):
                     array = None
                 try:
                     if array is None:
-                        dset = f.create_dataset(dataset_name, dataset_info['shape'], dataset_info['typecode'])
+                        dset = f.create_dataset(dataset_name, dataset_info['shape'] ) #, dataset_info['typecode']) # do we need?
                     else:
-                        dset = f.create_dataset(dataset_name, data=array, dtype= dataset_info['typecode'])
+                        dset = f.create_dataset(dataset_name, data=array ) # , dtype= dataset_info['typecode']) # do we need?
                 except RuntimeError:
                         print("Unable to save image data to {0}."
                             "Dataset with name {1} already exists in this file.".format(
