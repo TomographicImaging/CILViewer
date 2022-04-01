@@ -183,13 +183,13 @@ class TestImageReaderAndWriter(unittest.TestCase):
         cropped_array = self.input_3D_array[1:2, :, :]
 
         # HDF5: ------------------------------------------------------------------------------------------
-        reader = ImageReader(file_name=self.hdf5_filename_3D, crop=True, resample=False, target_z_extent=[1, 1], resample_z=False,  hdf5_dataset_name = "ImageData")
+        reader = ImageReader(file_name=self.hdf5_filename_3D, crop=True, resample=False, target_z_extent=[1, 1],  hdf5_dataset_name = "ImageData")
 
         # NOTE: the extent is in vtk so is in fortran order, whereas
         # above we had the np array in C-order so x and y cropping swapped
         array_image_data = reader.read()
-        read_cropped_array = Converter.vtk2numpy(array_image_data)
-        np.testing.assert_array_equal(cropped_array, read_cropped_array)
+        read_cropped_array_hdf5 = Converter.vtk2numpy(array_image_data)
+        np.testing.assert_array_equal(cropped_array, read_cropped_array_hdf5)
 
 
         # NUMPY: --------------------------------------------------------------

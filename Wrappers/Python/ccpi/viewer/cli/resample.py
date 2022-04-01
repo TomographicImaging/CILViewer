@@ -86,9 +86,10 @@ def main():
     #print(downsampled_image)
     original_image_attrs = reader.get_original_attrs()
     loaded_image_attrs = reader.get_loaded_attrs()
-    datasets = [[None, original_image_attrs], [downsampled_image, loaded_image_attrs]]
-
-    writer = ImageWriter(file_name=params['output']['file_name'], datasets=datasets)
+    datasets = [None, downsampled_image]
+    attributes = [original_image_attrs, loaded_image_attrs]
+    
+    writer = ImageWriter(file_name=params['output']['file_name'], format='hdf5', datasets=datasets, attributes=attributes)
     writer.write()
 
     # now we need to write out

@@ -152,6 +152,8 @@ class ImageReader(object):
         # progress_callback = kwargs.get('progress_callback')
         # print("The progress callback: ", progress_callback)
 
+        print("read: ",  self.file_name)
+
         if os.path.isfile(self.file_name):
             file_extension = os.path.splitext(self.file_name)[1]
 
@@ -339,17 +341,34 @@ class ImageReader(object):
 
 class ImageWriter(object):
 
-    # TODO take filename and format as separate inputs
 
     def __init__(self, **kwargs):
+        '''
+        Constructor
+
+        Parameters
+        ----------
+        file_name: os.path or string, default None
+            file name to write to
+        format: string, default None
+            file format to write out.
+            Must be one of: hdf5 #TODO
+        datasets: list, default None
+            list of datasets to write to the file
+        attributes: list, default None
+            list of dictionaries which contain the attributes
+            of the dataset in datasets with the same index.           
+        '''
         file_name = kwargs.get('file_name', None)
+        format = kwargs.get('format', None)
         datasets = kwargs.get('datasets', None)
+        attributes = kwargs.get('attributes', None)
 
         # can have multiple datasets
         # so we want to input list of datasets and their attributes and optionally the data
         # so we have
         # datasets = [[dataset, attributes], [dataset1, attributes1]] and they're auto written to entry1, entry2 etc.
-        # if dataset entry is None we must have an attribute filename
+        # if dataset entry is None we must have an attribute file_name
 
         # Attributes will be like:
         # info about original dataset:
@@ -359,7 +378,7 @@ class ImageWriter(object):
         # self.original_image_attrs['bit_depth'] = str(reader.GetBytesPerElement()*8)
         # self.original_image_attrs['is_big_endian'] = reader.GetBigEndian()
         # self.original_image_attrs['header_length'] = reader.GetFileHeaderLength()
-        # TODO: here we need to save the filepath of the original dataset
+        # Also 'file_name' and 'resample_z'
 
         # # info about new dataset:
         # self.loaded_image_attrs['spacing'] = data.GetSpacing()
@@ -369,12 +388,31 @@ class ImageWriter(object):
         # we want to then make a reader so that the viewer uses the spacing etc that has been 
         # written out to this file
 
-        self.set_up(file_name, datasets)
+        self.set_up(file_name, format, datasets, attributes)
 
-    def set_up(self, filename, datasets):
-        self.file_name = filename
+    def set_up(self, file_name, format, datasets, attributes):
+        '''
+        Parameters
+        ----------
+        file_name: os.path or string, default None
+            file name to write to
+        format: string, default None
+            file format to write out.
+            Must be one of: hdf5 #TODO
+        datasets: list, default None
+            list of datasets to write to the file
+        attributes: list, default None
+            list of dictionaries which contain the attributes
+            of the dataset in datasets with the same index.           
+        '''
+        for var in [file_name, format, datasets, attributes]:
+            if var is None:
+                raise Exception("file_name, format, dataset(s) and attribute(s), are required.")
+        self.file_name = file_name
+        self.format = format
         self.datasets = datasets
-
+        self.attributes = attributes
+        
 
     def write(self):
         # check file ext
@@ -412,9 +450,9 @@ class ImageWriter(object):
 
 
             for i, dataset in enumerate(self.datasets):
+                data = dataset
+                dataset_info = self.attributes[i]
                 entry_num = i+1
-                data = dataset[0]
-                dataset_info = dataset[1]
                 dataset_name = 'entry{}/tomo_entry/data/data'.format(entry_num)
 
                 vtk_array_name = dataset_info.get('vtk_array_name', 'ImageScalars')#'vtkarray')
@@ -430,6 +468,10 @@ class ImageWriter(object):
                     # C order.
                     array = array.reshape(wdata.GetDimensions()[::-1])
                 else:
+                    # If we have no data then we want to save info about a dataset in another
+                    # file, so we want to have an attribute which is called 'file_name'
+                    if dataset_info.get("file_name") is None:
+                        raise Exception("If no name is given for a dataset, the attributes must include the 'file_name'.")
                     array = None
                 try:
                     if array is None:
@@ -496,12 +538,13 @@ def h5dump(path, group='/'):
         descend_obj(f[group])
 
 if __name__ == "__main__":
-    reader = ImageReader(file_name=r"C:\Users\lhe97136\Work\Data\24737_fd_normalised.nxs", crop=True, resample=False, target_z_extent=[1, 2], hdf5_image_attrs={'resample_z': False})
+    reader = ImageReader(file_name=r"D:\lhe97136\Work\Data\24737_fd_normalised.nxs", resample=True)#)crop=True, resample=False, target_z_extent=[1, 2], resample_z=False)
     img=reader.read()
+    print("the image is: ", img)
     iviewer(img, img)
     original_image_attrs = reader.get_original_attrs()
     loaded_image_attrs = reader.get_loaded_attrs()
-    writer = ImageWriter(file_name='test_empty_dataset.hdf5', datasets=[[None, original_image_attrs], [img, loaded_image_attrs]])
+    writer = ImageWriter(file_name='test_empty_dataset.hdf5', format='hdf5', datasets=[None, img], attributes=[original_image_attrs, loaded_image_attrs])
     writer.write()
     h5dump('test_empty_dataset.hdf5')
 
