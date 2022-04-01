@@ -156,19 +156,24 @@ class HDF5SubsetReader(VTKPythonAlgorithmBase):
 
             whole_extent = info.Get(
                 vtk.vtkStreamingDemandDrivenPipeline.WHOLE_EXTENT())
-            set_extent = info.Get(
-                vtk.vtkStreamingDemandDrivenPipeline.UPDATE_EXTENT())
+            set_extent = list(info.Get(
+                vtk.vtkStreamingDemandDrivenPipeline.UPDATE_EXTENT()))
             for i, value in enumerate(set_extent):
-                if i % 2 == 0:
-                    if value < whole_extent[i]:
-                        raise ValueError("Requested extent {}\
-                             is outside of original image extent {}".format(
-                            set_extent, whole_extent))
+                if value == -1:
+                    set_extent[i] = whole_extent[i]
                 else:
-                    if value > whole_extent[i]:
-                        raise ValueError("Requested extent {}\
-                             is outside of original image extent {}".format(
-                            set_extent, whole_extent))
+                    if i % 2 == 0:
+                        if value < whole_extent[i]:
+                            raise ValueError("Requested extent {}\
+                                is outside of original image extent {}".format(
+                                set_extent, whole_extent))
+                    else:
+                        if value > whole_extent[i]:
+                            raise ValueError("Requested extent {}\
+                                is outside of original image extent {}".format(
+                                set_extent, whole_extent))
+            
+            self.SetUpdateExtent(set_extent)
 
             info.Set(vtk.vtkStreamingDemandDrivenPipeline.UPDATE_EXTENT(),
                      self.__UpdateExtent, 6)
