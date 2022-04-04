@@ -26,6 +26,9 @@ from ccpi.viewer.utils.hdf5_io import HDF5Reader
 from ccpi.viewer.version import version
 from schema import Optional, Or, Schema, SchemaError
 from vtk.numpy_interface import dataset_adapter as dsa
+from ccpi.viewer.utils.error_handling import customise_warnings
+
+import warnings
 
 # Currently doesn't support both cropping and resampling
 # If set both to true then it resamples and doesn't crop
@@ -86,6 +89,10 @@ class ImageReader(object):
     def set_up(self,  file_name=None, resample=True, target_size=512**3, crop=False,
         target_z_extent=None, resample_z=False, raw_image_attrs=None, hdf5_dataset_name="entry1/tomo_entry/data/data"):
 
+        customise_warnings()
+
+        self._set_up_logger(None)
+
         if file_name is None:
             raise Exception('Path to file is required.')
 
@@ -112,8 +119,7 @@ class ImageReader(object):
         self.loaded_image_attrs = {'resampled': self.resample, 'cropped': self.crop}
 
         if self.crop and self.resample:
-            print("WARNING: Both cropping and resampling is not yet implemented.")
-            print("Image will just be cropped and not resampled.")
+            warnings.warn("Both cropping and resampling is not yet implemented. Image will just be cropped and not resampled.")
             self.resample = False
         
        
@@ -322,7 +328,7 @@ class ImageReader(object):
         if fname:
             print("Will output results to: " + fname)
             handler = logging.FileHandler(fname)
-            self.logger = logging.getLogger("ImageReader")
+            self.logger = logging.getLogger("ccpi.viewer.utils.io.ImageReader")
             self.logger.setLevel(logging.INFO)
             self.logger.addHandler(handler)
 
@@ -538,15 +544,17 @@ def h5dump(path, group='/'):
         descend_obj(f[group])
 
 if __name__ == "__main__":
-    reader = ImageReader(file_name=r"D:\lhe97136\Work\Data\24737_fd_normalised.nxs", resample=True)#)crop=True, resample=False, target_z_extent=[1, 2], resample_z=False)
-    img=reader.read()
-    print("the image is: ", img)
-    iviewer(img, img)
-    original_image_attrs = reader.get_original_attrs()
-    loaded_image_attrs = reader.get_loaded_attrs()
-    writer = ImageWriter(file_name='test_empty_dataset.hdf5', format='hdf5', datasets=[None, img], attributes=[original_image_attrs, loaded_image_attrs])
-    writer.write()
-    h5dump('test_empty_dataset.hdf5')
+    
+    reader = ImageReader(file_name=r"D:\lhe97136\Work\Data\24737_fd_normalised.nxs", resample=True, crop=True)
+    #reader = ImageReader(file_name=r"D:\lhe97136\Work\Data\24737_fd_normalised.nxs", resample=True)#)crop=True, resample=False, target_z_extent=[1, 2], resample_z=False)
+    # img=reader.read()
+    # print("the image is: ", img)
+    # iviewer(img, img)
+    # original_image_attrs = reader.get_original_attrs()
+    # loaded_image_attrs = reader.get_loaded_attrs()
+    # writer = ImageWriter(file_name='test_empty_dataset.hdf5', format='hdf5', datasets=[None, img], attributes=[original_image_attrs, loaded_image_attrs])
+    # writer.write()
+    # h5dump('test_empty_dataset.hdf5')
 
     # Entrypoint:
     # - take args
