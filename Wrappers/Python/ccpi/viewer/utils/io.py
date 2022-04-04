@@ -71,27 +71,33 @@ class ImageReader(object):
             {'shape': 2D or 3D array, 'is_fortran':bool, 'is_big_endian':bool
             'type_code':info_var['typcode']}
         hdf5_dataset_name: string, default "entry1/tomo_entry/data/data"
-            Name of the hdf5 dataset to be read, if file format is hdf5            
+            Name of the hdf5 dataset to be read, if file format is hdf5
+        log_file: str, optional, default None
+            log verbose output to file of this name            
         '''
-        file_name = kwargs.get('file_name', None)
+        file_name = kwargs.get('file_name')
         resample = kwargs.get('resample', True)
         target_size = kwargs.get('target_size', 512**3)
         crop = kwargs.get('crop', False)
-        target_z_extent = kwargs.get('target_z_extent', None)
+        target_z_extent = kwargs.get('target_z_extent')
         resample_z = kwargs.get('resample_z', False)
-        raw_image_attrs = kwargs.get('raw_image_attrs', None)
+        raw_image_attrs = kwargs.get('raw_image_attrs')
         hdf5_dataset_name = kwargs.get('hdf5_dataset_name', "entry1/tomo_entry/data/data")
+        log_file = kwargs.get('log_file')
 
         if file_name is not None:
             self.set_up(file_name, resample, target_size,
-                        crop, target_z_extent, resample_z, raw_image_attrs, hdf5_dataset_name)
+                        crop, target_z_extent, resample_z, raw_image_attrs, hdf5_dataset_name, log_file)
 
     def set_up(self,  file_name=None, resample=True, target_size=512**3, crop=False,
-        target_z_extent=None, resample_z=False, raw_image_attrs=None, hdf5_dataset_name="entry1/tomo_entry/data/data"):
+        target_z_extent=None, resample_z=False, raw_image_attrs=None, hdf5_dataset_name="entry1/tomo_entry/data/data", 
+        log_file=None):
 
         customise_warnings()
 
-        self._set_up_logger(None)
+        self._set_up_logger(log_file)
+
+        self.logger.info("This is an info log")
 
         if file_name is None:
             raise Exception('Path to file is required.')
@@ -117,6 +123,10 @@ class ImageReader(object):
 
         self.original_image_attrs = self._generate_image_attrs(raw_attrs)
         self.loaded_image_attrs = {'resampled': self.resample, 'cropped': self.crop}
+
+        if self.crop:
+            if self.target_z_extent is None:
+                raise Exception("Error: if crop is set to True, target_z_extent must be set.")
 
         if self.crop and self.resample:
             warnings.warn("Both cropping and resampling is not yet implemented. Image will just be cropped and not resampled.")
@@ -158,7 +168,7 @@ class ImageReader(object):
         # progress_callback = kwargs.get('progress_callback')
         # print("The progress callback: ", progress_callback)
 
-        print("read: ",  self.file_name)
+        self.logger.info("read: {}".format(self.file_name))
 
         if os.path.isfile(self.file_name):
             file_extension = os.path.splitext(self.file_name)[1]
@@ -191,7 +201,7 @@ class ImageReader(object):
             self._data = self._read_tiff_images(image_files)
 
         reader.SetFileName(self.file_name)
-        print("is it acq? : ", self.resample_z)
+        self.logger.debug("is it acq? : {}".format(self.resample_z))
         reader.SetIsAcquisitionData(self.resample_z)
         if not self.crop:
             if self.resample:
@@ -267,7 +277,7 @@ class ImageReader(object):
         sa = vtk.vtkStringArray()
         for fname in filenames:
             i = sa.InsertNextValue(fname)
-        print("read {} files".format(i))
+        self.logger.info("read {} files".format(i))
 
         # reader.AddObserver(vtk.vtkCommand.ProgressEvent, partial(
         #     getProgress, progress_callback=progress_callback))
@@ -325,11 +335,11 @@ class ImageReader(object):
     # TODO: test logger
     def _set_up_logger(self, fname):
         """Set up the logger """
+        self.logger = logging.getLogger("ccpi.viewer.utils.io.ImageReader")
+        self.logger.setLevel(logging.INFO)
         if fname:
             print("Will output results to: " + fname)
             handler = logging.FileHandler(fname)
-            self.logger = logging.getLogger("ccpi.viewer.utils.io.ImageReader")
-            self.logger.setLevel(logging.INFO)
             self.logger.addHandler(handler)
 
     def _report_progress(self, caller, event, progress_callback):
@@ -342,7 +352,6 @@ class ImageReader(object):
         if progress_callback is not None:
             progress_callback.emit(int(caller.getProgress()*100))
 
-    # TODO: should we just print the progress if progress_callback is not None?
 
 
 class ImageWriter(object):
@@ -545,8 +554,13 @@ def h5dump(path, group='/'):
 
 if __name__ == "__main__":
     
-    reader = ImageReader(file_name=r"D:\lhe97136\Work\Data\24737_fd_normalised.nxs", resample=True, crop=True)
-    #reader = ImageReader(file_name=r"D:\lhe97136\Work\Data\24737_fd_normalised.nxs", resample=True)#)crop=True, resample=False, target_z_extent=[1, 2], resample_z=False)
+    # reader = ImageReader(file_name=r"D:\lhe97136\Work\Data\24737_fd_normalised.nxs", resample=True, crop=False, log_file='log_test.log')
+    # reader.read()
+
+    # reader2 = ImageReader(file_name=r"D:\lhe97136\Work\Data\24737_fd_normalised.nxs", resample=True, crop=True, target_z_extent=[1,4], log_file='log_test_debug.log')
+    # reader2.logger.setLevel(logging.DEBUG)
+    # reader2.read()
+    # reader = ImageReader(file_name=r"D:\lhe97136\Work\Data\24737_fd_normalised.nxs", resample=True)#)crop=True, resample=False, target_z_extent=[1, 2], resample_z=False)
     # img=reader.read()
     # print("the image is: ", img)
     # iviewer(img, img)
@@ -555,12 +569,6 @@ if __name__ == "__main__":
     # writer = ImageWriter(file_name='test_empty_dataset.hdf5', format='hdf5', datasets=[None, img], attributes=[original_image_attrs, loaded_image_attrs])
     # writer.write()
     # h5dump('test_empty_dataset.hdf5')
-
-    # Entrypoint:
-    # - take args
-    # - read file
-    # - write file
-
 
 
 
