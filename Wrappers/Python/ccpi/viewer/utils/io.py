@@ -7,6 +7,8 @@ import shutil
 import sys
 import time
 from functools import partial
+
+from attr import attributes
 from vtk.util.vtkAlgorithm import VTKPythonAlgorithmBase
 
 import h5py
@@ -449,7 +451,115 @@ class ImageWriter(object):
                 raise Exception("File format is not supported. Supported types include tiff and hdf5/nexus.")
 
 
+    # def _write_hdf5(self):
+    #     with h5py.File(self.file_name, 'w') as f:
+            
+    #         # give the file some important attributes
+    #         f.attrs['file_name'] = self.file_name
+    #         f.attrs['cilviewer_version'] = version
+    #         f.attrs['file_time'] = str(datetime.datetime.utcnow())
+    #         f.attrs['creator'] = np.string_('io.py')
+    #         f.attrs['HDF5_Version'] = h5py.version.hdf5_version
+    #         f.attrs['h5py_version'] = h5py.version.version
+            
+    #         # create the NXentry group
+    #         nxentry = f.create_group('entry1/tomo_entry')
+    #         nxentry.attrs['NX_class'] = 'NXentry'
+
+
+    #         for i, dataset in enumerate(self.datasets):
+    #             data = dataset
+    #             dataset_info = self.attributes[i]
+    #             entry_num = i+1
+    #             dataset_name = 'entry{}/tomo_entry/data/data'.format(entry_num)
+
+    #             vtk_array_name = dataset_info.get('vtk_array_name', 'ImageScalars')#'vtkarray')
+
+    #             if data is not None:
+    #                 print(data, vtk_array_name)
+    #                 wdata = dsa.WrapDataObject(data)
+    #                 array = wdata.PointData[vtk_array_name]
+    #                 # Note that we flip the shape here because
+    #                 # VTK's order is Fortran whereas h5py writes in
+    #                 # C order. We don't want to do deep copies so we write
+    #                 # with shape flipped and pretend the array is
+    #                 # C order.
+    #                 array = array.reshape(wdata.GetDimensions()[::-1])
+    #             else:
+    #                 # If we have no data then we want to save info about a dataset in another
+    #                 # file, so we want to have an attribute which is called 'file_name'
+    #                 if dataset_info.get("file_name") is None:
+    #                     raise Exception("If no name is given for a dataset, the attributes must include the 'file_name'.")
+    #                 array = None
+    #             try:
+    #                 if array is None:
+    #                     dset = f.create_dataset(dataset_name, dataset_info['shape'] ) #, dataset_info['typecode']) # do we need?
+    #                 else:
+    #                     dset = f.create_dataset(dataset_name, data=array ) # , dtype= dataset_info['typecode']) # do we need?
+    #             except RuntimeError:
+    #                     print("Unable to save image data to {0}."
+    #                         "Dataset with name {1} already exists in this file.".format(
+    #                             self.file_name, dataset_name))
+                
+
+    #             for key, value in dataset_info.items():
+    #                 # we want to save all the attributes except for the 
+    #                 # vtk array name and the typecode
+    #                 if 'vtk_array_name' not in key and 'typecode' not in key:
+    #                     dset.attrs[key] = value
+
+    #         #[0,1,2,3]
+
+    #         #create data entry
+    #         #original_data = 
+
+
+    #         # # data attributes:
+    #         # # original dataset will be in 'entry1/tomo_entry/data/data'
+            
+    #         # original_data.attrs['original_fname'] = filepath to original data
+    #         # original_data.attrs['original_shape'] = shape of  original  data
+    #         # original_data.attrs['original_origin'] =
+    #         # original_data.attrs['original_spacing'] =
+
+    #         # # downsampled or cropped (or both) will be in: 'entry2/tomo_entry/data/data'
+    #         # modified_data.attrs['resampled'] = bool
+    #         # modified_data.attrs['cropped'] = bool
+    #         # modified_data.attrs['spacing'] =
+    #         # modified_data.attrs['origin']=
+
+    def _write_tiff(self):
+        pass
+
     def _write_hdf5(self):
+        writer = vortexImageWriter(file_name=self.file_name, format=self.format, datasets=self.datasets, attributes=self.attributes)
+        writer.write()
+
+
+
+
+class vortexImageWriter(ImageWriter):
+    def __init__(self, **kwargs):
+        '''
+        Constructor
+
+        Parameters
+        ----------
+        file_name: os.path or string, default None
+            file name to write to
+        format: string, default None
+            file format to write out.
+            Must be one of: hdf5 #TODO
+        datasets: list, default None
+            list of datasets to write to the file
+        attributes: list, default None
+            list of dictionaries which contain the attributes
+            of the dataset in datasets with the same index.           
+        '''
+
+        super(vortexImageWriter, self).__init__(**kwargs)       
+
+    def write(self):
         with h5py.File(self.file_name, 'w') as f:
             
             # give the file some important attributes
@@ -526,8 +636,6 @@ class ImageWriter(object):
             # modified_data.attrs['spacing'] =
             # modified_data.attrs['origin']=
 
-        def _write_tiff(self):
-            pass
 
 
 class vortexHDF5ImageReader(HDF5Reader):
