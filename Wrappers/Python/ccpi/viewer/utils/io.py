@@ -7,6 +7,7 @@ import shutil
 import sys
 import time
 from functools import partial
+from vtk.util.vtkAlgorithm import VTKPythonAlgorithmBase
 
 import h5py
 import numpy as np
@@ -27,6 +28,7 @@ from ccpi.viewer.version import version
 from schema import Optional, Or, Schema, SchemaError
 from vtk.numpy_interface import dataset_adapter as dsa
 from ccpi.viewer.utils.error_handling import customise_warnings
+from ccpi.viewer.utils.hdf5_io import HDF5Reader
 
 import warnings
 
@@ -97,8 +99,6 @@ class ImageReader(object):
 
         self._set_up_logger(log_file)
 
-        self.logger.info("This is an info log")
-
         if file_name is None:
             raise Exception('Path to file is required.')
 
@@ -150,7 +150,6 @@ class ImageReader(object):
         if raw_image_attrs is not None:
             image_attrs.update(raw_image_attrs)
         image_attrs['file_name'] = self.file_name
-        image_attrs['resample_z'] = self.resample_z
         return image_attrs
 
     def get_original_attrs(self):
@@ -238,6 +237,8 @@ class ImageReader(object):
         self.loaded_image_attrs['spacing'] = data.GetSpacing()
         self.loaded_image_attrs['origin'] = data.GetOrigin()
         self.loaded_image_attrs['vtk_array_name'] = 'ImageScalars'
+        if self.resample:
+            self.loaded_image_attrs['resample_z'] = self.resample_z
         # TODO: do we need to set typecode in case we want to write to hdf5 self.loaded_image_attrs['typecode']  ??
         
         return data
@@ -393,7 +394,7 @@ class ImageWriter(object):
         # self.original_image_attrs['bit_depth'] = str(reader.GetBytesPerElement()*8)
         # self.original_image_attrs['is_big_endian'] = reader.GetBigEndian()
         # self.original_image_attrs['header_length'] = reader.GetFileHeaderLength()
-        # Also 'file_name' and 'resample_z'
+        # Also 'file_name'
 
         # # info about new dataset:
         # self.loaded_image_attrs['spacing'] = data.GetSpacing()
@@ -529,30 +530,37 @@ class ImageWriter(object):
             pass
 
 
-def descend_obj(obj, sep='\t'):
-    """
-    Iterate through groups in a HDF5 file and prints the groups and datasets names and datasets attributes
-    """
-    if type(obj) in [h5py._hl.group.Group, h5py._hl.files.File]:
-        for key in obj.keys():
-            print(sep, '-', key, ':', obj[key])
-            descend_obj(obj[key], sep=sep+'\t')
-    elif type(obj) == h5py._hl.dataset.Dataset:
-        for key in obj.attrs.keys():
-            print(sep+'\t', '-', key, ':', obj.attrs[key])
+class vortexHDF5ImageReader(HDF5Reader):
+    def __init__(self):
+        VTKPythonAlgorithmBase.__init__(self,
+                                        nInputPorts=0,
+                                        nOutputPorts=1,
+                                        outputType='vtkImageData')
+
+        super(vortexHDF5ImageReader, self).__init__()
+        self._DatasetName = 'entry2/tomo_entry/data/data'
+        print("dataset_name: ", self._DatasetName)
 
 
-def h5dump(path, group='/'):
-    """
-    print HDF5 file metadata
+    def RequestData(self, request, inInfo, outInfo):
+        output = super(vortexHDF5ImageReader, self)._update_output_data(outInfo)
+        with h5py.File(self._FileName, 'r') as f:      
+            attrs = f[self._DatasetName].attrs
+            output.SetOrigin(attrs['origin'])
+            output.SetSpacing(attrs['spacing'])
+        return 1
 
-    group: you can give a specific group, defaults to the root group
-    """
-    print("dump")
-    with h5py.File(path, 'r') as f:
-        descend_obj(f[group])
+    def GetOriginalDataset(self):
+        # TODO
+        # should this return the filename?
+        # or the attributes
+        # or the dataset as imagedata if present?
+        pass
 
-if __name__ == "__main__":
+
+            
+
+# if __name__ == "__main__":
     
     # reader = ImageReader(file_name=r"D:\lhe97136\Work\Data\24737_fd_normalised.nxs", resample=True, crop=False, log_file='log_test.log')
     # reader.read()
