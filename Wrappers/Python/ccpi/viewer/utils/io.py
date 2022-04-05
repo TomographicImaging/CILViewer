@@ -82,10 +82,6 @@ def SaveRenderToPNG(render_window, filename):
     writer.Write()
 
 
-# Currently doesn't support both cropping and resampling
-# If set both to true then it resamples and doesn't crop
-
-
 # TODO:
 # supporting tiffs
 # write out other filetypes
@@ -97,6 +93,8 @@ class ImageReader(object):
     Later will support TIFFs
     Supports resampling OR cropping the dataset whilst
     reading.
+    Currently doesn't support both cropping and resampling
+    If set both to true then it resamples and doesn't crop
     '''
 
     def __init__(self, **kwargs):
