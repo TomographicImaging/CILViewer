@@ -16,8 +16,9 @@ from ccpi.viewer.utils.io import ImageReader
 from ccpi.viewer.utils.io import ImageWriter, vortexHDF5ImageReader
 import h5py
 from ccpi.viewer.iviewer import iviewer
+import numpy as np
 
-DATASET_TO_READ = r"D:\lhe97136\Work\CCPi\CILViewer\Wrappers\Python\ccpi\viewer\cli\24737_fd_normalised.nxs"
+DATASET_TO_READ =  None  #r"D:\lhe97136\Work\CCPi\CILViewer\Wrappers\Python\ccpi\viewer\cli\24737_fd_normalised.nxs"
 TARGET_SIZE = (100)**3
 FILE_TO_WRITE = 'resampled_dataset.hdf5'
 
@@ -48,7 +49,11 @@ def h5dump(path, group='/'):
 
 # ----- STEP 1 ------------------------------
 
-# TODO
+if DATASET_TO_READ is None:
+    input_3D_array = np.random.random(size=(500, 100, 600))
+    # write to NUMPY: ----------
+    DATASET_TO_READ = 'test_3D_data.npy'
+    np.save(DATASET_TO_READ, input_3D_array)
 
 # ----- STEP 2 ------------------------------
 reader = ImageReader()
@@ -64,8 +69,6 @@ writer.write()
 
 # ---- STEP 4 --------------------------------
 h5dump(FILE_TO_WRITE)
-
-print(resampled_image)
 
 # ---- STEP 5 --------------------------------
 reader = vortexHDF5ImageReader()

@@ -3,12 +3,12 @@ from vtk.util.vtkAlgorithm import VTKPythonAlgorithmBase
 import h5py
 import numpy as np
 from vtk.numpy_interface import dataset_adapter as dsa
+from vtk.util import numpy_support
 
 # Methods for reading and writing HDF5 files:
 
 
-def write_image_data_to_hdf5(filename, data, dataset_name, attributes={},
-                             array_name='vtkarray'):
+def write_image_data_to_hdf5(filename, data, dataset_name, attributes={}):
     '''
     Writes vtkImageData to a dataset in a HDF5 file
 
@@ -21,14 +21,17 @@ def write_image_data_to_hdf5(filename, data, dataset_name, attributes={},
     '''
 
     with h5py.File(filename, "a") as f:
-        wdata = dsa.WrapDataObject(data)
-        array = wdata.PointData[array_name]
+        # The function imgdata.GetPointData().GetScalars() returns a pointer to a
+        # vtk<TYPE>Array where the data is stored as X-Y-Z.
+        array = numpy_support.vtk_to_numpy(
+            data.GetPointData().GetScalars())
+
         # Note that we flip the dimensions here because
         # VTK's order is Fortran whereas h5py writes in
         # C order. We don't want to do deep copies so we write
         # with dimensions flipped and pretend the array is
         # C order.
-        array = array.reshape(wdata.GetDimensions()[::-1])
+        array = array.reshape(data.GetDimensions()[::-1])
         try:
             dset = f.create_dataset(dataset_name, data=array)
         except RuntimeError:

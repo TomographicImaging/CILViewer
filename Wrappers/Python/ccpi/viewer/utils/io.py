@@ -31,6 +31,7 @@ from schema import Optional, Or, Schema, SchemaError
 from vtk.numpy_interface import dataset_adapter as dsa
 from ccpi.viewer.utils.error_handling import customise_warnings
 from ccpi.viewer.utils.hdf5_io import HDF5Reader
+from vtk.util import numpy_support
 
 import warnings
 
@@ -238,7 +239,6 @@ class ImageReader(object):
         # info about new dataset:
         self.loaded_image_attrs['spacing'] = data.GetSpacing()
         self.loaded_image_attrs['origin'] = data.GetOrigin()
-        self.loaded_image_attrs['vtk_array_name'] = 'ImageScalars'
         if self.resample:
             self.loaded_image_attrs['resample_z'] = self.resample_z
         # TODO: do we need to set typecode in case we want to write to hdf5 self.loaded_image_attrs['typecode']  ??
@@ -401,7 +401,6 @@ class ImageWriter(object):
         # # info about new dataset:
         # self.loaded_image_attrs['spacing'] = data.GetSpacing()
         # self.loaded_image_attrs['origin'] = data.GetOrigin()
-        # self.loaded_image_attrs['vtk_array_name'] = 'ImageScalars'
 
         # we want to then make a reader so that the viewer uses the spacing etc that has been 
         # written out to this file
@@ -450,83 +449,6 @@ class ImageWriter(object):
             else:
                 raise Exception("File format is not supported. Supported types include tiff and hdf5/nexus.")
 
-
-    # def _write_hdf5(self):
-    #     with h5py.File(self.file_name, 'w') as f:
-            
-    #         # give the file some important attributes
-    #         f.attrs['file_name'] = self.file_name
-    #         f.attrs['cilviewer_version'] = version
-    #         f.attrs['file_time'] = str(datetime.datetime.utcnow())
-    #         f.attrs['creator'] = np.string_('io.py')
-    #         f.attrs['HDF5_Version'] = h5py.version.hdf5_version
-    #         f.attrs['h5py_version'] = h5py.version.version
-            
-    #         # create the NXentry group
-    #         nxentry = f.create_group('entry1/tomo_entry')
-    #         nxentry.attrs['NX_class'] = 'NXentry'
-
-
-    #         for i, dataset in enumerate(self.datasets):
-    #             data = dataset
-    #             dataset_info = self.attributes[i]
-    #             entry_num = i+1
-    #             dataset_name = 'entry{}/tomo_entry/data/data'.format(entry_num)
-
-    #             vtk_array_name = dataset_info.get('vtk_array_name', 'ImageScalars')#'vtkarray')
-
-    #             if data is not None:
-    #                 print(data, vtk_array_name)
-    #                 wdata = dsa.WrapDataObject(data)
-    #                 array = wdata.PointData[vtk_array_name]
-    #                 # Note that we flip the shape here because
-    #                 # VTK's order is Fortran whereas h5py writes in
-    #                 # C order. We don't want to do deep copies so we write
-    #                 # with shape flipped and pretend the array is
-    #                 # C order.
-    #                 array = array.reshape(wdata.GetDimensions()[::-1])
-    #             else:
-    #                 # If we have no data then we want to save info about a dataset in another
-    #                 # file, so we want to have an attribute which is called 'file_name'
-    #                 if dataset_info.get("file_name") is None:
-    #                     raise Exception("If no name is given for a dataset, the attributes must include the 'file_name'.")
-    #                 array = None
-    #             try:
-    #                 if array is None:
-    #                     dset = f.create_dataset(dataset_name, dataset_info['shape'] ) #, dataset_info['typecode']) # do we need?
-    #                 else:
-    #                     dset = f.create_dataset(dataset_name, data=array ) # , dtype= dataset_info['typecode']) # do we need?
-    #             except RuntimeError:
-    #                     print("Unable to save image data to {0}."
-    #                         "Dataset with name {1} already exists in this file.".format(
-    #                             self.file_name, dataset_name))
-                
-
-    #             for key, value in dataset_info.items():
-    #                 # we want to save all the attributes except for the 
-    #                 # vtk array name and the typecode
-    #                 if 'vtk_array_name' not in key and 'typecode' not in key:
-    #                     dset.attrs[key] = value
-
-    #         #[0,1,2,3]
-
-    #         #create data entry
-    #         #original_data = 
-
-
-    #         # # data attributes:
-    #         # # original dataset will be in 'entry1/tomo_entry/data/data'
-            
-    #         # original_data.attrs['original_fname'] = filepath to original data
-    #         # original_data.attrs['original_shape'] = shape of  original  data
-    #         # original_data.attrs['original_origin'] =
-    #         # original_data.attrs['original_spacing'] =
-
-    #         # # downsampled or cropped (or both) will be in: 'entry2/tomo_entry/data/data'
-    #         # modified_data.attrs['resampled'] = bool
-    #         # modified_data.attrs['cropped'] = bool
-    #         # modified_data.attrs['spacing'] =
-    #         # modified_data.attrs['origin']=
 
     def _write_tiff(self):
         pass
@@ -581,18 +503,18 @@ class vortexImageWriter(ImageWriter):
                 entry_num = i+1
                 dataset_name = 'entry{}/tomo_entry/data/data'.format(entry_num)
 
-                vtk_array_name = dataset_info.get('vtk_array_name', 'ImageScalars')#'vtkarray')
-
                 if data is not None:
-                    print(data, vtk_array_name)
-                    wdata = dsa.WrapDataObject(data)
-                    array = wdata.PointData[vtk_array_name]
+                    # The function imgdata.GetPointData().GetScalars() returns a pointer to a
+                    # vtk<TYPE>Array where the data is stored as X-Y-Z.
+                    array = numpy_support.vtk_to_numpy(
+                        data.GetPointData().GetScalars())
+
                     # Note that we flip the shape here because
                     # VTK's order is Fortran whereas h5py writes in
                     # C order. We don't want to do deep copies so we write
                     # with shape flipped and pretend the array is
                     # C order.
-                    array = array.reshape(wdata.GetDimensions()[::-1])
+                    array = array.reshape(data.GetDimensions()[::-1])
                 else:
                     # If we have no data then we want to save info about a dataset in another
                     # file, so we want to have an attribute which is called 'file_name'
@@ -612,8 +534,8 @@ class vortexImageWriter(ImageWriter):
 
                 for key, value in dataset_info.items():
                     # we want to save all the attributes except for the 
-                    # vtk array name and the typecode
-                    if 'vtk_array_name' not in key and 'typecode' not in key:
+                    # the typecode TODO - check if this is correct
+                    if 'typecode' not in key:
                         dset.attrs[key] = value
 
             #[0,1,2,3]
