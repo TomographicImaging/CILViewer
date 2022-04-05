@@ -21,6 +21,7 @@ import numpy as np
 DATASET_TO_READ =  None  #r"D:\lhe97136\Work\CCPi\CILViewer\Wrappers\Python\ccpi\viewer\cli\24737_fd_normalised.nxs"
 TARGET_SIZE = (100)**3
 FILE_TO_WRITE = 'resampled_dataset.hdf5'
+LOG_FILE = 'image_reader_and_writer.log'
 
 
 # --- UTILS ---------------------------------
@@ -57,11 +58,11 @@ if DATASET_TO_READ is None:
 
 # ----- STEP 2 ------------------------------
 reader = ImageReader()
-reader.set_up(file_name=DATASET_TO_READ, target_size=TARGET_SIZE, resample_z=True)
+reader.set_up(file_name=DATASET_TO_READ, target_size=TARGET_SIZE, resample_z=True, log_file=LOG_FILE)
 resampled_image = reader.read()
 
 resampled_image_attrs = reader.get_loaded_image_attrs()
-original_image_attrs = reader.get_original_attrs()
+original_image_attrs = reader.get_original_image_attrs()
 
 # ----- STEP 3 ------------------------------
 writer = ImageWriter(file_name=FILE_TO_WRITE, format='hdf5', datasets=[None, resampled_image], attributes=[original_image_attrs, resampled_image_attrs])
