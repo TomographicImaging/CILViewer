@@ -76,6 +76,9 @@ reader.SetFileName(FILE_TO_WRITE)
 reader.Update()
 read_resampled_image = reader.GetOutputDataObject(0)
 
+print(read_resampled_image.GetOrigin())
+print(read_resampled_image.GetSpacing())
+
 # ---- STEP 6 --------------------------------
 iviewer(read_resampled_image)
 

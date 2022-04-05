@@ -17,7 +17,7 @@ array:
   is_fortran: False
   is_big_endian: True
   typecode: 'float32'
-  group_name: '/entry1/tomo_entry/data/data' # valid for HDF5 and Zarr
+  dataset_name: '/entry1/tomo_entry/data/data' # valid for HDF5 and Zarr
 resample:
   target_size: 100000
   resample_z: True
@@ -34,7 +34,7 @@ schema = Schema(
                                 Optional('is_fortran'): bool, # only for raw
                                 Optional('is_big_endian'): bool, # only for raw
                                 Optional('typecode'): str, # only for raw
-                                Optional('group_name'): str}, # only for hdf5 # set default
+                                Optional('dataset_name'): str}, # only for hdf5 # need to set default
             'resample': {'target_size': int, 
                          'resample_z' : bool},
             'output': {'file_name': str,
@@ -71,17 +71,17 @@ def main():
     if 'array' in params.keys():
         raw_attrs = {}
         for key, value in params['array'].items():
-            if key == 'group_name':
-                group_name = value
+            if key == 'dataset_name':
+                dataset_name = value
             else:
                 raw_attrs[key] = value
     else:
         raw_attrs = None
-        group_name = None
+        dataset_name = None
 
 
     reader = ImageReader(file_name=args.input_dataset, resample=True, target_size=params['resample']['target_size'],
-             resample_z=params['resample']['resample_z'], raw_image_attrs=raw_attrs, hdf5_dataset_name=group_name)
+             resample_z=params['resample']['resample_z'], raw_image_attrs=raw_attrs, hdf5_dataset_name=dataset_name)
     downsampled_image = reader.read()
     #print(downsampled_image)
     original_image_attrs = reader.get_original_attrs()
@@ -91,8 +91,6 @@ def main():
     
     writer = ImageWriter(file_name=params['output']['file_name'], format='hdf5', datasets=datasets, attributes=attributes)
     writer.write()
-
-    # now we need to write out
 
 
 
