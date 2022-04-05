@@ -14,7 +14,6 @@ from vtk.util.vtkAlgorithm import VTKPythonAlgorithmBase
 import h5py
 import numpy as np
 import vtk
-from ccpi.viewer.iviewer import iviewer
 from ccpi.viewer.utils import Converter
 from ccpi.viewer.utils.conversion import (HDF5SubsetReader,
                                           cilRawCroppedReader,

@@ -88,6 +88,7 @@ class HDF5Reader(VTKPythonAlgorithmBase):
             output.SetExtent(ue)
             output.PointData.append(data.ravel(), self._DatasetName)
             output.PointData.SetActiveScalars(self._DatasetName)
+            return output
         
 
     def SetFileName(self, fname):
