@@ -84,8 +84,8 @@ def main():
              resample_z=params['resample']['resample_z'], raw_image_attrs=raw_attrs, hdf5_dataset_name=dataset_name)
     downsampled_image = reader.read()
     #print(downsampled_image)
-    original_image_attrs = reader.get_original_attrs()
-    loaded_image_attrs = reader.get_loaded_attrs()
+    original_image_attrs = reader.get_original_image_attrs()
+    loaded_image_attrs = reader.get_loaded_image_attrs()
     datasets = [None, downsampled_image]
     attributes = [original_image_attrs, loaded_image_attrs]
     

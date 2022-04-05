@@ -40,18 +40,8 @@ import re
 
 import vtk
 
-# Currently doesn't support both cropping and resampling
-# If set both to true then it resamples and doesn't crop
+from ccpi.viewer.utils.error_handling import EndObserver, ErrorObserver
 
-
-# TODO: progress reporting
-# supporting tiffs
-# logger
-
-
-# write other filetypes
-# possibly change structure of how it's written out
-# make a reader for our data format that we write out
 
 def SaveRenderToPNG(render_window, filename):
     ''' Saves contents of a vtk render window
@@ -92,7 +82,22 @@ def SaveRenderToPNG(render_window, filename):
     writer.Write()
 
 
+# Currently doesn't support both cropping and resampling
+# If set both to true then it resamples and doesn't crop
+
+
+# TODO:
+# supporting tiffs
+# write out other filetypes
+
 class ImageReader(object):
+    '''
+    Generic reader for reading to vtkImageData
+    Currently reads: HDF5, MetaImage, Numpy, Raw
+    Later will support TIFFs
+    Supports resampling OR cropping the dataset whilst
+    reading.
+    '''
 
     def __init__(self, **kwargs):
         '''
@@ -164,12 +169,12 @@ class ImageReader(object):
         if raw_image_attrs is not None and raw_image_attrs != {}:
             try:
                 raw_attrs = self._validate_raw_attrs(raw_image_attrs)
+                self.original_image_attrs = raw_attrs
             except SchemaError as e:
                 raise ValueError("Error: Raw image attributes were not input correctly: ", e)
-
-        self.original_image_attrs = self._generate_image_attrs(raw_attrs)
-        self.loaded_image_attrs = {'resampled': self.resample, 'cropped': self.crop}
-
+        else:
+            self.original_image_attrs = {}
+        
         if self.crop:
             if self.target_z_extent is None:
                 raise Exception("Error: if crop is set to True, target_z_extent must be set.")
@@ -177,8 +182,36 @@ class ImageReader(object):
         if self.crop and self.resample:
             warnings.warn("Both cropping and resampling is not yet implemented. Image will just be cropped and not resampled.")
             self.resample = False
+
+        self.loaded_image_attrs = {'resampled': self.resample, 'cropped': self.crop}
         
        
+    def read(self, *args, **kwargs):
+        ''' reads self.file_name
+            returns vtkImageData'''
+        # identifies file type
+        # uses appropriate reader based on file type and cropping or resampling
+
+        self.logger.info("reading: {}".format(self.file_name))
+
+        progress_callback = kwargs.get('progress_callback')
+
+        reader = self._get_reader(progress_callback)
+        reader.Update()
+        data = reader.GetOutput()
+
+        self._update_loaded_image_attrs(reader, data)
+
+        self._update_original_image_attrs(reader)
+        
+        return data
+
+    def get_original_image_attrs(self):
+        return self.original_image_attrs
+
+    def get_loaded_image_attrs(self):
+        return self.loaded_image_attrs
+
     def _validate_raw_attrs(self, raw_image_attrs):
         if raw_image_attrs is None:
             return
@@ -190,31 +223,7 @@ class ImageReader(object):
         raw_attrs_schema.validate(raw_attrs)
         return raw_attrs
 
-
-    def _generate_image_attrs(self, raw_image_attrs=None, hdf5_image_attrs=None):
-        image_attrs = {}
-        if raw_image_attrs is not None:
-            image_attrs.update(raw_image_attrs)
-        image_attrs['file_name'] = self.file_name
-        return image_attrs
-
-    def get_original_attrs(self):
-        return self.original_image_attrs
-
-    def get_loaded_attrs(self):
-        return self.loaded_image_attrs
-
-    def read(self, *args, **kwargs):
-        ''' reads self.file_name
-            returns vtkImageData'''
-        # identifies file type
-        # uses appropriate reader based on file type and cropping or resampling
-
-        # progress_callback = kwargs.get('progress_callback')
-        # print("The progress callback: ", progress_callback)
-
-        self.logger.info("read: {}".format(self.file_name))
-
+    def _get_reader(self, progress_callback=None):
         if os.path.isfile(self.file_name):
             file_extension = os.path.splitext(self.file_name)[1]
 
@@ -225,7 +234,7 @@ class ImageReader(object):
                 reader = self._get_numpy_image_reader()
 
             elif file_extension in ['.raw']:
-                reader = self._read_raw_image()
+                reader = self._get_raw_image_reader()
 
             elif file_extension in ['.nxs', '.h5', '.hdf5']:
                 reader = self._get_hdf5_image_reader()
@@ -246,7 +255,6 @@ class ImageReader(object):
             self._data = self._read_tiff_images(image_files)
 
         reader.SetFileName(self.file_name)
-        self.logger.debug("is it acq? : {}".format(self.resample_z))
         reader.SetIsAcquisitionData(self.resample_z)
         if not self.crop:
             if self.resample:
@@ -257,42 +265,19 @@ class ImageReader(object):
                 # but the large target size means we don't resample
                 target_size = 1e12
             reader.SetTargetSize(int(target_size))
-        reader.Update()
-        data = reader.GetOutput()
-        
-        # Make sure whether we did resample or not:
-        if self.resample:
-            original_image_size = reader.GetStoredArrayShape(
-            )[0] * reader.GetStoredArrayShape()[1] * reader.GetStoredArrayShape()[2]
-            resampled_image_size = reader.GetTargetSize()
-            if original_image_size <= resampled_image_size:
-                self.loaded_image_attrs['resampled'] = False
-            else:
-                self.loaded_image_attrs['resampled'] = True
 
-        # info about original dataset:
-        self.original_image_attrs['shape'] = reader.GetStoredArrayShape()
-        self.original_image_attrs['spacing'] = reader.GetElementSpacing()
-        self.original_image_attrs['origin'] = reader.GetOrigin()
-        self.original_image_attrs['bit_depth'] = str(reader.GetBytesPerElement()*8)
-        self.original_image_attrs['is_big_endian'] = reader.GetBigEndian()
-        self.original_image_attrs['header_length'] = reader.GetFileHeaderLength()
-        # TODO: here we need to save the filepath of the original dataset
+        # Add observers:
+        reader.AddObserver(vtk.vtkCommand.ProgressEvent, partial(
+            self._report_progress, progress_callback=progress_callback))
 
-        # info about new dataset:
-        self.loaded_image_attrs['spacing'] = data.GetSpacing()
-        self.loaded_image_attrs['origin'] = data.GetOrigin()
-        if self.resample:
-            self.loaded_image_attrs['resample_z'] = self.resample_z
-        # TODO: do we need to set typecode in case we want to write to hdf5 self.loaded_image_attrs['typecode']  ??
-        
-        return data
+        # Prints the error if an error occurs in the reader.
+        # Otherwise this wouldn't print at all.
+        error_obs = ErrorObserver(callback_fn=print)
+        reader.AddObserver(vtk.vtkCommand.ErrorEvent, error_obs)
+        # Could add end observer so that we don't continue to do anything
+        # else if an error does occur in reader?
 
-    def get_original_image_attributes(self):
-        return self.original_image_attrs
-
-    def get_loaded_image_attrs(self):
-        return self.loaded_image_attrs
+        return reader
 
     def _get_meta_image_reader(self, progress_callback=None):
         if self.crop:
@@ -310,7 +295,6 @@ class ImageReader(object):
             reader = cilNumpyResampleReader()
 
         return reader
-
 
     def _read_tiff_images(self, progress_callback=None):
         # TODO!!!!!!!!!!!
@@ -341,7 +325,7 @@ class ImageReader(object):
 
         return reader.GetOutput()
 
-    def _read_raw_image(self, progress_callback=None):
+    def _get_raw_image_reader(self):
         if self.original_image_attrs is None or 'shape' not in self.original_image_attrs.keys():
             raise Exception(
                 "To read a raw image, raw_image_attrs must be set.")
@@ -365,7 +349,6 @@ class ImageReader(object):
         return reader
     
     def _get_hdf5_image_reader(self):
-
         if self.crop:
             reader = cilHDF5CroppedReader()
             reader.SetTargetExtent([0, -1, 0, -1, self.target_z_extent[0], self.target_z_extent[1]])
@@ -377,30 +360,59 @@ class ImageReader(object):
 
         return reader
 
-
-    # TODO: test logger
     def _set_up_logger(self, fname):
         """Set up the logger """
         self.logger = logging.getLogger("ccpi.viewer.utils.io.ImageReader")
         self.logger.setLevel(logging.INFO)
         if fname:
-            print("Will output results to: " + fname)
             handler = logging.FileHandler(fname)
             self.logger.addHandler(handler)
 
-    def _report_progress(self, caller, event, progress_callback):
-        ''' This emits the progress as an integer between 1 and 100, if a 
-        Qt progress_callback has been passed. This allows progress to be kept track
+    def _report_progress(self, caller, event, progress_callback=None):
+        ''' This emits the progress as a value between 1 and 100,
+        and writes to a log file.
+        If a Qt progress_callback has been passed, this allows progress to be kept track
         of if the reading is run in a Worker thread.'''
-        # TODO: test log
-        self.logger.info(str(caller.getProgress()*100) + "%")
+        progress_value = caller.GetProgress()*100
+        progress = "{:.1f}%".format(progress_value)
+        self.logger.info(progress)
 
         if progress_callback is not None:
-            progress_callback.emit(int(caller.getProgress()*100))
+            progress_callback.emit(int(progress_value))
 
+    def _update_loaded_image_attrs(self, reader, data):
+        # Make sure whether we did resample or not:
+        if self.resample:
+            original_image_size = reader.GetStoredArrayShape(
+            )[0] * reader.GetStoredArrayShape()[1] * reader.GetStoredArrayShape()[2]
+            resampled_image_size = reader.GetTargetSize()
+            if original_image_size <= resampled_image_size:
+                self.loaded_image_attrs['resampled'] = False
+            else:
+                self.loaded_image_attrs['resampled'] = True
+        # info about new dataset:
+        self.loaded_image_attrs['spacing'] = data.GetSpacing()
+        self.loaded_image_attrs['origin'] = data.GetOrigin()
+        if self.resample:
+            self.loaded_image_attrs['resample_z'] = self.resample_z
+
+    def _update_original_image_attrs(self, reader):
+        self.original_image_attrs['shape'] = reader.GetStoredArrayShape()
+        self.original_image_attrs['spacing'] = reader.GetElementSpacing()
+        self.original_image_attrs['origin'] = reader.GetOrigin()
+        self.original_image_attrs['bit_depth'] = str(reader.GetBytesPerElement()*8)
+        self.original_image_attrs['is_big_endian'] = reader.GetBigEndian()
+        self.original_image_attrs['header_length'] = reader.GetFileHeaderLength()
+        self.original_image_attrs['file_name'] = self.file_name
 
 
 class ImageWriter(object):
+    '''
+    Generic image writer for writing out vtkImageData or 
+    multiple vtkImageData and attributes to a file.
+    Currently supports writing to HDF5.
+    Will later support other formats
+    '''
 
 
     def __init__(self, **kwargs):
@@ -416,9 +428,12 @@ class ImageWriter(object):
             Must be one of: hdf5 #TODO
         datasets: list, default None
             list of datasets to write to the file
+            Can set a dataset as None and just save attributes
+            to file, but in this case, the attributes must include
+            the file_name of the dataset.
         attributes: list, default None
             list of dictionaries which contain the attributes
-            of the dataset in datasets with the same index.           
+            of the dataset in the datasets list with the same index.           
         '''
         file_name = kwargs.get('file_name', None)
         format = kwargs.get('format', None)
@@ -427,26 +442,11 @@ class ImageWriter(object):
 
         # can have multiple datasets
         # so we want to input list of datasets and their attributes and optionally the data
-        # so we have
-        # datasets = [[dataset, attributes], [dataset1, attributes1]] and they're auto written to entry1, entry2 etc.
-        # if dataset entry is None we must have an attribute file_name
-
-        # Attributes will be like:
-        # info about original dataset:
-        # self.original_image_attrs['shape'] = reader.GetStoredArrayShape()
-        # self.original_image_attrs['spacing'] = reader.GetElementSpacing()
-        # self.original_image_attrs['origin'] = reader.GetOrigin()
-        # self.original_image_attrs['bit_depth'] = str(reader.GetBytesPerElement()*8)
-        # self.original_image_attrs['is_big_endian'] = reader.GetBigEndian()
-        # self.original_image_attrs['header_length'] = reader.GetFileHeaderLength()
-        # Also 'file_name'
-
-        # # info about new dataset:
-        # self.loaded_image_attrs['spacing'] = data.GetSpacing()
-        # self.loaded_image_attrs['origin'] = data.GetOrigin()
-
-        # we want to then make a reader so that the viewer uses the spacing etc that has been 
-        # written out to this file
+        # idea is you would give
+        # datasets = [None, downsampled_dataset]
+        # attributes = [original_attrs, downsampled_attrs]
+        # original_attrs will include filename of original dataset and attributes needed to read it
+        # downsampled_attrs will include origin and spacing of dataset so it can be displayed correctly on viewer
 
         self.set_up(file_name, format, datasets, attributes)
 
@@ -476,31 +476,35 @@ class ImageWriter(object):
 
     def write(self):
         # check file ext
-
-            file_extension = os.path.splitext(self.file_name)[1]
-
-            if file_extension in ['tif', 'tiff', '.tif', '.tiff']:
-                self._write_tiff()
-
-            elif file_extension in ['.nxs', '.h5', '.hdf5']:
-                self._write_hdf5()
-
-            elif file_extension in ['']:
-                self.file_name = self.file_name + '.nxs'
-                self._write_hdf5()
-
-            else:
-                raise Exception("File format is not supported. Supported types include tiff and hdf5/nexus.")
-
-
-    def _write_tiff(self):
-        pass
-
-    def _write_hdf5(self):
-        writer = vortexImageWriter(file_name=self.file_name, format=self.format, datasets=self.datasets, attributes=self.attributes)
+        writer = self._get_writer()
         writer.write()
 
+   
+    def _get_writer(self):
 
+        file_name = os.path.splitext(self.file_name)[0]
+
+        if self.format in ['tif', 'tiff']:
+            self.file_name = file_name + '.tif'
+            writer = self._get_tiff_writer()
+
+        elif self.format in ['nxs', 'h5', 'hdf5', '']:
+            self.file_name = file_name + '.hdf5'
+            writer = self._get_hdf5_writer()
+
+        else:
+            raise Exception("File format is not supported. Supported types include tiff and hdf5/nexus.")
+
+        return writer
+
+
+    def _get_tiff_writer(self):
+        pass
+
+    def _get_hdf5_writer(self):
+        writer = vortexImageWriter(file_name=self.file_name, format=self.format, datasets=self.datasets, attributes=self.attributes)
+        return writer
+        
 
 
 class vortexImageWriter(ImageWriter):
@@ -645,8 +649,8 @@ class vortexHDF5ImageReader(HDF5Reader):
     # img=reader.read()
     # print("the image is: ", img)
     # iviewer(img, img)
-    # original_image_attrs = reader.get_original_attrs()
-    # loaded_image_attrs = reader.get_loaded_attrs()
+    # original_image_attrs = reader.get_original_image_attrs()
+    # loaded_image_attrs = reader.get_loaded_image_attrs()
     # writer = ImageWriter(file_name='test_empty_dataset.hdf5', format='hdf5', datasets=[None, img], attributes=[original_image_attrs, loaded_image_attrs])
     # writer.write()
     # h5dump('test_empty_dataset.hdf5')
@@ -655,8 +659,8 @@ class vortexHDF5ImageReader(HDF5Reader):
 
     # reader2 = ImageReader(file_name=r"C:\Users\lhe97136\Work\Data\24737_fd_normalised.nxs", hdf5_image_attrs={'dataset_name': 'entry2/tomo_entry/data/data'})
     # img2=reader.read()
-    # original_image_attrs2 = reader.get_original_attrs()
-    # loaded_image_attrs2 = reader.get_loaded_attrs()
+    # original_image_attrs2 = reader.get_original_image_attrs()
+    # loaded_image_attrs2 = reader.get_loaded_image_attrs()
 
     # print(img)
     # print(img2)
