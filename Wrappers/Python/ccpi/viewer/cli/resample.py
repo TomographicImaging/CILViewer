@@ -9,8 +9,6 @@ from ccpi.viewer.utils.io import ImageReader, ImageWriter
 # SO FAR THIS READS AND DOWNSAMPLES AND WRITES TO HDF5
 
 #### EXAMPLE INPUT YAML:
-### works with 24737_fd_normalised.nxs
-### which doesn't use the shape, is_fortran and other raw attrs
 '''
 array:
   shape: (1024,1024,1024)
@@ -26,6 +24,30 @@ output:
   format: 'hdf5' # npy, METAImage, NIFTI (or Zarr to come)
   '''
 
+### THIS IS WHAT THE OUTPUT STRUCTURE OF AN EXAMPLE OUTPUT HDF5 FILE WOULD LOOK LIKE:
+'''
+- entry1 : <HDF5 group "/entry1" (1 members)>
+            - tomo_entry : <HDF5 group "/entry1/tomo_entry" (1 members)>
+                    - data : <HDF5 group "/entry1/tomo_entry/data" (1 members)>
+                            - data : <HDF5 dataset "data": shape (500, 100, 600), type "<f4">
+                                            - bit_depth : 64
+                                            - file_name : test_3D_data.npy
+                                            - header_length : 128
+                                            - is_big_endian : False
+                                            - origin : [0. 0. 0.]
+                                            - shape : [500 100 600]
+                                            - spacing : [1 1 1]
+    - entry2 : <HDF5 group "/entry2" (1 members)>
+            - tomo_entry : <HDF5 group "/entry2/tomo_entry" (1 members)>
+                    - data : <HDF5 group "/entry2/tomo_entry/data" (1 members)>
+                            - data : <HDF5 dataset "data": shape (500, 18, 109), type "<f8">
+                                            - cropped : False
+                                            - origin : [2.23861279 2.23861279 0.        ]
+                                            - resample_z : True
+                                            - resampled : True
+                                            - spacing : [5.47722558 5.47722558 1.        ]
+'''
+ 
 
 
 schema = Schema(
