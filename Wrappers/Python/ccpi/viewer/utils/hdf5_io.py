@@ -95,8 +95,9 @@ class HDF5Reader(VTKPythonAlgorithmBase):
         if fname != self._FileName:
             self.Modified()
             if self._DatasetName is not None:
-                if not (self._DatasetName in fname):
-                    raise Exception("No dataset named {} exists in {}.".format(self._DatasetName, fname))
+                with h5py.File(fname, 'r') as f:
+                    if not (self._DatasetName in f):
+                        raise Exception("No dataset named {} exists in {}.".format(self._DatasetName, fname))
             self._FileName = fname
 
     def GetFileName(self):
@@ -106,8 +107,9 @@ class HDF5Reader(VTKPythonAlgorithmBase):
         if lname != self._DatasetName:
             self.Modified()
             if self._FileName is not None:
-                if not (lname in self._FileName):
-                    raise Exception("No dataset named {} exists in {}.".format(lname, self._FileName))
+                with h5py.File(self._FileName, 'r') as f:
+                    if not (lname in f):
+                        raise Exception("No dataset named {} exists in {}.".format(lname, self._FileName))
             self._DatasetName = lname
 
     def GetDatasetName(self):
