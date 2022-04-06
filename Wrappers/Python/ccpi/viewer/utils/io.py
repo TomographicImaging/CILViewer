@@ -1,11 +1,7 @@
 import datetime
 import glob
-import imghdr
 import logging
 import os
-import shutil
-import sys
-import time
 from functools import partial
 
 from attr import attributes
@@ -15,8 +11,7 @@ import h5py
 import numpy as np
 import vtk
 from ccpi.viewer.utils import Converter
-from ccpi.viewer.utils.conversion import (HDF5SubsetReader,
-                                          cilRawCroppedReader,
+from ccpi.viewer.utils.conversion import (cilRawCroppedReader,
                                           cilRawResampleReader,
                                           cilHDF5CroppedReader,
                                           cilHDF5ResampleReader,
@@ -27,7 +22,6 @@ from ccpi.viewer.utils.conversion import (HDF5SubsetReader,
 from ccpi.viewer.utils.hdf5_io import HDF5Reader
 from ccpi.viewer.version import version
 from schema import Optional, Or, Schema, SchemaError
-from vtk.numpy_interface import dataset_adapter as dsa
 from ccpi.viewer.utils.error_handling import customise_warnings
 from ccpi.viewer.utils.hdf5_io import HDF5Reader
 from vtk.util import numpy_support
@@ -583,27 +577,6 @@ class vortexImageWriter(ImageWriter):
                     if 'typecode' not in key:
                         dset.attrs[key] = value
 
-            #[0,1,2,3]
-
-            #create data entry
-            #original_data = 
-
-
-            # # data attributes:
-            # # original dataset will be in 'entry1/tomo_entry/data/data'
-            
-            # original_data.attrs['original_fname'] = filepath to original data
-            # original_data.attrs['original_shape'] = shape of  original  data
-            # original_data.attrs['original_origin'] =
-            # original_data.attrs['original_spacing'] =
-
-            # # downsampled or cropped (or both) will be in: 'entry2/tomo_entry/data/data'
-            # modified_data.attrs['resampled'] = bool
-            # modified_data.attrs['cropped'] = bool
-            # modified_data.attrs['spacing'] =
-            # modified_data.attrs['origin']=
-
-
 
 class vortexHDF5ImageReader(HDF5Reader):
     def __init__(self):
@@ -631,34 +604,3 @@ class vortexHDF5ImageReader(HDF5Reader):
         # or the attributes
         # or the dataset as imagedata if present?
         pass
-
-
-            
-
-# if __name__ == "__main__":
-    
-    # reader = ImageReader(file_name=r"D:\lhe97136\Work\Data\24737_fd_normalised.nxs", resample=True, crop=False, log_file='log_test.log')
-    # reader.read()
-
-    # reader2 = ImageReader(file_name=r"D:\lhe97136\Work\Data\24737_fd_normalised.nxs", resample=True, crop=True, target_z_extent=[1,4], log_file='log_test_debug.log')
-    # reader2.logger.setLevel(logging.DEBUG)
-    # reader2.read()
-    # reader = ImageReader(file_name=r"D:\lhe97136\Work\Data\24737_fd_normalised.nxs", resample=True)#)crop=True, resample=False, target_z_extent=[1, 2], resample_z=False)
-    # img=reader.read()
-    # print("the image is: ", img)
-    # iviewer(img, img)
-    # original_image_attrs = reader.get_original_image_attrs()
-    # loaded_image_attrs = reader.get_loaded_image_attrs()
-    # writer = ImageWriter(file_name='test_empty_dataset.hdf5', format='hdf5', datasets=[None, img], attributes=[original_image_attrs, loaded_image_attrs])
-    # writer.write()
-    # h5dump('test_empty_dataset.hdf5')
-
-
-
-    # reader2 = ImageReader(file_name=r"C:\Users\lhe97136\Work\Data\24737_fd_normalised.nxs", hdf5_image_attrs={'dataset_name': 'entry2/tomo_entry/data/data'})
-    # img2=reader.read()
-    # original_image_attrs2 = reader.get_original_image_attrs()
-    # loaded_image_attrs2 = reader.get_loaded_image_attrs()
-
-    # print(img)
-    # print(img2)
