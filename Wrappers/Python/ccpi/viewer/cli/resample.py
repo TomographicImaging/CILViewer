@@ -6,10 +6,22 @@ from schema import SchemaError, Schema, Optional
 
 from ccpi.viewer.utils.io import ImageReader, ImageWriter
 
-# SO FAR THIS READS AND DOWNSAMPLES AND WRITES TO HDF5
-
-#### EXAMPLE INPUT YAML:
 '''
+This command line tool takes a dataset file and a yaml file as input.
+It resamples or crops the dataset as it reads it in, and then writes
+out the resulting dataset to a file.
+
+Supported file types for reading:
+hdf5, nxs, mha, raw, numpy
+
+Supported file types for writing:
+hdf5, nxs, mha
+
+'''
+
+'''
+EXAMPLE INPUT YAML FILE:
+
 array:
   shape: (1024,1024,1024)
   is_fortran: False
@@ -24,8 +36,8 @@ output:
   format: 'hdf5' # npy, METAImage, NIFTI (or Zarr to come)
   '''
 
-### THIS IS WHAT THE OUTPUT STRUCTURE OF AN EXAMPLE OUTPUT HDF5 FILE WOULD LOOK LIKE:
 '''
+THIS IS WHAT THE OUTPUT STRUCTURE OF AN EXAMPLE OUTPUT HDF5 FILE WOULD LOOK LIKE:
 - entry1 : <HDF5 group "/entry1" (1 members)>
             - tomo_entry : <HDF5 group "/entry1/tomo_entry" (1 members)>
                     - data : <HDF5 group "/entry1/tomo_entry/data" (1 members)>
@@ -37,6 +49,8 @@ output:
                                             - origin : [0. 0. 0.]
                                             - shape : [500 100 600]
                                             - spacing : [1 1 1]
+                                            - resampled: False
+                                            - cropped: False
     - entry2 : <HDF5 group "/entry2" (1 members)>
             - tomo_entry : <HDF5 group "/entry2/tomo_entry" (1 members)>
                     - data : <HDF5 group "/entry2/tomo_entry/data" (1 members)>
@@ -46,10 +60,11 @@ output:
                                             - resample_z : True
                                             - resampled : True
                                             - spacing : [5.47722558 5.47722558 1.        ]
+                                            - original_dataset: /entry1/tomo_entry/data/data
 '''
  
 
-
+# This validates the input yaml file:
 schema = Schema(
         {
             Optional('array'): {Optional('shape'): tuple, # only for raw
@@ -105,15 +120,9 @@ def main():
     reader = ImageReader(file_name=args.input_dataset, resample=True, target_size=params['resample']['target_size'],
              resample_z=params['resample']['resample_z'], raw_image_attrs=raw_attrs, hdf5_dataset_name=dataset_name)
     downsampled_image = reader.read()
-    #print(downsampled_image)
     original_image_attrs = reader.get_original_image_attrs()
     loaded_image_attrs = reader.get_loaded_image_attrs()
-    datasets = [None, downsampled_image]
-    attributes = [original_image_attrs, loaded_image_attrs]
     
-    # writer = ImageWriter(file_name=params['output']['file_name'], format='hdf5', datasets=datasets, attributes=attributes)
-    # writer.write()
-
     writer = ImageWriter()
     writer.SetFileName(params['output']['file_name'])
     writer.SetFileFormat(params['output']['format'])
