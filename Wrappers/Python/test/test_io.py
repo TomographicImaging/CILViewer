@@ -5,7 +5,7 @@ import h5py
 import numpy as np
 import vtk
 from ccpi.viewer.utils.conversion import Converter
-from ccpi.viewer.utils.io import ImageReader, ImageWriter, vortexHDF5ImageReader
+from ccpi.viewer.utils.io import ImageReader, vortexHDF5ImageWriter, vortexHDF5ImageReader
 
 def calculate_target_downsample_shape(max_size, total_size, shape, acq=False):
     if not acq:
@@ -224,8 +224,14 @@ class TestImageReaderAndWriter(unittest.TestCase):
         resampled_image_attrs = reader.get_loaded_image_attrs()
         original_image_attrs = reader.get_original_image_attrs()
 
-        writer = ImageWriter(file_name=file_to_write, format='hdf5', datasets=[None, resampled_image], attributes=[original_image_attrs, resampled_image_attrs])
-        writer.write()
+        # writer = ImageWriter(file_name=file_to_write, format='hdf5', datasets=[None, resampled_image], attributes=[original_image_attrs, resampled_image_attrs])
+        # writer.write()
+
+        writer = vortexHDF5ImageWriter()
+        writer.SetFileName(file_to_write)
+        writer.SetOriginalDataset(None, original_image_attrs)
+        writer.AddChildDataset(resampled_image,  resampled_image_attrs)
+        writer.Write()
 
         reader = vortexHDF5ImageReader()
         reader.SetFileName(file_to_write)

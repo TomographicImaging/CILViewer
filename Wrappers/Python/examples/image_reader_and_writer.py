@@ -13,7 +13,7 @@ a dataset, this will skip step 1 and read in your dataset instead.
 '''
 
 from ccpi.viewer.utils.io import ImageReader
-from ccpi.viewer.utils.io import ImageWriter, vortexHDF5ImageReader
+from ccpi.viewer.utils.io import vortexHDF5ImageReader, vortexHDF5ImageWriter
 import h5py
 from ccpi.viewer.iviewer import iviewer
 import numpy as np
@@ -65,8 +65,12 @@ resampled_image_attrs = reader.get_loaded_image_attrs()
 original_image_attrs = reader.get_original_image_attrs()
 
 # ----- STEP 3 ------------------------------
-writer = ImageWriter(file_name=FILE_TO_WRITE, format='hdf5', datasets=[None, resampled_image], attributes=[original_image_attrs, resampled_image_attrs])
-writer.write()
+writer = vortexHDF5ImageWriter()
+writer.SetFileName(FILE_TO_WRITE)
+# format='hdf5'
+writer.SetOriginalDataset(None, original_image_attrs)
+writer.AddChildDataset(resampled_image, resampled_image_attrs)
+writer.Write()
 
 # ---- STEP 4 --------------------------------
 h5dump(FILE_TO_WRITE)

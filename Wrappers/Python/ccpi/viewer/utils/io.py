@@ -4,7 +4,6 @@ import logging
 import os
 from functools import partial
 
-from attr import attributes
 from vtk.util.vtkAlgorithm import VTKPythonAlgorithmBase
 
 import h5py
@@ -27,14 +26,12 @@ from ccpi.viewer.utils.hdf5_io import HDF5Reader
 from vtk.util import numpy_support
 
 import warnings
-
-import glob
 import os
 import re
-
 import vtk
 
 from ccpi.viewer.utils.error_handling import EndObserver, ErrorObserver
+from schema import Schema, Optional
 
 
 def SaveRenderToPNG(render_window, filename):
@@ -396,6 +393,8 @@ class ImageReader(object):
         self.original_image_attrs['is_big_endian'] = reader.GetBigEndian()
         self.original_image_attrs['header_length'] = reader.GetFileHeaderLength()
         self.original_image_attrs['file_name'] = self.file_name
+        self.original_image_attrs['resampled'] = False
+        self.original_image_attrs['cropped'] = False
 
 
 class ImageWriter(object):
@@ -405,68 +404,18 @@ class ImageWriter(object):
     Currently supports writing to HDF5.
     Will later support other formats
     '''
+    def __init__(self):
+        self._FileName = None
+        self._FileFormat = None
+        self._OriginalDataset = None
+        self._ChildDatasets = []
+        self._OriginalDatasetAttributes = None
+        self._ChildDatasetsAttributes = []
+
+    
 
 
-    def __init__(self, **kwargs):
-        '''
-        Constructor
-
-        Parameters
-        ----------
-        file_name: os.path or string, default None
-            file name to write to
-        format: string, default None
-            file format to write out.
-            Must be one of: hdf5 #TODO
-        datasets: list, default None
-            list of datasets to write to the file
-            Can set a dataset as None and just save attributes
-            to file, but in this case, the attributes must include
-            the file_name of the dataset.
-        attributes: list, default None
-            list of dictionaries which contain the attributes
-            of the dataset in the datasets list with the same index.           
-        '''
-        file_name = kwargs.get('file_name', None)
-        format = kwargs.get('format', None)
-        datasets = kwargs.get('datasets', None)
-        attributes = kwargs.get('attributes', None)
-
-        # can have multiple datasets
-        # so we want to input list of datasets and their attributes and optionally the data
-        # idea is you would give
-        # datasets = [None, downsampled_dataset]
-        # attributes = [original_attrs, downsampled_attrs]
-        # original_attrs will include filename of original dataset and attributes needed to read it
-        # downsampled_attrs will include origin and spacing of dataset so it can be displayed correctly on viewer
-
-        self.set_up(file_name, format, datasets, attributes)
-
-    def set_up(self, file_name, format, datasets, attributes):
-        '''
-        Parameters
-        ----------
-        file_name: os.path or string, default None
-            file name to write to
-        format: string, default None
-            file format to write out.
-            Must be one of: hdf5 #TODO
-        datasets: list, default None
-            list of datasets to write to the file
-        attributes: list, default None
-            list of dictionaries which contain the attributes
-            of the dataset in datasets with the same index.           
-        '''
-        for var in [file_name, format, datasets, attributes]:
-            if var is None:
-                raise Exception("file_name, format, dataset(s) and attribute(s), are required.")
-        self.file_name = file_name
-        self.format = format
-        self.datasets = datasets
-        self.attributes = attributes
-        
-
-    def write(self):
+    def Write(self):
         # check file ext
         writer = self._get_writer()
         writer.write()
@@ -474,58 +423,124 @@ class ImageWriter(object):
    
     def _get_writer(self):
 
-        file_name = os.path.splitext(self.file_name)[0]
+        file_name = os.path.splitext(self._File_name)[0]
 
-        if self.format in ['tif', 'tiff']:
-            self.file_name = file_name + '.tif'
-            writer = self._get_tiff_writer()
 
-        elif self.format in ['nxs', 'h5', 'hdf5', '']:
+        if self._FileFormat in ['nxs', 'h5', 'hdf5', '']:
             self.file_name = file_name + '.hdf5'
             writer = self._get_hdf5_writer()
 
         else:
-            raise Exception("File format is not supported. Supported types include tiff and hdf5/nexus.")
+            raise Exception("File format is not supported. Supported types include hdf5/nexus.")
 
         return writer
 
-
-    def _get_tiff_writer(self):
-        pass
 
     def _get_hdf5_writer(self):
-        writer = vortexImageWriter(file_name=self.file_name, format=self.format, datasets=self.datasets, attributes=self.attributes)
+        writer = vortexHDF5ImageWriter(file_name=self._File_name, format=self.format, datasets=self.datasets, attributes=self.attributes)
         return writer
-        
+            
 
 
-class vortexImageWriter(ImageWriter):
-    def __init__(self, **kwargs):
-        '''
-        Constructor
+
+class vortexHDF5ImageWriter(object):
+    '''
+    Expects to be writing an original dataset or attributes of the original dataset,
+    plus one or more 'child' versions of the dataset which have been resampled and/or cropped.
+    '''
+
+    def __init__(self):
+        self._FileName = None
+        self._OriginalDataset = None
+        self._ChildDatasets = []
+        self._OriginalDatasetAttributes = None
+        self._ChildDatasetsAttributes = []       
+
+
+    def SetFileName(self, value):
+        ''' Set the file name or path where to write the image data
 
         Parameters
-        ----------
-        file_name: os.path or string, default None
-            file name to write to
-        format: string, default None
-            file format to write out.
-            Must be one of: hdf5 #TODO
-        datasets: list, default None
-            list of datasets to write to the file
-        attributes: list, default None
-            list of dictionaries which contain the attributes
-            of the dataset in datasets with the same index.           
+        -----------
+        value: (str)
+            file name or path
         '''
+        self._FileName = value
 
-        super(vortexImageWriter, self).__init__(**kwargs)       
+    def GetFileName(self):
+        ''' Set the file name or path where to write the image data '''
+        return self._FileName
 
-    def write(self):
-        with h5py.File(self.file_name, 'w') as f:
+    def SetOriginalDataset(self, original_dataset, attributes):
+        '''Parameters
+        -----------
+        original_dataset: vtkImageData or None
+            original dataset, or None if this won't be saved to the file
+        attributes: dict
+            dictionary containing attributes of original dataset
+        '''
+        if not isinstance(original_dataset, vtk.vtkImageData) and not (original_dataset is None):
+            raise Exception("'original_dataset' must be vtk.vtkImageData or None")
+        
+        self._validate_original_dataset_attributes(original_dataset, attributes)
+        self._OriginalDataset = original_dataset
+        self._OriginalDatasetAttributes = attributes
+
+    def _validate_original_dataset_attributes(self, original_dataset, attributes):
+        if not isinstance(attributes, dict):
+            raise Exception("'attributes' must be a dictionary.")
+        if original_dataset is None:
+            # must have shape and filename set
+            if attributes.get("file_name") is None or attributes.get("shape") is None:
+                raise Exception("If no name is given for a dataset, the attributes must include the 'file_name' and the 'shape'.")
+
+        original_attributes_schema = Schema({
+            Optional('file_name'): str,
+            Optional('shape'): Or(list, tuple),
+            'resampled': False,
+            'cropped': False,
+            Optional(str): object # allow any other keys and values
+        })
+
+        original_attributes_schema.validate(attributes)
+
+    def AddChildDataset(self, child_dataset, attributes):
+        if not isinstance(child_dataset, vtk.vtkImageData):
+            raise Exception("child_dataset must be vtk.vtkImageData")
+        # check type is vtkImageData
+        self._validate_child_dataset_attributes(child_dataset, attributes)
+        self._ChildDatasets.append(child_dataset)
+        self._ChildDatasetsAttributes.append(attributes)
+
+    def _validate_child_dataset_attributes(self, child_dataset, attributes):
+        if not isinstance(attributes, dict):
+            raise Exception("'attributes must be a dictionary.")
+        # check origin and spacing are set
+        # check resampling and cropping are set
+        child_attributes_schema = Schema({
+            'resampled': bool,
+            'cropped': bool,
+            'spacing': Or(list, tuple),
+            'origin': Or(list, tuple),
+            Optional('resample_z'): bool,
+            Optional(str): object # allow any other keys and values
+        })
+        child_attributes_schema.validate(attributes)
+   
+
+    def Write(self):
+        for var in [self._FileName, self._OriginalDatasetAttributes]:
+            if var is None:
+                raise Exception("file_name, dataset(/s) and attribute(/s), are required.")
+        for var in [self._ChildDatasets, self._ChildDatasetsAttributes]:
+            if var is []:
+                raise Exception("child dataset(/s) and attribute(/s), are required.")
+        
+        with h5py.File(self._FileName, 'w') as f:
             
             # give the file some important attributes
-            f.attrs['file_name'] = self.file_name
-            f.attrs['cilviewer_version'] = version
+            f.attrs['file_name'] = self._FileName
+            f.attrs['viewer_version'] = version
             f.attrs['file_time'] = str(datetime.datetime.utcnow())
             f.attrs['creator'] = np.string_('io.py')
             f.attrs['HDF5_Version'] = h5py.version.hdf5_version
@@ -535,10 +550,17 @@ class vortexImageWriter(ImageWriter):
             nxentry = f.create_group('entry1/tomo_entry')
             nxentry.attrs['NX_class'] = 'NXentry'
 
+            datasets = [self._OriginalDataset]
+            datasets += self._ChildDatasets
 
-            for i, dataset in enumerate(self.datasets):
+            attributes = [self._OriginalDatasetAttributes]
+            attributes+= self._ChildDatasetsAttributes
+
+            original_dataset_reference = None
+
+            for i, dataset in enumerate(datasets):
                 data = dataset
-                dataset_info = self.attributes[i]
+                dataset_info = attributes[i]
                 entry_num = i+1
                 dataset_name = 'entry{}/tomo_entry/data/data'.format(entry_num)
 
@@ -555,30 +577,36 @@ class vortexImageWriter(ImageWriter):
                     # C order.
                     array = array.reshape(data.GetDimensions()[::-1])
                 else:
-                    # If we have no data then we want to save info about a dataset in another
-                    # file, so we want to have an attribute which is called 'file_name'
-                    if dataset_info.get("file_name") is None:
-                        raise Exception("If no name is given for a dataset, the attributes must include the 'file_name'.")
                     array = None
                 try:
                     if array is None:
-                        dset = f.create_dataset(dataset_name, dataset_info['shape'] ) #, dataset_info['typecode']) # do we need?
+                        dset = f.create_dataset(dataset_name, dataset_info['shape'])
                     else:
-                        dset = f.create_dataset(dataset_name, data=array ) # , dtype= dataset_info['typecode']) # do we need?
+                        dset = f.create_dataset(dataset_name, data=array)
+
+                    if entry_num == 1:
+                        original_dataset_reference = dset
+                    else:
+                        dset.attrs['original_dataset'] = original_dataset_reference
+
                 except RuntimeError:
                         print("Unable to save image data to {0}."
                             "Dataset with name {1} already exists in this file.".format(
-                                self.file_name, dataset_name))
-                
+                                self._FileName, dataset_name))
 
                 for key, value in dataset_info.items():
-                    # we want to save all the attributes except for the 
-                    # the typecode TODO - check if this is correct
-                    if 'typecode' not in key:
-                        dset.attrs[key] = value
+                    dset.attrs[key] = value
 
 
 class vortexHDF5ImageReader(HDF5Reader):
+    '''
+    Expects to be reading a file where:
+    entry1 contains an original dataset or attributes of the original dataset
+    The following entries contain:
+    one or more 'child' versions of the dataset which have been resampled and/or cropped.
+    It is one of these 'child' versions that we are interested in reading for displaying in the viewer.
+    The user must specify which they would like if there is more than one. By default entry2 is read.
+    '''
     def __init__(self):
         VTKPythonAlgorithmBase.__init__(self,
                                         nInputPorts=0,
@@ -586,21 +614,60 @@ class vortexHDF5ImageReader(HDF5Reader):
                                         outputType='vtkImageData')
 
         super(vortexHDF5ImageReader, self).__init__()
-        self._DatasetName = 'entry2/tomo_entry/data/data'
-        print("dataset_name: ", self._DatasetName)
+        self._DatasetEntryNumber = 2
+        self._DatasetName = 'entry{}/tomo_entry/data/data'.format(self._DatasetEntryNumber)
+ 
 
+    def SetDatasetEntryNumber(self, num):
+        '''
+        The entry number that the dataset will be read from.
+        By default this is set to 2 which means the dataset read is:
+        'entry2/tomo_entry/data/data'
+        entry numbers:
+        1 - should contain the attributes of the unmodified dataset
+        2 - should contain a downsampled/cropped version 
+        3+ - if present, should contain another downsampled/cropped version 
+        '''
+        dataset_name = 'entry{}/tomo_entry/data/data'.format(num)
+        if self._FileName is not None:
+                with h5py.File(self._FileName, 'r') as f:
+                    if not (dataset_name in f):
+                        raise Exception("No dataset named {} exists in {}.".format(dataset_name, self._FileName))
+        self._DatasetEntryNumber = num
+        self._DatasetName = dataset_name
+
+    def GetDatasetEntryNumber(self):
+        '''
+        The entry number that the dataset will be read from.
+        By default this is set to 2 which means the dataset read is:
+        'entry2/tomo_entry/data/data'
+        entry numbers:
+        1 - should contain the attributes of the unmodified dataset
+        2 - should contain a downsampled/cropped version 
+        3+ - if present, should contain another downsampled/cropped version 
+        '''
+        return self._DatasetEntryNumber
+
+    def SetDatasetName(self, lname):
+        '''
+        It is easier to use SetDatasetEntryNumber,
+        but you may still set the name instead if you
+        wish.
+        '''
+        super(vortexHDF5ImageReader, self).SetDatasetName(lname)
+        re_str='^entry([0-9]*)'
+        try:
+            self._DatasetEntryNumber = re.search(re_str, str).group(1)
+        except AttributeError:
+            # This means no match found so naming convention of dataset is
+            # not as we expect, so we can't assign a dataset entry number.
+            self._DatasetEntryNumber = None
 
     def RequestData(self, request, inInfo, outInfo):
         output = super(vortexHDF5ImageReader, self)._update_output_data(outInfo)
         with h5py.File(self._FileName, 'r') as f:      
             attrs = f[self._DatasetName].attrs
+            # TODO check on the errors if these attributes haven't been found:
             output.SetOrigin(attrs['origin'])
             output.SetSpacing(attrs['spacing'])
         return 1
-
-    def GetOriginalDataset(self):
-        # TODO
-        # should this return the filename?
-        # or the attributes
-        # or the dataset as imagedata if present?
-        pass
