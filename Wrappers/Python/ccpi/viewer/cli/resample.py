@@ -4,7 +4,7 @@ import yaml
 import schema
 from schema import SchemaError, Schema, Optional
 
-from ccpi.viewer.utils.io import ImageReader, vortexHDF5ImageWriter #, ImageWriter
+from ccpi.viewer.utils.io import ImageReader, ImageWriter
 
 # SO FAR THIS READS AND DOWNSAMPLES AND WRITES TO HDF5
 
@@ -114,13 +114,12 @@ def main():
     # writer = ImageWriter(file_name=params['output']['file_name'], format='hdf5', datasets=datasets, attributes=attributes)
     # writer.write()
 
-    writer = vortexHDF5ImageWriter()
+    writer = ImageWriter()
     writer.SetFileName(params['output']['file_name'])
+    writer.SetFileFormat(params['output']['format'])
     writer.SetOriginalDataset(None, original_image_attrs)
     writer.AddChildDataset(downsampled_image,  loaded_image_attrs)
     writer.Write()
-
-
 
 
 if __name__ == '__main__':

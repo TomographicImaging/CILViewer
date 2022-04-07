@@ -5,7 +5,9 @@ This example:
 3. Writes out this resampled dataset and details about the original dataset to resampled_dataset.hdf5
 4. prints the structure of this hdf5 file we have written out
 5. Reads the resampled_dataset.hdf5
-6. Displays the resulting dataset on the viewer.
+6. Writes out the resampled dataset from step 2 to a metaimage file: resampled_dataset_2.mha using the ImageWriter
+7. Reads the resampled_dataset_2.mha
+8. Displays the resulting datasets on the viewer.
 
 Note: to test if it works with a real dataset, set DATASET_TO_READ to a filepath containing
 a dataset, this will skip step 1 and read in your dataset instead.
@@ -13,15 +15,17 @@ a dataset, this will skip step 1 and read in your dataset instead.
 '''
 
 from ccpi.viewer.utils.io import ImageReader
-from ccpi.viewer.utils.io import vortexHDF5ImageReader, vortexHDF5ImageWriter
+from ccpi.viewer.utils.io import vortexHDF5ImageReader, vortexHDF5ImageWriter, ImageWriter
 import h5py
 from ccpi.viewer.iviewer import iviewer
 import numpy as np
+import vtk
 
-DATASET_TO_READ =  None  #r"D:\lhe97136\Work\CCPi\CILViewer\Wrappers\Python\ccpi\viewer\cli\24737_fd_normalised.nxs"
+DATASET_TO_READ =  None #r"D:\lhe97136\Work\CCPi\CILViewer\Wrappers\Python\ccpi\viewer\cli\24737_fd_normalised.nxs"
 TARGET_SIZE = (100)**3
 FILE_TO_WRITE = 'resampled_dataset.hdf5'
 LOG_FILE = 'image_reader_and_writer.log'
+SECOND_FILE_TO_WRITE = 'resampled_dataset_2.mha'
 
 
 # --- UTILS ---------------------------------
@@ -85,6 +89,22 @@ print(read_resampled_image.GetOrigin())
 print(read_resampled_image.GetSpacing())
 
 # ---- STEP 6 --------------------------------
-iviewer(read_resampled_image)
+writer = ImageWriter()
+writer.SetFileName(SECOND_FILE_TO_WRITE)
+writer.SetFileFormat('mha')
+writer.AddChildDataset(resampled_image)
+writer.Write()
+
+# ---- STEP 7 --------------------------------
+reader = vtk.vtkMetaImageReader()
+reader.SetFileName(SECOND_FILE_TO_WRITE)
+reader.Update()
+read_resampled_image2 = reader.GetOutputDataObject(0)
+
+print(read_resampled_image2.GetOrigin())
+print(read_resampled_image2.GetSpacing())
+
+# ---- STEP 8 --------------------------------
+iviewer(read_resampled_image, read_resampled_image2)
 
 

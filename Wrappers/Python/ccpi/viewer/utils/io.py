@@ -229,11 +229,11 @@ class ImageReader(object):
                 reader = self._get_hdf5_image_reader()
                 self.original_image_attrs['dataset_name'] = self.hdf5_dataset_name
 
-            # elif file_extension in ['.tif', '.tiff']:
-            #     image_files = glob.glob(os.path.join(os.path.dirname(self.file_name), '*.{}'.format(file_extension)))
-            #     if len(image_files) == 0:
-            #         raise Exception('No tiff files were found in: {}'.format(self.file_name))
-            #     self._data = self._read_tiff_images(image_files)
+            elif file_extension in ['.tif', '.tiff']:
+                image_files = glob.glob(os.path.join(os.path.dirname(self.file_name), '*.{}'.format(file_extension)))
+                if len(image_files) == 0:
+                    raise Exception('No tiff files were found in: {}'.format(self.file_name))
+                self._data = self._read_tiff_images(image_files)
 
             else:
                 raise Exception('File format is not supported. Accepted formats include: .mhd, .mha, .npy, .tif, .raw')
@@ -243,8 +243,10 @@ class ImageReader(object):
                 raise Exception('No tiff files were found in: {}'.format(self.file_name))
             self._data = self._read_tiff_images(image_files)
 
-        reader.SetFileName(self.file_name)
-        reader.SetIsAcquisitionData(self.resample_z)
+        if file_extension not in ['.tif', '.tiff']:
+        # currently the tiff reader doesn't take these inputs:
+            reader.SetFileName(self.file_name)
+            reader.SetIsAcquisitionData(self.resample_z)
         if not self.crop:
             if self.resample:
                 target_size = self.target_size
@@ -290,29 +292,15 @@ class ImageReader(object):
         reader = vtk.vtkTIFFReader()
         filenames = glob.glob(os.path.join(self.file_name, '*'))
 
-        if self.resample:
-            raise NotImplementedError("Tiff resampling not yet implemented in this class")
+        if self.resample or self.crop:
+            raise NotImplementedError("Tiff resampling and cropping is not yet implemented in this class")
 
         sa = vtk.vtkStringArray()
         for fname in filenames:
             i = sa.InsertNextValue(fname)
-        self.logger.info("read {} files".format(i))
-
-        # reader.AddObserver(vtk.vtkCommand.ProgressEvent, partial(
-        #     getProgress, progress_callback=progress_callback))
+        self.logger.info("will read {} files".format(i))
         reader.SetFileNames(sa)
-        reader.Update()
-
-        numpy_array = Converter.vtk2numpy(reader.GetOutput())
-
-        if self.original_image_attrs is not None:
-            if (isinstance(numpy_array[0][0][0], np.uint8)):
-                self.original_image_attrs['vol_bit_depth'] = '8'
-            elif(isinstance(numpy_array[0][0][0], np.uint16)):
-                self.original_image_attrs['vol_bit_depth'] = '16'
-            print(self.original_image_attrs['vol_bit_depth'])
-
-        return reader.GetOutput()
+        return reader
 
     def _get_raw_image_reader(self):
         if self.original_image_attrs is None or 'shape' not in self.original_image_attrs.keys():
@@ -399,10 +387,39 @@ class ImageReader(object):
 
 class ImageWriter(object):
     '''
-    Generic image writer for writing out vtkImageData or 
-    multiple vtkImageData and attributes to a file.
-    Currently supports writing to HDF5.
-    Will later support other formats
+    Writer for writing out a modified i.e. resampled or cropped dataset.
+    Currently supports writing to HDF5 and metaimage.
+    Will later support other formats e.g zarr
+    
+    In the case of HDF5:
+    Expects to be writing an original dataset or attributes of the original dataset,
+    plus one or more 'child' versions of the dataset which have been resampled and/or cropped.
+    This can be done if the file format is set to hdf5 or nxs.
+    If an image has been downsampled/cropped using the ImageReader class, then the attributes 
+    obtained with: reader.get_original_image_attributes() and reader.get_loaded_image_attributes()
+    will be in the correct format for this writer.
+    
+    Example of writing to HDF5:
+    writer = ImageWriter()
+    writer.SetFileName('resampled_image')
+    writer.SetFileFormat('hdf5')
+    writer.SetOriginalDataset(None, 
+        {'file_name': 'image.nxs', 'shape': [500, 600, 600], 'resampled': False, 'cropped': False})
+    writer.AddChildDataset(downsampled_image,  
+        {'origin': [0.5, 0.5, 0.5], 'spacing': [2, 2, 2], 'resampled': True, 'resampled_z': False, 'cropped': False})
+    writer.Write()
+
+    Alternatively, to just write a downsampled/cropped dataset to a metaimage file with no extra attributes.
+    Remember the metaimage writer already automatically will save the spacing and origin of the vtkImageData
+    so there is no need to set this as extra attributes.
+    Example of writing to MHA:
+    writer = ImageWriter()
+    writer.SetFileName('resampled_image')
+    writer.SetFileFormat('mha')
+    writer.AddChildDataset(downsampled_image)
+    writer.Write()
+    With mha this means we lose the information about the original dataset before it was downsampled/cropped
+
     '''
     def __init__(self):
         self._FileName = None
@@ -412,53 +429,9 @@ class ImageWriter(object):
         self._OriginalDatasetAttributes = None
         self._ChildDatasetsAttributes = []
 
-    
-
-
-    def Write(self):
-        # check file ext
-        writer = self._get_writer()
-        writer.write()
-
-   
-    def _get_writer(self):
-
-        file_name = os.path.splitext(self._File_name)[0]
-
-
-        if self._FileFormat in ['nxs', 'h5', 'hdf5', '']:
-            self.file_name = file_name + '.hdf5'
-            writer = self._get_hdf5_writer()
-
-        else:
-            raise Exception("File format is not supported. Supported types include hdf5/nexus.")
-
-        return writer
-
-
-    def _get_hdf5_writer(self):
-        writer = vortexHDF5ImageWriter(file_name=self._File_name, format=self.format, datasets=self.datasets, attributes=self.attributes)
-        return writer
-            
-
-
-
-class vortexHDF5ImageWriter(object):
-    '''
-    Expects to be writing an original dataset or attributes of the original dataset,
-    plus one or more 'child' versions of the dataset which have been resampled and/or cropped.
-    '''
-
-    def __init__(self):
-        self._FileName = None
-        self._OriginalDataset = None
-        self._ChildDatasets = []
-        self._OriginalDatasetAttributes = None
-        self._ChildDatasetsAttributes = []       
-
-
     def SetFileName(self, value):
-        ''' Set the file name or path where to write the image data
+        '''
+        Set the file name or path where to write the image data
 
         Parameters
         -----------
@@ -468,8 +441,21 @@ class vortexHDF5ImageWriter(object):
         self._FileName = value
 
     def GetFileName(self):
-        ''' Set the file name or path where to write the image data '''
+        ''' The file name or path where to write the image data '''
         return self._FileName
+
+    def SetFileFormat(self, value):
+        '''
+        Parameters
+        -----------
+        value: (str)
+            file format
+            must be one of: hdf5, nexus, mha
+        '''
+        self._FileFormat = value
+
+    def GetFileFormat(self):
+        return self._FileFormat
 
     def SetOriginalDataset(self, original_dataset, attributes):
         '''Parameters
@@ -504,13 +490,62 @@ class vortexHDF5ImageWriter(object):
 
         original_attributes_schema.validate(attributes)
 
-    def AddChildDataset(self, child_dataset, attributes):
+    def AddChildDataset(self, child_dataset, attributes=None):
         if not isinstance(child_dataset, vtk.vtkImageData):
             raise Exception("child_dataset must be vtk.vtkImageData")
         # check type is vtkImageData
         self._validate_child_dataset_attributes(child_dataset, attributes)
         self._ChildDatasets.append(child_dataset)
         self._ChildDatasetsAttributes.append(attributes)
+
+    def _validate_child_dataset_attributes(self, child_dataset, attributes):
+        if not isinstance(attributes, dict) and not (attributes is None):
+            raise Exception("'attributes' must be a dictionary, or unset (i.e. None)")
+   
+    def Write(self):
+        # check file ext
+        writer = self._get_writer()
+        writer.Write()
+
+    def _get_writer(self):
+        file_name = os.path.splitext(self._FileName)[0]
+
+        if self._FileFormat in ['nxs', 'h5', 'hdf5', '']:
+            self._FileName = file_name + '.hdf5'
+            writer = self._get_hdf5_writer()
+
+        elif self._FileFormat in ['mha']:
+            self._FileName = file_name + '.mha'
+            writer = self._get_mha_writer()
+
+        else:
+            raise Exception("File format is not supported. Supported types include hdf5/nexus.")
+
+        writer.SetFileName(self._FileName)
+
+        return writer
+
+    def _get_hdf5_writer(self):
+        writer = vortexHDF5ImageWriter()
+        writer.SetOriginalDataset(None, self._OriginalDatasetAttributes)
+        for i in range(0, len(self._ChildDatasets)):
+            writer.AddChildDataset(self._ChildDatasets[i],  self._ChildDatasetsAttributes[i])
+        return writer
+
+    def _get_mha_writer(self):
+        writer = vtk.vtkMetaImageWriter()
+        writer.SetInputData(self._ChildDatasets[0])
+        return writer
+
+class vortexHDF5ImageWriter(ImageWriter):
+    '''
+    Expects to be writing an original dataset or attributes of the original dataset,
+    plus one or more 'child' versions of the dataset which have been resampled and/or cropped.
+    '''
+
+    def __init__(self):
+        super(vortexHDF5ImageWriter, self).__init__()  
+
 
     def _validate_child_dataset_attributes(self, child_dataset, attributes):
         if not isinstance(attributes, dict):
@@ -526,7 +561,6 @@ class vortexHDF5ImageWriter(object):
             Optional(str): object # allow any other keys and values
         })
         child_attributes_schema.validate(attributes)
-   
 
     def Write(self):
         for var in [self._FileName, self._OriginalDatasetAttributes]:
@@ -556,8 +590,6 @@ class vortexHDF5ImageWriter(object):
             attributes = [self._OriginalDatasetAttributes]
             attributes+= self._ChildDatasetsAttributes
 
-            original_dataset_reference = None
-
             for i, dataset in enumerate(datasets):
                 data = dataset
                 dataset_info = attributes[i]
@@ -583,16 +615,13 @@ class vortexHDF5ImageWriter(object):
                         dset = f.create_dataset(dataset_name, dataset_info['shape'])
                     else:
                         dset = f.create_dataset(dataset_name, data=array)
-
-                    if entry_num == 1:
-                        original_dataset_reference = dset
-                    else:
-                        dset.attrs['original_dataset'] = original_dataset_reference
-
                 except RuntimeError:
                         print("Unable to save image data to {0}."
                             "Dataset with name {1} already exists in this file.".format(
                                 self._FileName, dataset_name))
+
+                if entry_num != 1:
+                    dset.attrs['original_dataset'] = 'entry1/tomo_entry/data/data'
 
                 for key, value in dataset_info.items():
                     dset.attrs[key] = value
