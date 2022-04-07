@@ -38,6 +38,9 @@ output:
 
 '''
 THIS IS WHAT THE OUTPUT STRUCTURE OF AN EXAMPLE OUTPUT HDF5 FILE WOULD LOOK LIKE:
+Entry 1 contains attributes of the original dataset
+Entry 2 contains the resampled dataset and attributes
+
 - entry1 : <HDF5 group "/entry1" (1 members)>
             - tomo_entry : <HDF5 group "/entry1/tomo_entry" (1 members)>
                     - data : <HDF5 group "/entry1/tomo_entry/data" (1 members)>
