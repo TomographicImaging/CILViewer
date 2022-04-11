@@ -122,9 +122,9 @@ def main():
 
     reader = ImageReader(file_name=args.input_dataset, resample=True, target_size=params['resample']['target_size'],
              resample_z=params['resample']['resample_z'], raw_image_attrs=raw_attrs, hdf5_dataset_name=dataset_name)
-    downsampled_image = reader.read()
-    original_image_attrs = reader.get_original_image_attrs()
-    loaded_image_attrs = reader.get_loaded_image_attrs()
+    downsampled_image = reader.Read()
+    original_image_attrs = reader.GetOriginalImageAttrs()
+    loaded_image_attrs = reader.GetLoadedImageAttrs()
     
     writer = ImageWriter()
     writer.SetFileName(params['output']['file_name'])
@@ -132,7 +132,6 @@ def main():
     writer.SetOriginalDataset(None, original_image_attrs)
     writer.AddChildDataset(downsampled_image,  loaded_image_attrs)
     writer.Write()
-
 
 if __name__ == '__main__':
     main()

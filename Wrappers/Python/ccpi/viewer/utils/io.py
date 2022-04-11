@@ -88,7 +88,9 @@ class ImageReader(object):
     If set both to true then it resamples and doesn't crop
     '''
 
-    def __init__(self, **kwargs):
+    def __init__(self,  file_name=None, resample=True, target_size=512**3, crop=False,
+        target_z_extent=None, resample_z=False, raw_image_attrs=None, hdf5_dataset_name="entry1/tomo_entry/data/data", 
+        log_file=None):
         '''
         Constructor
 
@@ -116,28 +118,7 @@ class ImageReader(object):
             Name of the hdf5 dataset to be read, if file format is hdf5
         log_file: str, optional, default None
             log verbose output to file of this name            
-        '''
-        file_name = kwargs.get('file_name')
-        resample = kwargs.get('resample', True)
-        target_size = kwargs.get('target_size', 512**3)
-        crop = kwargs.get('crop', False)
-        target_z_extent = kwargs.get('target_z_extent')
-        resample_z = kwargs.get('resample_z', False)
-        raw_image_attrs = kwargs.get('raw_image_attrs')
-        hdf5_dataset_name = kwargs.get('hdf5_dataset_name', "entry1/tomo_entry/data/data")
-        log_file = kwargs.get('log_file')
-
-        if file_name is not None:
-            self.set_up(file_name, resample, target_size,
-                        crop, target_z_extent, resample_z, raw_image_attrs, hdf5_dataset_name, log_file)
-
-    def set_up(self,  file_name=None, resample=True, target_size=512**3, crop=False,
-        target_z_extent=None, resample_z=False, raw_image_attrs=None, hdf5_dataset_name="entry1/tomo_entry/data/data", 
-        log_file=None):
-
-        customise_warnings()
-
-        self._set_up_logger(log_file)
+        '''      
 
         if file_name is None:
             raise Exception('Path to file is required.')
@@ -145,63 +126,141 @@ class ImageReader(object):
         if not (os.path.isfile(file_name) or os.path.isdir(file_name)):
             raise Exception('Path\n {}\n does not exist.'.format(file_name))
 
-        self.file_name = file_name
-        self.resample = resample
-        self.target_size = target_size
-        self.crop = crop
-        self.target_z_extent = target_z_extent
-        self.resample_z = resample_z
-        self.hdf5_dataset_name = hdf5_dataset_name
+        self._OriginalImageAttrs = {}  
 
-        # validate image attributes
-        raw_attrs = None
+        self.SetFileName(file_name)
+        self.SetResample(resample)
+        self.SetTargetSize(target_size)
+        self.SetCrop(crop)
+        self.SetTargetZExtent(target_z_extent)
+        self.SetResampleZ(resample_z)
+        self.SetHDF5DatasetName(hdf5_dataset_name)
+        self.SetRawImageAttributes(raw_image_attrs)
+        self.SetLogFileName(log_file)
+
+
+    def SetFileName(self, file_name):
+        '''
+        Parameters
+        ----------
+        file_name: os.path or string, default None
+            file name to read
+        '''
+        self._FileName = file_name
+
+    def SetResample(self, resample):
+        '''
+        Parameters
+        ----------
+        resample: bool, default True
+            whether to resample
+        '''
+        self._Resample = resample
+
+    def SetTargetSize(self, target_size):
+        '''
+        Parameters
+        ----------
+        target_size: int, default 512**3
+            target size after downsampling
+        '''
+
+        self._TargetSize = target_size
+
+    def SetCrop(self, crop):
+        '''
+        Parameters
+        ----------
+        crop: bool, default False
+            whether to crop
+        '''
+        self._Crop = crop
+
+    def SetTargetZExtent(self, target_z_extent):
+        '''
+        Parameters
+        ----------
+        target_z_extent: list [,], default None
+            desired extent after cropping on z axis
+            '''
+        self._TargetZExtent = target_z_extent
+
+
+    def SetResampleZ(self, resample_z):
+        '''
+        Parameters
+        ----------
+        resample_z: bool, default True
+            whether to resample on the z axis. E.g. in the case we have
+            acquisition data, the projections would be on the z axis, so
+            we would not want to resample in that direction.
+        '''
+        self._ResampleZ = resample_z
+
+        
+    def SetHDF5DatasetName(self, hdf5_dataset_name):
+        '''
+        Parameters
+        ----------
+        hdf5_dataset_name: string, default "entry1/tomo_entry/data/data"
+            Name of the hdf5 dataset to be read, if file format is hdf5
+        '''
+        self._HDF5DatasetName = hdf5_dataset_name
+
+    def SetLogFileName(self, log_file):
+        '''
+        Parameters
+        ----------
+        log_file: str, optional, default None
+            log verbose output to file of this name            
+        '''    
+        self._SetUpLogger(log_file)
+
+    def SetRawImageAttributes(self, raw_image_attrs):
         if raw_image_attrs is not None and raw_image_attrs != {}:
             try:
-                raw_attrs = self._validate_raw_attrs(raw_image_attrs)
-                self.original_image_attrs = raw_attrs
+                raw_attrs = self._ValidateRawAttrs(raw_image_attrs)
+                self._OriginalImageAttrs = raw_attrs
             except SchemaError as e:
                 raise ValueError("Error: Raw image attributes were not input correctly: ", e)
-        else:
-            self.original_image_attrs = {}
-        
-        if self.crop:
-            if self.target_z_extent is None:
-                raise Exception("Error: if crop is set to True, target_z_extent must be set.")
 
-        if self.crop and self.resample:
-            warnings.warn("Both cropping and resampling is not yet implemented. Image will just be cropped and not resampled.")
-            self.resample = False
 
-        self.loaded_image_attrs = {'resampled': self.resample, 'cropped': self.crop}
-        
-       
-    def read(self, *args, **kwargs):
-        ''' reads self.file_name
+    def Read(self, *args, **kwargs):
+        ''' reads self._FileName
             returns vtkImageData'''
         # identifies file type
         # uses appropriate reader based on file type and cropping or resampling
 
-        self.logger.info("reading: {}".format(self.file_name))
+        if self._Crop:
+            if self._TargetZExtent is None:
+                raise Exception("Error: if crop is set to True, target_z_extent must be set.")
+            if self._Resample:
+                warnings.warn("Both cropping and resampling is not yet implemented. Image will just be cropped and not resampled.")
+                self._Resample = False
+
+        self._LoadedImageAttrs = {'resampled': self._Resample, 'cropped': self._Crop}
+
+        self.logger.info("reading: {}".format(self._FileName))
 
         progress_callback = kwargs.get('progress_callback')
 
-        reader = self._get_reader(progress_callback)
+        reader = self._GetReader(progress_callback)
         reader.Update()
         data = reader.GetOutput()
 
-        self._update_loaded_image_attrs(reader, data)
+        self._UpdateLoadedImageAttrs(reader, data)
 
-        self._update_original_image_attrs(reader)
+        self._UpdateOriginalImageAttrs(reader)
         
         return data
 
-    def get_original_image_attrs(self):
-        return self.original_image_attrs
+    def GetOriginalImageAttrs(self):
+        return self._OriginalImageAttrs
 
-    def get_loaded_image_attrs(self):
-        return self.loaded_image_attrs
+    def GetLoadedImageAttrs(self):
+        return self._LoadedImageAttrs
 
-    def _validate_raw_attrs(self, raw_image_attrs):
+    def _ValidateRawAttrs(self, raw_image_attrs):
         if raw_image_attrs is None:
             return
         raw_attrs = raw_image_attrs.copy()
@@ -212,44 +271,44 @@ class ImageReader(object):
         raw_attrs_schema.validate(raw_attrs)
         return raw_attrs
 
-    def _get_reader(self, progress_callback=None):
-        if os.path.isfile(self.file_name):
-            file_extension = os.path.splitext(self.file_name)[1]
+    def _GetReader(self, progress_callback=None):
+        if os.path.isfile(self._FileName):
+            file_extension = os.path.splitext(self._FileName)[1]
 
             if file_extension in ['.mha', '.mhd']:
-                reader = self._get_meta_image_reader()
+                reader = self._GetMetaImageReader()
 
             elif file_extension in ['.npy']:
-                reader = self._get_numpy_image_reader()
+                reader = self._GetNumpyImageReader()
 
             elif file_extension in ['.raw']:
-                reader = self._get_raw_image_reader()
+                reader = self._GetRawImageReader()
 
             elif file_extension in ['.nxs', '.h5', '.hdf5']:
-                reader = self._get_hdf5_image_reader()
-                self.original_image_attrs['dataset_name'] = self.hdf5_dataset_name
+                reader = self._GetHDF5ImageReader()
+                self._OriginalImageAttrs['dataset_name'] = self._HDF5DatasetName
 
             elif file_extension in ['.tif', '.tiff']:
-                image_files = glob.glob(os.path.join(os.path.dirname(self.file_name), '*.{}'.format(file_extension)))
+                image_files = glob.glob(os.path.join(os.path.dirname(self._FileName), '*.{}'.format(file_extension)))
                 if len(image_files) == 0:
-                    raise Exception('No tiff files were found in: {}'.format(self.file_name))
-                self._data = self._read_tiff_images(image_files)
+                    raise Exception('No tiff files were found in: {}'.format(self._FileName))
+                self._data = self._GetTiffImageReader(image_files)
 
             else:
                 raise Exception('File format is not supported. Accepted formats include: .mhd, .mha, .npy, .tif, .raw')
         else: # If we are given a folder, not a file, look for tiff files and try to read them
-            image_files = glob.glob(os.path.join(self.file_name, '*.tif')) + glob.glob(os.path.join(self.file_name, '*.tiff'))
+            image_files = glob.glob(os.path.join(self._FileName, '*.tif')) + glob.glob(os.path.join(self._FileName, '*.tiff'))
             if len(image_files) == 0:
-                raise Exception('No tiff files were found in: {}'.format(self.file_name))
-            self._data = self._read_tiff_images(image_files)
+                raise Exception('No tiff files were found in: {}'.format(self._FileName))
+            self._data = self._GetTiffImageReader(image_files)
 
         if file_extension not in ['.tif', '.tiff']:
         # currently the tiff reader doesn't take these inputs:
-            reader.SetFileName(self.file_name)
-            reader.SetIsAcquisitionData(self.resample_z)
-        if not self.crop:
-            if self.resample:
-                target_size = self.target_size
+            reader.SetFileName(self._FileName)
+            reader.SetIsAcquisitionData(self._ResampleZ)
+        if not self._Crop:
+            if self._Resample:
+                target_size = self._TargetSize
             else:
                 # forced use of resample reader in the case that we 
                 # don't want to crop or resample,
@@ -259,7 +318,7 @@ class ImageReader(object):
 
         # Add observers:
         reader.AddObserver(vtk.vtkCommand.ProgressEvent, partial(
-            self._report_progress, progress_callback=progress_callback))
+            self._ReportProgress, progress_callback=progress_callback))
 
         # Prints the error if an error occurs in the reader.
         # Otherwise this wouldn't print at all.
@@ -270,29 +329,29 @@ class ImageReader(object):
 
         return reader
 
-    def _get_meta_image_reader(self, progress_callback=None):
-        if self.crop:
+    def _GetMetaImageReader(self, progress_callback=None):
+        if self._Crop:
             reader = cilMetaImageCroppedReader()
-            reader.SetTargetZExtent(tuple(self.target_z_extent))
+            reader.SetTargetZExtent(tuple(self._TargetZExtent))
         else:
             reader = cilMetaImageResampleReader()
         return reader
 
-    def _get_numpy_image_reader(self, progress_callback=None):
-        if self.crop:
+    def _GetNumpyImageReader(self, progress_callback=None):
+        if self._Crop:
             reader = cilNumpyCroppedReader()
-            reader.SetTargetZExtent(tuple(self.target_z_extent))
+            reader.SetTargetZExtent(tuple(self._TargetZExtent))
         else:
             reader = cilNumpyResampleReader()
 
         return reader
 
-    def _read_tiff_images(self, progress_callback=None):
+    def _GetTiffImageReader(self, progress_callback=None):
         # TODO!!!!!!!!!!!
         reader = vtk.vtkTIFFReader()
-        filenames = glob.glob(os.path.join(self.file_name, '*'))
+        filenames = glob.glob(os.path.join(self._FileName, '*'))
 
-        if self.resample or self.crop:
+        if self._Resample or self._Crop:
             raise NotImplementedError("Tiff resampling and cropping is not yet implemented in this class")
 
         sa = vtk.vtkStringArray()
@@ -302,19 +361,19 @@ class ImageReader(object):
         reader.SetFileNames(sa)
         return reader
 
-    def _get_raw_image_reader(self):
-        if self.original_image_attrs is None or 'shape' not in self.original_image_attrs.keys():
+    def _GetRawImageReader(self):
+        if self._OriginalImageAttrs is None or 'shape' not in self._OriginalImageAttrs.keys():
             raise Exception(
                 "To read a raw image, raw_image_attrs must be set.")
 
-        isFortran = self.original_image_attrs['is_fortran']
-        isBigEndian = self.original_image_attrs['is_big_endian']
-        typecode = self.original_image_attrs['typecode']
-        shape = tuple(self.original_image_attrs['shape'])
+        isFortran = self._OriginalImageAttrs['is_fortran']
+        isBigEndian = self._OriginalImageAttrs['is_big_endian']
+        typecode = self._OriginalImageAttrs['typecode']
+        shape = tuple(self._OriginalImageAttrs['shape'])
 
-        if self.crop:
+        if self._Crop:
             reader = cilRawCroppedReader()
-            reader.SetTargetZExtent(tuple(self.target_z_extent))
+            reader.SetTargetZExtent(tuple(self._TargetZExtent))
         else:
             reader = cilRawResampleReader()
         
@@ -325,19 +384,19 @@ class ImageReader(object):
 
         return reader
     
-    def _get_hdf5_image_reader(self):
-        if self.crop:
+    def _GetHDF5ImageReader(self):
+        if self._Crop:
             reader = cilHDF5CroppedReader()
-            reader.SetTargetExtent([0, -1, 0, -1, self.target_z_extent[0], self.target_z_extent[1]])
+            reader.SetTargetExtent([0, -1, 0, -1, self._TargetZExtent[0], self._TargetZExtent[1]])
 
         else:
             reader = cilHDF5ResampleReader()
 
-        reader.SetDatasetName(self.hdf5_dataset_name)
+        reader.SetDatasetName(self._HDF5DatasetName)
 
         return reader
 
-    def _set_up_logger(self, fname):
+    def _SetUpLogger(self, fname):
         """Set up the logger """
         self.logger = logging.getLogger("ccpi.viewer.utils.io.ImageReader")
         self.logger.setLevel(logging.INFO)
@@ -345,7 +404,7 @@ class ImageReader(object):
             handler = logging.FileHandler(fname)
             self.logger.addHandler(handler)
 
-    def _report_progress(self, caller, event, progress_callback=None):
+    def _ReportProgress(self, caller, event, progress_callback=None):
         ''' This emits the progress as a value between 1 and 100,
         and writes to a log file.
         If a Qt progress_callback has been passed, this allows progress to be kept track
@@ -357,32 +416,32 @@ class ImageReader(object):
         if progress_callback is not None:
             progress_callback.emit(int(progress_value))
 
-    def _update_loaded_image_attrs(self, reader, data):
+    def _UpdateLoadedImageAttrs(self, reader, data):
         # Make sure whether we did resample or not:
-        if self.resample:
+        if self._Resample:
             original_image_size = reader.GetStoredArrayShape(
             )[0] * reader.GetStoredArrayShape()[1] * reader.GetStoredArrayShape()[2]
             resampled_image_size = reader.GetTargetSize()
             if original_image_size <= resampled_image_size:
-                self.loaded_image_attrs['resampled'] = False
+                self._LoadedImageAttrs['resampled'] = False
             else:
-                self.loaded_image_attrs['resampled'] = True
+                self._LoadedImageAttrs['resampled'] = True
         # info about new dataset:
-        self.loaded_image_attrs['spacing'] = data.GetSpacing()
-        self.loaded_image_attrs['origin'] = data.GetOrigin()
-        if self.resample:
-            self.loaded_image_attrs['resample_z'] = self.resample_z
+        self._LoadedImageAttrs['spacing'] = data.GetSpacing()
+        self._LoadedImageAttrs['origin'] = data.GetOrigin()
+        if self._Resample:
+            self._LoadedImageAttrs['resample_z'] = self._ResampleZ
 
-    def _update_original_image_attrs(self, reader):
-        self.original_image_attrs['shape'] = reader.GetStoredArrayShape()
-        self.original_image_attrs['spacing'] = reader.GetElementSpacing()
-        self.original_image_attrs['origin'] = reader.GetOrigin()
-        self.original_image_attrs['bit_depth'] = str(reader.GetBytesPerElement()*8)
-        self.original_image_attrs['is_big_endian'] = reader.GetBigEndian()
-        self.original_image_attrs['header_length'] = reader.GetFileHeaderLength()
-        self.original_image_attrs['file_name'] = self.file_name
-        self.original_image_attrs['resampled'] = False
-        self.original_image_attrs['cropped'] = False
+    def _UpdateOriginalImageAttrs(self, reader):
+        self._OriginalImageAttrs['shape'] = reader.GetStoredArrayShape()
+        self._OriginalImageAttrs['spacing'] = reader.GetElementSpacing()
+        self._OriginalImageAttrs['origin'] = reader.GetOrigin()
+        self._OriginalImageAttrs['bit_depth'] = str(reader.GetBytesPerElement()*8)
+        self._OriginalImageAttrs['is_big_endian'] = reader.GetBigEndian()
+        self._OriginalImageAttrs['header_length'] = reader.GetFileHeaderLength()
+        self._OriginalImageAttrs['file_name'] = self._FileName
+        self._OriginalImageAttrs['resampled'] = False
+        self._OriginalImageAttrs['cropped'] = False
 
 
 class ImageWriter(object):
@@ -494,29 +553,29 @@ class ImageWriter(object):
         if not isinstance(child_dataset, vtk.vtkImageData):
             raise Exception("child_dataset must be vtk.vtkImageData")
         # check type is vtkImageData
-        self._validate_child_dataset_attributes(child_dataset, attributes)
+        self._ValidateChildDatasetAttributes(child_dataset, attributes)
         self._ChildDatasets.append(child_dataset)
         self._ChildDatasetsAttributes.append(attributes)
 
-    def _validate_child_dataset_attributes(self, child_dataset, attributes):
+    def _ValidateChildDatasetAttributes(self, child_dataset, attributes):
         if not isinstance(attributes, dict) and not (attributes is None):
             raise Exception("'attributes' must be a dictionary, or unset (i.e. None)")
    
     def Write(self):
         # check file ext
-        writer = self._get_writer()
+        writer = self._GetWriter()
         writer.Write()
 
-    def _get_writer(self):
+    def _GetWriter(self):
         file_name = os.path.splitext(self._FileName)[0]
 
         if self._FileFormat in ['nxs', 'h5', 'hdf5', '']:
             self._FileName = file_name + '.hdf5'
-            writer = self._get_hdf5_writer()
+            writer = self._GetHDF5Writer()
 
         elif self._FileFormat in ['mha']:
             self._FileName = file_name + '.mha'
-            writer = self._get_mha_writer()
+            writer = self._GetMetaImageWriter()
 
         else:
             raise Exception("File format is not supported. Supported types include hdf5/nexus.")
@@ -525,14 +584,14 @@ class ImageWriter(object):
 
         return writer
 
-    def _get_hdf5_writer(self):
+    def _GetHDF5Writer(self):
         writer = vortexHDF5ImageWriter()
         writer.SetOriginalDataset(None, self._OriginalDatasetAttributes)
         for i in range(0, len(self._ChildDatasets)):
             writer.AddChildDataset(self._ChildDatasets[i],  self._ChildDatasetsAttributes[i])
         return writer
 
-    def _get_mha_writer(self):
+    def _GetMetaImageWriter(self):
         writer = vtk.vtkMetaImageWriter()
         writer.SetInputData(self._ChildDatasets[0])
         return writer
@@ -547,7 +606,7 @@ class vortexHDF5ImageWriter(ImageWriter):
         super(vortexHDF5ImageWriter, self).__init__()  
 
 
-    def _validate_child_dataset_attributes(self, child_dataset, attributes):
+    def _ValidateChildDatasetAttributes(self, child_dataset, attributes):
         if not isinstance(attributes, dict):
             raise Exception("'attributes must be a dictionary.")
         # check origin and spacing are set

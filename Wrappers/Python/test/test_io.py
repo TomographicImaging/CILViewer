@@ -60,12 +60,12 @@ class TestImageReaderAndWriter(unittest.TestCase):
 
 
     def _test_read_full_size_data(self, reader):
-        array_image_data = reader.read()
+        array_image_data = reader.Read()
         read_array = Converter.vtk2numpy(array_image_data)
         np.testing.assert_array_equal(self.input_3D_array, read_array)
 
     def _test_resampling_not_acq_data(self, reader, target_size):
-        image = reader.read()
+        image = reader.Read()
         extent = image.GetExtent()
         resulting_shape = (extent[1]+1, (extent[3]+1), (extent[5]+1))
         og_shape = np.shape(self.input_3D_array)
@@ -76,7 +76,7 @@ class TestImageReaderAndWriter(unittest.TestCase):
         self.assertEqual(resulting_shape, expected_shape)
 
     def _test_resample_size_bigger_than_image_size(self, reader):
-        image = reader.read()
+        image = reader.Read()
         extent = image.GetExtent()
         og_shape = np.shape(self.input_3D_array)
         og_shape = (og_shape[2], og_shape[1], og_shape[0])
@@ -91,7 +91,7 @@ class TestImageReaderAndWriter(unittest.TestCase):
         og_shape = np.shape(self.input_3D_array)
         og_shape = (og_shape[2], og_shape[1], og_shape[0])
         og_size = og_shape[0]*og_shape[1]*og_shape[2]
-        image = reader.read()
+        image = reader.Read()
         extent = image.GetExtent()
         shape_not_acquisition = calculate_target_downsample_shape(
             target_size, og_size, og_shape, acq=True)
@@ -181,26 +181,26 @@ class TestImageReaderAndWriter(unittest.TestCase):
 
         # NOTE: the extent is in vtk so is in fortran order, whereas
         # above we had the np array in C-order so x and y cropping swapped
-        array_image_data = reader.read()
+        array_image_data = reader.Read()
         read_cropped_array_hdf5 = Converter.vtk2numpy(array_image_data)
         np.testing.assert_array_equal(cropped_array, read_cropped_array_hdf5)
 
 
         # NUMPY: --------------------------------------------------------------
         reader = ImageReader(file_name=self.numpy_filename_3D, crop=True, resample=False, target_z_extent=[1, 1])
-        array_image_data = reader.read()
+        array_image_data = reader.Read()
         read_cropped_array = Converter.vtk2numpy(array_image_data)
         np.testing.assert_array_equal(cropped_array, read_cropped_array)
 
         # METAIMAGE: -----------------------------------------------------------------
         reader = ImageReader(file_name=self.mha_filename_3D, crop=True, resample=False, target_z_extent=[1, 1])
-        array_image_data = reader.read()
+        array_image_data = reader.Read()
         read_cropped_array = Converter.vtk2numpy(array_image_data)
         np.testing.assert_array_equal(cropped_array, read_cropped_array)
 
         # RAW: ----------------------------------------------------------------------
         reader = ImageReader(file_name=self.raw_filename_3D, crop=True, resample=False, target_z_extent=[1, 1], raw_image_attrs=self.raw_image_attrs)
-        array_image_data = reader.read()
+        array_image_data = reader.Read()
         read_cropped_array = Converter.vtk2numpy(array_image_data)
         np.testing.assert_array_equal(cropped_array, read_cropped_array)
 
@@ -214,15 +214,15 @@ class TestImageReaderAndWriter(unittest.TestCase):
         Reads the resampled_dataset
         Checks we read back in the same array, spacing and origin
         '''
-        reader = ImageReader()
         target_size=100
+        reader = ImageReader(file_name=self.hdf5_filename_3D, target_size=target_size, resample_z=True, hdf5_dataset_name="ImageData")
+        
         file_to_write='downsampled_image.hdf5'
-        reader.set_up(file_name=self.hdf5_filename_3D, target_size=target_size, resample_z=True, hdf5_dataset_name="ImageData")
-        resampled_image = reader.read()
+        resampled_image = reader.Read()
         resampled_image_array = Converter.vtk2numpy(resampled_image)
 
-        resampled_image_attrs = reader.get_loaded_image_attrs()
-        original_image_attrs = reader.get_original_image_attrs()
+        resampled_image_attrs = reader.GetLoadedImageAttrs()
+        original_image_attrs = reader.GetOriginalImageAttrs()
 
         # writer = ImageWriter(file_name=file_to_write, format='hdf5', datasets=[None, resampled_image], attributes=[original_image_attrs, resampled_image_attrs])
         # writer.write()

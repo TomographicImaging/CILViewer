@@ -21,7 +21,7 @@ from ccpi.viewer.iviewer import iviewer
 import numpy as np
 import vtk
 
-DATASET_TO_READ =  None #r"D:\lhe97136\Work\CCPi\CILViewer\Wrappers\Python\ccpi\viewer\cli\24737_fd_normalised.nxs"
+DATASET_TO_READ =  None
 TARGET_SIZE = (100)**3
 FILE_TO_WRITE = 'resampled_dataset.hdf5'
 LOG_FILE = 'image_reader_and_writer.log'
@@ -29,27 +29,32 @@ SECOND_FILE_TO_WRITE = 'resampled_dataset_2.mha'
 
 
 # --- UTILS ---------------------------------
-def descend_obj(obj, sep='\t'):
+def descend_hdf5_obj(obj, sep='\t'):
     """
-    Iterate through groups in a HDF5 file and prints the groups and datasets names and datasets attributes
+    Iterates through the groups in a HDF5 file (obj)
+    and prints the groups and datasets names and 
+    datasets attributes
     """
     if type(obj) in [h5py._hl.group.Group, h5py._hl.files.File]:
         for key in obj.keys():
             print(sep, '-', key, ':', obj[key])
-            descend_obj(obj[key], sep=sep+'\t')
+            descend_hdf5_obj(obj[key], sep=sep+'\t')
     elif type(obj) == h5py._hl.dataset.Dataset:
         for key in obj.attrs.keys():
             print(sep+'\t', '-', key, ':', obj.attrs[key])
 
 
-def h5dump(path, group='/'):
+def print_hdf5_metadata(path, group='/'):
     """
     print HDF5 file metadata
-
-    group: you can give a specific group, defaults to the root group
+    path: (str)
+        path of hdf5 file
+    group: (str), default: '/'
+        a specific group to print the metadata for,
+        defaults to the root group
     """
     with h5py.File(path, 'r') as f:
-        descend_obj(f[group])
+        descend_hdf5_obj(f[group])
 
 
 # ----- STEP 1 ------------------------------
@@ -61,12 +66,11 @@ if DATASET_TO_READ is None:
     np.save(DATASET_TO_READ, input_3D_array)
 
 # ----- STEP 2 ------------------------------
-reader = ImageReader()
-reader.set_up(file_name=DATASET_TO_READ, target_size=TARGET_SIZE, resample_z=True, log_file=LOG_FILE)
-resampled_image = reader.read()
+reader = ImageReader(file_name=DATASET_TO_READ, target_size=TARGET_SIZE, resample_z=True, log_file=LOG_FILE)
+resampled_image = reader.Read()
 
-resampled_image_attrs = reader.get_loaded_image_attrs()
-original_image_attrs = reader.get_original_image_attrs()
+resampled_image_attrs = reader.GetLoadedImageAttrs()
+original_image_attrs = reader.GetOriginalImageAttrs()
 
 # ----- STEP 3 ------------------------------
 writer = vortexHDF5ImageWriter()
@@ -77,7 +81,7 @@ writer.AddChildDataset(resampled_image, resampled_image_attrs)
 writer.Write()
 
 # ---- STEP 4 --------------------------------
-h5dump(FILE_TO_WRITE)
+print_hdf5_metadata(FILE_TO_WRITE)
 
 # ---- STEP 5 --------------------------------
 reader = vortexHDF5ImageReader()
