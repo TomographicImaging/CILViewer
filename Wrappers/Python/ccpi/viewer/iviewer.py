@@ -13,6 +13,9 @@ class SingleViewerCenterWidget(QtWidgets.QMainWindow):
         QtWidgets.QMainWindow.__init__(self, parent)
         
         self.frame = QCILViewerWidget(viewer=viewer, shape=(600,600))
+
+        if viewer == viewer3D:
+            self.frame.viewer.setVolumeRenderOpacityMethod('scalar')
                 
         self.setCentralWidget(self.frame)
     
@@ -43,7 +46,8 @@ class TwoLinkedViewersCenterWidget(QtWidgets.QMainWindow):
         # For the head example we have to set the method to scalar so that
         # the volume render can be seen
         # may need to comment this out for other datasets
-        self.frame2.viewer.setVolumeRenderOpacityMethod('scalar')
+        if viewers[1] == viewer3D:
+            self.frame2.viewer.setVolumeRenderOpacityMethod('scalar')
                 
         # Initially link viewers
         self.linkedViewersSetup()
