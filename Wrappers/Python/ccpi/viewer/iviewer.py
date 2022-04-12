@@ -23,14 +23,27 @@ class SingleViewerCenterWidget(QtWidgets.QMainWindow):
         
 class TwoLinkedViewersCenterWidget(QtWidgets.QMainWindow):
 
-    def __init__(self, parent = None):
+    def __init__(self, parent = None, viewer1='2D', viewer2='2D'):
         QtWidgets.QMainWindow.__init__(self, parent)
         #self.resize(800,600)
-        
-        self.frame1 = QCILViewerWidget(viewer=viewer2D, shape=(600,600),
-              interactorStyle=vlink.Linked2DInteractorStyle)
-        self.frame2 = QCILViewerWidget(viewer=viewer2D, shape=(600,600),
-              interactorStyle=vlink.Linked2DInteractorStyle)
+        styles = []
+        viewers = []
+
+        for viewer in [viewer1, viewer2]:
+            if viewer == '2D':
+                styles.append(vlink.Linked2DInteractorStyle)
+            elif viewer == '3D':
+                styles.append(vlink.Linked3DInteractorStyle)
+            viewers.append(eval('viewer' + viewer))        
+        self.frame1 = QCILViewerWidget(viewer=viewers[0], shape=(600,600),
+              interactorStyle=styles[0])
+        self.frame2 = QCILViewerWidget(viewer=viewers[1], shape=(600,600),
+              interactorStyle=styles[1])
+
+        # For the head example we have to set the method to scalar so that
+        # the volume render can be seen
+        # may need to comment this out for other datasets
+        self.frame2.viewer.setVolumeRenderOpacityMethod('scalar')
                 
         # Initially link viewers
         self.linkedViewersSetup()
@@ -61,7 +74,20 @@ class TwoLinkedViewersCenterWidget(QtWidgets.QMainWindow):
         self.frame2.viewer.setInputData(data2)
         
 class iviewer(object):
-    '''a Qt interactive viewer that can be used as plotter2D with one single dataset'''
+    '''
+    a Qt interactive viewer that can be used as plotter2D with one single dataset
+    Parameters
+    ----------
+    data: vtkImageData
+        image to be displayed
+    moredata: vtkImageData, optional
+        extra image to be displayed
+    viewer1: string - '2D' or '3D'
+        the type of viewer to display the first image on
+    viewer2: string - '2D' or '3D', optional
+        the type of viewer to display the second image on (if present)
+        
+    '''
     def __init__(self, data, *moredata, **kwargs):
         '''Creator'''
         app = QtWidgets.QApplication(sys.argv)
@@ -74,7 +100,7 @@ class iviewer(object):
         if len(moredata) == 0:
             # can change the behaviour by setting which viewer you want
             # between viewer2D and viewer3D
-            viewer_type = kwargs.get('viewer', '2D')
+            viewer_type = kwargs.get('viewer1', '2D')
             if viewer_type == '2D':
                 viewer = viewer2D
             elif viewer_type == '3D':
@@ -82,10 +108,14 @@ class iviewer(object):
             window = SingleViewerCenterWidget(viewer=viewer)        
             window.set_input(self.convert_to_vtkImage(data))
         else:
-            window = TwoLinkedViewersCenterWidget()
+            viewer1 = kwargs.get('viewer1', '2D')
+            viewer2 = kwargs.get('viewer2', '2D')
+            window = TwoLinkedViewersCenterWidget(viewer1=viewer1, viewer2=viewer2)
             window.set_input(self.convert_to_vtkImage(data),
                              self.convert_to_vtkImage(moredata[0]))
             viewer_type = None
+            self.viewer1_type = viewer1
+            self.viewer2_type = viewer2
 
         self.window = window
         self.viewer_type = viewer_type
@@ -125,6 +155,5 @@ if __name__ == "__main__":
     reader = vtk.vtkMetaImageReader()
     reader.SetFileName('head.mha')
     reader.Update()
-    
-    #iviewer(reader.GetOutput(), viewer='3D')
-    iviewer(reader.GetOutput(), reader.GetOutput())
+
+    iviewer(reader.GetOutput(), reader.GetOutput(), viewer1='2D', viewer2='3D')
