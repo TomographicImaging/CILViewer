@@ -10,6 +10,8 @@ build:
   preserve_egg_dir: False 
   number: {{ GIT_DESCRIBE_NUMBER }}
   noarch: python
+  entry_points:
+  - resample = ccpi.viewer.cli.resample:main
   
 test:
   source_files:
