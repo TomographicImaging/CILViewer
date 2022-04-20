@@ -107,7 +107,8 @@ def main():
     except SchemaError as e:
         print(e)
 
-   
+    raw_attrs = None
+    dataset_name = None
     if 'array' in params.keys():
         raw_attrs = {}
         for key, value in params['array'].items():
@@ -115,10 +116,7 @@ def main():
                 dataset_name = value
             else:
                 raw_attrs[key] = value
-    else:
-        raw_attrs = None
-        dataset_name = None
-
+        
 
     reader = ImageReader(file_name=args.input_dataset, resample=True, target_size=params['resample']['target_size'],
              resample_z=params['resample']['resample_z'], raw_image_attrs=raw_attrs, hdf5_dataset_name=dataset_name)
