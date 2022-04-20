@@ -33,6 +33,7 @@ requirements:
     - importlib_metadata    # [py<38]
     - h5py
     - schema
+    - pyyaml
 
 about:
   home: http://www.ccpi.ac.uk
