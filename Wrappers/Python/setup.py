@@ -60,7 +60,7 @@ with open(fname, 'w') as f:
 setup(
     name="ccpi-viewer",
     version=version,
-    packages=['ccpi','ccpi.viewer', 'ccpi.viewer.utils'],
+    packages=['ccpi','ccpi.viewer', 'ccpi.viewer.utils', 'ccpi.viewer.cli'],
 	install_requires=requires,
     zip_safe = False,
     # metadata for upload to PyPI
@@ -70,6 +70,11 @@ setup(
     license="Apache v2.0",
     keywords="3D data viewer",
     url="http://www.ccpi.ac.uk",   # project home page, if any
+    entry_points={
+        'console_scripts': [
+        'resample = ccpi.viewer.cli.resample:main',
+        ]
+    }
 
     # could also include long_description, download_url, classifiers, etc.
 )
