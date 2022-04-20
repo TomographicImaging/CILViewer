@@ -264,7 +264,8 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
                 planew = vtk.vtkImplicitPlaneWidget2()
                 
                 rep = vtk.vtkImplicitPlaneRepresentation()
-                extent = viewer.img3D.GetExtent()
+                world_extent = self.GetImageWorldExtent()
+                extent = [0, world_extent[0], 0, world_extent[1], 0, world_extent[2]]
                 rep.SetWidgetBounds(*extent)
                 planew.SetInteractor(viewer.getInteractor())
                 planew.SetRepresentation(rep)
@@ -372,6 +373,53 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
         self.Render()
     def SaveRender(self, filename):
         self._viewer.saveRender(filename)
+
+    # Coordinate conversion ----------------------------
+
+    def world2imageCoordinate(self, world_coordinates):
+        """
+        Convert from the world or global coordinates to image coordinates
+        :param world_coordinates: (x,y,z)
+        :return: rounded to next integer (x,y,z) in image coorindates eg. slice index
+        """
+
+        dims = self.GetInputData().GetDimensions()
+        self.log(dims)
+        spac = self.GetInputData().GetSpacing()
+        orig = self.GetInputData().GetOrigin()
+
+        return [round((world_coordinates[i]) / spac[i] - orig[i]) for i in range(3)]
+    
+    def world2imageCoordinateFloat(self, world_coordinates):
+        """
+        Convert from the world or global coordinates to image coordinates
+        :param world_coordinates: (x,y,z)
+        :return: float (x,y,z) in image coorindates eg. slice index
+        """
+
+        dims = self.GetInputData().GetDimensions()
+        self.log(dims)
+        spac = self.GetInputData().GetSpacing()
+        orig = self.GetInputData().GetOrigin()
+
+        return [(world_coordinates[i]) / spac[i] - orig[i]  for i in range(3)]
+
+    def image2world(self, image_coordinates):
+
+        spac = self.GetInputData().GetSpacing()
+        orig = self.GetInputData().GetOrigin()
+
+        return [(image_coordinates[i]) * spac[i] + orig[i] for i in range(3)]
+
+    def GetImageWorldExtent(self):
+        """
+        Compute and return the maximum extent of the image in the rendered world
+        """
+        return self.image2world(self.GetInputData().GetExtent()[1::2])
+    
+    
+    def GetInputData(self):
+        return self._viewer.img3D
 
 class CILViewer():
     '''Simple 3D Viewer based on VTK classes'''
