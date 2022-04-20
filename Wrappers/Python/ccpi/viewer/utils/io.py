@@ -305,7 +305,9 @@ class ImageReader(object):
         if file_extension not in ['.tif', '.tiff']:
         # currently the tiff reader doesn't take these inputs:
             reader.SetFileName(self._FileName)
-            reader.SetIsAcquisitionData(self._ResampleZ)
+            # if we have acquisition data then we would not resample on
+            # the z axis:
+            reader.SetIsAcquisitionData(not self._ResampleZ)
         if not self._Crop:
             if self._Resample:
                 target_size = self._TargetSize
@@ -396,11 +398,11 @@ class ImageReader(object):
 
         return reader
 
-    def _SetUpLogger(self, fname):
+    def _SetUpLogger(self, fname=None, log_level=logging.INFO):
         """Set up the logger """
         self.logger = logging.getLogger("ccpi.viewer.utils.io.ImageReader")
-        self.logger.setLevel(logging.INFO)
-        if fname:
+        self.logger.setLevel(log_level)
+        if fname is not None:
             handler = logging.FileHandler(fname)
             self.logger.addHandler(handler)
 
@@ -487,6 +489,9 @@ class ImageWriter(object):
         self._ChildDatasets = []
         self._OriginalDatasetAttributes = None
         self._ChildDatasetsAttributes = []
+        self._Chunking = True
+        self._ChunkShape = None
+        self._HDF5Compression = None
 
     def SetFileName(self, value):
         '''
@@ -560,6 +565,44 @@ class ImageWriter(object):
     def _ValidateChildDatasetAttributes(self, child_dataset, attributes):
         if not isinstance(attributes, dict) and not (attributes is None):
             raise Exception("'attributes' must be a dictionary, or unset (i.e. None)")
+
+    def SetChunking(self, chunking):
+        '''
+        Parameters
+        ----------
+        chunking: bool, default: True in case of HDF5 file,
+                  otherwise False
+            Whether to write to the file in chunks.
+        '''
+        self._Chunking = chunking
+
+    def SetChunkShape(self, chunk_shape):
+        '''
+        Parameters
+        ----------
+        chunk_shape: tuple, default: one slice on the z axis
+            If SetChunking() has been set to True, this will be
+            the size of a chunk written to the file.
+        '''
+        self._ChunkShape = chunk_shape
+
+    def SetHDF5Compression(self, compression):
+        '''
+        Parameters
+        ----------
+        compression: list, default None
+            This is a list of compression settings when writing to HDF5
+            First element: str
+                The type of hdf5 compression to use.
+                Must be one of: None, 'gzip', or 'lzf'
+            Second element:
+                Options for the compression filter. For details, see:
+                https://docs.h5py.org/en/stable/high/dataset.html?highlight=compression_opts#dataset-compression
+            Third element: bool
+                Whether to shuffle the data i.e. rearrange the bytes in
+                a chunk, which may improve the compression ratio
+        '''
+        self._HDF5Compression = compression
    
     def Write(self):
         # check file ext
@@ -581,12 +624,14 @@ class ImageWriter(object):
             raise Exception("File format is not supported. Supported types include hdf5/nexus.")
 
         writer.SetFileName(self._FileName)
-
         return writer
 
     def _GetHDF5Writer(self):
         writer = vortexHDF5ImageWriter()
         writer.SetOriginalDataset(None, self._OriginalDatasetAttributes)
+        writer.SetChunking(self._Chunking)
+        writer.SetChunkShape(self._ChunkShape)
+        writer.SetHDF5Compression(self._HDF5Compression)
         for i in range(0, len(self._ChildDatasets)):
             writer.AddChildDataset(self._ChildDatasets[i],  self._ChildDatasetsAttributes[i])
         return writer
@@ -603,7 +648,7 @@ class vortexHDF5ImageWriter(ImageWriter):
     '''
 
     def __init__(self):
-        super(vortexHDF5ImageWriter, self).__init__()  
+        super(vortexHDF5ImageWriter, self).__init__()
 
 
     def _ValidateChildDatasetAttributes(self, child_dataset, attributes):
@@ -673,7 +718,32 @@ class vortexHDF5ImageWriter(ImageWriter):
                     if array is None:
                         dset = f.create_dataset(dataset_name, dataset_info['shape'])
                     else:
-                        dset = f.create_dataset(dataset_name, data=array)
+                        if self._Chunking:
+                            if self._ChunkShape is None:
+                                # If Chunking has been selected but a shape has not,
+                                # by default use a slice as the chunk
+                                slice_shape = list(array.shape)
+                                slice_shape[0] = 1
+                                self._ChunkShape = tuple(slice_shape)
+                            if self._HDF5Compression is None or self._HDF5Compression[0] is None:
+                                dset = f.create_dataset(dataset_name, data=array,
+                                                chunks=self._ChunkShape)                  
+                            elif self._HDF5Compression[0] == 'gzip':
+                                dset = f.create_dataset(dataset_name, data=array, 
+                                                    chunks=self._ChunkShape, 
+                                                    compression=self._HDF5Compression[0], 
+                                                    compression_opts=self._HDF5Compression[1], 
+                                                    shuffle=self._HDF5Compression[2]
+                                                    )                  
+                            elif self._HDF5Compression[0] == 'lzf':
+                                dset = f.create_dataset(dataset_name, data=array, 
+                                                    chunks=self._ChunkShape, 
+                                                    compression=self._HDF5Compression[0], 
+                                                    shuffle=self._HDF5Compression[2]
+                                                    )
+                        else:
+                            dset = f.create_dataset(dataset_name, data=array)
+
                 except RuntimeError:
                         print("Unable to save image data to {0}."
                             "Dataset with name {1} already exists in this file.".format(
