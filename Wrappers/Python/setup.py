@@ -18,17 +18,35 @@ import os
 import sys
 import subprocess
 
+def version2pep440(version):
+    '''normalises the version from git describe to pep440
+    
+    https://www.python.org/dev/peps/pep-0440/#id29
+    '''
+    if version[0] == 'v':
+        version = version[1:]
 
-cil_version = subprocess.check_output('git describe', shell=True).decode("utf-8").rstrip()
+    if u'-' in version:
+        v = version.split('-')
+        v_pep440 = "{}.dev{}".format(v[0], v[1])
+    else:
+        v_pep440 = version
+
+    return v_pep440
+
+
+git_version_string = subprocess.check_output('git describe', shell=True).decode("utf-8").rstrip()[1:]
 
 
 if os.environ.get('CONDA_BUILD', 0) == '1':
     cwd = os.path.join(os.environ.get('RECIPE_DIR'),'..')
     # requirements are processed by conda
     requires = []
+    version = git_version_string
 else:
     requires = ['numpy','vtk']
     cwd = os.getcwd()
+    version = version2pep440(git_version_string)
 
 # update the version string
 fname = os.path.join(cwd, 'ccpi', 'viewer', 'version.py')
@@ -36,12 +54,12 @@ fname = os.path.join(cwd, 'ccpi', 'viewer', 'version.py')
 if os.path.exists(fname):
     os.remove(fname)
 with open(fname, 'w') as f:
-    f.write('version = \'{}\''.format(cil_version))
+    f.write('version = \'{}\''.format(version))
     
 
 setup(
     name="ccpi-viewer",
-    version=cil_version,
+    version=version,
     packages=['ccpi','ccpi.viewer', 'ccpi.viewer.utils'],
 	install_requires=requires,
     zip_safe = False,

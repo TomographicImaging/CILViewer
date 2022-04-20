@@ -17,8 +17,10 @@
 import vtk
 import numpy
 import os
+import glob, re
 
 from ccpi.viewer.utils import Converter
+from ccpi.viewer.utils.io import SaveRenderToPNG
 
 SLICE_ORIENTATION_XY = 2 # Z
 SLICE_ORIENTATION_XZ = 1 # Y
@@ -1905,23 +1907,10 @@ class CILViewer2D():
     def saveRender(self, filename, renWin=None):
         '''Save the render window to PNG file'''
         # screenshot code:
-        w2if = vtk.vtkWindowToImageFilter()
+        
         if renWin == None:
             renWin = self.renWin
-        w2if.SetInput(renWin)
-        w2if.Update()
-
-        # Check if user has supplied an extension
-        extn = os.path.splitext(filename)[1]
-        if extn.lower() == '.png':
-                saveFilename = filename
-        else:
-            saveFilename = filename+'.png'
-
-        writer = vtk.vtkPNGWriter()
-        writer.SetFileName(saveFilename)
-        writer.SetInputConnection(w2if.GetOutputPort())
-        writer.Write()
+        SaveRenderToPNG(self.renWin, filename)
 
     def validateValue(self,value, axis):
         dims = self.img3D.GetDimensions()
