@@ -8,6 +8,7 @@
 * Add a few utility methods for volume rendering in 3D viewer
 * Create utils/io.py with code to save current render as PNG
 * Increments number in name of file when saving render to PNG, so multiple captures can be made without them overwriting each other.
+* Add vtkImageResampler, which downsamples from memory
 
 ## v22.1.0
 * requires vtk version >= 9.0.3
