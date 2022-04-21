@@ -321,11 +321,9 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
         viewer.volume.Modified()
         viewer.getRenderer().Render()
 
-
     def DisplayHelp(self):
         help_actor = self._viewer.helpActor
         slice_actor = self._viewer.imageSlice
-
 
         if help_actor.GetVisibility():
             help_actor.VisibilityOff()
@@ -383,6 +381,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
         self.HideActor(1)
 
         self.Render()
+
     def SaveRender(self, filename):
         self._viewer.saveRender(filename)
 
@@ -428,10 +427,10 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
         Compute and return the maximum extent of the image in the rendered world
         """
         return self.image2world(self.GetInputData().GetExtent()[1::2])
-    
-    
+
     def GetInputData(self):
         return self._viewer.img3D
+
 
 class CILViewer():
     '''Simple 3D Viewer based on VTK classes'''
@@ -496,7 +495,6 @@ class CILViewer():
         self.helpActor.VisibilityOff()
         self.ren.AddActor(self.helpActor)
 
-
         # volume render
         volumeMapper = vtk.vtkSmartVolumeMapper()
         #volumeMapper = vtk.vtkFixedPointVolumeRayCastMapper()
@@ -508,7 +506,6 @@ class CILViewer():
         # These may be optionally set by the user:
         self.volume_colormap_limits = None
 
-        
         # The volume holds the mapper and the property and
         # can be used to position/orient the volume.
         volume = vtk.vtkVolume()
@@ -522,10 +519,10 @@ class CILViewer():
         # axis orientation widget
         om = vtk.vtkAxesActor()
         ori = vtk.vtkOrientationMarkerWidget()
-        ori.SetOutlineColor( 0.9300, 0.5700, 0.1300 )
+        ori.SetOutlineColor(0.9300, 0.5700, 0.1300)
         ori.SetInteractor(self.iren)
         ori.SetOrientationMarker(om)
-        ori.SetViewport( 0.0, 0.0, 0.4, 0.4 )
+        ori.SetViewport(0.0, 0.0, 0.4, 0.4)
         ori.SetEnabled(1)
         ori.InteractiveOff()
         self.orientation_marker = ori
@@ -626,7 +623,6 @@ class CILViewer():
     def addActor(self, actor):
         '''Adds an actor to the render'''
         return self.showActor(0, actor)
-            
 
     def startRenderLoop(self):
         self.iren.Start()
@@ -1085,7 +1081,6 @@ class CILViewer():
         self.imageSlice.Update()
 
         self.ren.AddActor(self.imageSlice)
-        
 
     def updatePipeline(self, resetcamera = False):
         self.hideActor(self.sliceActorNo)

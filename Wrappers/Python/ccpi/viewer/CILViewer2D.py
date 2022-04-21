@@ -105,11 +105,11 @@ class CILInteractorStyle(vtk.vtkInteractorStyle):
     @property
     def reslicing_enabled(self):
         return self._reslicing_enabled
+
     @reslicing_enabled.setter
     def reslicing_enabled(self, value):
         if isinstance(value, bool):
             self._reslicing_enabled = value
-
 
     def log(self, msg):
         if self.debug:
@@ -1446,6 +1446,7 @@ class CILViewer2D():
     def setInput3DData(self, imageData):
         '''alias of setInputData, kept for backward compatibility'''
         return self.setInputData(imageData)
+
     def setInputData(self, imageData):
         self.log("setInputData")
         self.img3D = imageData
