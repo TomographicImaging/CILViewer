@@ -1,25 +1,21 @@
 import sys
+
 import vtk
-from PySide2 import QtCore, QtWidgets
-from PySide2.QtCore import Qt
-from ccpi.viewer import viewer2D, viewer3D
-from ccpi.viewer.QCILViewerWidget import QCILViewerWidget
-import ccpi.viewer.viewerLinker as vlink
-from ccpi.viewer.utils.conversion import Converter
-import numpy as np
-from eqt.ui.UIFormWidget import FormWidget, FormDockWidget
-
-from ccpi.viewer.utils.conversion import cilHDF5ResampleReader
+from ccpi.viewer import viewer3D
 from ccpi.viewer.iviewer import SingleViewerCenterWidget
-from PySide2.QtWidgets import (QCheckBox, QComboBox, QDoubleSpinBox,
-                               QFileDialog, QFormLayout, QFrame, QGroupBox,
-                               QHBoxLayout, QLabel, QLineEdit, QPushButton,
-                               QSlider, QSpinBox)
+from ccpi.viewer.QCILViewerWidget import QCILViewerWidget
+from eqt.ui.UIFormWidget import FormDockWidget
+from PySide2 import QtWidgets
+from PySide2.QtCore import Qt
+from PySide2.QtWidgets import QComboBox
 
-from qdarkstyle.dark.palette import DarkPalette
-from qdarkstyle.light.palette import LightPalette
-import qdarkstyle
-
+try:
+    import qdarkstyle
+    from qdarkstyle.dark.palette import DarkPalette
+    set_style = True
+except:
+    set_style = False
+    
 class OpacityViewerWidget(SingleViewerCenterWidget):
 
     def __init__(self, parent = None, viewer=viewer3D):
@@ -31,7 +27,8 @@ class OpacityViewerWidget(SingleViewerCenterWidget):
 
         self.create_settings_dockwidget()
 
-        self.set_app_style()
+        if set_style:
+            self.set_app_style()
     
         self.show()
 
