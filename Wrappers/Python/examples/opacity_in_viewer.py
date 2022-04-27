@@ -84,7 +84,7 @@ if __name__ == "__main__":
     vtk.vtkOutputWindow.SetInstance(err)
  
     reader = vtk.vtkMetaImageReader()
-    reader.SetFileName(r'D:\lhe97136\Work\Data\CILViewer\head.mha')
+    reader.SetFileName(r'head.mha')
     reader.Update()
 
 
