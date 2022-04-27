@@ -783,6 +783,10 @@ class CILViewer():
         self.getRenderer().AddLight(lgt)
         self.light = lgt
     
+    def getVolumeRenderOpacityMethod(self):
+        if not hasattr(self, '_vol_render_opacity_method'):
+            self.setVolumeRenderOpacityMethod('gradient')
+        return self._vol_render_opacity_method
     def setVolumeRenderOpacityMethod(self, method='gradient'):
         '''
         Parameters
@@ -1114,6 +1118,8 @@ class CILViewer():
             colors, opacity = self.getColorOpacityForVolumeRender()
             
             self.volume_property.SetColor(colors)
+            self.volume_property.SetScalarOpacity(opacity)
+        
 
             # Update whether we use our calculated opacity as the scalar or gradient opacity
             if self.getVolumeRenderOpacityMethod() == 'gradient':
