@@ -687,6 +687,10 @@ class CILViewer():
         colors, opacity = self.getColorOpacityForVolumeRender()
 
         self.volume_property.SetColor(colors)
+
+        self.setDefaultScalarOpacity(self.volume_property.GetScalarOpacity())
+        self.setDefaultGradientOpacity(self.volume_property.GetGradientOpacity())
+
         if self.getVolumeRenderOpacityMethod() == 'gradient':
             self.volume_property.SetGradientOpacity(opacity)
         elif self.getVolumeRenderOpacityMethod() == 'scalar':
@@ -716,10 +720,24 @@ class CILViewer():
         if not hasattr(self, '_vol_render_opacity_method'):
             self.setVolumeRenderOpacityMethod('gradient')
         return self._vol_render_opacity_method
+
     def setVolumeRenderOpacityMethod(self, method='gradient'):
         if method in ['scalar', 'gradient']:
             self._vol_render_opacity_method = method
+            self.updateVolumePipeline()
         # if the method is not supported it does nothing???
+
+    def setDefaultScalarOpacity(self, opacity):
+        self.default_scalar_opacity = opacity
+    
+    def setDefaultGradientOpacity(self, opacity):
+        self.default_gradient_opacity = opacity
+
+    def getDefaultScalarOpacity(self):
+        return self.default_scalar_opacity
+
+    def getDefaultGradientOpacity(self):
+        return self.default_gradient_opacity
 
     def getColorOpacityForVolumeRender(self, percentiles=(80.,99.), color_num=255, max_opacity=0.1):
         '''Defines the color and opacity tables
@@ -835,7 +853,16 @@ class CILViewer():
             opacity = colormaps.CILColorMaps.get_opacity_transfer_function(x, 
             colormaps.relu, cmin, cmax, scaling)
             self.volume_property.SetColor(colors)
-            self.volume_property.SetScalarOpacity(opacity)
+
+            # Update whether we use our calculated opacity as the scalar or gradient opacity
+            # Also return the other opacity type to its default value:
+            if self.getVolumeRenderOpacityMethod() == 'gradient':
+                self.volume_property.SetScalarOpacity(self.getDefaultScalarOpacity()) 
+                self.volume_property.SetGradientOpacity(opacity)
+                 
+            elif self.getVolumeRenderOpacityMethod() == 'scalar': 
+                self.volume_property.SetGradientOpacity(self.getDefaultGradientOpacity())
+                self.volume_property.SetScalarOpacity(opacity)
         
 
     def setVolumeColorLevelWindow(self, cmin, cmax):
