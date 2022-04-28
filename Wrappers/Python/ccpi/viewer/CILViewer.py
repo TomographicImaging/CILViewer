@@ -170,6 +170,97 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
         if not (alt and ctrl and shift):
             self.SetEventInactive("ZOOM_EVENT")
 
+    def ToggleSliceInterpolation(self):
+        # toggle interpolation of image slice
+        is_interpolated = self._viewer.imageSlice.GetProperty().GetInterpolationType()
+        if is_interpolated:
+            self._viewer.imageSlice.GetProperty().SetInterpolationTypeToNearest()
+        else:
+            self._viewer.imageSlice.GetProperty().SetInterpolationTypeToLinear()
+        self._viewer.updatePipeline()
+
+    def ToggleVolumeClipping(self):
+        viewer = self._viewer
+        viewer.imageSlice.VisibilityOff()
+        # clip a volume render if available
+        if hasattr(self._viewer, 'planew'):
+            is_enabled = viewer.planew.GetEnabled()
+            viewer.planew.SetEnabled(not is_enabled)
+            # print ("should set to not", is_enabled)
+            viewer.getRenderer().Render()
+        else:
+            # print ("handling c")
+            planew = vtk.vtkImplicitPlaneWidget2()
+
+            rep = vtk.vtkImplicitPlaneRepresentation()
+            world_extent = self.GetImageWorldExtent()
+            extent = [0, world_extent[0], 0, world_extent[1], 0, world_extent[2]]
+            rep.SetWidgetBounds(*extent)
+            planew.SetInteractor(viewer.getInteractor())
+            planew.SetRepresentation(rep)
+
+            rep.SetNormalToCamera()
+            rep.SetOutlineTranslation(False)  # this means user can't move bounding box
+
+            plane = vtk.vtkPlane()
+            # should be in the focal point
+            cam = self.GetActiveCamera()
+            foc = cam.GetFocalPoint()
+            plane.SetOrigin(*foc)
+
+            proj = cam.GetDirectionOfProjection()
+            proj = [x + 0.3 for x in list(proj)]
+            plane.SetNormal(*proj)
+            rep.SetPlane(plane)
+            rep.UpdatePlacement()
+
+            viewer.volume.GetMapper().AddClippingPlane(plane)
+            viewer.volume.Modified()
+            planew.On()
+            viewer.plane = plane
+            viewer.planew = planew
+            planew.AddObserver('InteractionEvent', self.update_clipping_plane, 0.5)
+        viewer.updatePipeline()
+
+    def ToggleSliceVisibility(self):
+        # toggle visibility of the slice
+        if self._viewer.imageSlice.GetVisibility():
+            self._viewer.imageSlice.VisibilityOff()
+        else:
+            self._viewer.imageSlice.VisibilityOn()
+        self._viewer.updatePipeline()
+
+    def ToggleVolumeVisibility(self):
+        # toggle visibility of the volume render
+        if not self._viewer.volume_render_initialised:
+            self._viewer.installVolumeRenderActorPipeline()
+
+        if self._viewer.volume.GetVisibility():
+            self._viewer.volume.VisibilityOff()
+            self._viewer.light.SwitchOff()
+        else:
+            self._viewer.volume.VisibilityOn()
+            self._viewer.light.SwitchOn()
+        self._viewer.updatePipeline()
+
+    def ResetVolume(self):
+        # reset color/window
+        cmin, cmax = self._viewer.ia.GetAutoRange()
+
+        # set the level to the average value between the percintiles
+        level = (cmin + cmax) / 2
+        # accommodates all values between the level an the percentiles
+        window = (cmax - cmin) / 2
+
+        self.SetInitialLevel(level)
+        self.SetInitialWindow(window)
+
+        self._viewer.imageSlice.GetProperty().SetColorLevel(self.GetInitialLevel())
+        self._viewer.imageSlice.GetProperty().SetColorWindow(self.GetInitialWindow())
+
+        self._viewer.imageSlice.Update()
+        self.Render()
+
     def OnKeyPress(self, interactor, event):
 
         ctrl = interactor.GetControlKey()
@@ -177,35 +268,16 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
         alt = interactor.GetShiftKey()
 
         if interactor.GetKeyCode() == "x":
-            self.SetSliceOrientation( SLICE_ORIENTATION_YZ )
+            self.SetSliceOrientation(SLICE_ORIENTATION_YZ)
             self.UpdatePipeline(resetcamera=True)
-
         elif interactor.GetKeyCode() == "y":
             self.SetSliceOrientation(SLICE_ORIENTATION_XZ)
             self.UpdatePipeline(resetcamera=True)
-
         elif interactor.GetKeyCode() == "z":
             self.SetSliceOrientation(SLICE_ORIENTATION_XY)
             self.UpdatePipeline(resetcamera=True)
-
         elif interactor.GetKeyCode() == "a":
-            # reset color/window
-            cmin, cmax = self._viewer.ia.GetAutoRange()
-
-            # set the level to the average value between the percintiles
-            level = (cmin + cmax) / 2
-            # accommodates all values between the level an the percentiles
-            window = (cmax - cmin) / 2
-
-            self.SetInitialLevel(level)
-            self.SetInitialWindow(window)
-
-            self._viewer.imageSlice.GetProperty().SetColorLevel(self.GetInitialLevel())
-            self._viewer.imageSlice.GetProperty().SetColorWindow(self.GetInitialWindow())
-
-            self._viewer.imageSlice.Update()
-            self.Render()
-
+            self.ResetVolume()
         elif ctrl and not (alt and shift):
             # CREATE ROI
             position = interactor.GetEventPosition()
@@ -218,56 +290,19 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
 
         elif interactor.GetKeyCode() == "h":
             self.DisplayHelp()
-            
         elif interactor.GetKeyCode() == "r":
             filename = "current_render"
             self.SaveRender(filename)
         elif interactor.GetKeyCode() == "v":
-            # toggle visibility of the volume render
-            if not self._viewer.volume_render_initialised:
-                self._viewer.installVolumeRenderActorPipeline()
-
-            if self._viewer.volume.GetVisibility():
-                self._viewer.volume.VisibilityOff()
-                self._viewer.light.SwitchOff()
-            else:
-                self._viewer.volume.VisibilityOn()
-                self._viewer.light.SwitchOn()
-            self._viewer.updatePipeline()
+            self.ToggleVolumeVisibility()
         elif interactor.GetKeyCode() == "s":
-            # toggle visibility of the slice 
-            
-            if self._viewer.imageSlice.GetVisibility():
-                self._viewer.imageSlice.VisibilityOff()
-            else:
-                self._viewer.imageSlice.VisibilityOn()
-            self._viewer.updatePipeline()
+            self.ToggleSliceVisibility()
         elif interactor.GetKeyCode() == "i":
-            # toggle interpolation of image slice
-            is_interpolated = self._viewer.imageSlice.GetProperty().GetInterpolationType()
-            if is_interpolated:
-                self._viewer.imageSlice.GetProperty().SetInterpolationTypeToNearest()
-            else:
-                self._viewer.imageSlice.GetProperty().SetInterpolationTypeToLinear()
-            self._viewer.updatePipeline()
+            self.ToggleSliceInterpolation()
         elif interactor.GetKeyCode() == "c" and self._viewer.volume_render_initialised:
-            viewer = self._viewer
-            viewer.imageSlice.VisibilityOff() 
-            # clip a volume render if available
-            if hasattr(self._viewer, 'planew') and self._viewer.clipping_plane_initialised:   
-                is_enabled = viewer.planew.GetEnabled()
-                viewer.planew.SetEnabled(not is_enabled)
-                # print ("should set to not", is_enabled)
-                viewer.getRenderer().Render()
-            else:
-                # print ("handling c")
-                planew = self.CreateClippingPlane()
-                planew.On()
-                
-            viewer.updatePipeline()
+            self.ToggleVolumeClipping()
         else:
             print("Unhandled event %s" % interactor.GetKeyCode())
-
 
     def CreateClippingPlane(self):
         viewer = self._viewer
@@ -277,8 +312,8 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
         world_extent = self.GetImageWorldExtent()
         extent = [0, world_extent[0], 0, world_extent[1], 0, world_extent[2]]
         rep.SetWidgetBounds(*extent)
-        planew.SetInteractor(viewer.getInteractor())
         planew.SetRepresentation(rep)
+        planew.SetInteractor(viewer.getInteractor())
 
         rep.SetNormalToCamera()
         rep.SetOutlineTranslation(False) # this means user can't move bounding box
@@ -1133,7 +1168,7 @@ class CILViewer():
     
 
 
-    def adjustCamera(self, resetcamera= False):
+    def adjustCamera(self, resetcamera=False):
         self.ren.ResetCameraClippingRange()
 
         if resetcamera:
