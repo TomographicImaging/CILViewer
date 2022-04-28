@@ -83,8 +83,8 @@ class CILInteractorStyle(vtk.vtkInteractorStyle):
         priority = 1.0
         self.debug = False
 
-        self.AddObserver("MouseWheelForwardEvent" , self.OnMouseWheelForward , priority)
-        self.AddObserver("MouseWheelBackwardEvent" , self.OnMouseWheelBackward, priority)
+        self.AddObserver("MouseWheelForwardEvent", self.OnMouseWheelForward, priority)
+        self.AddObserver("MouseWheelBackwardEvent", self.OnMouseWheelBackward, priority)
         self.AddObserver('KeyPressEvent', self.OnKeyPress, priority)
         self.AddObserver('KeyReleaseEvent', self.OnKeyRelease, priority)
         self.AddObserver('LeftButtonPressEvent',
