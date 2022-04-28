@@ -261,7 +261,7 @@ def main():
     # iren.Initialize()
     # iren.Start()
 
-    html_view = VtkLocalView(ren_win)
+    html_view = VtkRemoteView(ren_win)
 
     layout = FullScreenPage("CILViewer on web", on_ready=html_view.update)
 

@@ -1,6 +1,7 @@
 # Needs to install trame, vtk, h5py
+from functools import partial
 
-from trame.layouts import FullScreenPage
+from trame.layouts import FullScreenPage, SinglePageWithDrawer
 from trame.html import vtk, vuetify
 
 # VTK imports
@@ -132,6 +133,9 @@ def start_viewer_edo_pipeline():
 
     # Style of interaction handling
     style = vtkInteractorStyleImage()
+
+
+
     iren.SetInteractorStyle(style)
 
     # change the background to the signature blue!
@@ -161,12 +165,12 @@ def start_viewer_edo_pipeline():
     imageSlice.GetProperty().SetInterpolationTypeToNearest()
 
     # Which slice do we want?
-    num_slice = 32
+    num_slice = [32]
 
     # tell the voi which is the extent we are interested in
     extent = list(reader.GetOutput().GetExtent())
-    extent[4] = num_slice
-    extent[5] = num_slice + 1
+    extent[4] = num_slice[0]
+    extent[5] = num_slice[0] + 1
     voi.SetVOI(extent)
 
     # connect the mapper with the data
@@ -191,10 +195,42 @@ def start_viewer_edo_pipeline():
 
     # start the interactor loop
     # iren.Start()
+    #
+    # self.AddObserver("MouseWheelForwardEvent", self.OnMouseWheelForward, priority)
+    # self.AddObserver("MouseWheelBackwardEvent", self.OnMouseWheelBackward, priority)
 
-    html_view = vtk.VtkRemoteView(renWin)
+    priority = 1.0
 
-    layout = FullScreenPage("CILViewer on web", on_ready=html_view.update)
+    def onMouseWheel(reader, num_slice, voi, advance, interactor, event):
+        maxSlice = reader.GetOutput().GetExtent()[2 * 2 + 1]
+        # shift = interactor.GetShiftKey()
+        # advance = 1
+
+        if num_slice[0] + advance <= maxSlice:
+            num_slice[0] += advance
+
+            # tell the voi which is the extent we are interested in
+            extent = list(reader.GetOutput().GetExtent())
+            extent[4] = num_slice[0]
+            extent[5] = num_slice[0] + 1
+            voi.SetVOI(extent)
+            voi.Update()
+            renWin.Render()
+
+        # if self.GetViewerEvent("SHOW_LINE_PROFILE_EVENT"):
+        #     self.DisplayLineProfile(interactor, event, True)
+
+    # style.AddObserver("MouseWheelForwardEvent", partial(onMouseWheel, reader, num_slice, voi, 1), priority)
+    # style.AddObserver("MouseWheelBackwardEvent", partial(onMouseWheel, reader, num_slice, voi, -1), priority)
+
+    # iren.Start()
+
+    def onKeyPress():
+        print("Key pressed")
+
+    html_view = vtk.VtkRemoteView(renWin, interactor_events=("events", 'KeyPress'), KeyPress=onKeyPress)
+
+    layout = SinglePageWithDrawer("CILViewer on web", on_ready=html_view.update)
 
     layout.children += [
         vuetify.VContainer(
@@ -208,10 +244,11 @@ def start_viewer_edo_pipeline():
 
 
 def start_layout_local():
+    pass
 
 
 if __name__ == "__main__":
     # start_cone_viewer()
     # start_cilviewer()
     # start_viewer_with_cil_interactor_style()
-    # start_viewer_edo_pipeline()
+    start_viewer_edo_pipeline()
