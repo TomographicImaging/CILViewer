@@ -494,6 +494,9 @@ class CILViewer():
         volumeProperty = vtk.vtkVolumeProperty()
         self.volume_property = volumeProperty
 
+        # These may be optionally set by the user:
+        self.volume_colormap_limits = None
+
         
         # The volume holds the mapper and the property and
         # can be used to position/orient the volume.
@@ -680,20 +683,16 @@ class CILViewer():
         self.renWin.Render()
 
     def installVolumeRenderActorPipeline(self):
-        
         self.volume_mapper.SetInputData(self.img3D)
 
         # define colors and opacity with default values
-        colors, opacity = self.getColorOpacityForVolumeRender()
+        colors, opacity = self.getColorOpacityForVolumeRender(method=self.getVolumeRenderOpacityMethod())
 
         self.volume_property.SetColor(colors)
 
-        self.setDefaultScalarOpacity(self.volume_property.GetScalarOpacity())
-        self.setDefaultGradientOpacity(self.volume_property.GetGradientOpacity())
+        self.setDefaultScalarOpacity()
 
-        if self.getVolumeRenderOpacityMethod() == 'gradient':
-            self.volume_property.SetGradientOpacity(opacity)
-        elif self.getVolumeRenderOpacityMethod() == 'scalar':
+        if self.getVolumeRenderOpacityMethod() == 'scalar':
             self.volume_property.SetScalarOpacity(opacity)
         else:
             # currently this is not relevant, but in the future one may want to do 
@@ -727,55 +726,80 @@ class CILViewer():
             self.updateVolumePipeline()
         # if the method is not supported it does nothing???
 
-    def setDefaultScalarOpacity(self, opacity):
-        self.default_scalar_opacity = opacity
-    
-    def setDefaultGradientOpacity(self, opacity):
-        self.default_gradient_opacity = opacity
+    def setDefaultScalarOpacity(self):
+        self.default_scalar_opacity = self.volume_property.GetScalarOpacity()
 
     def getDefaultScalarOpacity(self):
         return self.default_scalar_opacity
 
-    def getDefaultGradientOpacity(self):
-        return self.default_gradient_opacity
-
-    def getColorOpacityForVolumeRender(self, percentiles=(80.,99.), color_num=255, max_opacity=0.1):
+    def getColorOpacityForVolumeRender(self, percentiles=(80.,99.), color_num=255, max_opacity=0.1, method='scalar'):
         '''Defines the color and opacity tables
         
-        Parameters:
-        :param percentiles: tuple
-        :color_num: int, number of colors in the map
-        :max_opacity: float in [0,1] representing the maximum rendered opacity'''
+        Parameters
+        ----------
+        percentiles: tuple, default: (80., 99.)
+        color_num: int, default: 255 
+            number of colors in the map
+        max_opacity: float in [0,1]
+            representing the maximum rendered opacity
+        method: string
+            method for setting opacity and colour - either 'scalar' or 'gradient' 
+        '''
+        # if colormap limits have been set by the user, they are saved in 
+        # self.volume_colormap_limits. We default to use these if set.
+        if self.volume_colormap_limits is None:       
+            cmin, cmax = self.createVolumeColormapLimits(percentiles, method)
+        else:
+            cmin = self.volume_colormap_limits[0]
+            cmax = self.volume_colormap_limits[1]
+      
+        colors = colormaps.CILColorMaps.get_color_transfer_function(self.getVolumeColorMapName(), (cmin, cmax))
 
-        ia = vtk.vtkImageHistogramStatistics()
-        ia.SetInputData(self.img3D)
-        ia.SetAutoRangePercentiles( *percentiles )
-        ia.Update()
-        
-        cmin, cmax = ia.GetAutoRange()
-        self.volume_colormap_limits = (cmin, cmax)
-        
-        # accomodates all values between the level an the percentiles
-        colors = colormaps.CILColorMaps.get_color_transfer_function(self.getVolumeColorMapName(), (cmin,cmax))
-
-        x = numpy.linspace(ia.GetMinimum(), ia.GetMaximum(), num=color_num)
-        
+        # mapping values in the image to opacity:
+        x = self.getMappingArray(color_num, method)
         opacity = colormaps.CILColorMaps.get_opacity_transfer_function(x, 
           colormaps.relu, cmin, cmax, max_opacity)
 
         return colors, opacity
-    
-    def setVolumeColorMapName(self, cmap='magma'):
-        '''set the volume color map name
-        
-        :param cmap: string with one of ['viridis', 'plasma', 'magma', 'inferno'], or matplotlib's cmaps if available'''
-        self.volume_colormap_name = cmap
 
 
-    def getVolumeColorMapName(self):
-        '''get the volume color map name'''
-        return self.volume_colormap_name
-        
+    def getImageHistogramStatistics(self, method):
+        '''
+        returns histogram statistics for either the image
+        or gradient of the image depending on the method
+        '''
+        ia = vtk.vtkImageHistogramStatistics()
+        if method == 'scalar':
+            ia.SetInputData(self.img3D)
+        else:
+            grad = vtk.vtkImageGradientMagnitude()
+            grad.SetInputData(self.img3D)
+            grad.SetDimensionality(3)
+            grad.Update()
+            ia.SetInputData(grad.GetOutput())
+        ia.Update()
+        return ia
+
+    def createVolumeColormapLimits(self, percentiles, method):
+        '''
+        uses percentiles to generate min and max values in either
+        the image or image gradient (depending on method) for which
+        the colormap and opacity are displayed.
+        '''
+        ia = self.getImageHistogramStatistics(method)
+        ia.SetAutoRangePercentiles(*percentiles)
+        ia.Update()
+        cmin, cmax = ia.GetAutoRange()
+        return cmin, cmax
+
+    def getMappingArray(self, color_num, method):
+        '''
+        generates array of color_num values between min and max values in 
+        image or image gradient (depending on method).
+        '''
+        ia = self.getImageHistogramStatistics(method)
+        x = numpy.linspace(ia.GetMinimum(), ia.GetMaximum(), num=color_num)
+        return x
 
     def installSliceActorPipeline(self):
         self.voi.SetInputData(self.img3D)
@@ -845,39 +869,40 @@ class CILViewer():
 
     def updateVolumePipeline(self):
         if self.volume_render_initialised and self.volume.GetVisibility():
-            cmin , cmax = self.volume_colormap_limits
-            colors = colormaps.CILColorMaps.get_color_transfer_function(self.volume_colormap_name, (cmin,cmax))
-
-            x = numpy.linspace(self.ia.GetMinimum(), self.ia.GetMaximum(), num=255)
-            scaling = 0.1
-            opacity = colormaps.CILColorMaps.get_opacity_transfer_function(x, 
-            colormaps.relu, cmin, cmax, scaling)
+            # define colors and opacity with default values
+            colors, opacity = self.getColorOpacityForVolumeRender(method=self.getVolumeRenderOpacityMethod())
+            
             self.volume_property.SetColor(colors)
 
             # Update whether we use our calculated opacity as the scalar or gradient opacity
-            # Also return the other opacity type to its default value:
             if self.getVolumeRenderOpacityMethod() == 'gradient':
+                # Also return the scalar opacity to its default value:
                 self.volume_property.SetScalarOpacity(self.getDefaultScalarOpacity()) 
+                self.volume_property.DisableGradientOpacityOff()
                 self.volume_property.SetGradientOpacity(opacity)
                  
             elif self.getVolumeRenderOpacityMethod() == 'scalar': 
-                self.volume_property.SetGradientOpacity(self.getDefaultGradientOpacity())
+                self.volume_property.DisableGradientOpacityOn()
                 self.volume_property.SetScalarOpacity(opacity)
-        
 
+            self.renWin.Render()
+    
     def setVolumeColorLevelWindow(self, cmin, cmax):
         self.volume_colormap_limits = (cmin, cmax)
-        self.updatePipeline()
+        self.updateVolumePipeline()
 
-    def setVolumeColorName(self, name):
-        self.volume_colormap_name = name
-        self.updatePipeline()
+    def setVolumeColorMapName(self, cmap='viridis'):
+        '''set the volume color map name
+        
+        :param cmap: string with one of ['viridis', 'plasma', 'magma', 'inferno'], or matplotlib's cmaps if available'''
+        self.volume_colormap_name = cmap
+        self.updateVolumePipeline()
 
-    def getVolumeColorName(self):
+    def getVolumeColorMapName(self):
+        '''get the volume color map name'''
         return self.volume_colormap_name
 
     def adjustCamera(self, resetcamera= False):
-
         self.ren.ResetCameraClippingRange()
 
         if resetcamera:
