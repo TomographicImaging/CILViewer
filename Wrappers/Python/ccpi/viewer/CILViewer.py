@@ -262,7 +262,6 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
         self.Render()
 
     def OnKeyPress(self, interactor, event):
-
         ctrl = interactor.GetControlKey()
         shift = interactor.GetAltKey()
         alt = interactor.GetShiftKey()
@@ -1193,6 +1192,6 @@ class CILViewer():
         
     def saveRender(self, filename, renWin=None):
         '''Save the render window to PNG file'''
-        if renWin == None:
+        if renWin is None:
             renWin = self.renWin
-        SaveRenderToPNG(self.renWin, filename)
+        SaveRenderToPNG(renWin, filename)
