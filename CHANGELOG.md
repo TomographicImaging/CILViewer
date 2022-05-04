@@ -9,6 +9,7 @@
 * Create utils/io.py with code to save current render as PNG
 * Increments number in name of file when saving render to PNG, so multiple captures can be made without them overwriting each other.
 * Add vtkImageResampler, which downsamples from memory
+* When a new 3D image is input, volume render is updated and clipping planes are cleared
 
 ## v22.1.0
 * requires vtk version >= 9.0.3
