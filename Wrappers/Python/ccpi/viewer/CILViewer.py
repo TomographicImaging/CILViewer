@@ -254,7 +254,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
             viewer = self._viewer
             viewer.imageSlice.VisibilityOff() 
             # clip a volume render if available
-            if hasattr(self._viewer, 'planew'):   
+            if hasattr(self._viewer, 'planew') and self._viewer.clipping_plane_initialised:   
                 is_enabled = viewer.planew.GetEnabled()
                 viewer.planew.SetEnabled(not is_enabled)
                 # print ("should set to not", is_enabled)
@@ -291,6 +291,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
                 viewer.plane = plane
                 viewer.planew = planew
                 planew.AddObserver('InteractionEvent', self.update_clipping_plane, 0.5)
+                self._viewer.clipping_plane_initialised = True
             viewer.updatePipeline()
         else:
             print("Unhandled event %s" % interactor.GetKeyCode())
@@ -503,6 +504,7 @@ class CILViewer():
         self.volume = volume
         self.volume_colormap_name = 'viridis'
         self.volume_render_initialised = False
+        self.clipping_plane_initialised = False
         
         # axis orientation widget
         om = vtk.vtkAxesActor()
@@ -618,6 +620,17 @@ class CILViewer():
     def setInput3DData(self, imageData):
         self.img3D = imageData
         self.installPipeline()
+        if self.volume_render_initialised:
+            if self.volume.GetVisibility():
+                if self.clipping_plane_initialised:
+                    self.planew.SetEnabled(False)
+                    self.volume.GetMapper().RemoveAllClippingPlanes()
+                    self.clipping_plane_initialised = False
+                self.installVolumeRenderActorPipeline()
+                self.volume.VisibilityOn()
+                self.updatePipeline()
+            else:
+                self.volume_render_initialised = False
 
     def setInputData(self, imageData):
         '''alias of setInput3DData'''
