@@ -752,8 +752,16 @@ class CILViewer():
         else:
             cmin = self.volume_colormap_limits[0]
             cmax = self.volume_colormap_limits[1]
+
+        ia = vtk.vtkImageHistogramStatistics()
+        ia.SetInputData(self.img3D)
+        ia.SetAutoRangePercentiles(10,90)
+        ia.Update()
+        colour_cmin, colour_cmax = ia.GetAutoRange()
+
       
-        colors = colormaps.CILColorMaps.get_color_transfer_function(self.getVolumeColorMapName(), (cmin, cmax))
+        # get cmin, cmax from image
+        colors = colormaps.CILColorMaps.get_color_transfer_function(self.getVolumeColorMapName(), (colour_cmin, colour_cmax))
 
         # mapping values in the image to opacity:
         x = self.getMappingArray(color_num, method)
