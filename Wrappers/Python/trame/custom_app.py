@@ -1,60 +1,77 @@
+from dataclasses import dataclass
+
 import matplotlib.pyplot as plt
 from trame import state
 from trame.html import vtk, vuetify
 from trame.layouts import SinglePageWithDrawer
 from vtkmodules.vtkIOImage import vtkMetaImageReader
+from vtkmodules.vtkRenderingCore import vtkCamera
 
 from ccpi.viewer.CILViewer import CILViewer
 from ccpi.viewer.CILViewer2D import SLICE_ORIENTATION_XY, SLICE_ORIENTATION_XZ, SLICE_ORIENTATION_YZ
+from ccpi.viewer.utils.conversion import cilHDF5ResampleReader
 
 DEFAULT_SLICE = 32
-DEFAULT_SLICE_ORIENTATION = SLICE_ORIENTATION_XY
-DEFAULT_CONTRAST = 50
-DEFAULT_LEVELS = 1
 INITIAL_IMAGE = "head.mha"
 
 
-def load_image(image_file: str):
-    reader = vtkMetaImageReader()
-    reader.SetFileName(image_file)
-    reader.Update()
-    return reader.GetOutput()
+@dataclass(init=False)
+class CameraData:
+    position: list
+    focalPoint: list
+    viewUp: list
+
+    def __init__(self, camera: vtkCamera):
+        self.position = camera.GetPosition()
+        self.focalPoint = camera.GetFocalPoint()
+        self.viewUp = camera.GetViewUp()
+
+    def copy_data_to_other_camera(self, other_cam: vtkCamera):
+        other_cam.SetPosition(*self.position)
+        other_cam.SetFocalPoint(*self.focalPoint)
+        other_cam.SetViewUp(*self.viewUp)
 
 
 class TrameViewer:
     def __init__(self):
-        self.image = load_image(INITIAL_IMAGE)
+        self.cmax = None
+        self.cmin = None
+        self.windowing_defaults = None
+        self.max_slice = None
+        self.default_slice = None
+        self.image = None
 
         self.cil_viewer = CILViewer()
-
-        # Setup defaults situation
-        self.cil_viewer.setInput3DData(self.image)
-        self.cil_viewer.setVolumeRenderOpacityMethod('scalar')
-        self.cil_viewer.setActiveSlice(DEFAULT_SLICE)
+        self.load_file(INITIAL_IMAGE)
 
         self.html_view = vtk.VtkRemoteView(
             self.cil_viewer.renWin,
             # interactor_events=("events", 'KeyPress'),
             # KeyPress=(on_key_press, "[$event.keyCode]"),
         )
+        self.set_opacity_mapping("scalar")
         self.switch_render()  # Turn on 3D view by default
+
+        # Grab current pos and orientation for reset later.
+        self.original_cam_data = CameraData(self.cil_viewer.ren.GetActiveCamera())
 
         self.layout = SinglePageWithDrawer("CILViewer on web", on_ready=self.html_view.update, width=300)
         self.layout.title.set_text("CILViewer on Web")
         self.layout.logo.children = [vuetify.VIcon("mdi-skull", classes="mr-4")]
 
-        self.max_slice = self.cil_viewer.img3D.GetExtent()[self.cil_viewer.sliceOrientation * 2 + 1]
+        self.update_slice_data()
 
         # replace this with the list browser? # https://kitware.github.io/trame/docs/module-widgets.html#ListBrowser
         self.model_choice = vuetify.VSelect(
             v_model=("file_name", "head.mha"),
-            items=("file_name_options", ["head.mha", "FullHead.mhd"]),
+            items=("file_name_options", ["head.mha", "egg2.nxs", "fbp_reconstruction_mouse_512.nxs",
+                                         "small_normSPDHG_eTV_alpha_0.0003_it_1260.nxs", "walnut_recon.nxs"]),
             hide_details=True,
             solo=True,
         )
 
         self.slice_slider = vuetify.VSlider(
-            v_model=("slice", DEFAULT_SLICE),
+            v_model=("slice", self.default_slice),
             min=0,
             max=self.max_slice,
             step=1,
@@ -115,13 +132,7 @@ class TrameViewer:
             click=self.cil_viewer.style.ToggleVolumeClipping,
         )
 
-        self.cil_viewer.ia.SetAutoRangePercentiles(0., 100.)  # Used to grab the defaults using CILViewer.ia
-        self.cil_viewer.ia.Update()
-        self.cmin, self.cmax = self.cil_viewer.ia.GetAutoRange()
-        self.cil_viewer.ia.SetAutoRangePercentiles(80., 99.)  # Used in the default of CILViewer.getColorOpacityForVolumeRender
-        self.cil_viewer.ia.Update()
-
-        self.windowing_defaults = [self.cil_viewer.volume_colormap_limits[0], self.cil_viewer.volume_colormap_limits[1]]
+        self.update_windowing_defaults()
 
         self.windowing_slider = vuetify.VRangeSlider(
             label="Windowing range",
@@ -135,15 +146,12 @@ class TrameViewer:
             style="max-width: 300px"
         )
 
-        def reset_cam():
-            self.cil_viewer.adjustCamera(resetcamera=True)
-            self.html_view.update()
         self.reset_cam_button = vuetify.VBtn(
             "Reset Camera",
             hide_details=True,
             dense=True,
             solo=True,
-            click=reset_cam,
+            click=self.reset_cam,
         )
 
         self.reset_defaults_button = vuetify.VBtn(
@@ -197,8 +205,50 @@ class TrameViewer:
         # Setup default state
         self.set_default_button_state()
 
+    def update_windowing_defaults(self):
+        self.cil_viewer.ia.SetAutoRangePercentiles(0., 100.)  # Used to grab the min and max defaults using CILViewer.ia
+        self.cil_viewer.ia.Update()
+        self.cmin, self.cmax = self.cil_viewer.ia.GetAutoRange()
+        self.cil_viewer.ia.SetAutoRangePercentiles(80., 99.)  # Used in the default of CILViewer.getColorOpacityForVolumeRender
+        self.cil_viewer.ia.Update()
+        if hasattr(self.cil_viewer, "volume_colormap_limits"):
+            self.windowing_defaults = [self.cil_viewer.volume_colormap_limits[0], self.cil_viewer.volume_colormap_limits[1]]
+
+    def update_slice_data(self):
+        self.max_slice = self.cil_viewer.img3D.GetExtent()[self.cil_viewer.sliceOrientation * 2 + 1]
+        self.default_slice = round(self.max_slice / 2)
+
     def start(self):
         self.layout.start()
+
+    def load_file(self, file_name):
+        if ".nxs" in file_name:
+            self.load_nexus_file(file_name)
+        else:
+            self.load_image(file_name)
+
+        # Update default values
+        self.update_windowing_defaults()
+        self.update_slice_data()
+
+        # Reset all the buttons and camera
+        self.reset_defaults()
+
+    def load_image(self, image_file: str):
+        reader = vtkMetaImageReader()
+        reader.SetFileName(image_file)
+        reader.Update()
+        self.image = reader.GetOutput()
+        self.cil_viewer.setInput3DData(self.image)
+
+    def load_nexus_file(self, file_name):
+        reader = cilHDF5ResampleReader()
+        reader.SetFileName(file_name)
+        reader.SetDatasetName('entry1/tomo_entry/data/data')
+        reader.SetTargetSize(1024 * 1024 * 1024)
+        reader.Update()
+        self.image = reader.GetOutput()
+        self.cil_viewer.setInput3DData(self.image)
 
     def switch_render(self):
         if not self.cil_viewer.volume_render_initialised:
@@ -239,30 +289,36 @@ class TrameViewer:
         self.cil_viewer.setVolumeColorLevelWindow(min_value, max_value)
         self.html_view.update()
 
-    def change_data(self, data_to_use):
-        # self.reset_defaults()
-        pass
+    def reset_cam(self):
+        self.cil_viewer.adjustCamera(resetcamera=True)
+        if hasattr(self, "original_cam_data"):
+            self.original_cam_data.copy_data_to_other_camera(self.cil_viewer.ren.GetActiveCamera())
+        if hasattr(self, "html_view"):
+            self.html_view.update()
 
     def reset_defaults(self):
-        app = vuetify.get_app_instance()
         self.set_default_button_state()
-        pass
+        self.reset_cam()
 
     def set_default_button_state(self):
         # Don't reset file name
         app = vuetify.get_app_instance()
-        app.set(key="slice", value=DEFAULT_SLICE)
+        app.set(key="slice", value=self.default_slice)
         app.set(key="orientation", value=f"{SLICE_ORIENTATION_XY}")
         app.set(key="opacity", value="scalar")
-        # app.set(key="file_name", value=)
         app.set(key="colour_map", value="viridis")
         app.set(key="windowing", value=self.windowing_defaults)
-        # Ensure 3D is on
+        # Ensure 2D is on
         if not self.cil_viewer.imageSlice.GetVisibility():
             self.switch_slice()
-        # Ensure 2D is on
+        # Ensure 3D is on
         if not self.cil_viewer.volume.GetVisibility():
             self.switch_render()
+        # Reset clipping on the volume itself
+        if self.cil_viewer.volume.GetMapper().GetClippingPlanes() is not None:
+            self.cil_viewer.volume.GetMapper().RemoveAllClippingPlanes()
+        if hasattr(self.cil_viewer, 'planew'):
+            self.cil_viewer.style.ToggleVolumeClipping()
 
 
 TRAME_VIEWER = TrameViewer()
@@ -292,8 +348,7 @@ def change_opacity_mapping(**kwargs):
 
 @state.change("file_name")
 def change_model(**kwargs):
-    # TODO: Implement change the model and slice being displayed in the viewer to the new file
-    TRAME_VIEWER.change_data(kwargs['file_name'])
+    TRAME_VIEWER.load_file(kwargs['file_name'])
 
 
 @state.change("colour_map")
