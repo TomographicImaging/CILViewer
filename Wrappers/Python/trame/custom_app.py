@@ -1,3 +1,4 @@
+import os
 from dataclasses import dataclass
 
 import matplotlib.pyplot as plt
@@ -222,6 +223,8 @@ class TrameViewer:
         self.layout.start()
 
     def load_file(self, file_name):
+        if "data" not in file_name:
+            file_name = os.path.join("data", file_name)
         if ".nxs" in file_name:
             self.load_nexus_file(file_name)
         else:
