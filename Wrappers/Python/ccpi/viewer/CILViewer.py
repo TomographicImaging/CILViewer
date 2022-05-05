@@ -685,12 +685,23 @@ class CILViewer():
     def installVolumeRenderActorPipeline(self):
         self.volume_mapper.SetInputData(self.img3D)
 
+        # set defaults for opacity and colour mapping:
+        color_percentiles = (5., 95.)
+        scalar_opacity_percentiles = (80., 99.)
+        gradient_opacity_percentiles = (80., 99.)
+        max_opacity = 0.1
+
+        self.setVolumeColorPercentiles(*color_percentiles, update_pipeline=False)
+        self.setScalarOpacityPercentiles(*scalar_opacity_percentiles, update_pipeline=False)
+        self.setGradientOpacityPercentiles(*gradient_opacity_percentiles, update_pipeline=False)
+        self.setMaximumOpacity(max_opacity)
+
         # define colors and opacity with default values
-        colors, opacity = self.getColorOpacityForVolumeRender(method=self.getVolumeRenderOpacityMethod())
+        colors, opacity = self.getColorOpacityForVolumeRender()
 
         self.volume_property.SetColor(colors)
 
-        self.setDefaultScalarOpacity()
+        self._setDefaultScalarOpacityFunction()
 
         if self.getVolumeRenderOpacityMethod() == 'scalar':
             self.volume_property.SetScalarOpacity(opacity)
@@ -715,58 +726,212 @@ class CILViewer():
         self.getRenderer().AddLight(lgt)
         self.light = lgt
     
-    def getVolumeRenderOpacityMethod(self):
-        if not hasattr(self, '_vol_render_opacity_method'):
-            self.setVolumeRenderOpacityMethod('gradient')
-        return self._vol_render_opacity_method
-
     def setVolumeRenderOpacityMethod(self, method='gradient'):
+        '''
+        Parameters
+        ----------
+        method: string: 'scalar' or 'gradient'
+            method for setting opacity of the volume render            
+        '''
         if method in ['scalar', 'gradient']:
             self._vol_render_opacity_method = method
             self.updateVolumePipeline()
         # if the method is not supported it does nothing???
 
-    def setDefaultScalarOpacity(self):
+    def getVolumeRenderOpacityMethod(self):
+        '''
+        Returns
+        ----------
+        method: string: 'scalar' or 'gradient'
+            method for setting opacity of the volume render            
+        '''
+        if not hasattr(self, '_vol_render_opacity_method'):
+            self.setVolumeRenderOpacityMethod('gradient')
+        return self._vol_render_opacity_method
+
+    def setMaximumOpacity(self, max, update_pipeline=True):
+        '''
+        Parameters
+        ----------
+        max_opacity: float in [0,1]
+            representing the maximum rendered opacity
+        update_pipeline: bool
+            whether to immediately update the pipeline with this new
+            setting
+        '''
+        self.maximum_opacity = max
+        if update_pipeline:
+            self.updateVolumePipeline()
+
+    def getMaximumOpacity(self):
+        '''
+        Returns
+        ----------
+        max_opacity: float in [0,1]
+            representing the maximum rendered opacity
+        '''
+        return self.maximum_opacity
+        
+    def setGradientOpacityPercentiles(self, min, max, update_pipeline=True):
+        '''
+        Parameters
+        -----------
+        min, max: float, default: (80., 99.)
+            the percentiles on the image gradient values that the 
+            opacity will be mapped to if setVolumeRenderOpacityMethod
+            has been set to 'gradient'.
+        update_pipeline: bool
+            whether to immediately update the pipeline with this new
+            setting
+        '''
+        go_min, go_max = self.getVolumeMapWindow((min, max), 'gradient')
+        self.setGradientOpacityWindow(go_min, go_max, update_pipeline)
+
+    def setScalarOpacityPercentiles(self, min, max, update_pipeline=True):
+        '''
+        min, max: float, default: (80., 99.)
+            the percentiles on the image values that the 
+            opacity will be mapped to if setVolumeRenderOpacityMethod
+            has been set to 'scalar'.
+        '''
+        so_min, so_max = self.getVolumeMapWindow((min, max), 'scalar')
+        self.setScalarOpacityWindow(so_min, so_max, update_pipeline)
+
+    def setVolumeColorPercentiles(self, min, max, update_pipeline=True):
+        '''
+        min, max: int, default: (85., 95.)
+            the percentiles on the image values upon which the colours will be mapped to
+        '''
+        cmin, cmax = self.getVolumeMapWindow((min, max), 'scalar')
+        self.setVolumeColorLevelWindow(cmin, cmax, update_pipeline)
+
+    def setGradientOpacityWindow(self, min, max, update_pipeline=True):
+        '''
+        Parameters
+        -----------
+        min, max: float, default: (80., 99.)
+            the pupper and lower image gradient values that the 
+            opacity will be mapped to if setVolumeRenderOpacityMethod
+            has been set to 'gradient'.
+        update_pipeline: bool
+            whether to immediately update the pipeline with this new
+            setting
+        '''
+        self.gradient_opacity_limits = (min, max)
+        if update_pipeline:
+            self.updateVolumePipeline()
+
+    def getGradientOpacityWindow(self):
+        '''
+        Returns
+        -----------
+        (min, max): tuple, default: (80., 99.)
+            the pupper and lower image gradient values that the 
+            opacity will be mapped to if setVolumeRenderOpacityMethod
+            has been set to 'gradient'.
+        '''
+        return self.gradient_opacity_limits
+
+    
+    def setScalarOpacityWindow(self, min, max, update_pipeline=True):
+        '''
+        Parameters
+        -----------
+        min, max: float, default: (80., 99.)
+            the upper and lower image values that the 
+            opacity will be mapped to if setVolumeRenderOpacityMethod
+            has been set to 'scalar'.
+        update_pipeline: bool
+            whether to immediately update the pipeline with this new
+            setting
+        '''
+        self.scalar_opacity_limits = (min, max)
+        if update_pipeline:
+            self.updateVolumePipeline()
+
+    def getScalarOpacityWindow(self):
+        '''
+        Returns
+        -----------
+        (min, max): tuple, default: (80., 99.)
+            the upper and lower image values that the 
+            opacity will be mapped to if setVolumeRenderOpacityMethod
+            has been set to 'scalar'.
+        '''
+        return self.scalar_opacity_limits
+
+    def setVolumeColorLevelWindow(self, min, max, update_pipeline=True):
+        '''
+        Parameters
+        -----------
+        min, max: float, default: (80., 99.)
+            the upper and lower image values that the 
+            color will be mapped to.
+        update_pipeline: bool
+            whether to immediately update the pipeline with this new
+            setting
+        '''
+        self.volume_colormap_limits = (min, max)
+        if update_pipeline:
+            self.updateVolumePipeline()
+
+    def getVolumeColorLevelWindow(self):
+        '''
+        Returns
+        -----------
+        (min, max): tuple, default: (80., 99.)
+            the upper and lower image values that the 
+            color will be mapped to.
+        '''
+        return self.volume_colormap_limits
+
+    def setVolumeColorMapName(self, cmap='viridis'):
+        '''set the volume color map name
+        Parameters
+        ----------
+        cmap: string, default: 'viridis'
+            with one of ['viridis', 'plasma', 'magma', 'inferno'],
+            or matplotlib's cmaps if available
+        '''
+        self.volume_colormap_name = cmap
+        self.updateVolumePipeline()
+
+    def getVolumeColorMapName(self):
+        '''get the volume color map name'''
+        return self.volume_colormap_name
+
+    def _setDefaultScalarOpacityFunction(self):
+        # used inside viewer, not for user
         self.default_scalar_opacity = self.volume_property.GetScalarOpacity()
 
-    def getDefaultScalarOpacity(self):
+    def _getDefaultScalarOpacityFunction(self):
+        # used inside viewer, not for user
         return self.default_scalar_opacity
 
-    def getColorOpacityForVolumeRender(self, percentiles=(80.,99.), color_num=255, max_opacity=0.1, method='scalar'):
-        '''Defines the color and opacity tables
+
+    def getColorOpacityForVolumeRender(self, color_num=255):
+        '''
+        Defines the color and opacity tables
         
         Parameters
         ----------
-        percentiles: tuple, default: (80., 99.)
         color_num: int, default: 255 
             number of colors in the map
-        max_opacity: float in [0,1]
-            representing the maximum rendered opacity
-        method: string
-            method for setting opacity and colour - either 'scalar' or 'gradient' 
         '''
-        # if colormap limits have been set by the user, they are saved in 
-        # self.volume_colormap_limits. We default to use these if set.
-        if self.volume_colormap_limits is None:       
-            cmin, cmax = self.createVolumeColormapLimits(percentiles, method)
+        
+        colors = colormaps.CILColorMaps.get_color_transfer_function(self.getVolumeColorMapName(), self.volume_colormap_limits)
+
+        method = self.getVolumeRenderOpacityMethod()
+
+        if method == 'scalar':
+            omin, omax = self.scalar_opacity_limits
         else:
-            cmin = self.volume_colormap_limits[0]
-            cmax = self.volume_colormap_limits[1]
+            omin, omax = self.gradient_opacity_limits
 
-        ia = vtk.vtkImageHistogramStatistics()
-        ia.SetInputData(self.img3D)
-        ia.SetAutoRangePercentiles(10,90)
-        ia.Update()
-        colour_cmin, colour_cmax = ia.GetAutoRange()
-
-      
-        # get cmin, cmax from image
-        colors = colormaps.CILColorMaps.get_color_transfer_function(self.getVolumeColorMapName(), (colour_cmin, colour_cmax))
-
-        # mapping values in the image to opacity:
+        # mapping values in the image or gradient to the opacity:
         x = self.getMappingArray(color_num, method)
         opacity = colormaps.CILColorMaps.get_opacity_transfer_function(x, 
-          colormaps.relu, cmin, cmax, max_opacity)
+          colormaps.relu, omin, omax, self.maximum_opacity)
 
         return colors, opacity
 
@@ -788,17 +953,28 @@ class CILViewer():
         ia.Update()
         return ia
 
-    def createVolumeColormapLimits(self, percentiles, method):
+    def getVolumeMapWindow(self, percentiles, method):
         '''
         uses percentiles to generate min and max values in either
         the image or image gradient (depending on method) for which
-        the colormap and opacity are displayed.
+        the colormap or opacity are displayed.
         '''
         ia = self.getImageHistogramStatistics(method)
         ia.SetAutoRangePercentiles(*percentiles)
         ia.Update()
-        cmin, cmax = ia.GetAutoRange()
-        return cmin, cmax
+        min, max = ia.GetAutoRange()
+        return min, max
+
+    def getVolumeRange(self, method):
+        '''
+        Parameters
+        -----------
+        method: string : ['scalar', 'gradient']
+            'scalar' - returns full range of values in image
+            'gradient' - returns full range of values in image gradient
+        '''
+
+        self.getVolumeMapWindow((0,100), method)
 
     def getMappingArray(self, color_num, method):
         '''
@@ -878,14 +1054,14 @@ class CILViewer():
     def updateVolumePipeline(self):
         if self.volume_render_initialised and self.volume.GetVisibility():
             # define colors and opacity with default values
-            colors, opacity = self.getColorOpacityForVolumeRender(method=self.getVolumeRenderOpacityMethod())
+            colors, opacity = self.getColorOpacityForVolumeRender()
             
             self.volume_property.SetColor(colors)
 
             # Update whether we use our calculated opacity as the scalar or gradient opacity
             if self.getVolumeRenderOpacityMethod() == 'gradient':
                 # Also return the scalar opacity to its default value:
-                self.volume_property.SetScalarOpacity(self.getDefaultScalarOpacity()) 
+                self.volume_property.SetScalarOpacity(self._getDefaultScalarOpacityFunction()) 
                 self.volume_property.DisableGradientOpacityOff()
                 self.volume_property.SetGradientOpacity(opacity)
                  
@@ -895,20 +1071,7 @@ class CILViewer():
 
             self.renWin.Render()
     
-    def setVolumeColorLevelWindow(self, cmin, cmax):
-        self.volume_colormap_limits = (cmin, cmax)
-        self.updateVolumePipeline()
 
-    def setVolumeColorMapName(self, cmap='viridis'):
-        '''set the volume color map name
-        
-        :param cmap: string with one of ['viridis', 'plasma', 'magma', 'inferno'], or matplotlib's cmaps if available'''
-        self.volume_colormap_name = cmap
-        self.updateVolumePipeline()
-
-    def getVolumeColorMapName(self):
-        '''get the volume color map name'''
-        return self.volume_colormap_name
 
     def adjustCamera(self, resetcamera= False):
         self.ren.ResetCameraClippingRange()
