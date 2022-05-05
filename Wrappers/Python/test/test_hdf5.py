@@ -35,7 +35,7 @@ class TestHDF5IO(unittest.TestCase):
             f.create_dataset('ImageData', data=self.input_3D_array)
 
         # Generate random 4D array and write to HDF5:
-        self.input_4D_array = np.random.random(size=(10, 5, 10, 6))
+        self.input_4D_array = np.random.random(size=(10, 7, 10, 6))
         self.hdf5_filename_4D = 'test_4D_data.h5'
         with h5py.File(self.hdf5_filename_4D, 'w') as f:
             f.create_dataset('ImageData', data=self.input_4D_array)
@@ -57,7 +57,8 @@ class TestHDF5IO(unittest.TestCase):
         reader = HDF5Reader()
         reader.SetFileName(self.hdf5_filename_4D)
         reader.SetDatasetName("ImageData")
-        reader.Set4DIndex(channel_index)
+        reader.Set4DSliceIndex(channel_index)
+        reader.Set4DIndex(0)
         reader.Update()
         array_image_data = reader.GetOutputDataObject(0)
         read_array = Converter.vtk2numpy(array_image_data)
@@ -93,14 +94,15 @@ class TestHDF5IO(unittest.TestCase):
     def test_read_cropped_hdf5_channel(self):
         # Test cropping the extent of a dataset
         channel_index = 5
-        cropped_array = self.input_4D_array[:, 1:2, 3:6, 0:3][5]
+        cropped_array = self.input_4D_array[1:2, channel_index, 3:6, 0:3]
         hdf5_filename = 'test_numpy_data.h5'
         with h5py.File(hdf5_filename, 'w') as f:
             f.create_dataset('ImageData', data=self.input_4D_array)
         reader = HDF5Reader()
         reader.SetFileName(self.hdf5_filename_4D)
         reader.SetDatasetName("ImageData")
-        reader.Set4DIndex(channel_index)
+        reader.Set4DSliceIndex(channel_index)
+        reader.Set4DIndex(1)
         cropped_reader = HDF5SubsetReader()
         cropped_reader.SetInputConnection(reader.GetOutputPort())
         # NOTE: the extent is in vtk so is in fortran order, whereas

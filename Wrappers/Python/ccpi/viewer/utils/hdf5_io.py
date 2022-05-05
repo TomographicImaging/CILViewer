@@ -60,6 +60,7 @@ class HDF5Reader(VTKPythonAlgorithmBase):
 
         self._FileName = ""
         self._DatasetName = None
+        self._4DSliceIndex = 0
         self._4DIndex = 0
 
     def RequestData(self, request, inInfo, outInfo):
@@ -81,8 +82,16 @@ class HDF5Reader(VTKPythonAlgorithmBase):
             if len(shape) == 3:
                 data = f[self._DatasetName][ue[4]:ue[5]+1, ue[2]:ue[3]+1, ue[0]:ue[1]+1]
             elif len(shape) == 4:
-                data = f[self._DatasetName][self._4DIndex][
-                    ue[4]:ue[5] + 1, ue[2]:ue[3]+1, ue[0]:ue[1]+1]
+                if self._4DIndex == 0:
+                    data = f[self._DatasetName][self._4DSliceIndex, ue[4]:ue[5]+1, ue[2]:ue[3]+1, ue[0]:ue[1]+1]
+                elif self._4DIndex == 1:
+                    data = f[self._DatasetName][ue[4]:ue[5]+1, self._4DSliceIndex, ue[2]:ue[3]+1, ue[0]:ue[1]+1]
+                elif self._4DIndex == 2:
+                    data = f[self._DatasetName][ue[4]:ue[5]+1,  ue[2]:ue[3]+1, self._4DSliceIndex, ue[0]:ue[1]+1]
+                elif self._4DIndex == 3:
+                    data = f[self._DatasetName][ue[4]:ue[5]+1,  ue[2]:ue[3]+1,  ue[0]:ue[1]+1, self._4DSliceIndex]
+            else:
+                raise Exception("Currently only 3D and 4D datasets are supported.")
             # print("attributes: ", f.attrs.items())
             output = dsa.WrapDataObject(vtk.vtkImageData.GetData(outInfo))
             output.SetExtent(ue)
@@ -116,10 +125,18 @@ class HDF5Reader(VTKPythonAlgorithmBase):
         return self._DatasetName
 
     def Set4DIndex(self, index):
-        '''Sets which index to read, in the case of a 4D dataset'''
+        '''Sets which index is the 4th dimension that we will only read 1 slice of.'''
+        if index not in range(0,4):
+            raise Exception("4D Index must be between 0 and 3.")
         if index != self._4DIndex:
             self.Modified()
             self._4DIndex = index
+
+    def Set4DSliceIndex(self, index):
+        '''Sets which index to read along the 4th dimension.'''
+        if index != self._4DSliceIndex:
+            self.Modified()
+            self._4DSliceIndex = index
 
     def GetDimensions(self):
         with h5py.File(self._FileName, 'r') as f:
