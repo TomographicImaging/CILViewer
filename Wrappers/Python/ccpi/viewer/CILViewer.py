@@ -261,11 +261,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
         self._viewer.imageSlice.Update()
         self.Render()
 
-    def OnKeyPress(self, interactor, event):
-        ctrl = interactor.GetControlKey()
-        shift = interactor.GetAltKey()
-        alt = interactor.GetShiftKey()
-
+    def OnKeyPress(self, interactor, _):
         if interactor.GetKeyCode() == "x":
             self.SetSliceOrientation(SLICE_ORIENTATION_YZ)
             self.UpdatePipeline(resetcamera=True)
@@ -277,16 +273,6 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
             self.UpdatePipeline(resetcamera=True)
         elif interactor.GetKeyCode() == "a":
             self.ResetVolume()
-        elif ctrl and not (alt and shift):
-            # CREATE ROI
-            position = interactor.GetEventPosition()
-            # print ("3D VIEWER MOUSE POSITION", position)
-
-
-        # elif alt and not (shift and ctrl):
-        #     # DELETE ROI
-        #     print ("DELETE ROI")
-
         elif interactor.GetKeyCode() == "h":
             self.DisplayHelp()
         elif interactor.GetKeyCode() == "r":
