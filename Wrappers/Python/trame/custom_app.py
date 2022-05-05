@@ -248,7 +248,7 @@ class TrameViewer:
         reader = cilHDF5ResampleReader()
         reader.SetFileName(file_name)
         reader.SetDatasetName('entry1/tomo_entry/data/data')
-        reader.SetTargetSize(1024 * 1024 * 1024)
+        reader.SetTargetSize(512 * 512 * 512)
         reader.Update()
         self.image = reader.GetOutput()
         self.cil_viewer.setInput3DData(self.image)
