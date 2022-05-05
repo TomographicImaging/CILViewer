@@ -974,7 +974,7 @@ class CILViewer():
             'gradient' - returns full range of values in image gradient
         '''
 
-        self.getVolumeMapWindow((0,100), method)
+        return self.getVolumeMapWindow((0,100), method)
 
     def getMappingArray(self, color_num, method):
         '''
