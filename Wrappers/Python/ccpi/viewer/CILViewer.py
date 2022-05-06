@@ -803,7 +803,7 @@ class CILViewer():
             the percentiles on the image values upon which the colours will be mapped to
         '''
         cmin, cmax = self.getVolumeMapWindow((min, max), 'scalar')
-        self.setVolumeColorLevelWindow(cmin, cmax, update_pipeline)
+        self.setVolumeColorWindow(cmin, cmax, update_pipeline)
 
     def setGradientOpacityWindow(self, min, max, update_pipeline=True):
         '''
@@ -860,7 +860,7 @@ class CILViewer():
         '''
         return self.scalar_opacity_limits
 
-    def setVolumeColorLevelWindow(self, min, max, update_pipeline=True):
+    def setVolumeColorWindow(self, min, max, update_pipeline=True):
         '''
         Parameters
         -----------
@@ -875,7 +875,7 @@ class CILViewer():
         if update_pipeline:
             self.updateVolumePipeline()
 
-    def getVolumeColorLevelWindow(self):
+    def getVolumeColorWindow(self):
         '''
         Returns
         -----------
@@ -1061,7 +1061,9 @@ class CILViewer():
             # Update whether we use our calculated opacity as the scalar or gradient opacity
             if self.getVolumeRenderOpacityMethod() == 'gradient':
                 # Also return the scalar opacity to its default value:
-                self.volume_property.SetScalarOpacity(self._getDefaultScalarOpacityFunction()) 
+                # If we don't do this then the gradient opacity changes depending on what the
+                # user set for the scalar opacity - not sure we want this:
+                self.volume_property.SetScalarOpacity(self._getDefaultScalarOpacityFunction())
                 self.volume_property.DisableGradientOpacityOff()
                 self.volume_property.SetGradientOpacity(opacity)
                  
