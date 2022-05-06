@@ -619,7 +619,6 @@ class CILViewer():
 
     def setInput3DData(self, imageData):
         self.img3D = imageData
-        self.installPipeline()
         if self.volume_render_initialised:
             if self.volume.GetVisibility():
                 if self.clipping_plane_initialised:
@@ -628,9 +627,9 @@ class CILViewer():
                     self.clipping_plane_initialised = False
                 self.installVolumeRenderActorPipeline()
                 self.volume.VisibilityOn()
-                self.updatePipeline()
             else:
                 self.volume_render_initialised = False
+        self.installPipeline()
 
     def setInputData(self, imageData):
         '''alias of setInput3DData'''
