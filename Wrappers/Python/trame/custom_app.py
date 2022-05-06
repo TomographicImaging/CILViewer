@@ -62,11 +62,16 @@ class TrameViewer:
 
         self.update_slice_data()
 
+        list_of_files = os.listdir("data/")
+        if "head.mha" in list_of_files:
+            default_file = "head.mha"
+        else:
+            default_file = list_of_files[0]
+
         # replace this with the list browser? # https://kitware.github.io/trame/docs/module-widgets.html#ListBrowser
         self.model_choice = vuetify.VSelect(
-            v_model=("file_name", "head.mha"),
-            items=("file_name_options", ["head.mha", "egg2.nxs", "fbp_reconstruction_mouse_512.nxs",
-                                         "small_normSPDHG_eTV_alpha_0.0003_it_1260.nxs", "walnut_recon.nxs"]),
+            v_model=("file_name", default_file),
+            items=("file_name_options", list_of_files),
             hide_details=True,
             solo=True,
         )
