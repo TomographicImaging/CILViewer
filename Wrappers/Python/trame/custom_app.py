@@ -2,7 +2,7 @@ import os
 from dataclasses import dataclass
 
 import matplotlib.pyplot as plt
-from trame import state
+from trame import state, update_layout
 from trame.html import vtk, vuetify
 from trame.layouts import SinglePageWithDrawer
 from vtkmodules.vtkIOImage import vtkMetaImageReader
@@ -35,15 +35,28 @@ class CameraData:
 
 class TrameViewer:
     def __init__(self):
-        self.cmax = None
+        # Define attributes that will be constructed in methods outside of __init__
         self.cmin = None
+        self.cmax = None
         self.windowing_defaults = None
         self.max_slice = None
         self.default_slice = None
         self.image = None
+        self.slice_interaction_col = None
+        self.slice_interaction_row = None
+        self.slice_interaction_section = None
+        self.volume_interaction_col = None
+        self.volume_interaction_row = None
+        self.volume_interaction_section = None
+
+        list_of_files = os.listdir("data/")
+        if "head.mha" in list_of_files:
+            default_file = "head.mha"
+        else:
+            default_file = list_of_files[0]
 
         self.cil_viewer = CILViewer()
-        self.load_file(INITIAL_IMAGE)
+        self.load_file(default_file)
 
         self.html_view = vtk.VtkRemoteView(
             self.cil_viewer.renWin,
@@ -61,12 +74,6 @@ class TrameViewer:
         self.layout.logo.children = [vuetify.VIcon("mdi-skull", classes="mr-4")]
 
         self.update_slice_data()
-
-        list_of_files = os.listdir("data/")
-        if "head.mha" in list_of_files:
-            default_file = "head.mha"
-        else:
-            default_file = list_of_files[0]
 
         # replace this with the list browser? # https://kitware.github.io/trame/docs/module-widgets.html#ListBrowser
         self.model_choice = vuetify.VSelect(
@@ -140,8 +147,8 @@ class TrameViewer:
 
         self.update_windowing_defaults()
 
-        self.windowing_slider = vuetify.VRangeSlider(
-            label="Windowing range",
+        self.windowing_range_slider = vuetify.VRangeSlider(
+            label="Windowing",
             hide_details=True,
             solo=True,
             v_model=("windowing", self.windowing_defaults),
@@ -168,6 +175,20 @@ class TrameViewer:
             click=self.reset_defaults
         )
 
+        self.construct_drawer_layout()
+
+        self.layout.children += [
+            vuetify.VContainer(
+                fluid=True,
+                classes="pa-0 fill-height",
+                children=[self.html_view],
+            )
+        ]
+
+        # Setup default state
+        self.set_default_button_state()
+
+    def construct_drawer_layout(self):
         self.slice_interaction_col = vuetify.VCol([
             self.slice_slider,
             self.orientation_radio_buttons,
@@ -180,13 +201,13 @@ class TrameViewer:
             self.opacity_radio_buttons,
             self.colour_choice,
             self.clipping_button,
-            self.windowing_slider,
+            self.windowing_range_slider,
             self.model_3d_button
         ])
         self.volume_interaction_row = vuetify.VRow(self.volume_interaction_col)
         self.volume_interaction_section = vuetify.VContainer(self.volume_interaction_row)
 
-        self.layout.drawer.children += [
+        self.layout.drawer.children = [
             self.model_choice,
             vuetify.VDivider(),
             self.slice_interaction_section,
@@ -200,17 +221,6 @@ class TrameViewer:
             self.reset_defaults_button
         ]
 
-        self.layout.children += [
-            vuetify.VContainer(
-                fluid=True,
-                classes="pa-0 fill-height",
-                children=[self.html_view],
-            )
-        ]
-
-        # Setup default state
-        self.set_default_button_state()
-
     def update_windowing_defaults(self):
         self.cil_viewer.ia.SetAutoRangePercentiles(0., 100.)  # Used to grab the min and max defaults using CILViewer.ia
         self.cil_viewer.ia.Update()
@@ -219,10 +229,42 @@ class TrameViewer:
         self.cil_viewer.ia.Update()
         if hasattr(self.cil_viewer, "volume_colormap_limits"):
             self.windowing_defaults = [self.cil_viewer.volume_colormap_limits[0], self.cil_viewer.volume_colormap_limits[1]]
+        if hasattr(self, "windowing_range_slider"):
+            if self.cmax >= 100:
+                step = 1
+            else:
+                step = 100 / (self.cmax - self.cmin)
+            self.windowing_range_slider = vuetify.VRangeSlider(
+                label="Windowing",
+                hide_details=True,
+                solo=True,
+                v_model=("windowing", self.windowing_defaults),
+                min=self.cmin,
+                max=self.cmax,
+                step=step,
+                thumb_label=True,
+                style="max-width: 300px"
+            )
+            self.construct_drawer_layout()
+            update_layout(self.layout)
 
     def update_slice_data(self):
         self.max_slice = self.cil_viewer.img3D.GetExtent()[self.cil_viewer.sliceOrientation * 2 + 1]
         self.default_slice = round(self.max_slice / 2)
+        if hasattr(self, "slice_slider"):
+            self.slice_slider = vuetify.VSlider(
+                v_model=("slice", self.default_slice),
+                min=0,
+                max=self.max_slice,
+                step=1,
+                hide_details=True,
+                dense=True,
+                label="Slice",
+                thumb_label=True,
+                style="max-width: 300px"
+            )
+            self.construct_drawer_layout()
+            update_layout(self.layout)
 
     def start(self):
         self.layout.start()
@@ -236,8 +278,8 @@ class TrameViewer:
             self.load_image(file_name)
 
         # Update default values
-        self.update_windowing_defaults()
         self.update_slice_data()
+        self.update_windowing_defaults()
 
         # Reset all the buttons and camera
         self.reset_defaults()
@@ -253,7 +295,7 @@ class TrameViewer:
         reader = cilHDF5ResampleReader()
         reader.SetFileName(file_name)
         reader.SetDatasetName('entry1/tomo_entry/data/data')
-        reader.SetTargetSize(512 * 512 * 512)
+        reader.SetTargetSize(128 * 128 * 128)
         reader.Update()
         self.image = reader.GetOutput()
         self.cil_viewer.setInput3DData(self.image)
@@ -366,7 +408,7 @@ def change_colour_map(**kwargs):
 
 @state.change("windowing")
 def change_windowing(**kwargs):
-    TRAME_VIEWER.change_windowing(min_value=kwargs["windowing"][0], max_value=kwargs["windowing"][1])
+    TRAME_VIEWER.change_windowing(kwargs["windowing"][0], kwargs["windowing"][1])
 
 
 if __name__ == "__main__":
