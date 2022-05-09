@@ -17,7 +17,6 @@ def write_image_data_to_hdf5(filename, data, dataset_name, attributes={}):
         data: vtkImageData - image data to write.
         DatasetName: string - DatasetName for HDF5 dataset.
         attributes: dict - attributes to assign to HDF5 dataset.
-        array_name: string - name of array to read points from the vtkImageData
     '''
 
     with h5py.File(filename, "a") as f:
