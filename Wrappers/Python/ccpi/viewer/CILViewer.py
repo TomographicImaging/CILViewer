@@ -622,16 +622,29 @@ class CILViewer():
 
     def setInput3DData(self, imageData):
         self.img3D = imageData
+
         if self.volume_render_initialised:
-            if self.volume.GetVisibility():
-                if self.clipping_plane_initialised:
-                    self.planew.SetEnabled(False)
-                    self.volume.GetMapper().RemoveAllClippingPlanes()
-                    self.clipping_plane_initialised = False
-                self.installVolumeRenderActorPipeline()
-                self.volume.VisibilityOn()
-            else:
-                self.volume_render_initialised = False
+            # Any previous clipping planes, if made, are deleted:
+            if self.clipping_plane_initialised:
+                self.planew.SetEnabled(False)
+                self.volume.GetMapper().RemoveAllClippingPlanes()
+                self.clipping_plane_initialised = False
+            # Volume render is switched off:
+            self.volume.VisibilityOff()
+            self.volume.Update()
+            self.volume_render_initialised = False
+        
+        # Slice visibility is on by default, and oriented
+        # in z direction:
+        self.imageSlice.VisibilityOn()
+        self.imageSlice.Update()
+        self.style.SetSliceOrientation(SLICE_ORIENTATION_XY)
+        
+        # reset camera to initial orientation
+        # i.e. reset any rotation of the slice and volume
+        self.resetCameraToDefault()
+
+        # Install pipeline with new image:
         self.installPipeline()
 
     def setInputData(self, imageData):
@@ -691,8 +704,21 @@ class CILViewer():
 
         self.adjustCamera()
 
+        self.saveDefaultCamera()
+
         self.iren.Initialize()
         self.renWin.Render()
+
+    def saveDefaultCamera(self):
+        camera = vtk.vtkCamera()
+        camera.SetFocalPoint(self.getCamera().GetFocalPoint())
+        camera.SetPosition(self.getCamera().GetPosition())
+        camera.SetViewUp(self.getCamera().GetViewUp())
+        self.default_camera = camera
+
+    def resetCameraToDefault(self):
+        if hasattr(self, 'default_camera'):
+            self.ren.SetActiveCamera(self.default_camera)
 
     def installVolumeRenderActorPipeline(self):
         self.volume_mapper.SetInputData(self.img3D)
