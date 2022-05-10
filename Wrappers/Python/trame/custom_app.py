@@ -147,6 +147,7 @@ class TrameViewer:
         )
 
         self.update_windowing_defaults()
+        self.colour_slider = self.construct_colour_slider()
         self.windowing_range_slider = self.construct_windowing_slider()
 
         self.reset_cam_button = vuetify.VBtn(
@@ -190,7 +191,7 @@ class TrameViewer:
         self.volume_interaction_col = vuetify.VCol([
             self.opacity_radio_buttons,
             self.colour_choice,
-            # self.colour_slider,
+            self.colour_slider,
             self.clipping_button,
             self.windowing_range_slider,
             self.model_3d_button
@@ -211,6 +212,32 @@ class TrameViewer:
             vuetify.VDivider(),
             self.reset_defaults_button
         ]
+
+    def construct_colour_slider(self):
+        if self.cmax > 100:
+            # Use actual values
+            min_value = self.cmin
+            max_value = self.cmax
+            step = 1
+            self.windowing_slider_is_percentage = False
+        else:
+            # Use percentages
+            min_value = 0
+            max_value = 100
+            step = 0.5
+            self.windowing_slider_is_percentage = True
+        
+        return vuetify.VRangeSlider(
+            label="Colour range",
+            hide_details=True,
+            solo=True,
+            v_model=("colouring", self.windowing_defaults),
+            min=min_value,
+            max=max_value,
+            step=step,
+            thumb_label=True,
+            style="max-width: 300px"
+        )
 
     def construct_windowing_slider(self):
         if self.cmax > 100:
@@ -242,12 +269,14 @@ class TrameViewer:
         self.cmin, self.cmax = self.cil_viewer.getVolumeMapWindow((0., 100.), method)
         self.windowing_defaults = self.cil_viewer.getVolumeMapWindow((80., 99.), method)
         # self.change_windowing(*self.windowing_defaults, method)
-        if hasattr(self, "windowing_range_slider"):
+        if hasattr(self, "windowing_range_slider") and hasattr(self, "colour_slider"):
             self.windowing_range_slider = self.construct_windowing_slider()
+            self.colour_slider = self.construct_colour_slider()
             self.construct_drawer_layout()
             update_layout(self.layout)
         app = vuetify.get_app_instance()
         app.set(key="windowing", value=self.windowing_defaults)
+        app.set(key="colouring", value=self.windowing_defaults)
 
     def update_slice_data(self):
         self.max_slice = self.cil_viewer.img3D.GetExtent()[self.cil_viewer.sliceOrientation * 2 + 1]
@@ -297,7 +326,7 @@ class TrameViewer:
         reader = cilHDF5ResampleReader()
         reader.SetFileName(file_name)
         reader.SetDatasetName('entry1/tomo_entry/data/data')
-        reader.SetTargetSize(256 * 256 * 256 * 8)
+        reader.SetTargetSize(256 * 256 * 256)
         reader.Update()
         self.image = reader.GetOutput()
         self.cil_viewer.setInput3DData(self.image)
@@ -371,6 +400,7 @@ class TrameViewer:
         app.set(key="opacity", value="scalar")
         app.set(key="colour_map", value="viridis")
         app.set(key="windowing", value=self.windowing_defaults)
+        app.set(key="colouring", value=self.windowing_defaults)
         # Ensure 2D is on
         if not self.cil_viewer.imageSlice.GetVisibility():
             self.switch_slice()
@@ -382,7 +412,10 @@ class TrameViewer:
             self.cil_viewer.volume.GetMapper().RemoveAllClippingPlanes()
         if hasattr(self.cil_viewer, 'planew'):
             self.cil_viewer.style.ToggleVolumeClipping()
-
+            
+    def change_colouring(self, min_value, max_value):
+        self.cil_viewer.setVolumeColorWindow(min_value, max_value)
+        
 
 TRAME_VIEWER = TrameViewer()
 
@@ -422,6 +455,11 @@ def change_colour_map(**kwargs):
 @state.change("windowing")
 def change_windowing(**kwargs):
     TRAME_VIEWER.change_windowing(kwargs["windowing"][0], kwargs["windowing"][1], windowing_method=kwargs['opacity'])
+    
+
+@state.change("colouring")
+def change_colouring(**kwargs):
+    TRAME_VIEWER.change_colouring(kwargs["colouring"][0], kwargs["colouring"][1])
 
 
 if __name__ == "__main__":
