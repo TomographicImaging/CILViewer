@@ -1,5 +1,8 @@
 # Changelog
 
+## v22.1.1
+* Changes released in 22.0.1, but also requires vtk version >= 9.0.3
+
 ## v22.0.1
 * requires vtk 8.1.2
 * Fixes enabling and disabling slice with 's' key in 3D viewer
