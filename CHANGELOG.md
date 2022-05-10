@@ -13,6 +13,8 @@
 * Increments number in name of file when saving render to PNG, so multiple captures can be made without them overwriting each other.
 * Add vtkImageResampler, which downsamples from memory
 * When a new 3D image is input, volume render is updated and clipping planes are cleared
+* No need to specify VTK array name when writing to HDF5
+* Allow setting both 4D index and 4D slice index when reading 4D HDF5 dataset
 
 ## v22.1.0
 * requires vtk version >= 9.0.3
