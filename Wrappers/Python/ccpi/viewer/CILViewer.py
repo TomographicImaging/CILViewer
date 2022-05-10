@@ -941,7 +941,7 @@ class CILViewer():
         '''
         Parameters
         -----------
-        min, max: float, default: (80., 99.)
+        min, max: float, default: the raw value of the 80. percentile for min, and the raw value of the 99. percentile for max.
             the upper and lower image values that the 
             color will be mapped to.
         update_pipeline: bool

@@ -48,6 +48,7 @@ class TrameViewer:
         self.volume_interaction_col = None
         self.volume_interaction_row = None
         self.volume_interaction_section = None
+        self.windowing_slider_is_percentage = False  # Defaults to not percentage with the head.mha file
 
         list_of_files = os.listdir("data/")
         if "head.mha" in list_of_files:
@@ -146,18 +147,7 @@ class TrameViewer:
         )
 
         self.update_windowing_defaults()
-
-        self.windowing_range_slider = vuetify.VRangeSlider(
-            label="Windowing",
-            hide_details=True,
-            solo=True,
-            v_model=("windowing", self.windowing_defaults),
-            min=self.cmin,
-            max=self.cmax,
-            step=1,
-            thumb_label=True,
-            style="max-width: 300px"
-        )
+        self.windowing_range_slider = self.construct_windowing_slider()
 
         self.reset_cam_button = vuetify.VBtn(
             "Reset Camera",
@@ -200,6 +190,7 @@ class TrameViewer:
         self.volume_interaction_col = vuetify.VCol([
             self.opacity_radio_buttons,
             self.colour_choice,
+            # self.colour_slider,
             self.clipping_button,
             self.windowing_range_slider,
             self.model_3d_button
@@ -221,32 +212,42 @@ class TrameViewer:
             self.reset_defaults_button
         ]
 
-    def update_windowing_defaults(self):
-        self.cil_viewer.ia.SetAutoRangePercentiles(0., 100.)  # Used to grab the min and max defaults using CILViewer.ia
-        self.cil_viewer.ia.Update()
-        self.cmin, self.cmax = self.cil_viewer.ia.GetAutoRange()
-        self.cil_viewer.ia.SetAutoRangePercentiles(80., 99.)  # Used in the default of CILViewer.getColorOpacityForVolumeRender
-        self.cil_viewer.ia.Update()
-        if hasattr(self.cil_viewer, "volume_colormap_limits"):
-            self.windowing_defaults = [self.cil_viewer.volume_colormap_limits[0], self.cil_viewer.volume_colormap_limits[1]]
+    def construct_windowing_slider(self):
+        if self.cmax > 100:
+            # Use actual values
+            min_value = self.cmin
+            max_value = self.cmax
+            step = 1
+            self.windowing_slider_is_percentage = False
+        else:
+            # Use percentages
+            min_value = 0
+            max_value = 100
+            step = 0.5
+            self.windowing_slider_is_percentage = True
+
+        return vuetify.VRangeSlider(
+            label="Windowing",
+            hide_details=True,
+            solo=True,
+            v_model=("windowing", self.windowing_defaults),
+            min=min_value,
+            max=max_value,
+            step=step,
+            thumb_label=True,
+            style="max-width: 300px"
+        )
+
+    def update_windowing_defaults(self, method="scalar"):
+        self.cmin, self.cmax = self.cil_viewer.getVolumeMapWindow((0., 100.), method)
+        self.windowing_defaults = self.cil_viewer.getVolumeMapWindow((80., 99.), method)
+        # self.change_windowing(*self.windowing_defaults, method)
         if hasattr(self, "windowing_range_slider"):
-            if self.cmax >= 100:
-                step = 1
-            else:
-                step = 100 / (self.cmax - self.cmin)
-            self.windowing_range_slider = vuetify.VRangeSlider(
-                label="Windowing",
-                hide_details=True,
-                solo=True,
-                v_model=("windowing", self.windowing_defaults),
-                min=self.cmin,
-                max=self.cmax,
-                step=step,
-                thumb_label=True,
-                style="max-width: 300px"
-            )
+            self.windowing_range_slider = self.construct_windowing_slider()
             self.construct_drawer_layout()
             update_layout(self.layout)
+        app = vuetify.get_app_instance()
+        app.set(key="windowing", value=self.windowing_defaults)
 
     def update_slice_data(self):
         self.max_slice = self.cil_viewer.img3D.GetExtent()[self.cil_viewer.sliceOrientation * 2 + 1]
@@ -269,7 +270,7 @@ class TrameViewer:
     def start(self):
         self.layout.start()
 
-    def load_file(self, file_name):
+    def load_file(self, file_name, windowing_method="scalar"):
         if "data" not in file_name:
             file_name = os.path.join("data", file_name)
         if ".nxs" in file_name:
@@ -279,7 +280,8 @@ class TrameViewer:
 
         # Update default values
         self.update_slice_data()
-        self.update_windowing_defaults()
+        self.update_windowing_defaults(windowing_method)
+        self.original_cam_data = CameraData(self.cil_viewer.ren.GetActiveCamera())
 
         # Reset all the buttons and camera
         self.reset_defaults()
@@ -295,7 +297,7 @@ class TrameViewer:
         reader = cilHDF5ResampleReader()
         reader.SetFileName(file_name)
         reader.SetDatasetName('entry1/tomo_entry/data/data')
-        reader.SetTargetSize(128 * 128 * 128)
+        reader.SetTargetSize(256 * 256 * 256 * 8)
         reader.Update()
         self.image = reader.GetOutput()
         self.cil_viewer.setInput3DData(self.image)
@@ -332,12 +334,23 @@ class TrameViewer:
         self.html_view.update()
 
     def set_opacity_mapping(self, opacity):
+        self.update_windowing_defaults(opacity)
         self.cil_viewer.setVolumeRenderOpacityMethod(opacity)
         self.html_view.update()
 
-    def change_windowing(self, min_value, max_value):
-        self.cil_viewer.setVolumeColorLevelWindow(min_value, max_value)
-        self.html_view.update()
+    def change_windowing(self, min_value, max_value, windowing_method="scalar"):
+        if self.windowing_slider_is_percentage:
+            if windowing_method == "scalar":
+                self.cil_viewer.setScalarOpacityPercentiles(min_value, max_value)
+            else:
+                self.cil_viewer.setGradientOpacityPercentiles(min_value, max_value)
+        else:
+            if windowing_method == "scalar":
+                self.cil_viewer.setScalarOpacityWindow(min_value, max_value)
+            else:
+                self.cil_viewer.setGradientOpacityWindow(min_value, max_value)
+        if hasattr(self, "html_view"):
+            self.html_view.update()
 
     def reset_cam(self):
         self.cil_viewer.adjustCamera(resetcamera=True)
@@ -398,7 +411,7 @@ def change_opacity_mapping(**kwargs):
 
 @state.change("file_name")
 def change_model(**kwargs):
-    TRAME_VIEWER.load_file(kwargs['file_name'])
+    TRAME_VIEWER.load_file(kwargs['file_name'], windowing_method=kwargs['opacity'])
 
 
 @state.change("colour_map")
@@ -408,7 +421,7 @@ def change_colour_map(**kwargs):
 
 @state.change("windowing")
 def change_windowing(**kwargs):
-    TRAME_VIEWER.change_windowing(kwargs["windowing"][0], kwargs["windowing"][1])
+    TRAME_VIEWER.change_windowing(kwargs["windowing"][0], kwargs["windowing"][1], windowing_method=kwargs['opacity'])
 
 
 if __name__ == "__main__":
