@@ -1,36 +1,35 @@
+#
+#   Author 2022 Samuel Jones
+#   Copyright 2022 SCD Rutherford Appleton Laboratory UKRI
+#
+#   Licensed under the Apache License, Version 2.0 (the "License");
+#   you may not use this file except in compliance with the License.
+#   You may obtain a copy of the License at
+#
+#       http://www.apache.org/licenses/LICENSE-2.0
+#
+#   Unless required by applicable law or agreed to in writing, software
+#   distributed under the License is distributed on an "AS IS" BASIS,
+#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#   See the License for the specific language governing permissions and
+#   limitations under the License.
+#
+
 import os
-from dataclasses import dataclass
 
 import matplotlib.pyplot as plt
-from trame import state, update_layout
-from trame.html import vtk, vuetify
-from trame.layouts import SinglePageWithDrawer
+from ccpi.web_viewer import state, update_layout
+from ccpi.web_viewer import vtk, vuetify
+from ccpi.web_viewer import SinglePageWithDrawer
 from vtkmodules.vtkIOImage import vtkMetaImageReader
-from vtkmodules.vtkRenderingCore import vtkCamera
 
 from ccpi.viewer.CILViewer import CILViewer
 from ccpi.viewer.CILViewer2D import SLICE_ORIENTATION_XY, SLICE_ORIENTATION_XZ, SLICE_ORIENTATION_YZ
 from ccpi.viewer.utils.conversion import cilHDF5ResampleReader
+from ccpi.web_viewer.camera_data import CameraData
 
 DEFAULT_SLICE = 32
 INITIAL_IMAGE = "head.mha"
-
-
-@dataclass(init=False)
-class CameraData:
-    position: list
-    focalPoint: list
-    viewUp: list
-
-    def __init__(self, camera: vtkCamera):
-        self.position = camera.GetPosition()
-        self.focalPoint = camera.GetFocalPoint()
-        self.viewUp = camera.GetViewUp()
-
-    def copy_data_to_other_camera(self, other_cam: vtkCamera):
-        other_cam.SetPosition(*self.position)
-        other_cam.SetFocalPoint(*self.focalPoint)
-        other_cam.SetViewUp(*self.viewUp)
 
 
 class TrameViewer:
@@ -101,8 +100,11 @@ class TrameViewer:
             style="max-width: 300px"
         )
 
+        # self.slice_window_slider = self.construct_slice_window_slider()
+        # self.slice_level_slider = self.construct_slice_level_slider()
+
+        good_defaults = self.cil_viewer.getVolumeMapWindow((5., 95.), "scalar")
         self.slice_window_slider = self.construct_slice_window_slider()
-        self.slice_level_slider = self.construct_slice_level_slider()
 
         self.orientation_radio_buttons = vuetify.VRadioGroup(
             children=[
@@ -138,8 +140,8 @@ class TrameViewer:
             click=self.cil_viewer.style.ToggleVolumeVisibility,
         )
 
-        self.slice_button = vuetify.VBtn(
-            "Toggle 2D Slice",
+        self.slice_button = vuetify.VSwitch(
+            label="Toggle 2D Slice",
             hide_details=True,
             dense=True,
             solo=True,
@@ -195,7 +197,6 @@ class TrameViewer:
             self.slice_slider,
             self.orientation_radio_buttons,
             self.slice_window_slider,
-            self.slice_level_slider,
             self.slice_button
         ])
         self.slice_interaction_row = vuetify.VRow(self.slice_interaction_col)
@@ -265,14 +266,14 @@ class TrameViewer:
             max_value = 100
             step = 0.5
 
-        return vuetify.VSlider(
-            v_model=("slice_window", self.default_slice_window),
+        return vuetify.VRangeSlider(
+            v_model=("slice_window", good_defaults),
             min=min_value,
             max=max_value,
             step=step,
             hide_details=True,
             dense=True,
-            label="Slice Window",
+            label="Slice window",
             thumb_label=True,
             style="max-width: 300px"
         )
@@ -338,6 +339,8 @@ class TrameViewer:
         if hasattr(self, "windowing_range_slider") and hasattr(self, "colour_slider"):
             self.windowing_range_slider = self.construct_windowing_slider()
             self.colour_slider = self.construct_colour_slider()
+            self.slice_window_slider = self.construct_slice_window_slider()
+            self.slice_level_slider = self.construct_slice_level_slider()
             self.construct_drawer_layout()
             update_layout(self.layout)
         app = vuetify.get_app_instance()
@@ -479,8 +482,9 @@ class TrameViewer:
         if hasattr(self.cil_viewer, 'planew'):
             self.cil_viewer.style.ToggleVolumeClipping()
             
-    def change_slice_window(self, new_window):
-        self.cil_viewer.setSliceColourWindow(window=new_window)
+    def change_slice_window(self, window, level):
+        # self.cil_viewer.setSliceColourWindow(window=new_window)
+        self.cil_viewer.setSliceColourWindowLevel(window, level)
 
     def change_slice_level(self, new_level):
         self.cil_viewer.setSliceColourLevel(level=new_level)
@@ -531,13 +535,18 @@ def change_colouring(**kwargs):
     TRAME_VIEWER.change_colouring(kwargs["colouring"][0], kwargs["colouring"][1])
 
     
+# @state.change("slice_window")
+# def change_slice_window_level(**kwargs):
+#     TRAME_VIEWER.change_slice_window(kwargs["slice_window"])
+
+
 @state.change("slice_window")
 def change_slice_window_level(**kwargs):
-    TRAME_VIEWER.change_slice_window(kwargs["slice_window"])
-
-@state.change("slice_level")
-def change_slice_window_level(**kwargs):
-    TRAME_VIEWER.change_slice_level(kwargs["slice_level"])
+    min = kwargs["slice_window"][0]
+    max = kwargs["slice_window"][1]
+    level = (max + min) / 2
+    window = (max - min)
+    TRAME_VIEWER.change_slice_window(window=window, level=level)
 
 
 if __name__ == "__main__":
