@@ -575,10 +575,10 @@ class CILViewer():
         '''returns the active camera'''
         return self.ren.GetActiveCamera()
 
-    def getColourWindow(self):
+    def getSliceColourWindow(self):
         return self.imageSlice.GetProperty().GetColorWindow()
     
-    def getColourLevel(self):
+    def getSliceColourLevel(self):
         return self.imageSlice.GetProperty().GetColorLevel()
 
     def createPolyDataActor(self, polydata):
@@ -1150,8 +1150,6 @@ class CILViewer():
                 self.volume_property.SetScalarOpacity(opacity)
 
             self.renWin.Render()
-    
-
 
     def adjustCamera(self, resetcamera=False):
         self.ren.ResetCameraClippingRange()
@@ -1169,7 +1167,24 @@ class CILViewer():
         self._viewer.imageSlice.GetProperty().SetInterpolationTypeToNearest()
         self.renWin.Render()
 
-    def setColourWindowLevel(self, window, level):
+    def setSliceColourWindowLevelPercentiles(self, min_percentage, max_percentage):
+        min_val, max_val = self.getVolumeMapWindow((min_percentage, max_percentage), 'scalar')
+        self.setScalarOpacityWindow(min_val, max_val)
+
+    def setSliceColourWindow(self, window):
+        self.imageSlice.GetProperty().SetColorWindow(window)
+        self.imageSlice.Update()
+        self.ren.Render()
+        self.renWin.Render()
+
+    def setSliceColourLevel(self, level):
+        self.imageSlice.GetProperty().SetColorLevel(level)
+        self.imageSlice.Update()
+        self.ren.Render()
+        self.renWin.Render()
+
+    def setSliceColourWindowLevel(self, window, level):
+        # Level is the average of min and max, and the window is the difference.
         self.imageSlice.GetProperty().SetColorLevel(level)
         self.imageSlice.GetProperty().SetColorWindow(window)
         self.imageSlice.Update()

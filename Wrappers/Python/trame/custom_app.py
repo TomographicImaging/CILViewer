@@ -39,6 +39,8 @@ class TrameViewer:
         self.cmin = None
         self.cmax = None
         self.windowing_defaults = None
+        self.default_slice_window = None
+        self.default_slice_level = None
         self.max_slice = None
         self.default_slice = None
         self.image = None
@@ -49,6 +51,9 @@ class TrameViewer:
         self.volume_interaction_row = None
         self.volume_interaction_section = None
         self.windowing_slider_is_percentage = False  # Defaults to not percentage with the head.mha file
+        self.colour_slider_is_percentage = False  # Defaults to not percentage with the head.mha file
+        self.slice_level_slider_is_percentage = False  # Defaults to not percentage with the head.mha file
+        self.slice_window_slider_is_percentage = False  # Defaults to not percentage with the head.mha file
 
         list_of_files = os.listdir("data/")
         if "head.mha" in list_of_files:
@@ -62,7 +67,7 @@ class TrameViewer:
         self.html_view = vtk.VtkRemoteView(
             self.cil_viewer.renWin,
             # interactor_events=("events", 'KeyPress'),
-            # KeyPress=(on_key_press, "[$event.keyCode]"),
+            # KeyPress=(self.on_key_press, "[$event.keyCode]"),
         )
         self.set_opacity_mapping("scalar")
         self.switch_render()  # Turn on 3D view by default
@@ -95,6 +100,9 @@ class TrameViewer:
             thumb_label=True,
             style="max-width: 300px"
         )
+
+        self.slice_window_slider = self.construct_slice_window_slider()
+        self.slice_level_slider = self.construct_slice_level_slider()
 
         self.orientation_radio_buttons = vuetify.VRadioGroup(
             children=[
@@ -179,10 +187,15 @@ class TrameViewer:
         # Setup default state
         self.set_default_button_state()
 
+    def on_key_press(self, key):
+        pass
+
     def construct_drawer_layout(self):
         self.slice_interaction_col = vuetify.VCol([
             self.slice_slider,
             self.orientation_radio_buttons,
+            self.slice_window_slider,
+            self.slice_level_slider,
             self.slice_button
         ])
         self.slice_interaction_row = vuetify.VRow(self.slice_interaction_col)
@@ -213,19 +226,70 @@ class TrameViewer:
             self.reset_defaults_button
         ]
 
+    def construct_slice_level_slider(self):
+        if self.cmax > 100:
+            # Use actual values
+            min_value = self.cmin
+            max_value = self.cmax
+            step = 1
+            self.slice_level_slider_is_percentage = False
+        else:
+            # Use percentages
+            min_value = 0
+            max_value = 100
+            step = 0.5
+            self.slice_level_slider_is_percentage = True
+
+        return vuetify.VSlider(
+            v_model=("slice_level", self.default_slice_level),
+            min=min_value,
+            max=max_value,
+            step=step,
+            hide_details=True,
+            dense=True,
+            label="Slice Level",
+            thumb_label=True,
+            style="max-width: 300px"
+        )
+
+    def construct_slice_window_slider(self):
+        if self.cmax > 100:
+            # Use actual values
+            min_value = self.cmin
+            max_value = self.cmax
+            step = 1
+            self.slice_window_slider_is_percentage = False
+        else:
+            # Use percentages
+            min_value = 0
+            max_value = 100
+            step = 0.5
+
+        return vuetify.VSlider(
+            v_model=("slice_window", self.default_slice_window),
+            min=min_value,
+            max=max_value,
+            step=step,
+            hide_details=True,
+            dense=True,
+            label="Slice Window",
+            thumb_label=True,
+            style="max-width: 300px"
+        )
+
     def construct_colour_slider(self):
         if self.cmax > 100:
             # Use actual values
             min_value = self.cmin
             max_value = self.cmax
             step = 1
-            self.windowing_slider_is_percentage = False
+            self.colour_slider_is_percentage = False
         else:
             # Use percentages
             min_value = 0
             max_value = 100
             step = 0.5
-            self.windowing_slider_is_percentage = True
+            self.colour_slider_is_percentage = True
         
         return vuetify.VRangeSlider(
             label="Colour range",
@@ -268,6 +332,8 @@ class TrameViewer:
     def update_windowing_defaults(self, method="scalar"):
         self.cmin, self.cmax = self.cil_viewer.getVolumeMapWindow((0., 100.), method)
         self.windowing_defaults = self.cil_viewer.getVolumeMapWindow((80., 99.), method)
+        self.default_slice_window = self.cil_viewer.getSliceColourWindow()
+        self.default_slice_level = self.cil_viewer.getSliceColourLevel()
         # self.change_windowing(*self.windowing_defaults, method)
         if hasattr(self, "windowing_range_slider") and hasattr(self, "colour_slider"):
             self.windowing_range_slider = self.construct_windowing_slider()
@@ -413,9 +479,12 @@ class TrameViewer:
         if hasattr(self.cil_viewer, 'planew'):
             self.cil_viewer.style.ToggleVolumeClipping()
             
-    def change_colouring(self, min_value, max_value):
-        self.cil_viewer.setVolumeColorWindow(min_value, max_value)
-        
+    def change_slice_window(self, new_window):
+        self.cil_viewer.setSliceColourWindow(window=new_window)
+
+    def change_slice_level(self, new_level):
+        self.cil_viewer.setSliceColourLevel(level=new_level)
+
 
 TRAME_VIEWER = TrameViewer()
 
@@ -460,6 +529,15 @@ def change_windowing(**kwargs):
 @state.change("colouring")
 def change_colouring(**kwargs):
     TRAME_VIEWER.change_colouring(kwargs["colouring"][0], kwargs["colouring"][1])
+
+    
+@state.change("slice_window")
+def change_slice_window_level(**kwargs):
+    TRAME_VIEWER.change_slice_window(kwargs["slice_window"])
+
+@state.change("slice_level")
+def change_slice_window_level(**kwargs):
+    TRAME_VIEWER.change_slice_level(kwargs["slice_level"])
 
 
 if __name__ == "__main__":
