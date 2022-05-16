@@ -643,7 +643,7 @@ class CILViewer():
                 # Have to create new clipping plane so that camera
                 # position is adjusted appropriately for new volume.
                 # Note: just removing old plane is not sufficient.
-                self.style.create_clipping_plane()
+                self.style.CreateClippingPlane()
                 self.planew.SetEnabled(False)
                 self.volume.GetMapper().RemoveAllClippingPlanes()
                 self.clipping_plane_initialised = False
