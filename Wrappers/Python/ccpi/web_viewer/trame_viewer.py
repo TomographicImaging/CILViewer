@@ -18,7 +18,7 @@
 import os
 
 import matplotlib.pyplot as plt
-from trame import state, update_layout
+from trame import update_layout
 from trame.html import vtk, vuetify
 from trame.layouts import SinglePageWithDrawer
 from vtkmodules.vtkIOImage import vtkMetaImageReader
@@ -38,7 +38,9 @@ class TrameViewer:
         self.cmin = None
         self.cmax = None
         self.windowing_defaults = None
-        self.slice_window_defaults = None
+        self.slice_window_range_defaults = None
+        self.slice_level_default = None
+        self.slice_window_default = None
         self.max_slice = None
         self.default_slice = None
         self.image = None
@@ -52,6 +54,7 @@ class TrameViewer:
         self.colour_slider_is_percentage = False  # Defaults to not percentage with the head.mha file
         self.slice_level_slider_is_percentage = False  # Defaults to not percentage with the head.mha file
         self.slice_window_slider_is_percentage = False  # Defaults to not percentage with the head.mha file
+        self.slice_window_sliders_are_detailed = False  # Defaults to none-detailed sliders
 
         if list_of_files is None:
             list_of_files = os.listdir("data/")
@@ -100,7 +103,18 @@ class TrameViewer:
             style="max-width: 300px"
         )
 
+        self.toggle_window_details_button = vuetify.VSwitch(
+            v_model=("slice_detailed_sliders", False),
+            label="Detailed window/level sliders",
+            hide_details=True,
+            dense=True,
+            solo=True,
+        )
+
+        self.slice_window_range_slider = self.construct_slice_window_range_slider()
+
         self.slice_window_slider = self.construct_slice_window_slider()
+        self.slice_level_slider = self.construct_slice_level_slider()
 
         self.orientation_radio_buttons = vuetify.VRadioGroup(
             children=[
@@ -137,7 +151,7 @@ class TrameViewer:
         )
 
         self.slice_button = vuetify.VSwitch(
-            label="Toggle 2D Slice",
+            label="2D Slice visibility",
             hide_details=True,
             dense=True,
             solo=True,
@@ -189,11 +203,15 @@ class TrameViewer:
         pass
 
     def construct_drawer_layout(self):
+        # The difference is that we use range slider instead of detailed sliders
         self.slice_interaction_col = vuetify.VCol([
+            self.slice_button,
             self.slice_slider,
             self.orientation_radio_buttons,
+            self.toggle_window_details_button,
+            self.slice_window_range_slider,
             self.slice_window_slider,
-            self.slice_button
+            self.slice_level_slider
         ])
         self.slice_interaction_row = vuetify.VRow(self.slice_interaction_col)
         self.slice_interaction_section = vuetify.VContainer(self.slice_interaction_row)
@@ -225,6 +243,68 @@ class TrameViewer:
 
     def construct_slice_window_slider(self):
         if self.cmax > 100:
+            # Use actual value
+            min_value = self.cmin
+            max_value = self.cmax
+            step = 1
+            self.slice_window_slider_is_percentage = False
+        else:
+            # Use percentages
+            min_value = 0
+            max_value = 100
+            step = 0.5
+            self.slice_window_slider_is_percentage = True
+
+        if self.slice_window_sliders_are_detailed:
+            style = "max-width: 300px"
+        else:
+            style = "visibility: hidden; height: 0"
+
+        return vuetify.VSlider(
+            v_model=("slice_window", self.slice_window_default),
+            min=min_value,
+            max=max_value,
+            step=step,
+            hide_details=True,
+            dense=True,
+            label="Slice window",
+            thumb_label=True,
+            style=style
+        )
+
+    def construct_slice_level_slider(self):
+        if self.cmax > 100:
+            # Use actual value
+            min_value = self.cmin
+            max_value = self.cmax
+            step = 1
+            self.slice_level_slider_is_percentage = False
+        else:
+            # Use percentages
+            min_value = 0
+            max_value = 100
+            step = 0.5
+            self.slice_level_slider_is_percentage = True
+
+        if self.slice_window_sliders_are_detailed:
+            style = "max-width: 300px"
+        else:
+            style = "visibility: hidden; height: 0"
+
+        return vuetify.VSlider(
+            v_model=("slice_level", self.slice_level_default),
+            min=min_value,
+            max=max_value,
+            step=step,
+            hide_details=True,
+            dense=True,
+            label="Slice level",
+            thumb_label=True,
+            style=style
+        )
+
+    def construct_slice_window_range_slider(self):
+        if self.cmax > 100:
             # Use actual values
             min_value = self.cmin
             max_value = self.cmax
@@ -235,9 +315,15 @@ class TrameViewer:
             min_value = 0
             max_value = 100
             step = 0.5
+            self.slice_window_slider_is_percentage = True
+
+        if not self.slice_window_sliders_are_detailed:
+            style = "max-width: 300px"
+        else:
+            style = "visibility: hidden; height: 0"
 
         return vuetify.VRangeSlider(
-            v_model=("slice_window", self.slice_window_defaults),
+            v_model=("slice_window_range", self.slice_window_range_defaults),
             min=min_value,
             max=max_value,
             step=step,
@@ -245,7 +331,7 @@ class TrameViewer:
             dense=True,
             label="Slice window",
             thumb_label=True,
-            style="max-width: 300px"
+            style=style,
         )
 
     def construct_colour_slider(self):
@@ -303,10 +389,14 @@ class TrameViewer:
     def update_windowing_defaults(self, method="scalar"):
         self.cmin, self.cmax = self.cil_viewer.getVolumeMapWindow((0., 100.), method)
         self.windowing_defaults = self.cil_viewer.getVolumeMapWindow((80., 99.), method)
-        self.slice_window_defaults = self.cil_viewer.getVolumeMapWindow((5., 95.), "scalar")
+        self.slice_window_range_defaults = self.cil_viewer.getVolumeMapWindow((5., 95.), "scalar")
+        self.slice_level_default = self.cil_viewer.getSliceColourLevel()
+        self.slice_window_default = self.cil_viewer.getSliceColourWindow()
         if hasattr(self, "windowing_range_slider") and hasattr(self, "colour_slider"):
             self.windowing_range_slider = self.construct_windowing_slider()
             self.colour_slider = self.construct_colour_slider()
+            self.slice_window_range_slider = self.construct_slice_window_range_slider()
+            self.slice_level_slider = self.construct_slice_level_slider()
             self.slice_window_slider = self.construct_slice_window_slider()
             self.construct_drawer_layout()
             update_layout(self.layout)
@@ -437,6 +527,7 @@ class TrameViewer:
         app.set(key="colour_map", value="viridis")
         app.set(key="windowing", value=self.windowing_defaults)
         app.set(key="colouring", value=self.windowing_defaults)
+        app.set(key="slice_window_range", value=self.cil_viewer.getVolumeMapWindow((5., 95.), "scalar"))
         # Ensure 2D is on
         if not self.cil_viewer.imageSlice.GetVisibility():
             self.switch_slice()
@@ -449,9 +540,37 @@ class TrameViewer:
         if hasattr(self.cil_viewer, 'planew'):
             self.cil_viewer.style.ToggleVolumeClipping()
             
-    def change_slice_window(self, window, level):
-        # self.cil_viewer.setSliceColourWindow(window=new_window)
+    def change_slice_window_range(self, window, level):
         self.cil_viewer.setSliceColourWindowLevel(window, level)
+
+    def change_slice_window(self, new_window):
+        self.cil_viewer.setSliceColourWindow(window=new_window)
 
     def change_slice_level(self, new_level):
         self.cil_viewer.setSliceColourLevel(level=new_level)
+
+    def change_window_level_detail_sliders(self, show_detailed):
+        if show_detailed == self.slice_window_sliders_are_detailed:
+            return
+        # Translate current colour level and colour window to range_min and range_max
+        current_level = self.cil_viewer.getSliceColourLevel()
+        current_window = self.cil_viewer.getSliceColourWindow()
+        range_min = (current_window - 2 * current_level) / -2  # The reverse of the window calculation in web_app.change_slice_window_level
+        range_max = current_window + range_min
+
+        # Setup the defaults pre-flip
+        self.slice_window_range_defaults = [range_min, range_max]
+        self.slice_level_default = current_level
+        self.slice_window_default = current_window
+
+        # Toggle the detailed sliders
+        self.slice_window_sliders_are_detailed = show_detailed
+
+        # Reconstruct the detailed sliders
+        self.slice_window_range_slider = self.construct_slice_window_range_slider()
+        self.slice_window_slider = self.construct_slice_window_slider()
+        self.slice_level_slider = self.construct_slice_level_slider()
+
+        # Reconstruct the drawer and push it
+        self.construct_drawer_layout()
+        update_layout(self.layout)

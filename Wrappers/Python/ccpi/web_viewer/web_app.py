@@ -104,12 +104,27 @@ def change_colouring(**kwargs):
 
 
 @state.change("slice_window")
+def change_slice_window(**kwargs):
+    TRAME_VIEWER.change_slice_window(kwargs["slice_window"])
+
+
+@state.change("slice_level")
+def change_slice_level(**kwargs):
+    TRAME_VIEWER.change_slice_level(kwargs["slice_level"])
+
+
+@state.change("slice_window_range")
 def change_slice_window_level(**kwargs):
-    min_window = kwargs["slice_window"][0]
-    max_window = kwargs["slice_window"][1]
+    min_window = kwargs["slice_window_range"][0]
+    max_window = kwargs["slice_window_range"][1]
     level = (max_window + min_window) / 2
     window = (max_window - min_window)
-    TRAME_VIEWER.change_slice_window(window=window, level=level)
+    TRAME_VIEWER.change_slice_window_range(window=window, level=level)
+
+
+@state.change("slice_detailed_sliders")
+def change_slice_detailed_sliders(**kwargs):
+    TRAME_VIEWER.change_window_level_detail_sliders(kwargs["slice_detailed_sliders"])
 
 
 if __name__ == "__main__":
