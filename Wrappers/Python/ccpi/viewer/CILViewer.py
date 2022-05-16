@@ -639,33 +639,32 @@ class CILViewer():
 
     def setInput3DData(self, imageData):
         self.img3D = imageData
-        self.installPipeline()
+        
+        # Have to overwrite old volume and clipping planes if they
+        # were previously created:
         if self.volume_render_initialised:
             if self.clipping_plane_initialised:
                 self.planew.SetEnabled(False)
                 self.volume.GetMapper().RemoveAllClippingPlanes()
                 # Have to create new clipping plane so that camera
                 # position is adjusted appropriately for new volume.
+                # Note: just removing old plane is not sufficient.
                 self.style.create_clipping_plane()
-                #self.clipping_plane_initialised = False
-            self.ren.RemoveVolume(self.volume)
-            self.installVolumeRenderActorPipeline()
-            #self.renWin.Render()
-            self.volume_render_initialised = False
-            if self.clipping_plane_initialised:
                 self.planew.SetEnabled(False)
                 self.volume.GetMapper().RemoveAllClippingPlanes()
                 self.clipping_plane_initialised = False
+
+            # Have to remove old volume and install pipeline
+            # with new volume:
+            self.ren.RemoveVolume(self.volume)
+            self.installVolumeRenderActorPipeline()
+
+        # Reset slice visibility and orientation:
         self.imageSlice.VisibilityOn()
-        self.updatePipeline()
-        
-        self.ren.ResetCamera()
-        self.ren.Render()
+        self.style.SetSliceOrientation(SLICE_ORIENTATION_XY)
+        self.installPipeline()
 
-        self.adjustCamera()
 
-        self.iren.Initialize()
-        self.renWin.Render()
 
     def setInputData(self, imageData):
         '''alias of setInput3DData'''
