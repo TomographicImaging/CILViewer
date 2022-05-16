@@ -18,9 +18,9 @@
 import os
 
 import matplotlib.pyplot as plt
-from ccpi.web_viewer import state, update_layout
-from ccpi.web_viewer import vtk, vuetify
-from ccpi.web_viewer import SinglePageWithDrawer
+from trame import state, update_layout
+from trame.html import vtk, vuetify
+from trame.layouts import SinglePageWithDrawer
 from vtkmodules.vtkIOImage import vtkMetaImageReader
 
 from ccpi.viewer.CILViewer import CILViewer
@@ -33,13 +33,12 @@ INITIAL_IMAGE = "head.mha"
 
 
 class TrameViewer:
-    def __init__(self):
+    def __init__(self, list_of_files=None):
         # Define attributes that will be constructed in methods outside of __init__
         self.cmin = None
         self.cmax = None
         self.windowing_defaults = None
-        self.default_slice_window = None
-        self.default_slice_level = None
+        self.slice_window_defaults = None
         self.max_slice = None
         self.default_slice = None
         self.image = None
@@ -54,7 +53,8 @@ class TrameViewer:
         self.slice_level_slider_is_percentage = False  # Defaults to not percentage with the head.mha file
         self.slice_window_slider_is_percentage = False  # Defaults to not percentage with the head.mha file
 
-        list_of_files = os.listdir("data/")
+        if list_of_files is None:
+            list_of_files = os.listdir("data/")
         if "head.mha" in list_of_files:
             default_file = "head.mha"
         else:
@@ -100,10 +100,6 @@ class TrameViewer:
             style="max-width: 300px"
         )
 
-        # self.slice_window_slider = self.construct_slice_window_slider()
-        # self.slice_level_slider = self.construct_slice_level_slider()
-
-        good_defaults = self.cil_viewer.getVolumeMapWindow((5., 95.), "scalar")
         self.slice_window_slider = self.construct_slice_window_slider()
 
         self.orientation_radio_buttons = vuetify.VRadioGroup(
@@ -227,32 +223,6 @@ class TrameViewer:
             self.reset_defaults_button
         ]
 
-    def construct_slice_level_slider(self):
-        if self.cmax > 100:
-            # Use actual values
-            min_value = self.cmin
-            max_value = self.cmax
-            step = 1
-            self.slice_level_slider_is_percentage = False
-        else:
-            # Use percentages
-            min_value = 0
-            max_value = 100
-            step = 0.5
-            self.slice_level_slider_is_percentage = True
-
-        return vuetify.VSlider(
-            v_model=("slice_level", self.default_slice_level),
-            min=min_value,
-            max=max_value,
-            step=step,
-            hide_details=True,
-            dense=True,
-            label="Slice Level",
-            thumb_label=True,
-            style="max-width: 300px"
-        )
-
     def construct_slice_window_slider(self):
         if self.cmax > 100:
             # Use actual values
@@ -267,7 +237,7 @@ class TrameViewer:
             step = 0.5
 
         return vuetify.VRangeSlider(
-            v_model=("slice_window", good_defaults),
+            v_model=("slice_window", self.slice_window_defaults),
             min=min_value,
             max=max_value,
             step=step,
@@ -333,14 +303,11 @@ class TrameViewer:
     def update_windowing_defaults(self, method="scalar"):
         self.cmin, self.cmax = self.cil_viewer.getVolumeMapWindow((0., 100.), method)
         self.windowing_defaults = self.cil_viewer.getVolumeMapWindow((80., 99.), method)
-        self.default_slice_window = self.cil_viewer.getSliceColourWindow()
-        self.default_slice_level = self.cil_viewer.getSliceColourLevel()
-        # self.change_windowing(*self.windowing_defaults, method)
+        self.slice_window_defaults = self.cil_viewer.getVolumeMapWindow((5., 95.), "scalar")
         if hasattr(self, "windowing_range_slider") and hasattr(self, "colour_slider"):
             self.windowing_range_slider = self.construct_windowing_slider()
             self.colour_slider = self.construct_colour_slider()
             self.slice_window_slider = self.construct_slice_window_slider()
-            self.slice_level_slider = self.construct_slice_level_slider()
             self.construct_drawer_layout()
             update_layout(self.layout)
         app = vuetify.get_app_instance()
@@ -488,66 +455,3 @@ class TrameViewer:
 
     def change_slice_level(self, new_level):
         self.cil_viewer.setSliceColourLevel(level=new_level)
-
-
-TRAME_VIEWER = TrameViewer()
-
-
-@state.change("slice")
-def update_slice(**kwargs):
-    TRAME_VIEWER.cil_viewer.setActiveSlice(kwargs["slice"])
-    TRAME_VIEWER.cil_viewer.updatePipeline()
-    TRAME_VIEWER.html_view.update()
-
-
-@state.change("orientation")
-def change_orientation(**kwargs):
-    if "orientation" in kwargs:
-        orientation = kwargs["orientation"]
-        if orientation is not int:
-            orientation = int(orientation)
-        TRAME_VIEWER.switch_to_orientation(int(orientation))
-
-
-@state.change("opacity")
-def change_opacity_mapping(**kwargs):
-    if "opacity" in kwargs:
-        TRAME_VIEWER.set_opacity_mapping(kwargs["opacity"])
-
-
-@state.change("file_name")
-def change_model(**kwargs):
-    TRAME_VIEWER.load_file(kwargs['file_name'], windowing_method=kwargs['opacity'])
-
-
-@state.change("colour_map")
-def change_colour_map(**kwargs):
-    TRAME_VIEWER.change_colour_map(kwargs['colour_map'])
-
-
-@state.change("windowing")
-def change_windowing(**kwargs):
-    TRAME_VIEWER.change_windowing(kwargs["windowing"][0], kwargs["windowing"][1], windowing_method=kwargs['opacity'])
-    
-
-@state.change("colouring")
-def change_colouring(**kwargs):
-    TRAME_VIEWER.change_colouring(kwargs["colouring"][0], kwargs["colouring"][1])
-
-    
-# @state.change("slice_window")
-# def change_slice_window_level(**kwargs):
-#     TRAME_VIEWER.change_slice_window(kwargs["slice_window"])
-
-
-@state.change("slice_window")
-def change_slice_window_level(**kwargs):
-    min = kwargs["slice_window"][0]
-    max = kwargs["slice_window"][1]
-    level = (max + min) / 2
-    window = (max - min)
-    TRAME_VIEWER.change_slice_window(window=window, level=level)
-
-
-if __name__ == "__main__":
-    TRAME_VIEWER.start()
