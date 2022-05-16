@@ -261,7 +261,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
                 viewer.getRenderer().Render()
             else:
                 # print ("handling c")
-                planew = self.create_clipping_plane()
+                planew = self.CreateClippingPlane()
                 planew.On()
                 
             viewer.updatePipeline()
@@ -269,7 +269,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
             print("Unhandled event %s" % interactor.GetKeyCode())
 
 
-    def create_clipping_plane(self):
+    def CreateClippingPlane(self):
         viewer = self._viewer
         planew = vtk.vtkImplicitPlaneWidget2()
                 
@@ -439,9 +439,19 @@ class CILViewer():
     def __init__(self, dimx=600,dimy=600, renWin=None, iren=None, ren=None, debug=False):
         '''creates the rendering pipeline'''
 
-        # Handle arguments
-        self.ren = self._CreateRen(ren)
-        self.renWin = self._CreateRenWin(dimx, dimy, renWin, self.ren)
+        # Handle arguments:
+        # create a renderer
+        if ren is None: 
+            ren = vtk.vtkRenderer()
+        self.ren = ren
+    
+        # create a rendering window
+        if renWin is None:
+            renWin = vtk.vtkRenderWindow()
+
+        renWin.SetSize(dimx, dimy)
+        renWin.AddRenderer(self.ren)
+        self.renWin = renWin
 
         if iren is not None:
             self.iren = iren
@@ -522,22 +532,6 @@ class CILViewer():
 
         self.iren.Initialize()
 
-    
-    def _CreateRenWin(self, dimx, dimy, renWin, ren):
-        # create a rendering window
-        if renWin is None:
-            renWin = vtk.vtkRenderWindow()
-
-        renWin.SetSize(dimx,dimy)
-        renWin.AddRenderer(ren)
-
-        return renWin
-
-    def _CreateRen(self, ren):
-        # create a renderer
-        if ren is None: 
-            ren = vtk.vtkRenderer()
-        return ren
     
     def getRenderer(self):
         '''returns the renderer'''
