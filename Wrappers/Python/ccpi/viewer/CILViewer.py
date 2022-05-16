@@ -662,8 +662,16 @@ class CILViewer():
         # Reset slice visibility and orientation:
         self.imageSlice.VisibilityOn()
         self.style.SetSliceOrientation(SLICE_ORIENTATION_XY)
+
+        # reset camera to initial orientation
+        # i.e. reset any rotation of the slice and volume
+        self.resetCameraToDefault()
+
+        # Install pipeline with new image:
         self.installPipeline()
 
+        # needs an extra nudge to turn the slice visibility on:
+        self.updatePipeline()
 
 
     def setInputData(self, imageData):
@@ -723,8 +731,21 @@ class CILViewer():
 
         self.adjustCamera()
 
+        self.saveDefaultCamera()
+
         self.iren.Initialize()
         self.renWin.Render()
+
+    def saveDefaultCamera(self):
+        camera = vtk.vtkCamera()
+        camera.SetFocalPoint(self.getCamera().GetFocalPoint())
+        camera.SetPosition(self.getCamera().GetPosition())
+        camera.SetViewUp(self.getCamera().GetViewUp())
+        self.default_camera = camera
+
+    def resetCameraToDefault(self):
+        if hasattr(self, 'default_camera'):
+            self.ren.SetActiveCamera(self.default_camera)
 
     def installVolumeRenderActorPipeline(self):
         self.volume_mapper.SetInputData(self.img3D)
