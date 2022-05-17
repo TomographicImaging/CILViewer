@@ -149,6 +149,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
     def OnLeftMouseRelease(self, interactor, event):
         self.SetDecimalisation(0.0)
         self.OnLeftButtonUp()
+
     def OnRightMousePress(self, interactor, event):
         ctrl = interactor.GetControlKey()
         alt = interactor.GetAltKey()

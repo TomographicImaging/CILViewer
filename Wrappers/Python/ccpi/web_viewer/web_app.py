@@ -127,5 +127,15 @@ def change_slice_detailed_sliders(**kwargs):
     TRAME_VIEWER.change_window_level_detail_sliders(kwargs["slice_detailed_sliders"])
 
 
+@state.change("slice_visibility")
+def change_slice_visibility(**kwargs):
+    TRAME_VIEWER.change_slice_visibility(kwargs["slice_visibility"])
+
+
+@state.change("volume_visibility")
+def change_volume_visibility(**kwargs):
+    TRAME_VIEWER.change_volume_visibility(kwargs["volume_visibility"])
+
+
 if __name__ == "__main__":
     sys.exit(main())

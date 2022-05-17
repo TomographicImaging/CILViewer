@@ -91,6 +91,14 @@ class TrameViewer:
             solo=True,
         )
 
+        self.toggle_slice_visibility = vuetify.VSwitch(
+            label="2D Slice visibility",
+            v_model=("slice_visibility", True),
+            hide_details=True,
+            dense=True,
+            solo=True
+        )
+
         self.slice_slider = vuetify.VSlider(
             v_model=("slice", self.default_slice),
             min=0,
@@ -111,11 +119,6 @@ class TrameViewer:
             solo=True,
         )
 
-        self.slice_window_range_slider = self.construct_slice_window_range_slider()
-
-        self.slice_window_slider = self.construct_slice_window_slider()
-        self.slice_level_slider = self.construct_slice_level_slider()
-
         self.orientation_radio_buttons = vuetify.VRadioGroup(
             children=[
                 vuetify.VRadio(label="XY", value=f"{SLICE_ORIENTATION_XY}"),
@@ -124,6 +127,19 @@ class TrameViewer:
             ],
             v_model=("orientation", f"{SLICE_ORIENTATION_XY}"),
             label="Slice orientation:"
+        )
+
+        self.slice_window_range_slider = self.construct_slice_window_range_slider()
+
+        self.slice_window_slider = self.construct_slice_window_slider()
+        self.slice_level_slider = self.construct_slice_level_slider()
+
+        self.toggle_volume_visibility = vuetify.VSwitch(
+            label="3D Volume visibility",
+            v_model=("volume_visibility", True),
+            hide_details=True,
+            dense=True,
+            solo=True,
         )
 
         self.opacity_radio_buttons = vuetify.VRadioGroup(
@@ -140,22 +156,6 @@ class TrameViewer:
             items=("colour_map_options", plt.colormaps()),
             hide_details=True,
             solo=True,
-        )
-
-        self.model_3d_button = vuetify.VBtn(
-            "Toggle 3D representation",
-            hide_details=True,
-            dense=True,
-            solo=True,
-            click=self.cil_viewer.style.ToggleVolumeVisibility,
-        )
-
-        self.slice_button = vuetify.VSwitch(
-            label="2D Slice visibility",
-            hide_details=True,
-            dense=True,
-            solo=True,
-            click=self.cil_viewer.style.ToggleSliceVisibility,
         )
 
         self.clipping_button = vuetify.VBtn(
@@ -205,7 +205,7 @@ class TrameViewer:
     def construct_drawer_layout(self):
         # The difference is that we use range slider instead of detailed sliders
         self.slice_interaction_col = vuetify.VCol([
-            self.slice_button,
+            self.toggle_slice_visibility,
             self.slice_slider,
             self.orientation_radio_buttons,
             self.toggle_window_details_button,
@@ -217,12 +217,12 @@ class TrameViewer:
         self.slice_interaction_section = vuetify.VContainer(self.slice_interaction_row)
 
         self.volume_interaction_col = vuetify.VCol([
+            self.toggle_volume_visibility,
             self.opacity_radio_buttons,
             self.colour_choice,
             self.colour_slider,
             self.clipping_button,
-            self.windowing_range_slider,
-            self.model_3d_button
+            self.windowing_range_slider
         ])
         self.volume_interaction_row = vuetify.VRow(self.volume_interaction_col)
         self.volume_interaction_section = vuetify.VContainer(self.volume_interaction_row)
@@ -574,3 +574,22 @@ class TrameViewer:
         # Reconstruct the drawer and push it
         self.construct_drawer_layout()
         update_layout(self.layout)
+
+    def change_slice_visibility(self, visbility):
+        if visbility:
+            self.cil_viewer.imageSlice.VisibilityOn()
+        else:
+            self.cil_viewer.imageSlice.VisibilityOff()
+        self.cil_viewer.updatePipeline()
+
+    def change_volume_visibility(self, visibility):
+        if not self.cil_viewer.volume_render_initialised:
+            self.cil_viewer.installVolumeRenderActorPipeline()
+
+        if visibility:
+            self.cil_viewer.volume.VisibilityOn()
+            self.cil_viewer.light.SwitchOn()
+        else:
+            self.cil_viewer.volume.VisibilityOff()
+            self.cil_viewer.light.SwitchOff()
+        self.cil_viewer.updatePipeline()
