@@ -638,8 +638,6 @@ class CILViewer():
         # were previously created:
         if self.volume_render_initialised:
             if self.clipping_plane_initialised:
-                self.planew.SetEnabled(False)
-                self.volume.GetMapper().RemoveAllClippingPlanes()
                 # Have to create new clipping plane so that camera
                 # position is adjusted appropriately for new volume.
                 # Note: just removing old plane is not sufficient.
