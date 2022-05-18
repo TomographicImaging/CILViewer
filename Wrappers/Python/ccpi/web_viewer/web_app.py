@@ -42,7 +42,7 @@ def data_finder():
             for file in files_in_dir:
                 data_files.append(os.path.join(arg, file))
         else:
-            raise FileNotFoundError(f"This arg: {arg} is not a valid file or directory.")
+            print(f"This arg: {arg} is not a valid file or directory. Assuming it is for trame.")
 
 
 def main() -> int:
