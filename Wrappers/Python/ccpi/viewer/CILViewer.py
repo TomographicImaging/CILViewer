@@ -184,43 +184,13 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
         viewer = self._viewer
         viewer.imageSlice.VisibilityOff()
         # clip a volume render if available
-        if hasattr(self._viewer, 'planew'):
+        if hasattr(self._viewer, 'planew') and self._viewer.clipping_plane_initialised:
             is_enabled = viewer.planew.GetEnabled()
             viewer.planew.SetEnabled(not is_enabled)
-            # print ("should set to not", is_enabled)
             viewer.getRenderer().Render()
         else:
-            # print ("handling c")
-            planew = vtk.vtkImplicitPlaneWidget2()
-
-            rep = vtk.vtkImplicitPlaneRepresentation()
-            world_extent = self.GetImageWorldExtent()
-            extent = [0, world_extent[0], 0, world_extent[1], 0, world_extent[2]]
-            rep.SetWidgetBounds(*extent)
-            planew.SetInteractor(viewer.getInteractor())
-            planew.SetRepresentation(rep)
-
-            rep.SetNormalToCamera()
-            rep.SetOutlineTranslation(False)  # this means user can't move bounding box
-
-            plane = vtk.vtkPlane()
-            # should be in the focal point
-            cam = self.GetActiveCamera()
-            foc = cam.GetFocalPoint()
-            plane.SetOrigin(*foc)
-
-            proj = cam.GetDirectionOfProjection()
-            proj = [x + 0.3 for x in list(proj)]
-            plane.SetNormal(*proj)
-            rep.SetPlane(plane)
-            rep.UpdatePlacement()
-
-            viewer.volume.GetMapper().AddClippingPlane(plane)
-            viewer.volume.Modified()
+            planew = self.CreateClippingPlane()
             planew.On()
-            viewer.plane = plane
-            viewer.planew = planew
-            planew.AddObserver('InteractionEvent', self.update_clipping_plane, 0.5)
         viewer.updatePipeline()
 
     def ToggleSliceVisibility(self):
@@ -324,8 +294,6 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
         self._viewer.clipping_plane_initialised = True
 
         return planew
-
-
 
     def update_clipping_plane(self, interactor, event):
         # event translator should you want to filter events
