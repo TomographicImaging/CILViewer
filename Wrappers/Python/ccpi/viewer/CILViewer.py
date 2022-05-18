@@ -261,40 +261,51 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
                 viewer.getRenderer().Render()
             else:
                 # print ("handling c")
-                planew = vtk.vtkImplicitPlaneWidget2()
-                
-                rep = vtk.vtkImplicitPlaneRepresentation()
-                world_extent = self.GetImageWorldExtent()
-                extent = [0, world_extent[0], 0, world_extent[1], 0, world_extent[2]]
-                rep.SetWidgetBounds(*extent)
-                planew.SetInteractor(viewer.getInteractor())
-                planew.SetRepresentation(rep)
-
-                rep.SetNormalToCamera()
-                rep.SetOutlineTranslation(False) # this means user can't move bounding box
-
-                plane = vtk.vtkPlane()
-                # should be in the focal point
-                cam = self.GetActiveCamera()
-                foc = cam.GetFocalPoint()
-                plane.SetOrigin( *foc )
-                
-                proj = cam.GetDirectionOfProjection()
-                proj = [x + 0.3 for x in list(proj)]
-                plane.SetNormal( *proj )
-                rep.SetPlane(plane)
-                rep.UpdatePlacement()
-
-                viewer.volume.GetMapper().AddClippingPlane(plane)
-                viewer.volume.Modified()
+                planew = self.CreateClippingPlane()
                 planew.On()
-                viewer.plane = plane
-                viewer.planew = planew
-                planew.AddObserver('InteractionEvent', self.update_clipping_plane, 0.5)
-                self._viewer.clipping_plane_initialised = True
+                
             viewer.updatePipeline()
         else:
             print("Unhandled event %s" % interactor.GetKeyCode())
+
+
+    def CreateClippingPlane(self):
+        viewer = self._viewer
+        planew = vtk.vtkImplicitPlaneWidget2()
+                
+        rep = vtk.vtkImplicitPlaneRepresentation()
+        world_extent = self.GetImageWorldExtent()
+        extent = [0, world_extent[0], 0, world_extent[1], 0, world_extent[2]]
+        rep.SetWidgetBounds(*extent)
+        planew.SetInteractor(viewer.getInteractor())
+        planew.SetRepresentation(rep)
+
+        rep.SetNormalToCamera()
+        rep.SetOutlineTranslation(False) # this means user can't move bounding box
+
+        plane = vtk.vtkPlane()
+        # should be in the focal point
+        cam = self.GetActiveCamera()
+        foc = cam.GetFocalPoint()
+        plane.SetOrigin( *foc )
+        
+        proj = cam.GetDirectionOfProjection()
+        proj = [x + 0.3 for x in list(proj)]
+        plane.SetNormal( *proj )
+        rep.SetPlane(plane)
+        rep.UpdatePlacement()
+
+        viewer.volume.GetMapper().AddClippingPlane(plane)
+        viewer.volume.Modified()
+        viewer.plane = plane
+        viewer.planew = planew
+        planew.AddObserver('InteractionEvent', self.update_clipping_plane, 0.5)
+        self._viewer.clipping_plane_initialised = True
+
+        return planew
+
+
+
     def update_clipping_plane(self, interactor, event):
         # event translator should you want to filter events
         # event_translator = planew.GetEventTranslator()
@@ -428,30 +439,34 @@ class CILViewer():
     def __init__(self, dimx=600,dimy=600, renWin=None, iren=None, ren=None, debug=False):
         '''creates the rendering pipeline'''
 
-        # Handle arguments
-        if renWin is not None:
-            self.renWin = renWin
-        else:
-            self.renWin = vtk.vtkRenderWindow()
+        # Handle arguments:
+        # create a renderer
+        if ren is None: 
+            ren = vtk.vtkRenderer()
+        self.ren = ren
+    
+        # create a rendering window
+        if renWin is None:
+            renWin = vtk.vtkRenderWindow()
+
+        renWin.SetSize(dimx, dimy)
+        renWin.AddRenderer(self.ren)
+        self.renWin = renWin
 
         if iren is not None:
             self.iren = iren
         else:
             self.iren = vtk.vtkRenderWindowInteractor()
-        
-        # create a rendering window and renderer
-        if ren is not None: 
-            self.ren = ren
-        else:
-            self.ren = vtk.vtkRenderer()
-        self.renWin.SetSize(dimx,dimy)
-        self.renWin.AddRenderer(self.ren)
+            
+        # create a renderwindowinteractor
+        self.style = CILInteractorStyle(self)
+        self.iren.SetInteractorStyle(self.style)
+        self.iren.SetRenderWindow(self.renWin)
 
         # img 3D as slice
         self.img3D = None
         self.slicenos = [0,0,0]
         self.sliceOrientation = SLICE_ORIENTATION_XY
-
 
         imageSlice = vtk.vtkImageSlice()
         imageSliceMapper = vtk.vtkImageSliceMapper()
@@ -466,11 +481,6 @@ class CILViewer():
 
         # Viewer Event manager
         self.event = ViewerEventManager()
-
-        # create a renderwindowinteractor
-        self.style = CILInteractorStyle(self)
-        self.iren.SetInteractorStyle(self.style)
-        self.iren.SetRenderWindow(self.renWin)
 
         # Render decimation
         self.decimate = vtk.vtkDecimatePro()
@@ -522,6 +532,7 @@ class CILViewer():
 
         self.iren.Initialize()
 
+    
     def getRenderer(self):
         '''returns the renderer'''
         return self.ren
@@ -622,17 +633,38 @@ class CILViewer():
 
     def setInput3DData(self, imageData):
         self.img3D = imageData
+        
+        # Have to overwrite old volume and clipping planes if they
+        # were previously created:
         if self.volume_render_initialised:
-            if self.volume.GetVisibility():
-                if self.clipping_plane_initialised:
-                    self.planew.SetEnabled(False)
-                    self.volume.GetMapper().RemoveAllClippingPlanes()
-                    self.clipping_plane_initialised = False
-                self.installVolumeRenderActorPipeline()
-                self.volume.VisibilityOn()
-            else:
-                self.volume_render_initialised = False
+            if self.clipping_plane_initialised:
+                # Have to create new clipping plane so that camera
+                # position is adjusted appropriately for new volume.
+                # Note: just removing old plane is not sufficient.
+                self.style.CreateClippingPlane()
+                self.planew.SetEnabled(False)
+                self.volume.GetMapper().RemoveAllClippingPlanes()
+                self.clipping_plane_initialised = False
+
+            # Have to remove old volume and install pipeline
+            # with new volume:
+            self.ren.RemoveVolume(self.volume)
+            self.installVolumeRenderActorPipeline()
+
+        # Reset slice visibility and orientation:
+        self.imageSlice.VisibilityOn()
+        self.style.SetSliceOrientation(SLICE_ORIENTATION_XY)
+
+        # reset camera to initial orientation
+        # i.e. reset any rotation of the slice and volume
+        self.resetCameraToDefault()
+
+        # Install pipeline with new image:
         self.installPipeline()
+
+        # needs an extra nudge to turn the slice visibility on:
+        self.updatePipeline()
+
 
     def setInputData(self, imageData):
         '''alias of setInput3DData'''
@@ -691,8 +723,21 @@ class CILViewer():
 
         self.adjustCamera()
 
+        self.saveDefaultCamera()
+
         self.iren.Initialize()
         self.renWin.Render()
+
+    def saveDefaultCamera(self):
+        camera = vtk.vtkCamera()
+        camera.SetFocalPoint(self.getCamera().GetFocalPoint())
+        camera.SetPosition(self.getCamera().GetPosition())
+        camera.SetViewUp(self.getCamera().GetViewUp())
+        self.default_camera = camera
+
+    def resetCameraToDefault(self):
+        if hasattr(self, 'default_camera'):
+            self.ren.SetActiveCamera(self.default_camera)
 
     def installVolumeRenderActorPipeline(self):
         self.volume_mapper.SetInputData(self.img3D)
