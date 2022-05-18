@@ -194,8 +194,6 @@ class HDF5SubsetReader(VTKPythonAlgorithmBase):
     
     cropped_reader = HDF5SubsetReader() 
     cropped_reader.SetInputConnection(reader.GetOutputPort()) 
-    # NOTE: the extent is in vtk so is in fortran order, whereas 
-    # above we had the np array in C-order so x and y cropping swapped 
     cropped_reader.SetUpdateExtent((0, 2, 3, 5, 1, 2)) 
     cropped_reader.Update() 
     '''
