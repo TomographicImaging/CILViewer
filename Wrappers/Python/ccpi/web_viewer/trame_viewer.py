@@ -55,16 +55,43 @@ class TrameViewer:
         self.slice_level_slider_is_percentage = False  # Defaults to not percentage with the head.mha file
         self.slice_window_slider_is_percentage = False  # Defaults to not percentage with the head.mha file
         self.slice_window_sliders_are_detailed = False  # Defaults to none-detailed sliders
+        self.disable_2d = False
+        self.disable_3d = False
 
+        # Define UI elements in __init__ to quiet down Pep8
+        self.model_choice = None
+        self.toggle_slice_visibility = None
+        self.slice_slider = None
+        self.toggle_window_details_button = None
+        self.orientation_radio_buttons = None
+        self.slice_window_range_slider = None
+        self.slice_window_slider = None
+        self.slice_level_slider = None
+        self.toggle_volume_visibility = None
+        self.opacity_radio_buttons = None
+        self.colour_choice = None
+        self.clipping_button = None
+        self.colour_slider = None
+        self.windowing_range_slider = None
+        self.reset_cam_button = None
+        self.reset_defaults_button = None
+
+        # Load files and setup the CILViewer
         if list_of_files is None:
-            list_of_files = os.listdir("data/")
-        if "head.mha" in list_of_files:
-            default_file = "head.mha"
+            self.list_of_files = os.listdir("data/")
         else:
-            default_file = list_of_files[0]
+            self.list_of_files = list_of_files
+
+        self.default_file = None
+        for file_path in self.list_of_files:
+            if "head.mha" in file_path:
+                self.default_file = file_path
+                break
+        if self.default_file is None:
+            self.default_file = list_of_files[0]
 
         self.cil_viewer = CILViewer()
-        self.load_file(default_file)
+        self.load_file(self.default_file, first_load=True)
 
         self.html_view = vtk.VtkRemoteView(
             self.cil_viewer.renWin,
@@ -83,108 +110,7 @@ class TrameViewer:
 
         self.update_slice_data()
 
-        # replace this with the list browser? # https://kitware.github.io/trame/docs/module-widgets.html#ListBrowser
-        self.model_choice = vuetify.VSelect(
-            v_model=("file_name", default_file),
-            items=("file_name_options", list_of_files),
-            hide_details=True,
-            solo=True,
-        )
-
-        self.toggle_slice_visibility = vuetify.VSwitch(
-            label="2D Slice visibility",
-            v_model=("slice_visibility", True),
-            hide_details=True,
-            dense=True,
-            solo=True
-        )
-
-        self.slice_slider = vuetify.VSlider(
-            v_model=("slice", self.default_slice),
-            min=0,
-            max=self.max_slice,
-            step=1,
-            hide_details=True,
-            dense=True,
-            label="Slice",
-            thumb_label=True,
-            style="max-width: 300px"
-        )
-
-        self.toggle_window_details_button = vuetify.VSwitch(
-            v_model=("slice_detailed_sliders", False),
-            label="Detailed window/level sliders",
-            hide_details=True,
-            dense=True,
-            solo=True,
-        )
-
-        self.orientation_radio_buttons = vuetify.VRadioGroup(
-            children=[
-                vuetify.VRadio(label="XY", value=f"{SLICE_ORIENTATION_XY}"),
-                vuetify.VRadio(label="XZ", value=f"{SLICE_ORIENTATION_XZ}"),
-                vuetify.VRadio(label="ZY", value=f"{SLICE_ORIENTATION_YZ}"),
-            ],
-            v_model=("orientation", f"{SLICE_ORIENTATION_XY}"),
-            label="Slice orientation:"
-        )
-
-        self.slice_window_range_slider = self.construct_slice_window_range_slider()
-
-        self.slice_window_slider = self.construct_slice_window_slider()
-        self.slice_level_slider = self.construct_slice_level_slider()
-
-        self.toggle_volume_visibility = vuetify.VSwitch(
-            label="3D Volume visibility",
-            v_model=("volume_visibility", True),
-            hide_details=True,
-            dense=True,
-            solo=True,
-        )
-
-        self.opacity_radio_buttons = vuetify.VRadioGroup(
-            children=[
-                vuetify.VRadio(ref="opacity_scalar_button", label="Scalar", value="scalar"),
-                vuetify.VRadio(label="Gradient", value="gradient"),
-            ],
-            v_model=("opacity", "scalar"),
-            label="Opacity mapping:"
-        )
-
-        self.colour_choice = vuetify.VSelect(
-            v_model=("colour_map", "viridis"),
-            items=("colour_map_options", plt.colormaps()),
-            hide_details=True,
-            solo=True,
-        )
-
-        self.clipping_button = vuetify.VBtn(
-            "Toggle Clipping",
-            hide_details=True,
-            dense=True,
-            solo=True,
-            click=self.cil_viewer.style.ToggleVolumeClipping,
-        )
-
-        self.update_windowing_defaults()
-        self.colour_slider = self.construct_colour_slider()
-        self.windowing_range_slider = self.construct_windowing_slider()
-
-        self.reset_cam_button = vuetify.VBtn(
-            "Reset Camera",
-            hide_details=True,
-            dense=True,
-            solo=True,
-            click=self.reset_cam,
-        )
-
-        self.reset_defaults_button = vuetify.VBtn(
-            "Reset defaults",
-            hide_details=True,
-            dense=True,
-            solo=True,
-            click=self.reset_defaults
-        )
+        self.create_drawer_ui_elements()
 
         self.construct_drawer_layout()
 
@@ -241,6 +167,144 @@ class TrameViewer:
             self.reset_defaults_button
         ]
 
+    def create_drawer_ui_elements(self):
+        # replace this with the list browser? # https://kitware.github.io/trame/docs/module-widgets.html#ListBrowser
+        self.model_choice = self.create_model_selector()
+        self.toggle_slice_visibility = self.create_toggle_slice_visibility()
+        self.slice_slider = self.create_slice_slider()
+        self.toggle_window_details_button = self.create_toggle_window_details_button()
+        self.orientation_radio_buttons = self.create_orientation_radio_buttons()
+        self.slice_window_range_slider = self.construct_slice_window_range_slider()
+        self.slice_window_slider = self.construct_slice_window_slider()
+        self.slice_level_slider = self.construct_slice_level_slider()
+        self.toggle_volume_visibility = self.create_toggle_volume_visibility()
+        self.opacity_radio_buttons = self.create_opacity_radio_buttons()
+        self.colour_choice = self.create_colour_choice_selector()
+        self.clipping_button = self.create_clipping_toggle()
+        self.update_windowing_defaults()
+        self.colour_slider = self.construct_colour_slider()
+        self.windowing_range_slider = self.construct_windowing_slider()
+        self.reset_cam_button = self.create_reset_camera_button()
+        self.reset_defaults_button = self.create_reset_defaults_button()
+
+    def create_reset_defaults_button(self):
+        return vuetify.VBtn(
+            "Reset defaults",
+            hide_details=True,
+            dense=True,
+            solo=True,
+            click=self.reset_defaults
+        )
+
+    def create_reset_camera_button(self):
+        return vuetify.VBtn(
+            "Reset Camera",
+            hide_details=True,
+            dense=True,
+            solo=True,
+            click=self.reset_cam,
+        )
+
+    def create_clipping_toggle(self):
+        return vuetify.VBtn(
+            "Toggle Clipping",
+            hide_details=True,
+            dense=True,
+            solo=True,
+            disabled=self.disable_3d,
+            click=self.cil_viewer.style.ToggleVolumeClipping,
+        )
+
+    def create_colour_choice_selector(self):
+        return vuetify.VSelect(
+            v_model=("colour_map", "viridis"),
+            items=("colour_map_options", plt.colormaps()),
+            hide_details=True,
+            solo=True,
+            disabled=self.disable_3d,
+        )
+
+    def create_opacity_radio_buttons(self):
+        return vuetify.VRadioGroup(
+            children=[
+                vuetify.VRadio(ref="opacity_scalar_button", label="Scalar", value="scalar"),
+                vuetify.VRadio(label="Gradient", value="gradient"),
+            ],
+            v_model=("opacity", "scalar"),
+            label="Opacity mapping:",
+            disabled=self.disable_3d,
+        )
+
+    def create_toggle_volume_visibility(self):
+        return vuetify.VSwitch(
+            label="3D Volume visibility",
+            v_model=("volume_visibility", True),
+            hide_details=True,
+            dense=True,
+            solo=True,
+        )
+
+    def create_orientation_radio_buttons(self):
+        return vuetify.VRadioGroup(
+            children=[
+                vuetify.VRadio(label="XY", value=f"{SLICE_ORIENTATION_XY}"),
+                vuetify.VRadio(label="XZ", value=f"{SLICE_ORIENTATION_XZ}"),
+                vuetify.VRadio(label="ZY", value=f"{SLICE_ORIENTATION_YZ}"),
+            ],
+            v_model=("orientation", f"{SLICE_ORIENTATION_XY}"),
+            label="Slice orientation:",
+            disabled=self.disable_2d,
+        )
+
+    def create_toggle_window_details_button(self):
+        return vuetify.VSwitch(
+            v_model=("slice_detailed_sliders", False),
+            label="Detailed window/level sliders",
+            hide_details=True,
+            dense=True,
+            disabled=self.disable_2d,
+            solo=True,
+        )
+
+    def create_slice_slider(self):
+        return vuetify.VSlider(
+            v_model=("slice", self.default_slice),
+            min=0,
+            max=self.max_slice,
+            step=1,
+            hide_details=True,
+            dense=True,
+            label="Slice",
+            thumb_label=True,
+            disabled=self.disable_2d,
+            style="max-width: 300px"
+        )
+
+    def create_toggle_slice_visibility(self):
+        return vuetify.VSwitch(
+            label="2D Slice visibility",
+            v_model=("slice_visibility", True),
+            hide_details=True,
+            dense=True,
+            solo=True
+        )
+
+    def create_model_selector(self):
+        useful_file_list = []
+        for file_path in self.list_of_files:        
+            file_name = os.path.basename(file_path)
+            useful_file_list.append({
+                "text": file_name,
+                "value": file_path
+            })
+        
+        return vuetify.VSelect(
+            v_model=("file_name", self.default_file),
+            items=("file_name_options", useful_file_list),
+            hide_details=True,
+            solo=True,
+        )
+
     def construct_slice_window_slider(self):
         if self.cmax > 100:
             # Use actual value
@@ -266,6 +330,7 @@ class TrameViewer:
             max=max_value,
             step=step,
             hide_details=True,
+            disabled=self.disable_2d,
             dense=True,
             label="Slice window",
             thumb_label=True,
@@ -298,6 +363,7 @@ class TrameViewer:
             step=step,
             hide_details=True,
             dense=True,
+            disabled=self.disable_2d,
             label="Slice level",
             thumb_label=True,
             style=style
@@ -329,6 +395,7 @@ class TrameViewer:
             step=step,
             hide_details=True,
             dense=True,
+            disabled=self.disable_2d,
             label="Slice window",
             thumb_label=True,
             style=style,
@@ -356,6 +423,7 @@ class TrameViewer:
             min=min_value,
             max=max_value,
             step=step,
+            disabled=self.disable_3d,
             thumb_label=True,
             style="max-width: 300px"
         )
@@ -382,6 +450,7 @@ class TrameViewer:
             min=min_value,
             max=max_value,
             step=step,
+            disabled=self.disable_3d,
             thumb_label=True,
             style="max-width: 300px"
         )
@@ -392,7 +461,8 @@ class TrameViewer:
         self.slice_window_range_defaults = self.cil_viewer.getVolumeMapWindow((5., 95.), "scalar")
         self.slice_level_default = self.cil_viewer.getSliceColourLevel()
         self.slice_window_default = self.cil_viewer.getSliceColourWindow()
-        if hasattr(self, "windowing_range_slider") and hasattr(self, "colour_slider"):
+        if hasattr(self, "windowing_range_slider") and self.windowing_range_slider is not None \
+                and hasattr(self, "colour_slider") and self.colour_slider is not None:
             self.windowing_range_slider = self.construct_windowing_slider()
             self.colour_slider = self.construct_colour_slider()
             self.slice_window_range_slider = self.construct_slice_window_range_slider()
@@ -407,7 +477,7 @@ class TrameViewer:
     def update_slice_data(self):
         self.max_slice = self.cil_viewer.img3D.GetExtent()[self.cil_viewer.sliceOrientation * 2 + 1]
         self.default_slice = round(self.max_slice / 2)
-        if hasattr(self, "slice_slider"):
+        if hasattr(self, "slice_slider") and self.slice_slider is not None:
             self.slice_slider = vuetify.VSlider(
                 v_model=("slice", self.default_slice),
                 min=0,
@@ -425,7 +495,7 @@ class TrameViewer:
     def start(self):
         self.layout.start()
 
-    def load_file(self, file_name, windowing_method="scalar"):
+    def load_file(self, file_name, windowing_method="scalar", first_load=False):
         if "data" not in file_name:
             file_name = os.path.join("data", file_name)
         if ".nxs" in file_name:
@@ -434,9 +504,10 @@ class TrameViewer:
             self.load_image(file_name)
 
         # Update default values
-        self.update_slice_data()
-        self.update_windowing_defaults(windowing_method)
-        self.original_cam_data = CameraData(self.cil_viewer.ren.GetActiveCamera())
+        if not first_load:
+            self.update_slice_data()
+            self.update_windowing_defaults(windowing_method)
+            self.original_cam_data = CameraData(self.cil_viewer.ren.GetActiveCamera())
 
         # Reset all the buttons and camera
         self.reset_defaults()
@@ -587,8 +658,12 @@ class TrameViewer:
     def change_slice_visibility(self, visbility):
         if visbility:
             self.cil_viewer.imageSlice.VisibilityOn()
+            self.disable_2d = False
         else:
             self.cil_viewer.imageSlice.VisibilityOff()
+            self.disable_2d = True
+        self.create_drawer_ui_elements()
+        update_layout(self.layout)
         self.cil_viewer.updatePipeline()
 
     def change_volume_visibility(self, visibility):
@@ -598,7 +673,11 @@ class TrameViewer:
         if visibility:
             self.cil_viewer.volume.VisibilityOn()
             self.cil_viewer.light.SwitchOn()
+            self.disable_3d = False
         else:
             self.cil_viewer.volume.VisibilityOff()
             self.cil_viewer.light.SwitchOff()
+            self.disable_3d = True
+        self.create_drawer_ui_elements()
+        update_layout(self.layout)
         self.cil_viewer.updatePipeline()
