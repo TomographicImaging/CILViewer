@@ -539,6 +539,15 @@ class TrameViewer:
             self.cil_viewer.volume.GetMapper().RemoveAllClippingPlanes()
         if hasattr(self.cil_viewer, 'planew'):
             self.cil_viewer.style.ToggleVolumeClipping()
+
+    def change_colouring(self, min_value, max_value):
+        if self.colour_slider_is_percentage:
+            self.cil_viewer.setVolumeColorPercentiles(min_value, max_value)
+        else:
+            self.cil_viewer.setVolumeColorWindow(min_value, max_value)
+        if hasattr(self, "html_view"):
+            self.html_view.update()
+
             
     def change_slice_window_range(self, window, level):
         self.cil_viewer.setSliceColourWindowLevel(window, level)
