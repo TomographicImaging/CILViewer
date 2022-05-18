@@ -43,6 +43,7 @@ def data_finder():
                 data_files.append(os.path.join(arg, file))
         else:
             print(f"This arg: {arg} is not a valid file or directory. Assuming it is for trame.")
+    return data_files
 
 
 def main() -> int:
@@ -51,13 +52,9 @@ def main() -> int:
     :return: int, exit code for the program
     """
     data_files = data_finder()
-    try:
-        global TRAME_VIEWER
-        TRAME_VIEWER = TrameViewer(data_files)
-        TRAME_VIEWER.start()
-    except Exception as e:
-        print(str(e))
-        return 1
+    global TRAME_VIEWER
+    TRAME_VIEWER = TrameViewer(data_files)
+    TRAME_VIEWER.start()
     return 0
 
 
