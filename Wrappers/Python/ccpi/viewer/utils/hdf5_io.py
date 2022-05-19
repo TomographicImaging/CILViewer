@@ -182,6 +182,21 @@ class HDF5Reader(VTKPythonAlgorithmBase):
 
 
 class HDF5SubsetReader(VTKPythonAlgorithmBase):
+    '''Modifies a HDF5Reader to return a different extent from an HDF5 file
+    
+    
+    Examples:
+    ---------
+    
+    reader = HDF5Reader() 
+    reader.SetFileName('file.h5') 
+    reader.SetDatasetName("ImageData") 
+    
+    cropped_reader = HDF5SubsetReader() 
+    cropped_reader.SetInputConnection(reader.GetOutputPort()) 
+    cropped_reader.SetUpdateExtent((0, 2, 3, 5, 1, 2)) 
+    cropped_reader.Update() 
+    '''
     def __init__(self):
         VTKPythonAlgorithmBase.__init__(self,
                                         nInputPorts=1,
