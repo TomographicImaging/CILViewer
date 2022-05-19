@@ -1131,7 +1131,7 @@ class cilBaseResampleReader(cilBaseReader):
             else:
                 shape = list(readshape)[::-1]
 
-            total_size = shape[0] * shape[1] * shape[2]
+            total_size = shape[0] * shape[1] * shape[2] * self.GetBytesPerElement()
 
             max_size = self.GetTargetSize()
 
@@ -1701,6 +1701,11 @@ class vtkImageResampler(VTKPythonAlgorithmBase):
         ''' Get the total target size to downsample image to, in bytes.'''
         return self._TargetSize
 
+    def GetBytesPerElement(self):
+        ''' Get number of bytes per element'''
+        if hasattr(self, '_BytesPerElement'):
+            return self._BytesPerElement
+
     def GetOutput(self):
         return self.GetOutputDataObject(0)
 
@@ -1709,6 +1714,7 @@ class vtkImageResampler(VTKPythonAlgorithmBase):
         self._Origin = inData.GetOrigin()
         self._Extent = inData.GetExtent()
         self._StoredArrayShape = (self._Extent[1]+1, (self._Extent[3]+1), (self._Extent[5]+1))
+        self._BytesPerElement = Converter.vtkType_to_bytes[inData.GetScalarType()]
 
     def GetElementSpacing(self):
         ''' Returns the spacing of the input dataset as a tuple'''
@@ -1736,7 +1742,7 @@ class vtkImageResampler(VTKPythonAlgorithmBase):
         extent = self.GetExtent()
         shape = self.GetStoredArrayShape()
 
-        total_size = shape[0] * shape[1] * shape[2]
+        total_size = shape[0] * shape[1] * shape[2] * self.GetBytesPerElement()
 
         max_size = self.GetTargetSize()
 

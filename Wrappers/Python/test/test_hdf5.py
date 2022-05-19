@@ -154,7 +154,7 @@ class TestHDF5IO(unittest.TestCase):
         resulting_shape = (extent[1]+1, (extent[3]+1), (extent[5]+1))
         og_shape = np.shape(self.input_3D_array)
         og_shape = (og_shape[2], og_shape[1], og_shape[0])
-        og_size = og_shape[0]*og_shape[1]*og_shape[2]
+        og_size = og_shape[0]*og_shape[1]*og_shape[2]*readerhdf5.GetBytesPerElement()
         expected_shape = calculate_target_downsample_shape(
             target_size, og_size, og_shape)
         self.assertEqual(resulting_shape, expected_shape)

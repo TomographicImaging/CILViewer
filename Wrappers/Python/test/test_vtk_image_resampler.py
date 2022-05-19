@@ -24,7 +24,9 @@ class TestVTKImageResampler(unittest.TestCase):
     def setUp(self):
         # Generate random 3D array and convert to VTK Image Data:
         np.random.seed(1)
-        self.input_3D_array = np.random.randint(10, size=(50, 10, 60), dtype=np.uint8)
+        bits = 16
+        self.bytes_per_element = int(bits/8)
+        self.input_3D_array = np.random.randint(10, size=(50, 10, 60), dtype=eval(f"np.uint{bits}"))
         self.input_vtk_image = Converter.numpy2vtkImage(self.input_3D_array)
         
 
@@ -44,7 +46,7 @@ class TestVTKImageResampler(unittest.TestCase):
         og_shape = np.shape(self.input_3D_array)
         resulting_shape = (extent[1]+1, (extent[3]+1), (extent[5]+1))
         og_shape = (og_shape[2], og_shape[1], og_shape[0])
-        og_size = og_shape[0]*og_shape[1]*og_shape[2]
+        og_size = og_shape[0]*og_shape[1]*og_shape[2]*self.bytes_per_element
         expected_shape = calculate_target_downsample_shape(
             target_size, og_size, og_shape)
         self.assertEqual(resulting_shape, expected_shape)
