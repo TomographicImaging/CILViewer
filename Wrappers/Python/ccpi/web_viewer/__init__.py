@@ -1,6 +1,7 @@
 #
+#   Copyright 2022 STFC, United Kingdom Research and Innovation
+#
 #   Author 2022 Samuel Jones
-#   Copyright 2022 SCD Rutherford Appleton Laboratory UKRI
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
