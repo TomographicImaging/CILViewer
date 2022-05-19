@@ -1334,10 +1334,8 @@ class cilHDF5ResampleReader(cilBaseResampleReader, cilBaseHDF5Reader):
         # Here we read just the chunk from the hdf5 file:
         cropped_reader = HDF5SubsetReader()
         cropped_reader.SetInputConnection(reader.GetOutputPort())
-        dims = self.GetStoredArrayShape()
         # Set default extent to full extent:
-        cropped_reader.SetUpdateExtent(
-            (0, dims[0]-1, 0, dims[1]-1, 0, dims[2]-1))
+        cropped_reader.SetUpdateExtent((0, -1, 0, -1, 0, -1))
         self._ChunkReader = cropped_reader
         return cropped_reader
 
@@ -1346,6 +1344,9 @@ class cilHDF5ResampleReader(cilBaseResampleReader, cilBaseHDF5Reader):
         start_slice in the z direction'''
         num_slices_per_chunk = self._GetNumSlicesPerChunk()
         end_slice = start_slice + num_slices_per_chunk - 1
+        end_z_value = self.GetStoredArrayShape()[2]-1
+        if end_slice > end_z_value:
+            end_slice = end_z_value
         if start_slice < 0:
             raise ValueError('{} ERROR: Start slice cannot be negative.'
                              .format(self.__class__.__name__))
@@ -1653,6 +1654,8 @@ class cilHDF5CroppedReader(cilBaseCroppedReader, cilBaseHDF5Reader):
         reader.Update()
         read_data = reader.GetOutput()
         outData.ShallowCopy(read_data)
+
+        return 1
 
 
 # ------------ RESAMPLE FROM MEMORY: ------------------------------------------------------------------------------
