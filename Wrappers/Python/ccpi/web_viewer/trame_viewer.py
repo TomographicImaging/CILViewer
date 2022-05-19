@@ -155,6 +155,7 @@ class TrameViewer:
         self.volume_interaction_section = vuetify.VContainer(self.volume_interaction_row)
 
         self.layout.drawer.children = [
+            "Choose model to load",
             self.model_choice,
             vuetify.VDivider(),
             self.slice_interaction_section,
