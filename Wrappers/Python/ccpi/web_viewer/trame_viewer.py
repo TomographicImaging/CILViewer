@@ -301,10 +301,12 @@ class TrameViewer:
         useful_file_list = []
         for file_path in self.list_of_files:        
             file_name = os.path.basename(file_path)
-            useful_file_list.append({
-                "text": file_name,
-                "value": file_path
-            })
+            useful_file_list.append(
+                {
+                    "text": file_name,
+                    "value": file_path
+                }
+            )
         
         return vuetify.VSelect(
             v_model=("file_name", self.default_file),
@@ -314,10 +316,30 @@ class TrameViewer:
         )
 
     def create_background_selector(self):
+        initial_list = dir(colors)
+        color_list = [
+            {
+                "text": "Miles blue",
+                "value": "cil_viewer_blue",
+            }
+        ]
+        for color in initial_list:
+            if "__" in color:
+                continue
+            if "_" in color:
+                filtered_color = color.replace("_", " ")
+            else:
+                filtered_color = color
+            filtered_color = filtered_color.capitalize()
+            color_list.append(
+                {
+                    "text": filtered_color,
+                    "value": color
+                }
+            )
         return vuetify.VSelect(
-            v_model=("background_colour", "Blue"),
-            items=("background_colour_options", ["Blue", "White", "Silver", "Gray", "Black", "Red", "Maroon", "Yellow", "Olive", "Lime",
-                                                 "Green", "Aqua", "Teal", "Navy", "Fuchsia", "Purple"]),
+            v_model=("background_colour", "cil_viewer_blue"),
+            items=("background_colour_options", color_list),
             hide_details=True,
             solo=True
         )
@@ -700,6 +722,9 @@ class TrameViewer:
         self.cil_viewer.updatePipeline()
 
     def change_background_colour(self, colour):
-        color_data = getattr(colors, colour.lower())
+        if colour == "cil_viewer_blue":
+            color_data = (.1, .2, .4)
+        else:
+            color_data = getattr(colors, colour.lower())
         self.cil_viewer.ren.SetBackground(color_data)
         self.cil_viewer.updatePipeline()
