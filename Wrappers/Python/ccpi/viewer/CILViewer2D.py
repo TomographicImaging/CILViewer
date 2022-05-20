@@ -393,6 +393,8 @@ class CILInteractorStyle(vtk.vtkInteractorStyle):
 
     ############### Handle events
     def OnMouseWheelForward(self, interactor, event):
+        if self.GetInputData() is None:
+            return
         maxSlice = self.GetInputData().GetExtent()[self.GetSliceOrientation()*2+1]
         shift = interactor.GetShiftKey()
         advance = 1
@@ -410,6 +412,8 @@ class CILInteractorStyle(vtk.vtkInteractorStyle):
             self.DisplayLineProfile(interactor, event, True)
 
     def OnMouseWheelBackward(self, interactor, event):
+        if self.GetInputData() is None:
+            return
         minSlice = self.GetInputData().GetExtent()[self.GetSliceOrientation()*2]
         shift = interactor.GetShiftKey()
         advance = 1
@@ -424,6 +428,8 @@ class CILInteractorStyle(vtk.vtkInteractorStyle):
             self.DisplayLineProfile(interactor, event, True)
 
     def OnKeyPress(self, interactor, event):
+        if self.GetInputData() is None:
+            return
         if self.reslicing_enabled and interactor.GetKeyCode() == "x":
             # Change the camera view point
 
@@ -586,6 +592,8 @@ class CILInteractorStyle(vtk.vtkInteractorStyle):
         
     def OnLeftButtonPressEvent(self, interactor, event):
         # print ("INTERACTOR", interactor)
+        if self.GetInputData() is None:
+            return
         alt = interactor.GetAltKey()
         shift = interactor.GetShiftKey()
         ctrl = interactor.GetControlKey()
@@ -642,6 +650,8 @@ class CILInteractorStyle(vtk.vtkInteractorStyle):
         self.SetEventInactive("DELETE_ROI_EVENT")
 
     def OnRightButtonPressEvent(self, interactor, event):
+        if self.GetInputData() is None:
+            return
         alt = interactor.GetAltKey()
         shift = interactor.GetShiftKey()
         ctrl = interactor.GetControlKey()
@@ -1568,6 +1578,8 @@ class CILViewer2D():
             self.__vis_mode = value
 
     def setVisualisationPipelineMethodTo(self, method):
+        if self.img3D is None:
+            return
         # get the current visualisation mode
         if self.vis_mode != method:
             # remove current pipeline
