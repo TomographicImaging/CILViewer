@@ -637,7 +637,13 @@ class TrameViewer:
         app.set(key="colour_map", value="viridis")
         app.set(key="windowing", value=self.windowing_defaults)
         app.set(key="colouring", value=self.windowing_defaults)
+        app.set(key="slice_visibility", value=True)
+        app.set(key="volume_visibility", value=True)
+        app.set(key="slice_detailed_sliders", value=False)
         app.set(key="slice_window_range", value=self.cil_viewer.getVolumeMapWindow((5., 95.), "scalar"))
+        app.set(key="slice_window", value=self.cil_viewer.getSliceColourWindow())
+        app.set(key="slice_level", value=self.cil_viewer.getSliceColourLevel())
+        app.set(key="background_colour", value="cil_viewer_blue")
         # Ensure 2D is on
         if not self.cil_viewer.imageSlice.GetVisibility():
             self.switch_slice()
@@ -657,7 +663,6 @@ class TrameViewer:
             self.cil_viewer.setVolumeColorWindow(min_value, max_value)
         if hasattr(self, "html_view"):
             self.html_view.update()
-
             
     def change_slice_window_range(self, window, level):
         self.cil_viewer.setSliceColourWindowLevel(window, level)
