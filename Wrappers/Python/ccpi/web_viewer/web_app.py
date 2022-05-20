@@ -140,5 +140,10 @@ def change_background_colour(**kwargs):
     TRAME_VIEWER.change_background_colour(kwargs["background_colour"])
 
 
+@state.change("toggle_clipping")
+def change_clipping(**kwargs):
+    TRAME_VIEWER.change_clipping(kwargs["toggle_clipping"])
+
+
 if __name__ == "__main__":
     sys.exit(main())

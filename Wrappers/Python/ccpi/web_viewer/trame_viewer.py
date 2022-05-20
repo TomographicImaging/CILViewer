@@ -214,8 +214,9 @@ class TrameViewer:
         )
 
     def create_clipping_toggle(self):
-        return vuetify.VBtn(
-            "Toggle Clipping",
+        return vuetify.VSwitch(
+            label="Toggle Clipping",
+            v_model=("toggle_clipping", False),
             hide_details=True,
             dense=True,
             solo=True,
@@ -644,6 +645,7 @@ class TrameViewer:
         app.set(key="slice_window", value=self.cil_viewer.getSliceColourWindow())
         app.set(key="slice_level", value=self.cil_viewer.getSliceColourLevel())
         app.set(key="background_colour", value="cil_viewer_blue")
+        app.set(key="toggle_clipping", value=False)
         # Ensure 2D is on
         if not self.cil_viewer.imageSlice.GetVisibility():
             self.switch_slice()
@@ -732,4 +734,14 @@ class TrameViewer:
         else:
             color_data = getattr(colors, colour.lower())
         self.cil_viewer.ren.SetBackground(color_data)
+        self.cil_viewer.updatePipeline()
+
+    def change_clipping(self, clipping_on):
+        self.cil_viewer.imageSlice.VisibilityOff()
+        if hasattr(self.cil_viewer, "planew"):
+            self.cil_viewer.planew.SetEnabled(clipping_on)
+            self.cil_viewer.ren.Render()
+        else:
+            planew = self.cil_viewer.style.CreateClippingPlane()
+            planew.On()
         self.cil_viewer.updatePipeline()
