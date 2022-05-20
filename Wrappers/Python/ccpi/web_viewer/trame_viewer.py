@@ -22,6 +22,7 @@ import matplotlib.pyplot as plt
 from trame import update_layout
 from trame.html import vtk, vuetify
 from trame.layouts import SinglePageWithDrawer
+from vtkmodules.util import colors
 from vtkmodules.vtkIOImage import vtkMetaImageReader
 
 from ccpi.viewer.CILViewer import CILViewer
@@ -61,6 +62,7 @@ class TrameViewer:
 
         # Define UI elements in __init__ to quiet down Pep8
         self.model_choice = None
+        self.background_choice = None
         self.toggle_slice_visibility = None
         self.slice_slider = None
         self.toggle_window_details_button = None
@@ -158,6 +160,9 @@ class TrameViewer:
             "Choose model to load",
             self.model_choice,
             vuetify.VDivider(),
+            "Choose background colour",
+            self.background_choice,
+            vuetify.VDivider(),
             self.slice_interaction_section,
             vuetify.VDivider(),
             self.volume_interaction_section,
@@ -172,6 +177,7 @@ class TrameViewer:
     def create_drawer_ui_elements(self):
         # replace this with the list browser? # https://kitware.github.io/trame/docs/module-widgets.html#ListBrowser
         self.model_choice = self.create_model_selector()
+        self.background_choice = self.create_background_selector()
         self.toggle_slice_visibility = self.create_toggle_slice_visibility()
         self.slice_slider = self.create_slice_slider()
         self.toggle_window_details_button = self.create_toggle_window_details_button()
@@ -305,6 +311,15 @@ class TrameViewer:
             items=("file_name_options", useful_file_list),
             hide_details=True,
             solo=True,
+        )
+
+    def create_background_selector(self):
+        return vuetify.VSelect(
+            v_model=("background_colour", "Blue"),
+            items=("background_colour_options", ["Blue", "White", "Silver", "Gray", "Black", "Red", "Maroon", "Yellow", "Olive", "Lime",
+                                                 "Green", "Aqua", "Teal", "Navy", "Fuchsia", "Purple"]),
+            hide_details=True,
+            solo=True
         )
 
     def construct_slice_window_slider(self):
@@ -682,4 +697,9 @@ class TrameViewer:
             self.disable_3d = True
         self.create_drawer_ui_elements()
         update_layout(self.layout)
+        self.cil_viewer.updatePipeline()
+
+    def change_background_colour(self, colour):
+        color_data = getattr(colors, colour.lower())
+        self.cil_viewer.ren.SetBackground(color_data)
         self.cil_viewer.updatePipeline()

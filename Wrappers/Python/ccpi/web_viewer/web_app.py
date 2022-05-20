@@ -135,5 +135,10 @@ def change_volume_visibility(**kwargs):
     TRAME_VIEWER.change_volume_visibility(kwargs["volume_visibility"])
 
 
+@state.change("background_colour")
+def change_background_colour(**kwargs):
+    TRAME_VIEWER.change_background_colour(kwargs["background_colour"])
+
+
 if __name__ == "__main__":
     sys.exit(main())

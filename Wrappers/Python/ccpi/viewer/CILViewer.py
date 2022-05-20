@@ -518,7 +518,6 @@ class CILViewer():
 
         self.iren.Initialize()
 
-    
     def getRenderer(self):
         '''returns the renderer'''
         return self.ren
@@ -650,7 +649,6 @@ class CILViewer():
         # needs an extra nudge to turn the slice visibility on:
         self.updatePipeline()
 
-
     def setInputData(self, imageData):
         '''alias of setInput3DData'''
         return self.setInput3DData(imageData)
@@ -772,6 +770,7 @@ class CILViewer():
         if not hasattr(self, '_vol_render_opacity_method'):
             self.setVolumeRenderOpacityMethod('gradient')
         return self._vol_render_opacity_method
+
     def setVolumeRenderOpacityMethod(self, method='gradient'):
         '''
         Parameters
@@ -953,7 +952,6 @@ class CILViewer():
     def _getDefaultScalarOpacityFunction(self):
         # used inside viewer, not for user
         return self.default_scalar_opacity
-
 
     def getColorOpacityForVolumeRender(self, color_num=255):
         '''
