@@ -73,7 +73,7 @@ class TrameViewer:
         self.toggle_volume_visibility = None
         self.opacity_radio_buttons = None
         self.colour_choice = None
-        self.clipping_button = None
+        self.clipping_switch = None
         self.colour_slider = None
         self.windowing_range_slider = None
         self.reset_cam_button = None
@@ -150,7 +150,8 @@ class TrameViewer:
             self.opacity_radio_buttons,
             self.colour_choice,
             self.colour_slider,
-            self.clipping_button,
+            self.clipping_switch,
+            self.clipping_removal_button,
             self.windowing_range_slider
         ])
         self.volume_interaction_row = vuetify.VRow(self.volume_interaction_col)
@@ -188,7 +189,8 @@ class TrameViewer:
         self.toggle_volume_visibility = self.create_toggle_volume_visibility()
         self.opacity_radio_buttons = self.create_opacity_radio_buttons()
         self.colour_choice = self.create_colour_choice_selector()
-        self.clipping_button = self.create_clipping_toggle()
+        self.clipping_switch = self.create_clipping_toggle()
+        self.clipping_removal_button = self.create_clipping_removal_button()
         self.update_windowing_defaults()
         self.colour_slider = self.construct_colour_slider()
         self.windowing_range_slider = self.construct_windowing_slider()
@@ -221,7 +223,16 @@ class TrameViewer:
             dense=True,
             solo=True,
             disabled=self.disable_3d,
-            click=self.cil_viewer.style.ToggleVolumeClipping,
+        )
+
+    def create_clipping_removal_button(self):
+        return vuetify.VBtn(
+            "Remove clipping",
+            hide_details=True,
+            dense=True,
+            solo=True,
+            disabled=self.disable_3d,
+            click=self.remove_clipping_plane
         )
 
     def create_colour_choice_selector(self):
@@ -745,3 +756,16 @@ class TrameViewer:
             planew = self.cil_viewer.style.CreateClippingPlane()
             planew.On()
         self.cil_viewer.updatePipeline()
+
+    def remove_clipping_plane(self):
+        if hasattr(self.cil_viewer, "planew"):
+            app = vuetify.get_app_instance()
+            app.set(key="toggle_clipping", value=False)
+            
+            self.cil_viewer.volume.GetMapper().RemoveAllClippingPlanes()
+
+            # Now remove planew from the cil_viewer
+            del self.cil_viewer.planew
+
+            self.cil_viewer.getRenderer().Render()
+            self.cil_viewer.updatePipeline()
