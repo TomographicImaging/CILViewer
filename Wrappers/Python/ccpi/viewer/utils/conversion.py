@@ -1131,7 +1131,7 @@ class cilBaseResampleReader(cilBaseReader):
             else:
                 shape = list(readshape)[::-1]
 
-            total_size = shape[0] * shape[1] * shape[2]
+            total_size = shape[0] * shape[1] * shape[2] * self.GetBytesPerElement()
 
             max_size = self.GetTargetSize()
 
@@ -1334,10 +1334,8 @@ class cilHDF5ResampleReader(cilBaseResampleReader, cilBaseHDF5Reader):
         # Here we read just the chunk from the hdf5 file:
         cropped_reader = HDF5SubsetReader()
         cropped_reader.SetInputConnection(reader.GetOutputPort())
-        dims = self.GetStoredArrayShape()
         # Set default extent to full extent:
-        cropped_reader.SetUpdateExtent(
-            (0, dims[0]-1, 0, dims[1]-1, 0, dims[2]-1))
+        cropped_reader.SetUpdateExtent((0, -1, 0, -1, 0, -1))
         self._ChunkReader = cropped_reader
         return cropped_reader
 
@@ -1346,6 +1344,9 @@ class cilHDF5ResampleReader(cilBaseResampleReader, cilBaseHDF5Reader):
         start_slice in the z direction'''
         num_slices_per_chunk = self._GetNumSlicesPerChunk()
         end_slice = start_slice + num_slices_per_chunk - 1
+        end_z_value = self.GetStoredArrayShape()[2]-1
+        if end_slice > end_z_value:
+            end_slice = end_z_value
         if start_slice < 0:
             raise ValueError('{} ERROR: Start slice cannot be negative.'
                              .format(self.__class__.__name__))
@@ -1654,6 +1655,8 @@ class cilHDF5CroppedReader(cilBaseCroppedReader, cilBaseHDF5Reader):
         read_data = reader.GetOutput()
         outData.ShallowCopy(read_data)
 
+        return 1
+
 
 # ------------ RESAMPLE FROM MEMORY: ------------------------------------------------------------------------------
 
@@ -1701,6 +1704,11 @@ class vtkImageResampler(VTKPythonAlgorithmBase):
         ''' Get the total target size to downsample image to, in bytes.'''
         return self._TargetSize
 
+    def GetBytesPerElement(self):
+        ''' Get number of bytes per element'''
+        if hasattr(self, '_BytesPerElement'):
+            return self._BytesPerElement
+
     def GetOutput(self):
         return self.GetOutputDataObject(0)
 
@@ -1709,6 +1717,7 @@ class vtkImageResampler(VTKPythonAlgorithmBase):
         self._Origin = inData.GetOrigin()
         self._Extent = inData.GetExtent()
         self._StoredArrayShape = (self._Extent[1]+1, (self._Extent[3]+1), (self._Extent[5]+1))
+        self._BytesPerElement = Converter.vtkType_to_bytes[inData.GetScalarType()]
 
     def GetElementSpacing(self):
         ''' Returns the spacing of the input dataset as a tuple'''
@@ -1736,7 +1745,7 @@ class vtkImageResampler(VTKPythonAlgorithmBase):
         extent = self.GetExtent()
         shape = self.GetStoredArrayShape()
 
-        total_size = shape[0] * shape[1] * shape[2]
+        total_size = shape[0] * shape[1] * shape[2] * self.GetBytesPerElement()
 
         max_size = self.GetTargetSize()
 
