@@ -748,7 +748,8 @@ class TrameViewer:
         self.cil_viewer.updatePipeline()
 
     def change_clipping(self, clipping_on):
-        self.cil_viewer.imageSlice.VisibilityOff()
+        app = vuetify.get_app_instance()
+        app.set(key="slice_visibility", value=False)
         if hasattr(self.cil_viewer, "planew"):
             self.cil_viewer.planew.SetEnabled(clipping_on)
             self.cil_viewer.ren.Render()
