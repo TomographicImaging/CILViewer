@@ -214,7 +214,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
             self._viewer.light.SwitchOn()
         self._viewer.updatePipeline()
 
-    def ResetVolume(self):
+    def ResetVolumeWindowLevel(self):
         # reset color/window
         cmin, cmax = self._viewer.ia.GetAutoRange()
 
@@ -243,7 +243,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
             self.SetSliceOrientation(SLICE_ORIENTATION_XY)
             self.UpdatePipeline(resetcamera=True)
         elif interactor.GetKeyCode() == "a":
-            self.ResetVolume()
+            self.ResetVolumeWindowLevel()
         elif interactor.GetKeyCode() == "h":
             self.DisplayHelp()
         elif interactor.GetKeyCode() == "r":
