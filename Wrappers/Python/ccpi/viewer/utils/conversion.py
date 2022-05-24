@@ -1280,7 +1280,7 @@ class cilBaseResampleReader(cilBaseReader):
         return 1
 
 
-class cilBaseBinaryBlobResampleReader(cilBaseReader, cilBaseResampleReader):
+class cilBaseBinaryBlobResampleReader(cilBaseResampleReader):
     '''vtkAlgorithm to load and resample a file to an approximate memory footprint.
     This BaseClass provides the methods needed to resample a file, if the filename
     and dataset info has been set (these will be set in instances of derived classes)

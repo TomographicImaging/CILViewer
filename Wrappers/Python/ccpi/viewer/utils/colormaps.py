@@ -1182,9 +1182,7 @@ class CILColorMaps(object):
                 print("To use colormaps other than: ",
                     "{}, please install matplotlib.".format(
                         str(list(_color_map_dict.keys()))))
-                        
-        else:
-            colors = _color_map_dict[cmap]
+
             
         N = len(colors)
         x = numpy.linspace(0, N, num=N)
