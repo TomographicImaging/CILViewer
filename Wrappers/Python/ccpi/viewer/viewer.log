@@ -1,8 +1,0 @@
-ERROR: In /home/conda/feedstock_root/build_artifacts/vtk_1648566156759/work/IO/Image/vtkMetaImageReader.cxx, line 86
-vtkMetaImageReader (0x55ba9384f570): MetaImage cannot parse file.
-
-
-ERROR: In /home/conda/feedstock_root/build_artifacts/vtk_1648566156759/work/IO/Image/vtkMetaImageReader.cxx, line 233
-vtkMetaImageReader (0x55ba9384f570): MetaImage cannot read data from file.
-
-
