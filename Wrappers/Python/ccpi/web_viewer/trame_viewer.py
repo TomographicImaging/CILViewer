@@ -621,6 +621,7 @@ class TrameViewer:
         app.set(key="slice_level", value=self.cil_viewer.getSliceColorLevel())
         app.set(key="background_color", value="cil_viewer_blue")
         app.set(key="toggle_clipping", value=False)
+        app.set(key="show_slice_histogram", value=False)
         # Ensure 2D is on
         if not self.cil_viewer.imageSlice.GetVisibility():
             self.switch_slice()
