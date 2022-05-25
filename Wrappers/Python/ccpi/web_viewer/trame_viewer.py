@@ -205,6 +205,7 @@ class TrameViewer:
             hide_details=True,
             dense=True,
             solo=True,
+            disabled=self.disable_2d,
         )
 
     def create_reset_defaults_button(self):
