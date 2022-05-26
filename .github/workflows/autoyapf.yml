@@ -24,6 +24,7 @@ jobs:
 
       - name: Push changes
         if: steps.git-check.outputs.modified == 'true'
+        continue-on-error: true
         run: |
           git config --global user.name 'github-actions'
           git config --global user.email 'github-actions@github.com'
