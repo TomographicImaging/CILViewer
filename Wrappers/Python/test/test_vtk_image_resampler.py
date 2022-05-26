@@ -11,11 +11,9 @@ def calculate_target_downsample_shape(max_size, total_size, shape, acq=False):
     else:
         slice_per_chunk = 1
         xy_axes_magnification = np.power(max_size / total_size, 1 / 2)
-    num_chunks = 1 + len(
-        [i for i in range(slice_per_chunk, shape[2], slice_per_chunk)])
+    num_chunks = 1 + len([i for i in range(slice_per_chunk, shape[2], slice_per_chunk)])
 
-    target_image_shape = (int(xy_axes_magnification * shape[0]),
-                          int(xy_axes_magnification * shape[1]), num_chunks)
+    target_image_shape = (int(xy_axes_magnification * shape[0]), int(xy_axes_magnification * shape[1]), num_chunks)
     return target_image_shape
 
 
@@ -26,9 +24,7 @@ class TestVTKImageResampler(unittest.TestCase):
         np.random.seed(1)
         bits = 16
         self.bytes_per_element = int(bits / 8)
-        self.input_3D_array = np.random.randint(10,
-                                                size=(50, 10, 60),
-                                                dtype=eval(f"np.uint{bits}"))
+        self.input_3D_array = np.random.randint(10, size=(50, 10, 60), dtype=eval(f"np.uint{bits}"))
         self.input_vtk_image = Converter.numpy2vtkImage(self.input_3D_array)
 
     def test_vtk_resample_reader(self):
@@ -47,10 +43,8 @@ class TestVTKImageResampler(unittest.TestCase):
         og_shape = np.shape(self.input_3D_array)
         resulting_shape = (extent[1] + 1, (extent[3] + 1), (extent[5] + 1))
         og_shape = (og_shape[2], og_shape[1], og_shape[0])
-        og_size = og_shape[0] * og_shape[1] * og_shape[
-            2] * self.bytes_per_element
-        expected_shape = calculate_target_downsample_shape(
-            target_size, og_size, og_shape)
+        og_size = og_shape[0] * og_shape[1] * og_shape[2] * self.bytes_per_element
+        expected_shape = calculate_target_downsample_shape(target_size, og_size, og_shape)
         self.assertEqual(resulting_shape, expected_shape)
 
         # # Now test if we get the full image extent if our
@@ -74,10 +68,7 @@ class TestVTKImageResampler(unittest.TestCase):
         reader.Update()
         image = reader.GetOutput()
         extent = image.GetExtent()
-        shape_not_acquisition = calculate_target_downsample_shape(target_size,
-                                                                  og_size,
-                                                                  og_shape,
-                                                                  acq=True)
+        shape_not_acquisition = calculate_target_downsample_shape(target_size, og_size, og_shape, acq=True)
         expected_size = shape_not_acquisition[0] * \
             shape_not_acquisition[1]*shape_not_acquisition[2]
         resulting_shape = (extent[1] + 1, (extent[3] + 1), (extent[5] + 1))

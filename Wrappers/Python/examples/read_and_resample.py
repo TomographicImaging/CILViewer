@@ -10,8 +10,7 @@ import tempfile
 from ccpi.viewer.utils.conversion import cilNumpyResampleReader
 
 if __name__ == "__main__":
-    fname = os.path.abspath(
-        r"E:\Documents\Dataset\CCPi\DVC\f000_crop\frame_000_f.npy")
+    fname = os.path.abspath(r"E:\Documents\Dataset\CCPi\DVC\f000_crop\frame_000_f.npy")
 
     def progress(x, y):
         print("{:.0f}%".format(100 * x.GetProgress()))

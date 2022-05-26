@@ -40,12 +40,8 @@ class TwoLinkedViewersCenterWidget(QtWidgets.QMainWindow):
             elif viewer == '3D':
                 styles.append(vlink.Linked3DInteractorStyle)
             viewers.append(eval('viewer' + viewer))
-        self.frame1 = QCILViewerWidget(viewer=viewers[0],
-                                       shape=(600, 600),
-                                       interactorStyle=styles[0])
-        self.frame2 = QCILViewerWidget(viewer=viewers[1],
-                                       shape=(600, 600),
-                                       interactorStyle=styles[1])
+        self.frame1 = QCILViewerWidget(viewer=viewers[0], shape=(600, 600), interactorStyle=styles[0])
+        self.frame2 = QCILViewerWidget(viewer=viewers[1], shape=(600, 600), interactorStyle=styles[1])
 
         # For the head example we have to set the method to scalar so that
         # the volume render can be seen
@@ -120,10 +116,8 @@ class iviewer(object):
         else:
             viewer1 = kwargs.get('viewer1', '2D')
             viewer2 = kwargs.get('viewer2', '2D')
-            window = TwoLinkedViewersCenterWidget(viewer1=viewer1,
-                                                  viewer2=viewer2)
-            window.set_input(self.convert_to_vtkImage(data),
-                             self.convert_to_vtkImage(moredata[0]))
+            window = TwoLinkedViewersCenterWidget(viewer1=viewer1, viewer2=viewer2)
+            window.set_input(self.convert_to_vtkImage(data), self.convert_to_vtkImage(moredata[0]))
             viewer_type = None
             self.viewer1_type = viewer1
             self.viewer2_type = viewer2
@@ -136,9 +130,7 @@ class iviewer(object):
         if self.has_run is None:
             self.has_run = self.app.exec_()
         else:
-            print(
-                'No instance can be run interactively again. Delete and re-instantiate.'
-            )
+            print('No instance can be run interactively again. Delete and re-instantiate.')
 
     def __del__(self):
         '''destructor'''

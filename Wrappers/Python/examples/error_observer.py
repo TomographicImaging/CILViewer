@@ -20,8 +20,7 @@ if __name__ == "__main__":
     If not, it then runs the callback_fn. In this case, it displays the hdf5 image in the iviewer.'''
     end_obs = EndObserver(
         error_observer=error_obs,
-        callback_fn=lambda: iviewer(readerhdf5.GetOutputDataObject(0),
-                                    readerhdf5.GetOutputDataObject(0)))
+        callback_fn=lambda: iviewer(readerhdf5.GetOutputDataObject(0), readerhdf5.GetOutputDataObject(0)))
     readerhdf5.AddObserver(vtk.vtkCommand.EndEvent, end_obs)
     readerhdf5.SetFileName(hdf5_name)
     ''' With this commented, we get an exception due to DatasetName not being set.

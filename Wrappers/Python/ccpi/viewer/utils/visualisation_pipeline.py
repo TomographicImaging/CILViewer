@@ -28,8 +28,7 @@ class cilClipPolyDataBetweenPlanes(VTKPythonAlgorithmBase):
 
         self.visPlane = [vtk.vtkPlane(), vtk.vtkPlane()]
         self.planeClipper = [vtk.vtkClipPolyData(), vtk.vtkClipPolyData()]
-        self.planeClipper[1].SetInputConnection(
-            self.planeClipper[0].GetOutputPort())
+        self.planeClipper[1].SetInputConnection(self.planeClipper[0].GetOutputPort())
 
         self.planeClipper[0].SetClipFunction(self.visPlane[0])
         self.planeClipper[1].SetClipFunction(self.visPlane[1])
@@ -39,9 +38,7 @@ class cilClipPolyDataBetweenPlanes(VTKPythonAlgorithmBase):
 
     def SetPlaneOriginAbove(self, value):
         if not (isinstance(value, list) or isinstance(value, tuple)):
-            raise ValueError(
-                'PlaneOriginAbove should be a list or a tuple. Got',
-                type(value))
+            raise ValueError('PlaneOriginAbove should be a list or a tuple. Got', type(value))
         if value != self.__PlaneOriginAbove:
             # print ("SetPlaneOriginAbove", value)
             self.__PlaneOriginAbove = value
@@ -52,9 +49,7 @@ class cilClipPolyDataBetweenPlanes(VTKPythonAlgorithmBase):
 
     def SetPlaneNormalAbove(self, value):
         if not (isinstance(value, list) or isinstance(value, tuple)):
-            raise ValueError(
-                'PlaneNormalAbove should be a list or a tuple. Got',
-                type(value))
+            raise ValueError('PlaneNormalAbove should be a list or a tuple. Got', type(value))
         if value != self.__PlaneNormalAbove:
             self.__PlaneNormalAbove = value
             self.Modified()
@@ -64,9 +59,7 @@ class cilClipPolyDataBetweenPlanes(VTKPythonAlgorithmBase):
 
     def SetPlaneOriginBelow(self, value):
         if not (isinstance(value, list) or isinstance(value, tuple)):
-            raise ValueError(
-                'PlaneOriginBelow should be a list or a tuple. Got',
-                type(value))
+            raise ValueError('PlaneOriginBelow should be a list or a tuple. Got', type(value))
         if value != self.__PlaneOriginBelow:
             # print ("SetPlaneOriginBelow", value)
             self.__PlaneOriginBelow = value
@@ -77,9 +70,7 @@ class cilClipPolyDataBetweenPlanes(VTKPythonAlgorithmBase):
 
     def SetPlaneNormalBelow(self, value):
         if not (isinstance(value, list) or isinstance(value, tuple)):
-            raise ValueError(
-                'PlaneNormalBelow should be a list or a tuple. Got',
-                type(value))
+            raise ValueError('PlaneNormalBelow should be a list or a tuple. Got', type(value))
         if value != self.__PlaneNormalBelow:
             self.__PlaneNormalBelow = value
             self.Modified()
@@ -89,8 +80,7 @@ class cilClipPolyDataBetweenPlanes(VTKPythonAlgorithmBase):
 
     def FillInputPortInformation(self, port, info):
         if port == 0:
-            info.Set(vtk.vtkAlgorithm.INPUT_REQUIRED_DATA_TYPE(),
-                     "vtkPolyData")
+            info.Set(vtk.vtkAlgorithm.INPUT_REQUIRED_DATA_TYPE(), "vtkPolyData")
         return 1
 
     def FillOutputPortInformation(self, port, info):
@@ -210,8 +200,7 @@ class cilPlaneClipper(object):
                 beta_down = 0.5
 
                 slice_above = [0, 0, 0]
-                slice_above[orientation] = interactor.GetActiveSlice(
-                ) + beta_up
+                slice_above[orientation] = interactor.GetActiveSlice() + beta_up
                 slice_above = interactor.image2world(slice_above)
 
                 normal[orientation] = norm
@@ -220,8 +209,7 @@ class cilPlaneClipper(object):
 
                 # update the  plane below
                 slice_below = [0, 0, 0]
-                slice_below[orientation] = interactor.GetActiveSlice(
-                ) - beta_down
+                slice_below[orientation] = interactor.GetActiveSlice() - beta_down
                 slice_below = interactor.image2world(slice_below)
 
                 origin_below = [i for i in origin]
@@ -232,8 +220,7 @@ class cilPlaneClipper(object):
                     data_to_clip.SetPlaneOriginAbove(origin_above)
                     data_to_clip.SetPlaneNormalAbove(normal)
                     data_to_clip.SetPlaneOriginBelow(origin_below)
-                    data_to_clip.SetPlaneNormalBelow(
-                        (-normal[0], -normal[1], -normal[2]))
+                    data_to_clip.SetPlaneNormalBelow((-normal[0], -normal[1], -normal[2]))
                     data_to_clip.Update()
 
                 interactor.UpdatePipeline()
@@ -267,11 +254,9 @@ class cilMaskPolyData(VTKPythonAlgorithmBase):
 
     def FillInputPortInformation(self, port, info):
         if port == 0:
-            info.Set(vtk.vtkAlgorithm.INPUT_REQUIRED_DATA_TYPE(),
-                     "vtkPolyData")
+            info.Set(vtk.vtkAlgorithm.INPUT_REQUIRED_DATA_TYPE(), "vtkPolyData")
         elif port == 1:
-            info.Set(vtk.vtkAlgorithm.INPUT_REQUIRED_DATA_TYPE(),
-                     "vtkImageData")
+            info.Set(vtk.vtkAlgorithm.INPUT_REQUIRED_DATA_TYPE(), "vtkImageData")
         return 1
 
     def FillOutputPortInformation(self, port, info):
@@ -303,8 +288,7 @@ class cilMaskPolyData(VTKPythonAlgorithmBase):
                 i += 1
 
             if not outside:
-                mm = mask.GetScalarComponentAsDouble(int(ic[0]), int(ic[1]),
-                                                     int(ic[2]), 0)
+                mm = mask.GetScalarComponentAsDouble(int(ic[0]), int(ic[1]), int(ic[2]), 0)
 
                 if int(mm) == int(self.GetMaskValue()):
                     # print ("value of point {} {}".format(mm, ic))
@@ -328,9 +312,7 @@ class cilMaskPolyData(VTKPythonAlgorithmBase):
         spac = imagedata.GetSpacing()
         orig = imagedata.GetOrigin()
 
-        return [
-            round((world_coordinates[i] + orig[i]) / spac[i]) for i in range(3)
-        ]
+        return [round((world_coordinates[i] + orig[i]) / spac[i]) for i in range(3)]
 
     def points2vertices(self, points):
         '''returns a vtkCellArray from a vtkPoints'''

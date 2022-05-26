@@ -45,17 +45,15 @@ class QCILViewerWidget(QtWidgets.QFrame):
         try:
 
             # print ("provided viewer class ", kwargs['viewer'])
-            self.viewer = kwargs['viewer'](
-                renWin=self.vtkWidget.GetRenderWindow(),
-                iren=self.iren,
-                ren=self.ren,
-                dimx=dimx,
-                dimy=dimy,
-                debug=kwargs.get('debug', False))
+            self.viewer = kwargs['viewer'](renWin=self.vtkWidget.GetRenderWindow(),
+                                           iren=self.iren,
+                                           ren=self.ren,
+                                           dimx=dimx,
+                                           dimy=dimy,
+                                           debug=kwargs.get('debug', False))
         except KeyError:
-            raise KeyError(
-                "Viewer class not provided. Submit an uninstantiated viewer class object"
-                "using 'viewer' keyword")
+            raise KeyError("Viewer class not provided. Submit an uninstantiated viewer class object"
+                           "using 'viewer' keyword")
 
         if 'interactorStyle' in kwargs.keys():
             self.viewer.style = kwargs['interactorStyle'](self.viewer)

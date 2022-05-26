@@ -17,30 +17,25 @@ class FourLinkedViewersDockableWidget(QtWidgets.QMainWindow):
         #self.resize(800,600)
 
         # create the dockable widgets with the viewer inside
-        self.v00 = QCILDockableWidget(
-            viewer=viewer2D,
-            shape=(600, 600),
-            title="X",
-            interactorStyle=vlink.Linked2DInteractorStyle)
-        self.v01 = QCILDockableWidget(
-            viewer=viewer2D,
-            shape=(600, 600),
-            title="Y",
-            interactorStyle=vlink.Linked2DInteractorStyle)
-        self.v10 = QCILDockableWidget(
-            viewer=viewer2D,
-            shape=(600, 600),
-            title="Z",
-            interactorStyle=vlink.Linked2DInteractorStyle)
-        self.v11 = QCILDockableWidget(
-            viewer=viewer3D,
-            shape=(600, 600),
-            title="3D",
-            interactorStyle=vlink.Linked3DInteractorStyle)
+        self.v00 = QCILDockableWidget(viewer=viewer2D,
+                                      shape=(600, 600),
+                                      title="X",
+                                      interactorStyle=vlink.Linked2DInteractorStyle)
+        self.v01 = QCILDockableWidget(viewer=viewer2D,
+                                      shape=(600, 600),
+                                      title="Y",
+                                      interactorStyle=vlink.Linked2DInteractorStyle)
+        self.v10 = QCILDockableWidget(viewer=viewer2D,
+                                      shape=(600, 600),
+                                      title="Z",
+                                      interactorStyle=vlink.Linked2DInteractorStyle)
+        self.v11 = QCILDockableWidget(viewer=viewer3D,
+                                      shape=(600, 600),
+                                      title="3D",
+                                      interactorStyle=vlink.Linked3DInteractorStyle)
 
         # Create the viewer linkers
-        viewerLinkers = self.linkedViewersSetup(self.v00, self.v01, self.v10,
-                                                self.v11)
+        viewerLinkers = self.linkedViewersSetup(self.v00, self.v01, self.v10, self.v11)
 
         for linker in viewerLinkers:
             linker.enable()
@@ -65,15 +60,11 @@ class FourLinkedViewersDockableWidget(QtWidgets.QMainWindow):
 
         # add to the GUI
 
-        self.addDockWidget(QtCore.Qt.LeftDockWidgetArea, self.v00,
-                           QtCore.Qt.Vertical)
-        self.addDockWidget(QtCore.Qt.LeftDockWidgetArea, self.v01,
-                           QtCore.Qt.Vertical)
+        self.addDockWidget(QtCore.Qt.LeftDockWidgetArea, self.v00, QtCore.Qt.Vertical)
+        self.addDockWidget(QtCore.Qt.LeftDockWidgetArea, self.v01, QtCore.Qt.Vertical)
 
-        self.addDockWidget(QtCore.Qt.RightDockWidgetArea, self.v10,
-                           QtCore.Qt.Vertical)
-        self.addDockWidget(QtCore.Qt.RightDockWidgetArea, self.v11,
-                           QtCore.Qt.Vertical)
+        self.addDockWidget(QtCore.Qt.RightDockWidgetArea, self.v10, QtCore.Qt.Vertical)
+        self.addDockWidget(QtCore.Qt.RightDockWidgetArea, self.v11, QtCore.Qt.Vertical)
 
         self.show()
 
@@ -109,8 +100,7 @@ if __name__ == "__main__":
 
     reader = vtk.vtkNIFTIImageReader()
     data_dir = os.path.abspath(
-        'C:/Users/ofn77899/Documents/Projects/PETMR/Publications/2020RS_MCIR/cluster_test/recons'
-    )
+        'C:/Users/ofn77899/Documents/Projects/PETMR/Publications/2020RS_MCIR/cluster_test/recons')
 
     reader.SetFileName(
         os.path.join(

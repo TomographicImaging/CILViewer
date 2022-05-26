@@ -41,10 +41,8 @@ class OpacityViewerWidget(SingleViewerCenterWidget):
         drop_down = QComboBox()
         drop_down.addItems(['gradient', 'scalar'])
         drop_down.currentTextChanged.connect(
-            lambda: self.frame.viewer.setVolumeRenderOpacityMethod(
-                drop_down.currentText()))
-        form_dock_widget.addWidget(drop_down, "Select Opacity Method:",
-                                   'select_opacity')
+            lambda: self.frame.viewer.setVolumeRenderOpacityMethod(drop_down.currentText()))
+        form_dock_widget.addWidget(drop_down, "Select Opacity Method:", 'select_opacity')
         self.addDockWidget(Qt.TopDockWidgetArea, form_dock_widget)
 
     def set_app_style(self):
@@ -80,9 +78,7 @@ class viewer_window(object):
         if self.has_run is None:
             self.has_run = self.app.exec_()
         else:
-            print(
-                'No instance can be run interactively again. Delete and re-instantiate.'
-            )
+            print('No instance can be run interactively again. Delete and re-instantiate.')
 
 
 if __name__ == "__main__":

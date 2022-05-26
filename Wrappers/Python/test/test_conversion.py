@@ -3,10 +3,8 @@ import unittest
 
 import numpy as np
 import vtk
-from ccpi.viewer.utils.conversion import (Converter, cilRawResampleReader,
-                                          cilMetaImageResampleReader,
-                                          cilNumpyResampleReader,
-                                          cilNumpyMETAImageWriter)
+from ccpi.viewer.utils.conversion import (Converter, cilRawResampleReader, cilMetaImageResampleReader,
+                                          cilNumpyResampleReader, cilNumpyMETAImageWriter)
 
 import numpy as np
 '''
@@ -22,9 +20,7 @@ class TestConversion(unittest.TestCase):
     def setUp(self):
         # Generate random 3D array and write to HDF5:
         np.random.seed(1)
-        self.input_3D_array = np.random.randint(10,
-                                                size=(5, 10, 6),
-                                                dtype=np.uint8)
+        self.input_3D_array = np.random.randint(10, size=(5, 10, 6), dtype=np.uint8)
         bytes_3D_array = bytes(self.input_3D_array)
         self.raw_filename_3D = 'test_3D_data.raw'
         with open(self.raw_filename_3D, 'wb') as f:
@@ -44,8 +40,7 @@ class TestConversion(unittest.TestCase):
         big_endian = False
         header_length = 0
         shape = np.shape(self.input_3D_array)
-        shape_to_write = shape[::
-                               -1]  # because it is not a fortran order array we have to swap
+        shape_to_write = shape[::-1]  # because it is not a fortran order array we have to swap
         cilNumpyMETAImageWriter.WriteMETAImageHeader(data_filename,
                                                      header_filename,
                                                      typecode,

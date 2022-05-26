@@ -36,8 +36,7 @@ def version2pep440(version):
     return v_pep440
 
 
-git_version_string = subprocess.check_output(
-    'git describe', shell=True).decode("utf-8").rstrip()[1:]
+git_version_string = subprocess.check_output('git describe', shell=True).decode("utf-8").rstrip()[1:]
 
 if os.environ.get('CONDA_BUILD', 0) == '1':
     cwd = os.path.join(os.environ.get('RECIPE_DIR'), '..')

@@ -14,16 +14,10 @@ class SingleViewerCenterWidget(QtWidgets.QMainWindow):
         self.frame = QCILViewerWidget(viewer=viewer, shape=(2000, 2000))
 
         reader = vtk.vtkMetaImageReader()
-        reader.SetFileName(
-            os.path.join(
-                "c:/Users/ofn77899/Dev/CILViewer/Wrappers/Python/examples",
-                'head.mha'))
+        reader.SetFileName(os.path.join("c:/Users/ofn77899/Dev/CILViewer/Wrappers/Python/examples", 'head.mha'))
         reader.Update()
         reader2 = vtk.vtkMetaImageReader()
-        reader2.SetFileName(
-            os.path.join(
-                "c:/Users/ofn77899/Dev/CILViewer/Wrappers/Python/examples",
-                'head_root.mha'))
+        reader2.SetFileName(os.path.join("c:/Users/ofn77899/Dev/CILViewer/Wrappers/Python/examples", 'head_root.mha'))
         reader2.Update()
         self.frame.viewer.setInputData(reader2.GetOutput())
         self.frame.viewer.setInputData2(reader.GetOutput())

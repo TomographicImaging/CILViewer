@@ -3,8 +3,7 @@ import unittest
 
 import numpy as np
 import vtk
-from ccpi.viewer.utils.conversion import (Converter, cilRawCroppedReader,
-                                          cilMetaImageCroppedReader,
+from ccpi.viewer.utils.conversion import (Converter, cilRawCroppedReader, cilMetaImageCroppedReader,
                                           cilNumpyCroppedReader)
 
 
@@ -13,9 +12,7 @@ class TestCroppedReaders(unittest.TestCase):
     def setUp(self):
         # Generate random 3D array and write to HDF5:
         np.random.seed(1)
-        self.input_3D_array = np.random.randint(10,
-                                                size=(50, 100, 60),
-                                                dtype=np.uint8)
+        self.input_3D_array = np.random.randint(10, size=(50, 100, 60), dtype=np.uint8)
         bytes_3D_array = bytes(self.input_3D_array)
         self.raw_filename_3D = 'test_3D_data.raw'
         with open(self.raw_filename_3D, 'wb') as f:
@@ -37,9 +34,7 @@ class TestCroppedReaders(unittest.TestCase):
         image = reader.GetOutput()
         extent = list(image.GetExtent())
         og_shape = np.shape(self.input_3D_array)
-        og_extent = [
-            0, og_shape[2] - 1, 0, og_shape[1] - 1, 0, og_shape[0] - 1
-        ]
+        og_extent = [0, og_shape[2] - 1, 0, og_shape[1] - 1, 0, og_shape[0] - 1]
         expected_extent = og_extent
         expected_extent[4] = target_z_extent[0]
         expected_extent[5] = target_z_extent[1]
@@ -47,8 +42,7 @@ class TestCroppedReaders(unittest.TestCase):
 
     def check_values(self, target_z_extent, read_cropped_image):
         read_cropped_array = Converter.vtk2numpy(read_cropped_image)
-        cropped_array = self.input_3D_array[
-            target_z_extent[0]:target_z_extent[1] + 1, :, :]
+        cropped_array = self.input_3D_array[target_z_extent[0]:target_z_extent[1] + 1, :, :]
         np.testing.assert_array_equal(cropped_array, read_cropped_array)
 
     def test_raw_cropped_reader(self):
@@ -81,9 +75,7 @@ class TestCroppedReaders(unittest.TestCase):
                 self.check_values(target_z_extent, reader.GetOutput())
 
     def tearDown(self):
-        files = [
-            self.raw_filename_3D, self.numpy_filename_3D, self.meta_filename_3D
-        ]
+        files = [self.raw_filename_3D, self.numpy_filename_3D, self.meta_filename_3D]
         for f in files:
             os.remove(f)
 

@@ -35,8 +35,7 @@ for num in range(nreduced):
     reader.Update()
     if num == 0:
         sliced = reader.GetOutput().GetExtent()
-        stack.SetExtent(sliced[0], sliced[1], sliced[2], sliced[3], 0,
-                        nreduced - 1)
+        stack.SetExtent(sliced[0], sliced[1], sliced[2], sliced[3], 0, nreduced - 1)
         size = (sliced[1] + 1) * (sliced[3] + 1) * nreduced
         #stack.SetNumberOfScalarComponents(1)
         stack.AllocateScalars(vtk.VTK_DOUBLE, 1)
@@ -44,9 +43,7 @@ for num in range(nreduced):
     dims = reader.GetOutput().GetDimensions()
     for i in range(dims[0]):
         for j in range(dims[1]):
-            stack.SetScalarComponentFromDouble(
-                i, j, 0, 0,
-                reader.GetOutput().GetScalarComponentAsDouble(i, j, num, 0))
+            stack.SetScalarComponentFromDouble(i, j, 0, 0, reader.GetOutput().GetScalarComponentAsDouble(i, j, num, 0))
 #writer = vtk.vtkMetaImageWriter()
 #stack.SetOrigin(0,0,0)
 #stack.SetSpacing(1,1,1)

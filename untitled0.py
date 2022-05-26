@@ -71,8 +71,7 @@ def MouseMove(obj, event):
     centerY = center[1] / 2.0
 
     if Rotating:
-        Rotate(ren, ren.GetActiveCamera(), x, y, lastX, lastY, centerX,
-               centerY)
+        Rotate(ren, ren.GetActiveCamera(), x, y, lastX, lastY, centerX, centerY)
     elif Panning:
         Pan(ren, ren.GetActiveCamera(), x, y, lastX, lastY, centerX, centerY)
     elif Zooming:
@@ -136,11 +135,9 @@ def Pan(renderer, camera, x, y, lastX, lastY, centerX, centerY):
         RPoint1 = RPoint1 / RPoint3
         RPoint2 = RPoint2 / RPoint3
 
-    camera.SetFocalPoint((FPoint0 - RPoint0) / 2.0 + FPoint0,
-                         (FPoint1 - RPoint1) / 2.0 + FPoint1,
+    camera.SetFocalPoint((FPoint0 - RPoint0) / 2.0 + FPoint0, (FPoint1 - RPoint1) / 2.0 + FPoint1,
                          (FPoint2 - RPoint2) / 2.0 + FPoint2)
-    camera.SetPosition((FPoint0 - RPoint0) / 2.0 + PPoint0,
-                       (FPoint1 - RPoint1) / 2.0 + PPoint1,
+    camera.SetPosition((FPoint0 - RPoint0) / 2.0 + PPoint0, (FPoint1 - RPoint1) / 2.0 + PPoint1,
                        (FPoint2 - RPoint2) / 2.0 + PPoint2)
     renWin.Render()
 

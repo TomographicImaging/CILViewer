@@ -36,8 +36,7 @@ def SaveRenderToPNG(render_window, filename):
     else:
         number = max(slist) + 1
 
-    saveFilename = '{}_{:04d}.png'.format(os.path.join(directory, basename),
-                                          number)
+    saveFilename = '{}_{:04d}.png'.format(os.path.join(directory, basename), number)
 
     writer = vtk.vtkPNGWriter()
     writer.SetFileName(saveFilename)
