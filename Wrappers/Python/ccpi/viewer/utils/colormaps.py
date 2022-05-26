@@ -1114,27 +1114,31 @@ def relu(x, xmin, xmax, scaling=1):
 
 class CILColorMaps(object):
     @staticmethod
-    def get_color_transfer_function(cmap, color_range):
-
-        tf = vtk.vtkColorTransferFunction()
-
-
+    def get_color_map(cmap):
         if not cmap in _color_map_dict.keys():
 
             try:
                 from matplotlib import cm
-                
+
                 colors = []
                 for x in range(0, 255):
                     color = cm.get_cmap(cmap)(x)
                     colors.append([color[0], color[1], color[2]])
             except ImportError:
                 print("To use colormaps other than: ",
-                    "{}, please install matplotlib.".format(
-                        str(list(_color_map_dict.keys()))))
-                        
+                      "{}, please install matplotlib.".format(
+                          str(list(_color_map_dict.keys()))))
+
         else:
             colors = _color_map_dict[cmap]
+        return colors
+
+    @classmethod
+    def get_color_transfer_function(cls, cmap, color_range):
+
+        tf = vtk.vtkColorTransferFunction()
+
+        colors = cls.get_color_map(cmap)
             
         N = len(colors)
         for i, color in enumerate(colors):

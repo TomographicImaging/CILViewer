@@ -18,7 +18,17 @@
 
 import os
 
-import matplotlib.pyplot as plt
+try:
+    import matplotlib.pyplot as plt
+except ImportError:
+    # Add optional overload to allow plt.colormaps to be called without matplotlib
+    from ccpi.viewer.utils import CILColorMaps
+    class BackupColorMaps:
+        @staticmethod
+        def colormaps():
+            return ['viridis', 'plasma', 'inferno', 'magma']
+    plt = BackupColorMaps()
+
 from trame import update_layout
 from trame.html import vtk, vuetify
 from trame.layouts import SinglePageWithDrawer
@@ -45,7 +55,6 @@ class TrameViewer:
         self.slice_window_default = None
         self.max_slice = None
         self.default_slice = None
-        self.image = None
         self.slice_interaction_col = None
         self.slice_interaction_row = None
         self.slice_interaction_section = None
@@ -81,9 +90,8 @@ class TrameViewer:
 
         # Load files and setup the CILViewer
         if list_of_files is None:
-            self.list_of_files = os.listdir("data/")
-        else:
-            self.list_of_files = list_of_files
+            raise AttributeError("list_of_files cannot be None as we need data to load in the viewer!")
+        self.list_of_files = list_of_files
 
         self.default_file = None
         for file_path in self.list_of_files:
@@ -127,9 +135,6 @@ class TrameViewer:
 
         # Setup default state
         self.set_default_button_state()
-
-    def on_key_press(self, key):
-        pass
 
     def construct_drawer_layout(self):
         # The difference is that we use range slider instead of detailed sliders
@@ -567,8 +572,7 @@ class TrameViewer:
         reader = vtkMetaImageReader()
         reader.SetFileName(image_file)
         reader.Update()
-        self.image = reader.GetOutput()
-        self.cil_viewer.setInput3DData(self.image)
+        self.cil_viewer.setInput3DData(reader.GetOutput())
 
     def load_nexus_file(self, file_name):
         reader = cilHDF5ResampleReader()
@@ -576,19 +580,10 @@ class TrameViewer:
         reader.SetDatasetName('entry1/tomo_entry/data/data')
         reader.SetTargetSize(256 * 256 * 256)
         reader.Update()
-        self.image = reader.GetOutput()
-        self.cil_viewer.setInput3DData(self.image)
+        self.cil_viewer.setInput3DData(reader.GetOutput())
 
     def switch_render(self):
-        if not self.cil_viewer.volume_render_initialised:
-            self.cil_viewer.installVolumeRenderActorPipeline()
-
-        if self.cil_viewer.volume.GetVisibility():
-            self.cil_viewer.volume.VisibilityOff()
-            self.cil_viewer.light.SwitchOff()
-        else:
-            self.cil_viewer.volume.VisibilityOn()
-            self.cil_viewer.light.SwitchOn()
+        self.cil_viewer.style.ToggleVolumeVisibility()
         self.cil_viewer.updatePipeline()
         self.html_view.update()
 
@@ -666,8 +661,10 @@ class TrameViewer:
         # Reset clipping on the volume itself
         if self.cil_viewer.volume.GetMapper().GetClippingPlanes() is not None:
             self.cil_viewer.volume.GetMapper().RemoveAllClippingPlanes()
-        if hasattr(self.cil_viewer, 'planew'):
-            self.cil_viewer.style.ToggleVolumeClipping()
+        if self.cil_viewer.clipping_plane_initialised:
+            self.cil_viewer.style.SetVolumeClipping(False)
+            self.remove_clipping_plane()
+
 
     def change_colouring(self, min_value, max_value):
         if self.colour_slider_is_percentage:
@@ -712,8 +709,8 @@ class TrameViewer:
         self.construct_drawer_layout()
         update_layout(self.layout)
 
-    def change_slice_visibility(self, visbility):
-        if visbility:
+    def change_slice_visibility(self, visibility):
+        if visibility:
             self.cil_viewer.imageSlice.VisibilityOn()
             self.disable_2d = False
         else:
@@ -728,13 +725,10 @@ class TrameViewer:
             self.cil_viewer.installVolumeRenderActorPipeline()
 
         if visibility:
-            self.cil_viewer.volume.VisibilityOn()
-            self.cil_viewer.light.SwitchOn()
             self.disable_3d = False
         else:
-            self.cil_viewer.volume.VisibilityOff()
-            self.cil_viewer.light.SwitchOff()
             self.disable_3d = True
+        self.cil_viewer.style.SetVolumeVisibility(visibility)
         self.create_drawer_ui_elements()
         update_layout(self.layout)
         self.cil_viewer.updatePipeline()
@@ -749,13 +743,9 @@ class TrameViewer:
 
     def change_clipping(self, clipping_on):
         app = vuetify.get_app_instance()
-        app.set(key="slice_visibility", value=False)
-        if hasattr(self.cil_viewer, "planew"):
-            self.cil_viewer.planew.SetEnabled(clipping_on)
-            self.cil_viewer.ren.Render()
-        else:
-            planew = self.cil_viewer.style.CreateClippingPlane()
-            planew.On()
+        if clipping_on:
+            app.set(key="slice_visibility", value=False)
+        self.cil_viewer.style.SetVolumeClipping(clipping_on)
         self.cil_viewer.updatePipeline()
 
     def remove_clipping_plane(self):
@@ -763,10 +753,4 @@ class TrameViewer:
             app = vuetify.get_app_instance()
             app.set(key="toggle_clipping", value=False)
             
-            self.cil_viewer.volume.GetMapper().RemoveAllClippingPlanes()
-
-            # Now remove planew from the cil_viewer
-            del self.cil_viewer.planew
-
-            self.cil_viewer.getRenderer().Render()
-            self.cil_viewer.updatePipeline()
+            self.cil_viewer.remove_clipping_plane()

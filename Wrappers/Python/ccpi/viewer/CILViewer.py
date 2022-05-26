@@ -180,17 +180,25 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
             self._viewer.imageSlice.GetProperty().SetInterpolationTypeToLinear()
         self._viewer.updatePipeline()
 
+    def SetVolumeClipping(self, clipping_on):
+        if hasattr(self._viewer, 'planew'):
+            self._viewer.planew.SetEnabled(clipping_on)
+            self._viewer.getRenderer().Render()
+        else:
+            # Doesn't exist and turn it off do nothing else:
+            if clipping_on:
+                planew = self.CreateClippingPlane()
+                planew.On()
+
     def ToggleVolumeClipping(self):
         viewer = self._viewer
         viewer.imageSlice.VisibilityOff()
         # clip a volume render if available
         if hasattr(self._viewer, 'planew') and self._viewer.clipping_plane_initialised:
             is_enabled = viewer.planew.GetEnabled()
-            viewer.planew.SetEnabled(not is_enabled)
-            viewer.getRenderer().Render()
+            self.SetVolumeClipping(not is_enabled)
         else:
-            planew = self.CreateClippingPlane()
-            planew.On()
+            self.SetVolumeClipping(True)
         viewer.updatePipeline()
 
     def ToggleSliceVisibility(self):
@@ -201,17 +209,21 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
             self._viewer.imageSlice.VisibilityOn()
         self._viewer.updatePipeline()
 
-    def ToggleVolumeVisibility(self):
-        # toggle visibility of the volume render
-        if not self._viewer.volume_render_initialised:
-            self._viewer.installVolumeRenderActorPipeline()
-
-        if self._viewer.volume.GetVisibility():
+    def SetVolumeVisibility(self, visibility):
+        if not visibility:
             self._viewer.volume.VisibilityOff()
             self._viewer.light.SwitchOff()
         else:
             self._viewer.volume.VisibilityOn()
             self._viewer.light.SwitchOn()
+
+    def ToggleVolumeVisibility(self):
+        # toggle visibility of the volume render
+        if not self._viewer.volume_render_initialised:
+            self._viewer.installVolumeRenderActorPipeline()
+
+        self.SetVolumeVisibility(not self._viewer.volume.GetVisibility())
+
         self._viewer.updatePipeline()
 
     def ResetVolumeWindowLevel(self):
@@ -1163,3 +1175,12 @@ class CILViewer():
         if renWin is None:
             renWin = self.renWin
         SaveRenderToPNG(renWin, filename)
+
+    def remove_clipping_plane(self):
+        self.volume.GetMapper().RemoveAllClippingPlanes()
+
+        # Now remove planew from the cil_viewer
+        del self.planew
+
+        self.getRenderer().Render()
+        self.updatePipeline()
