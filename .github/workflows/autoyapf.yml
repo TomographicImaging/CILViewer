@@ -1,0 +1,29 @@
+name: Yapf-ify this PR
+
+on:
+  pull_request:
+      branches:
+        - 'main'
+
+jobs:
+  autoyapf:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@master
+        with:
+          ref: ${{ github.head_ref }}
+
+      - name: autoyapf
+        id: autoyapf
+        uses: mritunjaysharma394/autoyapf@v2
+        with:
+          args: --parallel --recursive --in-place .
+
+      - name: Git auto commit
+        uses: stefanzweifel/git-auto-commit-action@v4.9.1
+        with:
+          commit_message: Add yapf changes
+          commit_options: '--no-verify --signoff'
+          file_pattern: "**/bin/*"
+          commit_user_name: github-actions
+          commit_user_email: github-actions@github.com
