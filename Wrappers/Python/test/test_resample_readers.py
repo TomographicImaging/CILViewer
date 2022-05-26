@@ -5,18 +5,19 @@ import numpy as np
 import vtk
 from ccpi.viewer.utils.conversion import (Converter, cilRawResampleReader,
                                           cilMetaImageResampleReader,
-                                          cilNumpyResampleReader, cilNumpyMETAImageWriter)
+                                          cilNumpyResampleReader,
+                                          cilNumpyMETAImageWriter)
 
 
 def calculate_target_downsample_shape(max_size, total_size, shape, acq=False):
     if not acq:
-        xy_axes_magnification = np.power(max_size/total_size, 1/3)
-        slice_per_chunk = int(1/xy_axes_magnification)
+        xy_axes_magnification = np.power(max_size / total_size, 1 / 3)
+        slice_per_chunk = int(1 / xy_axes_magnification)
     else:
         slice_per_chunk = 1
-        xy_axes_magnification = np.power(max_size/total_size, 1/2)
-    num_chunks = 1 + len([i for i in
-                          range(slice_per_chunk, shape[2], slice_per_chunk)])
+        xy_axes_magnification = np.power(max_size / total_size, 1 / 2)
+    num_chunks = 1 + len(
+        [i for i in range(slice_per_chunk, shape[2], slice_per_chunk)])
 
     target_image_shape = (int(xy_axes_magnification * shape[0]),
                           int(xy_axes_magnification * shape[1]), num_chunks)
@@ -29,8 +30,10 @@ class TestResampleReaders(unittest.TestCase):
         # Generate random 3D array and write to HDF5:
         np.random.seed(1)
         bits = 16
-        self.bytes_per_element = int(bits/8)
-        self.input_3D_array = np.random.randint(10, size=(5, 10, 6), dtype=eval(f"np.uint{bits}"))
+        self.bytes_per_element = int(bits / 8)
+        self.input_3D_array = np.random.randint(10,
+                                                size=(5, 10, 6),
+                                                dtype=eval(f"np.uint{bits}"))
         bytes_3D_array = bytes(self.input_3D_array)
         self.raw_filename_3D = 'test_3D_data.raw'
         with open(self.raw_filename_3D, 'wb') as f:
@@ -42,9 +45,16 @@ class TestResampleReaders(unittest.TestCase):
         big_endian = False
         header_length = 0
         shape = np.shape(self.input_3D_array)
-        shape_to_write = shape[::-1] # because it is not a fortran order array we have to swap
-        cilNumpyMETAImageWriter.WriteMETAImageHeader(self.raw_filename_3D, self.mhd_filename_3D, typecode, big_endian,
-                             header_length, shape_to_write, spacing=(1., 1., 1.), origin=(0., 0., 0.))
+        shape_to_write = shape[::
+                               -1]  # because it is not a fortran order array we have to swap
+        cilNumpyMETAImageWriter.WriteMETAImageHeader(self.raw_filename_3D,
+                                                     self.mhd_filename_3D,
+                                                     typecode,
+                                                     big_endian,
+                                                     header_length,
+                                                     shape_to_write,
+                                                     spacing=(1., 1., 1.),
+                                                     origin=(0., 0., 0.))
 
         self.numpy_filename_3D = 'test_3D_data.npy'
         np.save(self.numpy_filename_3D, self.input_3D_array)
@@ -77,22 +87,23 @@ class TestResampleReaders(unittest.TestCase):
         self.assertEqual(raw_type_code, reader.GetTypeCodeName())
         image = reader.GetOutput()
         extent = image.GetExtent()
-        resulting_shape = (extent[1]+1, (extent[3]+1), (extent[5]+1))
+        resulting_shape = (extent[1] + 1, (extent[3] + 1), (extent[5] + 1))
         og_shape = (og_shape[2], og_shape[1], og_shape[0])
-        og_size = og_shape[0]*og_shape[1]*og_shape[2]*self.bytes_per_element
+        og_size = og_shape[0] * og_shape[1] * og_shape[
+            2] * self.bytes_per_element
         expected_shape = calculate_target_downsample_shape(
             target_size, og_size, og_shape)
         self.assertEqual(resulting_shape, expected_shape)
 
         # # Now test if we get the full image extent if our
         # # target size is larger than the size of the image:
-        target_size = og_size*2
+        target_size = og_size * 2
         reader.SetTargetSize(target_size)
         reader.Update()
         image = reader.GetOutput()
         extent = image.GetExtent()
         expected_shape = og_shape
-        resulting_shape = (extent[1]+1, (extent[3]+1), (extent[5]+1))
+        resulting_shape = (extent[1] + 1, (extent[3] + 1), (extent[5] + 1))
         self.assertEqual(resulting_shape, expected_shape)
         resulting_array = Converter.vtk2numpy(image)
         np.testing.assert_array_equal(self.input_3D_array, resulting_array)
@@ -107,16 +118,18 @@ class TestResampleReaders(unittest.TestCase):
         reader.Update()
         image = reader.GetOutput()
         extent = image.GetExtent()
-        shape_acquisition = calculate_target_downsample_shape(
-            target_size, og_size, og_shape, acq=True)
+        shape_acquisition = calculate_target_downsample_shape(target_size,
+                                                              og_size,
+                                                              og_shape,
+                                                              acq=True)
         expected_size = shape_acquisition[0] * \
             shape_acquisition[1]*shape_acquisition[2]
-        resulting_shape = (extent[1]+1, (extent[3]+1), (extent[5]+1))
+        resulting_shape = (extent[1] + 1, (extent[3] + 1), (extent[5] + 1))
         resulting_size = resulting_shape[0] * \
             resulting_shape[1]*resulting_shape[2]
         # angle (z direction) is first index in numpy array, and in cil
         # but it is the last in vtk.
-        resulting_z_shape = extent[5]+1
+        resulting_z_shape = extent[5] + 1
         og_z_shape = np.shape(self.input_3D_array)[0]
         self.assertEqual(resulting_size, expected_size)
         self.assertEqual(resulting_z_shape, og_z_shape)
@@ -126,10 +139,18 @@ class TestResampleReaders(unittest.TestCase):
         # Not a great test, but at least checks the resample reader runs
         # without crashing
         # TODO: improve this test
-        readers = [cilNumpyResampleReader(), cilMetaImageResampleReader(), cilMetaImageResampleReader()]
-        filenames = [self.numpy_filename_3D, self.meta_filename_3D, self.mhd_filename_3D]
-        subtest_labels = ['cilNumpyResampleReader',
-                          'cilMetaImageResampleReader - mha', 'cilMetaImageResampleReader - mhd']
+        readers = [
+            cilNumpyResampleReader(),
+            cilMetaImageResampleReader(),
+            cilMetaImageResampleReader()
+        ]
+        filenames = [
+            self.numpy_filename_3D, self.meta_filename_3D, self.mhd_filename_3D
+        ]
+        subtest_labels = [
+            'cilNumpyResampleReader', 'cilMetaImageResampleReader - mha',
+            'cilMetaImageResampleReader - mhd'
+        ]
         for i, reader in enumerate(readers):
             with self.subTest(reader=subtest_labels[i]):
                 filename = filenames[i]
@@ -140,26 +161,29 @@ class TestResampleReaders(unittest.TestCase):
                 reader.Update()
                 image = reader.GetOutput()
                 extent = image.GetExtent()
-                resulting_shape = (extent[1]+1, (extent[3]+1), (extent[5]+1))
+                resulting_shape = (extent[1] + 1, (extent[3] + 1),
+                                   (extent[5] + 1))
                 og_shape = (og_shape[2], og_shape[1], og_shape[0])
-                og_size = og_shape[0]*og_shape[1]*og_shape[2]*self.bytes_per_element
+                og_size = og_shape[0] * og_shape[1] * og_shape[
+                    2] * self.bytes_per_element
                 expected_shape = calculate_target_downsample_shape(
                     target_size, og_size, og_shape)
                 self.assertEqual(resulting_shape, expected_shape)
 
                 # # Now test if we get the full image extent if our
                 # # target size is larger than the size of the image:
-                target_size = og_size*2
+                target_size = og_size * 2
                 reader.SetTargetSize(target_size)
                 reader.Update()
                 image = reader.GetOutput()
                 extent = image.GetExtent()
                 expected_shape = og_shape
-                resulting_shape = (extent[1]+1, (extent[3]+1), (extent[5]+1))
+                resulting_shape = (extent[1] + 1, (extent[3] + 1),
+                                   (extent[5] + 1))
                 self.assertEqual(resulting_shape, expected_shape)
                 resulting_array = Converter.vtk2numpy(image)
-                np.testing.assert_array_equal(
-                    self.input_3D_array, resulting_array)
+                np.testing.assert_array_equal(self.input_3D_array,
+                                              resulting_array)
 
                 # # Now test if we get the correct z extent if we set that we
                 # # have acquisition data
@@ -173,18 +197,22 @@ class TestResampleReaders(unittest.TestCase):
                     target_size, og_size, og_shape, acq=True)
                 expected_size = shape_not_acquisition[0] * \
                     shape_not_acquisition[1]*shape_not_acquisition[2]
-                resulting_shape = (extent[1]+1, (extent[3]+1), (extent[5]+1))
+                resulting_shape = (extent[1] + 1, (extent[3] + 1),
+                                   (extent[5] + 1))
                 resulting_size = resulting_shape[0] * \
                     resulting_shape[1]*resulting_shape[2]
                 # angle (z direction) is first index in numpy array, and in cil
                 # but it is the last in vtk.
-                resulting_z_shape = extent[5]+1
+                resulting_z_shape = extent[5] + 1
                 og_z_shape = np.shape(self.input_3D_array)[0]
                 self.assertEqual(resulting_size, expected_size)
                 self.assertEqual(resulting_z_shape, og_z_shape)
 
     def tearDown(self):
-        files = [self.raw_filename_3D, self.numpy_filename_3D, self.meta_filename_3D, self.mhd_filename_3D]
+        files = [
+            self.raw_filename_3D, self.numpy_filename_3D,
+            self.meta_filename_3D, self.mhd_filename_3D
+        ]
         for f in files:
             os.remove(f)
 

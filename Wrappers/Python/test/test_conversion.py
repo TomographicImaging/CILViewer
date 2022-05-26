@@ -5,10 +5,10 @@ import numpy as np
 import vtk
 from ccpi.viewer.utils.conversion import (Converter, cilRawResampleReader,
                                           cilMetaImageResampleReader,
-                                          cilNumpyResampleReader, cilNumpyMETAImageWriter)
+                                          cilNumpyResampleReader,
+                                          cilNumpyMETAImageWriter)
 
 import numpy as np
-
 '''
 This will test parts of the utils/conversion.py file other than
 the Resample and Cropped readers. (See test_cropped_readers.py
@@ -16,12 +16,15 @@ and test_resample_readers.py for tests of these)
 
 '''
 
+
 class TestConversion(unittest.TestCase):
 
     def setUp(self):
         # Generate random 3D array and write to HDF5:
         np.random.seed(1)
-        self.input_3D_array = np.random.randint(10, size=(5, 10, 6), dtype=np.uint8)
+        self.input_3D_array = np.random.randint(10,
+                                                size=(5, 10, 6),
+                                                dtype=np.uint8)
         bytes_3D_array = bytes(self.input_3D_array)
         self.raw_filename_3D = 'test_3D_data.raw'
         with open(self.raw_filename_3D, 'wb') as f:
@@ -34,7 +37,6 @@ class TestConversion(unittest.TestCase):
         by comparing to array read with cilRawResampleReader
         directly from RawResampleReader and the original contents'''
 
-
         # read raw file's info:
         data_filename = self.raw_filename_3D
         header_filename = 'raw_header.mhd'
@@ -42,10 +44,17 @@ class TestConversion(unittest.TestCase):
         big_endian = False
         header_length = 0
         shape = np.shape(self.input_3D_array)
-        shape_to_write = shape[::-1] # because it is not a fortran order array we have to swap
-        cilNumpyMETAImageWriter.WriteMETAImageHeader(data_filename, header_filename, typecode, big_endian,
-                             header_length, shape_to_write, spacing=(1., 1., 1.), origin=(0., 0., 0.))
-        
+        shape_to_write = shape[::
+                               -1]  # because it is not a fortran order array we have to swap
+        cilNumpyMETAImageWriter.WriteMETAImageHeader(data_filename,
+                                                     header_filename,
+                                                     typecode,
+                                                     big_endian,
+                                                     header_length,
+                                                     shape_to_write,
+                                                     spacing=(1., 1., 1.),
+                                                     origin=(0., 0., 0.))
+
         reader = vtk.vtkMetaImageReader()
         reader.SetFileName(header_filename)
         reader.Update()
@@ -67,7 +76,6 @@ class TestConversion(unittest.TestCase):
 
         np.testing.assert_array_equal(read_mhd_raw, raw_array)
         np.testing.assert_array_equal(read_mhd_raw, self.input_3D_array)
-
 
     def tearDown(self):
         files = [self.raw_filename_3D]

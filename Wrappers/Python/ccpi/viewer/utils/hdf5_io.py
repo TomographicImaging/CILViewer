@@ -22,8 +22,7 @@ def write_image_data_to_hdf5(filename, data, dataset_name, attributes={}):
     with h5py.File(filename, "a") as f:
         # The function imgdata.GetPointData().GetScalars() returns a pointer to a
         # vtk<TYPE>Array where the data is stored as X-Y-Z.
-        array = numpy_support.vtk_to_numpy(
-            data.GetPointData().GetScalars())
+        array = numpy_support.vtk_to_numpy(data.GetPointData().GetScalars())
 
         # Note that we flip the dimensions here because
         # VTK's order is Fortran whereas h5py writes in
@@ -81,25 +80,38 @@ class HDF5Reader(VTKPythonAlgorithmBase):
             # whereas h5py reads in C order. When writing we pretend that the
             # data was C order so we have to flip the extents/dimensions.
             if len(shape) == 3:
-                data = f[self._DatasetName][ue[4]:ue[5]+1, ue[2]:ue[3]+1, ue[0]:ue[1]+1]
+                data = f[self._DatasetName][ue[4]:ue[5] + 1, ue[2]:ue[3] + 1,
+                                            ue[0]:ue[1] + 1]
             elif len(shape) == 4:
                 if self._4DIndex == 0:
-                    data = f[self._DatasetName][self._4DSliceIndex, ue[4]:ue[5]+1, ue[2]:ue[3]+1, ue[0]:ue[1]+1]
+                    data = f[self._DatasetName][self._4DSliceIndex,
+                                                ue[4]:ue[5] + 1,
+                                                ue[2]:ue[3] + 1,
+                                                ue[0]:ue[1] + 1]
                 elif self._4DIndex == 1:
-                    data = f[self._DatasetName][ue[4]:ue[5]+1, self._4DSliceIndex, ue[2]:ue[3]+1, ue[0]:ue[1]+1]
+                    data = f[self._DatasetName][ue[4]:ue[5] + 1,
+                                                self._4DSliceIndex,
+                                                ue[2]:ue[3] + 1,
+                                                ue[0]:ue[1] + 1]
                 elif self._4DIndex == 2:
-                    data = f[self._DatasetName][ue[4]:ue[5]+1,  ue[2]:ue[3]+1, self._4DSliceIndex, ue[0]:ue[1]+1]
+                    data = f[self._DatasetName][ue[4]:ue[5] + 1,
+                                                ue[2]:ue[3] + 1,
+                                                self._4DSliceIndex,
+                                                ue[0]:ue[1] + 1]
                 elif self._4DIndex == 3:
-                    data = f[self._DatasetName][ue[4]:ue[5]+1,  ue[2]:ue[3]+1,  ue[0]:ue[1]+1, self._4DSliceIndex]
+                    data = f[self._DatasetName][ue[4]:ue[5] + 1,
+                                                ue[2]:ue[3] + 1,
+                                                ue[0]:ue[1] + 1,
+                                                self._4DSliceIndex]
             else:
-                raise Exception("Currently only 3D and 4D datasets are supported.")
+                raise Exception(
+                    "Currently only 3D and 4D datasets are supported.")
             # print("attributes: ", f.attrs.items())
             output = dsa.WrapDataObject(vtk.vtkImageData.GetData(outInfo))
             output.SetExtent(ue)
             output.PointData.append(data.ravel(), self._DatasetName)
             output.PointData.SetActiveScalars(self._DatasetName)
             return output
-        
 
     def SetFileName(self, fname):
         if fname != self._FileName:
@@ -107,7 +119,9 @@ class HDF5Reader(VTKPythonAlgorithmBase):
             if self._DatasetName is not None:
                 with h5py.File(fname, 'r') as f:
                     if not (self._DatasetName in f):
-                        raise Exception("No dataset named {} exists in {}.".format(self._DatasetName, fname))
+                        raise Exception(
+                            "No dataset named {} exists in {}.".format(
+                                self._DatasetName, fname))
             self._FileName = fname
 
     def GetFileName(self):
@@ -119,7 +133,9 @@ class HDF5Reader(VTKPythonAlgorithmBase):
             if self._FileName is not None:
                 with h5py.File(self._FileName, 'r') as f:
                     if not (lname in f):
-                        raise Exception("No dataset named {} exists in {}.".format(lname, self._FileName))
+                        raise Exception(
+                            "No dataset named {} exists in {}.".format(
+                                lname, self._FileName))
             self._DatasetName = lname
 
     def GetDatasetName(self):
@@ -127,7 +143,7 @@ class HDF5Reader(VTKPythonAlgorithmBase):
 
     def Set4DIndex(self, index):
         '''Sets which index is the 4th dimension that we will only read 1 slice of.'''
-        if index not in range(0,4):
+        if index not in range(0, 4):
             raise Exception("4D Index must be between 0 and 3.")
         if index != self._4DIndex:
             self.Modified()
@@ -160,7 +176,7 @@ class HDF5Reader(VTKPythonAlgorithmBase):
 
     def GetOrigin(self):
         # There is not a standard way to set the origin in a HDF5
-        # file so we do not have a way to read it. Therefore we 
+        # file so we do not have a way to read it. Therefore we
         # assume it is at 0,0,0
         return (0, 0, 0)
 
@@ -177,7 +193,7 @@ class HDF5Reader(VTKPythonAlgorithmBase):
         dims = self.GetDimensions()
         info = outInfo.GetInformationObject(0)
         info.Set(vtk.vtkStreamingDemandDrivenPipeline.WHOLE_EXTENT(),
-                 (0, dims[0]-1, 0, dims[1]-1, 0, dims[2]-1), 6)
+                 (0, dims[0] - 1, 0, dims[1] - 1, 0, dims[2] - 1), 6)
         return 1
 
 
@@ -197,6 +213,7 @@ class HDF5SubsetReader(VTKPythonAlgorithmBase):
     cropped_reader.SetUpdateExtent((0, 2, 3, 5, 1, 2)) 
     cropped_reader.Update() 
     '''
+
     def __init__(self):
         VTKPythonAlgorithmBase.__init__(self,
                                         nInputPorts=1,
@@ -217,9 +234,9 @@ class HDF5SubsetReader(VTKPythonAlgorithmBase):
 
             whole_extent = info.Get(
                 vtk.vtkStreamingDemandDrivenPipeline.WHOLE_EXTENT())
-            set_extent = list(info.Get(
-                vtk.vtkStreamingDemandDrivenPipeline.UPDATE_EXTENT()))
-            
+            set_extent = list(
+                info.Get(vtk.vtkStreamingDemandDrivenPipeline.UPDATE_EXTENT()))
+
             for i, value in enumerate(set_extent):
                 if value == -1:
                     set_extent[i] = whole_extent[i]
@@ -227,14 +244,16 @@ class HDF5SubsetReader(VTKPythonAlgorithmBase):
                     if i % 2 == 0:
                         if value < whole_extent[i]:
                             raise ValueError("Requested extent {}\
-                                is outside of original image extent {} as {}<{}".format(
-                                set_extent, whole_extent, value, whole_extent[i]))
+                                is outside of original image extent {} as {}<{}"
+                                             .format(set_extent, whole_extent,
+                                                     value, whole_extent[i]))
                     else:
                         if value > whole_extent[i]:
                             raise ValueError("Requested extent {}\
-                                is outside of original image extent {} as {}>{}".format(
-                                set_extent, whole_extent, value, whole_extent[i]))
-            
+                                is outside of original image extent {} as {}>{}"
+                                             .format(set_extent, whole_extent,
+                                                     value, whole_extent[i]))
+
             self.SetUpdateExtent(set_extent)
 
             info.Set(vtk.vtkStreamingDemandDrivenPipeline.UPDATE_EXTENT(),
