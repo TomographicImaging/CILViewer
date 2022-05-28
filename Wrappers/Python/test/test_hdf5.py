@@ -4,7 +4,7 @@ import unittest
 import h5py
 import numpy as np
 import vtk
-from ccpi.viewer.utils.conversion import Converter, cilHDF5ResampleReader
+from ccpi.viewer.utils.conversion import Converter, cilHDF5ResampleReader, cilHDF5CroppedReader
 from ccpi.viewer.utils.hdf5_io import (HDF5Reader, HDF5SubsetReader,
                                        write_image_data_to_hdf5)
 
@@ -12,7 +12,7 @@ from ccpi.viewer.utils.hdf5_io import (HDF5Reader, HDF5SubsetReader,
 def calculate_target_downsample_shape(max_size, total_size, shape, acq=False):
     if not acq:
         xy_axes_magnification = np.power(max_size/total_size, 1/3)
-        slice_per_chunk = np.int(1/xy_axes_magnification)
+        slice_per_chunk = int(1/xy_axes_magnification)
     else:
         slice_per_chunk = 1
         xy_axes_magnification = np.power(max_size/total_size, 1/2)
@@ -28,13 +28,14 @@ class TestHDF5IO(unittest.TestCase):
 
     def setUp(self):
         # Generate random 3D array and write to HDF5:
+        np.random.seed(1)
         self.input_3D_array = np.random.random(size=(5, 10, 6))
         self.hdf5_filename_3D = 'test_3D_data.h5'
         with h5py.File(self.hdf5_filename_3D, 'w') as f:
             f.create_dataset('ImageData', data=self.input_3D_array)
 
         # Generate random 4D array and write to HDF5:
-        self.input_4D_array = np.random.random(size=(10, 5, 10, 6))
+        self.input_4D_array = np.random.random(size=(10, 7, 10, 6))
         self.hdf5_filename_4D = 'test_4D_data.h5'
         with h5py.File(self.hdf5_filename_4D, 'w') as f:
             f.create_dataset('ImageData', data=self.input_4D_array)
@@ -56,14 +57,16 @@ class TestHDF5IO(unittest.TestCase):
         reader = HDF5Reader()
         reader.SetFileName(self.hdf5_filename_4D)
         reader.SetDatasetName("ImageData")
-        reader.Set4DIndex(channel_index)
+        reader.Set4DSliceIndex(channel_index)
+        reader.Set4DIndex(0)
         reader.Update()
         array_image_data = reader.GetOutputDataObject(0)
         read_array = Converter.vtk2numpy(array_image_data)
         np.testing.assert_array_equal(
             self.input_4D_array[channel_index], read_array)
 
-    def test_read_cropped_hdf5(self):
+    def test_hdf5_subset_reader(self):
+        # With the subset reader: -----------------------------
         # Test cropping the extent of a dataset
         cropped_array = self.input_3D_array[1:3, 3:6, 0:3]
         reader = HDF5Reader()
@@ -79,17 +82,30 @@ class TestHDF5IO(unittest.TestCase):
         read_cropped_array = Converter.vtk2numpy(array_image_data)
         np.testing.assert_array_equal(cropped_array, read_cropped_array)
 
+    def test_read_cropped_hdf5_reader(self):
+        # # With the Cropped reader: -----------------------------
+        cropped_array = self.input_3D_array[1:3, 3:6, 0:3]
+        reader = cilHDF5CroppedReader()
+        reader.SetFileName(self.hdf5_filename_3D)
+        reader.SetDatasetName("ImageData")
+        reader.SetTargetExtent((0, 2, 3, 5, 1, 2))
+        reader.Update()
+        array_image_data = reader.GetOutput()
+        read_cropped_array = Converter.vtk2numpy(array_image_data)
+        np.testing.assert_array_equal(cropped_array, read_cropped_array)
+    
     def test_read_cropped_hdf5_channel(self):
         # Test cropping the extent of a dataset
         channel_index = 5
-        cropped_array = self.input_4D_array[:, 1:2, 3:6, 0:3][5]
+        cropped_array = self.input_4D_array[1:2, channel_index, 3:6, 0:3]
         hdf5_filename = 'test_numpy_data.h5'
         with h5py.File(hdf5_filename, 'w') as f:
             f.create_dataset('ImageData', data=self.input_4D_array)
         reader = HDF5Reader()
         reader.SetFileName(self.hdf5_filename_4D)
         reader.SetDatasetName("ImageData")
-        reader.Set4DIndex(channel_index)
+        reader.Set4DSliceIndex(channel_index)
+        reader.Set4DIndex(1)
         cropped_reader = HDF5SubsetReader()
         cropped_reader.SetInputConnection(reader.GetOutputPort())
         # NOTE: the extent is in vtk so is in fortran order, whereas
@@ -110,8 +126,7 @@ class TestHDF5IO(unittest.TestCase):
         self.hdf5_filename_RT = "test_image_data.hdf5"
 
         write_image_data_to_hdf5(
-            self.hdf5_filename_RT, image_data, dataset_name='RTData',
-            array_name='RTData')
+            self.hdf5_filename_RT, image_data, dataset_name='RTData')
 
         # Test reading hdf5:
         reader = HDF5Reader()
@@ -142,7 +157,7 @@ class TestHDF5IO(unittest.TestCase):
         resulting_shape = (extent[1]+1, (extent[3]+1), (extent[5]+1))
         og_shape = np.shape(self.input_3D_array)
         og_shape = (og_shape[2], og_shape[1], og_shape[0])
-        og_size = og_shape[0]*og_shape[1]*og_shape[2]
+        og_size = og_shape[0]*og_shape[1]*og_shape[2]*readerhdf5.GetBytesPerElement()
         expected_shape = calculate_target_downsample_shape(
             target_size, og_size, og_shape)
         self.assertEqual(resulting_shape, expected_shape)

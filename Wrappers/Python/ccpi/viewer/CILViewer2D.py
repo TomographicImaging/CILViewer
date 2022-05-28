@@ -18,8 +18,10 @@ from ccpi.viewer.utils.colormaps import CILColorMaps
 import vtk
 import numpy
 import os
+import glob, re
 
 from ccpi.viewer.utils import Converter
+from ccpi.viewer.utils.io import SaveRenderToPNG
 
 SLICE_ORIENTATION_XY = 2 # Z
 SLICE_ORIENTATION_XZ = 1 # Y
@@ -392,6 +394,8 @@ class CILInteractorStyle(vtk.vtkInteractorStyle):
 
     ############### Handle events
     def OnMouseWheelForward(self, interactor, event):
+        if self.GetInputData() is None:
+            return
         maxSlice = self.GetInputData().GetExtent()[self.GetSliceOrientation()*2+1]
         shift = interactor.GetShiftKey()
         advance = 1
@@ -409,6 +413,8 @@ class CILInteractorStyle(vtk.vtkInteractorStyle):
             self.DisplayLineProfile(interactor, event, True)
 
     def OnMouseWheelBackward(self, interactor, event):
+        if self.GetInputData() is None:
+            return
         minSlice = self.GetInputData().GetExtent()[self.GetSliceOrientation()*2]
         shift = interactor.GetShiftKey()
         advance = 1
@@ -423,6 +429,8 @@ class CILInteractorStyle(vtk.vtkInteractorStyle):
             self.DisplayLineProfile(interactor, event, True)
 
     def OnKeyPress(self, interactor, event):
+        if self.GetInputData() is None:
+            return
         if self.reslicing_enabled and interactor.GetKeyCode() == "x":
             # Change the camera view point
 
@@ -585,6 +593,8 @@ class CILInteractorStyle(vtk.vtkInteractorStyle):
         
     def OnLeftButtonPressEvent(self, interactor, event):
         # print ("INTERACTOR", interactor)
+        if self.GetInputData() is None:
+            return
         alt = interactor.GetAltKey()
         shift = interactor.GetShiftKey()
         ctrl = interactor.GetControlKey()
@@ -641,6 +651,8 @@ class CILInteractorStyle(vtk.vtkInteractorStyle):
         self.SetEventInactive("DELETE_ROI_EVENT")
 
     def OnRightButtonPressEvent(self, interactor, event):
+        if self.GetInputData() is None:
+            return
         alt = interactor.GetAltKey()
         shift = interactor.GetShiftKey()
         ctrl = interactor.GetControlKey()
@@ -1576,6 +1588,8 @@ class CILViewer2D():
             self.__vis_mode = value
 
     def setVisualisationPipelineMethodTo(self, method):
+        if self.img3D is None:
+            return
         # get the current visualisation mode
         if self.vis_mode != method:
             # remove current pipeline
@@ -1930,23 +1944,10 @@ class CILViewer2D():
     def saveRender(self, filename, renWin=None):
         '''Save the render window to PNG file'''
         # screenshot code:
-        w2if = vtk.vtkWindowToImageFilter()
+        
         if renWin == None:
             renWin = self.renWin
-        w2if.SetInput(renWin)
-        w2if.Update()
-
-        # Check if user has supplied an extension
-        extn = os.path.splitext(filename)[1]
-        if extn.lower() == '.png':
-                saveFilename = filename
-        else:
-            saveFilename = filename+'.png'
-
-        writer = vtk.vtkPNGWriter()
-        writer.SetFileName(saveFilename)
-        writer.SetInputConnection(w2if.GetOutputPort())
-        writer.Write()
+        SaveRenderToPNG(self.renWin, filename)
 
     def validateValue(self,value, axis):
         dims = self.img3D.GetDimensions()
