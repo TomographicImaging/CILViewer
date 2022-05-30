@@ -1,9 +1,8 @@
 from ccpi.viewer import viewer2D
-import vtk
+from ccpi.viewer.utils import data_example
 
 v = viewer2D()
-reader = vtk.vtkMetaImageReader()
-reader.SetFileName("head.mha")
-reader.Update()
-v.setInputData(reader.GetOutput())
+# Load head data
+data = data_example.HEAD.get()
+v.setInputData(data)
 v.startRenderLoop()
