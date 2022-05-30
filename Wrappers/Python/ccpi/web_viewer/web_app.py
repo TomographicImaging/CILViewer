@@ -86,9 +86,9 @@ def change_model(**kwargs):
     TRAME_VIEWER.load_file(kwargs['file_name'], windowing_method=kwargs['opacity'])
 
 
-@state.change("colour_map")
-def change_colour_map(**kwargs):
-    TRAME_VIEWER.change_colour_map(kwargs['colour_map'])
+@state.change("color_map")
+def change_color_map(**kwargs):
+    TRAME_VIEWER.change_color_map(kwargs['color_map'])
 
 
 @state.change("windowing")
@@ -96,9 +96,9 @@ def change_windowing(**kwargs):
     TRAME_VIEWER.change_windowing(kwargs["windowing"][0], kwargs["windowing"][1], windowing_method=kwargs['opacity'])
 
 
-@state.change("colouring")
-def change_colouring(**kwargs):
-    TRAME_VIEWER.change_colouring(kwargs["colouring"][0], kwargs["colouring"][1])
+@state.change("coloring")
+def change_coloring(**kwargs):
+    TRAME_VIEWER.change_coloring(kwargs["coloring"][0], kwargs["coloring"][1])
 
 
 @state.change("slice_window")
@@ -135,9 +135,9 @@ def change_volume_visibility(**kwargs):
     TRAME_VIEWER.change_volume_visibility(kwargs["volume_visibility"])
 
 
-@state.change("background_colour")
-def change_background_colour(**kwargs):
-    TRAME_VIEWER.change_background_colour(kwargs["background_colour"])
+@state.change("background_color")
+def change_background_color(**kwargs):
+    TRAME_VIEWER.change_background_color(kwargs["background_color"])
 
 
 @state.change("toggle_clipping")

@@ -62,7 +62,7 @@ class TrameViewer:
         self.volume_interaction_row = None
         self.volume_interaction_section = None
         self.windowing_slider_is_percentage = False  # Defaults to not percentage with the head.mha file
-        self.colour_slider_is_percentage = False  # Defaults to not percentage with the head.mha file
+        self.color_slider_is_percentage = False  # Defaults to not percentage with the head.mha file
         self.slice_level_slider_is_percentage = False  # Defaults to not percentage with the head.mha file
         self.slice_window_slider_is_percentage = False  # Defaults to not percentage with the head.mha file
         self.slice_window_sliders_are_detailed = False  # Defaults to none-detailed sliders
@@ -81,9 +81,9 @@ class TrameViewer:
         self.slice_level_slider = None
         self.toggle_volume_visibility = None
         self.opacity_radio_buttons = None
-        self.colour_choice = None
+        self.color_choice = None
         self.clipping_switch = None
-        self.colour_slider = None
+        self.color_slider = None
         self.windowing_range_slider = None
         self.reset_cam_button = None
         self.reset_defaults_button = None
@@ -153,8 +153,8 @@ class TrameViewer:
         self.volume_interaction_col = vuetify.VCol([
             self.toggle_volume_visibility,
             self.opacity_radio_buttons,
-            self.colour_choice,
-            self.colour_slider,
+            self.color_choice,
+            self.color_slider,
             self.clipping_switch,
             self.clipping_removal_button,
             self.windowing_range_slider
@@ -166,7 +166,7 @@ class TrameViewer:
             "Choose model to load",
             self.model_choice,
             vuetify.VDivider(),
-            "Choose background colour",
+            "Choose background color",
             self.background_choice,
             vuetify.VDivider(),
             self.slice_interaction_section,
@@ -193,11 +193,11 @@ class TrameViewer:
         self.slice_level_slider = self.construct_slice_level_slider()
         self.toggle_volume_visibility = self.create_toggle_volume_visibility()
         self.opacity_radio_buttons = self.create_opacity_radio_buttons()
-        self.colour_choice = self.create_colour_choice_selector()
+        self.color_choice = self.create_color_choice_selector()
         self.clipping_switch = self.create_clipping_toggle()
         self.clipping_removal_button = self.create_clipping_removal_button()
         self.update_windowing_defaults()
-        self.colour_slider = self.construct_colour_slider()
+        self.color_slider = self.construct_color_slider()
         self.windowing_range_slider = self.construct_windowing_slider()
         self.reset_cam_button = self.create_reset_camera_button()
         self.reset_defaults_button = self.create_reset_defaults_button()
@@ -240,10 +240,10 @@ class TrameViewer:
             click=self.remove_clipping_plane
         )
 
-    def create_colour_choice_selector(self):
+    def create_color_choice_selector(self):
         return vuetify.VSelect(
-            v_model=("colour_map", "viridis"),
-            items=("colour_map_options", plt.colormaps()),
+            v_model=("color_map", "viridis"),
+            items=("color_map_options", plt.colormaps()),
             hide_details=True,
             solo=True,
             disabled=self.disable_3d,
@@ -355,8 +355,8 @@ class TrameViewer:
                 }
             )
         return vuetify.VSelect(
-            v_model=("background_colour", "cil_viewer_blue"),
-            items=("background_colour_options", color_list),
+            v_model=("background_color", "cil_viewer_blue"),
+            items=("background_color_options", color_list),
             hide_details=True,
             solo=True
         )
@@ -457,25 +457,25 @@ class TrameViewer:
             style=style,
         )
 
-    def construct_colour_slider(self):
+    def construct_color_slider(self):
         if self.cmax > 100:
             # Use actual values
             min_value = self.cmin
             max_value = self.cmax
             step = 1
-            self.colour_slider_is_percentage = False
+            self.color_slider_is_percentage = False
         else:
             # Use percentages
             min_value = 0
             max_value = 100
             step = 0.5
-            self.colour_slider_is_percentage = True
+            self.color_slider_is_percentage = True
         
         return vuetify.VRangeSlider(
-            label="Colour range",
+            label="Color range",
             hide_details=True,
             solo=True,
-            v_model=("colouring", self.windowing_defaults),
+            v_model=("coloring", self.windowing_defaults),
             min=min_value,
             max=max_value,
             step=step,
@@ -515,12 +515,12 @@ class TrameViewer:
         self.cmin, self.cmax = self.cil_viewer.getVolumeMapWindow((0., 100.), method)
         self.windowing_defaults = self.cil_viewer.getVolumeMapWindow((80., 99.), method)
         self.slice_window_range_defaults = self.cil_viewer.getVolumeMapWindow((5., 95.), "scalar")
-        self.slice_level_default = self.cil_viewer.getSliceColourLevel()
-        self.slice_window_default = self.cil_viewer.getSliceColourWindow()
+        self.slice_level_default = self.cil_viewer.getSliceColorLevel()
+        self.slice_window_default = self.cil_viewer.getSliceColorWindow()
         if hasattr(self, "windowing_range_slider") and self.windowing_range_slider is not None \
-                and hasattr(self, "colour_slider") and self.colour_slider is not None:
+                and hasattr(self, "color_slider") and self.color_slider is not None:
             self.windowing_range_slider = self.construct_windowing_slider()
-            self.colour_slider = self.construct_colour_slider()
+            self.color_slider = self.construct_color_slider()
             self.slice_window_range_slider = self.construct_slice_window_range_slider()
             self.slice_level_slider = self.construct_slice_level_slider()
             self.slice_window_slider = self.construct_slice_window_slider()
@@ -528,7 +528,7 @@ class TrameViewer:
             update_layout(self.layout)
         app = vuetify.get_app_instance()
         app.set(key="windowing", value=self.windowing_defaults)
-        app.set(key="colouring", value=self.windowing_defaults)
+        app.set(key="coloring", value=self.windowing_defaults)
 
     def update_slice_data(self):
         self.max_slice = self.cil_viewer.img3D.GetExtent()[self.cil_viewer.sliceOrientation * 2 + 1]
@@ -600,7 +600,7 @@ class TrameViewer:
         self.cil_viewer.updatePipeline()
         self.html_view.update()
 
-    def change_colour_map(self, cmap):
+    def change_color_map(self, cmap):
         self.cil_viewer.setVolumeColorMapName(cmap)
         self.cil_viewer.updatePipeline()
         self.html_view.update()
@@ -641,16 +641,16 @@ class TrameViewer:
         app.set(key="slice", value=self.default_slice)
         app.set(key="orientation", value=f"{SLICE_ORIENTATION_XY}")
         app.set(key="opacity", value="scalar")
-        app.set(key="colour_map", value="viridis")
+        app.set(key="color_map", value="viridis")
         app.set(key="windowing", value=self.windowing_defaults)
-        app.set(key="colouring", value=self.windowing_defaults)
+        app.set(key="coloring", value=self.windowing_defaults)
         app.set(key="slice_visibility", value=True)
         app.set(key="volume_visibility", value=True)
         app.set(key="slice_detailed_sliders", value=False)
         app.set(key="slice_window_range", value=self.cil_viewer.getVolumeMapWindow((5., 95.), "scalar"))
-        app.set(key="slice_window", value=self.cil_viewer.getSliceColourWindow())
-        app.set(key="slice_level", value=self.cil_viewer.getSliceColourLevel())
-        app.set(key="background_colour", value="cil_viewer_blue")
+        app.set(key="slice_window", value=self.cil_viewer.getSliceColorWindow())
+        app.set(key="slice_level", value=self.cil_viewer.getSliceColorLevel())
+        app.set(key="background_color", value="cil_viewer_blue")
         app.set(key="toggle_clipping", value=False)
         # Ensure 2D is on
         if not self.cil_viewer.imageSlice.GetVisibility():
@@ -666,8 +666,8 @@ class TrameViewer:
             self.remove_clipping_plane()
 
 
-    def change_colouring(self, min_value, max_value):
-        if self.colour_slider_is_percentage:
+    def change_coloring(self, min_value, max_value):
+        if self.color_slider_is_percentage:
             self.cil_viewer.setVolumeColorPercentiles(min_value, max_value)
         else:
             self.cil_viewer.setVolumeColorWindow(min_value, max_value)
@@ -675,20 +675,20 @@ class TrameViewer:
             self.html_view.update()
             
     def change_slice_window_range(self, window, level):
-        self.cil_viewer.setSliceColourWindowLevel(window, level)
+        self.cil_viewer.setSliceColorWindowLevel(window, level)
 
     def change_slice_window(self, new_window):
-        self.cil_viewer.setSliceColourWindow(window=new_window)
+        self.cil_viewer.setSliceColorWindow(window=new_window)
 
     def change_slice_level(self, new_level):
-        self.cil_viewer.setSliceColourLevel(level=new_level)
+        self.cil_viewer.setSliceColorLevel(level=new_level)
 
     def change_window_level_detail_sliders(self, show_detailed):
         if show_detailed == self.slice_window_sliders_are_detailed:
             return
-        # Translate current colour level and colour window to range_min and range_max
-        current_level = self.cil_viewer.getSliceColourLevel()
-        current_window = self.cil_viewer.getSliceColourWindow()
+        # Translate current color level and color window to range_min and range_max
+        current_level = self.cil_viewer.getSliceColorLevel()
+        current_window = self.cil_viewer.getSliceColorWindow()
         range_min = (current_window - 2 * current_level) / -2  # The reverse of the window calculation in web_app.change_slice_window_level
         range_max = current_window + range_min
 
@@ -733,11 +733,11 @@ class TrameViewer:
         update_layout(self.layout)
         self.cil_viewer.updatePipeline()
 
-    def change_background_colour(self, colour):
-        if colour == "cil_viewer_blue":
+    def change_background_color(self, color):
+        if color == "cil_viewer_blue":
             color_data = (.1, .2, .4)
         else:
-            color_data = getattr(colors, colour.lower())
+            color_data = getattr(colors, color.lower())
         self.cil_viewer.ren.SetBackground(color_data)
         self.cil_viewer.updatePipeline()
 
