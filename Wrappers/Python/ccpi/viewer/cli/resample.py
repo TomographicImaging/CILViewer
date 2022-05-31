@@ -22,7 +22,8 @@ hdf5, nxs, mha
 '''
 EXAMPLE INPUT YAML FILE:
 
-array:
+input:
+  file_name: '24737_fd_normalised.nxs'
   shape: (1024,1024,1024)
   is_fortran: False
   is_big_endian: True
@@ -69,12 +70,12 @@ Entry 2 contains the resampled dataset and attributes
 
 # This validates the input yaml file:
 schema = Schema(
-        {
-            Optional('array'): {Optional('shape'): tuple, # only for raw
-                                Optional('is_fortran'): bool, # only for raw
-                                Optional('is_big_endian'): bool, # only for raw
-                                Optional('typecode'): str, # only for raw
-                                Optional('dataset_name'): str}, # only for hdf5 # need to set default
+        {   'input': {'file_name': str,
+                        Optional('shape'): tuple, # only for raw
+                        Optional('is_fortran'): bool, # only for raw
+                        Optional('is_big_endian'): bool, # only for raw
+                        Optional('typecode'): str, # only for raw
+                        Optional('dataset_name'): str}, # only for hdf5 # need to set default
             'resample': {'target_size': int, 
                          'resample_z' : bool},
             'output': {'file_name': str,
@@ -86,7 +87,6 @@ schema = Schema(
 
 def main():
     parser = ArgumentParser(description='Dataset to Resample')
-    parser.add_argument('input_dataset', help='Input dataset')
     parser.add_argument('yaml_file', help='Input yaml file')
 
     args = parser.parse_args()
@@ -109,16 +109,18 @@ def main():
 
     raw_attrs = None
     dataset_name = None
-    if 'array' in params.keys():
+    if 'input' in params.keys():
         raw_attrs = {}
-        for key, value in params['array'].items():
+        for key, value in params['input'].items():
             if key == 'dataset_name':
                 dataset_name = value
+            elif key == 'file_name':
+                pass
             else:
                 raw_attrs[key] = value
         
 
-    reader = ImageReader(file_name=args.input_dataset, resample=True, target_size=params['resample']['target_size'],
+    reader = ImageReader(file_name=params['input']['file_name'], resample=True, target_size=params['resample']['target_size'],
              resample_z=params['resample']['resample_z'], raw_image_attrs=raw_attrs, hdf5_dataset_name=dataset_name)
     downsampled_image = reader.Read()
     original_image_attrs = reader.GetOriginalImageAttrs()
