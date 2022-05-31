@@ -65,7 +65,7 @@ class TestHDF5IO(unittest.TestCase):
         np.testing.assert_array_equal(
             self.input_4D_array[channel_index], read_array)
 
-    def test_read_cropped_hdf5(self):
+    def test_hdf5_subset_reader(self):
         # With the subset reader: -----------------------------
         # Test cropping the extent of a dataset
         cropped_array = self.input_3D_array[1:3, 3:6, 0:3]
@@ -81,7 +81,10 @@ class TestHDF5IO(unittest.TestCase):
         array_image_data = cropped_reader.GetOutputDataObject(0)
         read_cropped_array = Converter.vtk2numpy(array_image_data)
         np.testing.assert_array_equal(cropped_array, read_cropped_array)
-        # With the Cropped reader: -----------------------------
+
+    def test_read_cropped_hdf5_reader(self):
+        # # With the Cropped reader: -----------------------------
+        cropped_array = self.input_3D_array[1:3, 3:6, 0:3]
         reader = cilHDF5CroppedReader()
         reader.SetFileName(self.hdf5_filename_3D)
         reader.SetDatasetName("ImageData")
@@ -154,7 +157,7 @@ class TestHDF5IO(unittest.TestCase):
         resulting_shape = (extent[1]+1, (extent[3]+1), (extent[5]+1))
         og_shape = np.shape(self.input_3D_array)
         og_shape = (og_shape[2], og_shape[1], og_shape[0])
-        og_size = og_shape[0]*og_shape[1]*og_shape[2]
+        og_size = og_shape[0]*og_shape[1]*og_shape[2]*readerhdf5.GetBytesPerElement()
         expected_shape = calculate_target_downsample_shape(
             target_size, og_size, og_shape)
         self.assertEqual(resulting_shape, expected_shape)

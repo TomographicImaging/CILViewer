@@ -17,7 +17,6 @@ def write_image_data_to_hdf5(filename, data, dataset_name, attributes={}):
         data: vtkImageData - image data to write.
         DatasetName: string - DatasetName for HDF5 dataset.
         attributes: dict - attributes to assign to HDF5 dataset.
-        array_name: string - name of array to read points from the vtkImageData
     '''
 
     with h5py.File(filename, "a") as f:
@@ -58,7 +57,7 @@ class HDF5Reader(VTKPythonAlgorithmBase):
                                         nOutputPorts=1,
                                         outputType='vtkImageData')
 
-        self._FileName = ""
+        self._FileName = None
         self._DatasetName = None
         self._4DSliceIndex = 0
         self._4DIndex = 0
@@ -70,6 +69,8 @@ class HDF5Reader(VTKPythonAlgorithmBase):
     def _update_output_data(self, outInfo):
         if self._DatasetName is None:
             raise Exception("DataSetName must be set.")
+        if self._FileName is None:
+            raise Exception("FileName must be set.")
         with h5py.File(self._FileName, 'r') as f:
             info = outInfo.GetInformationObject(0)
             shape = np.shape(f[self._DatasetName])
@@ -139,6 +140,8 @@ class HDF5Reader(VTKPythonAlgorithmBase):
             self._4DSliceIndex = index
 
     def GetDimensions(self):
+        if self._FileName is None:
+            raise Exception("FileName must be set.")
         with h5py.File(self._FileName, 'r') as f:
             # Note that we flip the shape because VTK is Fortran order
             # whereas h5py reads in C order. When writing we pretend that the
@@ -148,6 +151,8 @@ class HDF5Reader(VTKPythonAlgorithmBase):
             return f[self._DatasetName].shape[::-1]
 
     def GetDataSetAttributes(self):
+        if self._FileName is None:
+            raise Exception("FileName must be set.")
         with h5py.File(self._FileName, 'r') as f:
             if self._DatasetName is None:
                 raise Exception("DataSetName must be set.")
@@ -160,6 +165,8 @@ class HDF5Reader(VTKPythonAlgorithmBase):
         return (0, 0, 0)
 
     def GetDataType(self):
+        if self._FileName is None:
+            raise Exception("FileName must be set.")
         with h5py.File(self._FileName, 'r') as f:
             data_type = type(f[self._DatasetName][0][0][0])
             if isinstance(data_type, np.ndarray):
@@ -175,6 +182,21 @@ class HDF5Reader(VTKPythonAlgorithmBase):
 
 
 class HDF5SubsetReader(VTKPythonAlgorithmBase):
+    '''Modifies a HDF5Reader to return a different extent from an HDF5 file
+    
+    
+    Examples:
+    ---------
+    
+    reader = HDF5Reader() 
+    reader.SetFileName('file.h5') 
+    reader.SetDatasetName("ImageData") 
+    
+    cropped_reader = HDF5SubsetReader() 
+    cropped_reader.SetInputConnection(reader.GetOutputPort()) 
+    cropped_reader.SetUpdateExtent((0, 2, 3, 5, 1, 2)) 
+    cropped_reader.Update() 
+    '''
     def __init__(self):
         VTKPythonAlgorithmBase.__init__(self,
                                         nInputPorts=1,
@@ -197,6 +219,7 @@ class HDF5SubsetReader(VTKPythonAlgorithmBase):
                 vtk.vtkStreamingDemandDrivenPipeline.WHOLE_EXTENT())
             set_extent = list(info.Get(
                 vtk.vtkStreamingDemandDrivenPipeline.UPDATE_EXTENT()))
+            
             for i, value in enumerate(set_extent):
                 if value == -1:
                     set_extent[i] = whole_extent[i]
@@ -204,13 +227,13 @@ class HDF5SubsetReader(VTKPythonAlgorithmBase):
                     if i % 2 == 0:
                         if value < whole_extent[i]:
                             raise ValueError("Requested extent {}\
-                                is outside of original image extent {}".format(
-                                set_extent, whole_extent))
+                                is outside of original image extent {} as {}<{}".format(
+                                set_extent, whole_extent, value, whole_extent[i]))
                     else:
                         if value > whole_extent[i]:
                             raise ValueError("Requested extent {}\
-                                is outside of original image extent {}".format(
-                                set_extent, whole_extent))
+                                is outside of original image extent {} as {}>{}".format(
+                                set_extent, whole_extent, value, whole_extent[i]))
             
             self.SetUpdateExtent(set_extent)
 

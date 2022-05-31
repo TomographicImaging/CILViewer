@@ -1108,7 +1108,7 @@ def relu(x, xmin, xmax, scaling=1):
         if val < xmin or val > xmax:
             out.append(0)
         else:
-            out.append((val - xmin) / dx)
+            out.append(scaling * ((val - xmin) / dx))
     return numpy.asarray(out)
 
 
