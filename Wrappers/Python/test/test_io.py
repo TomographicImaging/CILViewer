@@ -33,7 +33,9 @@ class TestImageReaderAndWriter(unittest.TestCase):
 
     def setUp(self):
         # Generate random 3D array:
-        self.input_3D_array = np.random.random(size=(5, 10, 6))
+        bits = 16
+        self.bytes_per_element = int(bits/8)
+        self.input_3D_array = np.random.randint(10, size=(5, 10, 6), dtype=eval(f"np.uint{bits}"))
         # write to HDF5: -----------
         self.hdf5_filename_3D = 'test_3D_data.h5'
         with h5py.File(self.hdf5_filename_3D, 'w') as f:
@@ -70,7 +72,7 @@ class TestImageReaderAndWriter(unittest.TestCase):
         resulting_shape = (extent[1]+1, (extent[3]+1), (extent[5]+1))
         og_shape = np.shape(self.input_3D_array)
         og_shape = (og_shape[2], og_shape[1], og_shape[0])
-        og_size = og_shape[0]*og_shape[1]*og_shape[2]
+        og_size = og_shape[0]*og_shape[1]*og_shape[2]*self.bytes_per_element
         expected_shape = calculate_target_downsample_shape(
             target_size, og_size, og_shape)
         self.assertEqual(resulting_shape, expected_shape)
@@ -90,7 +92,7 @@ class TestImageReaderAndWriter(unittest.TestCase):
     def _test_resampling_acq_data(self, reader, target_size):
         og_shape = np.shape(self.input_3D_array)
         og_shape = (og_shape[2], og_shape[1], og_shape[0])
-        og_size = og_shape[0]*og_shape[1]*og_shape[2]
+        og_size = og_shape[0]*og_shape[1]*og_shape[2]*self.bytes_per_element
         image = reader.Read()
         extent = image.GetExtent()
         shape_not_acquisition = calculate_target_downsample_shape(
