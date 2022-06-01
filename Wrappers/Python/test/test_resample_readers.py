@@ -28,7 +28,9 @@ class TestResampleReaders(unittest.TestCase):
     def setUp(self):
         # Generate random 3D array and write to HDF5:
         np.random.seed(1)
-        self.input_3D_array = np.random.randint(10, size=(5, 10, 6), dtype=np.uint8)
+        bits = 16
+        self.bytes_per_element = int(bits/8)
+        self.input_3D_array = np.random.randint(10, size=(5, 10, 6), dtype=eval(f"np.uint{bits}"))
         bytes_3D_array = bytes(self.input_3D_array)
         self.raw_filename_3D = 'test_3D_data.raw'
         with open(self.raw_filename_3D, 'wb') as f:
@@ -36,7 +38,7 @@ class TestResampleReaders(unittest.TestCase):
 
         # write header to go with raw file
         self.mhd_filename_3D = 'raw_header.mhd'
-        typecode = 'uint8'
+        typecode = f'uint{bits}'
         big_endian = False
         header_length = 0
         shape = np.shape(self.input_3D_array)
@@ -77,7 +79,7 @@ class TestResampleReaders(unittest.TestCase):
         extent = image.GetExtent()
         resulting_shape = (extent[1]+1, (extent[3]+1), (extent[5]+1))
         og_shape = (og_shape[2], og_shape[1], og_shape[0])
-        og_size = og_shape[0]*og_shape[1]*og_shape[2]
+        og_size = og_shape[0]*og_shape[1]*og_shape[2]*self.bytes_per_element
         expected_shape = calculate_target_downsample_shape(
             target_size, og_size, og_shape)
         self.assertEqual(resulting_shape, expected_shape)
@@ -105,10 +107,10 @@ class TestResampleReaders(unittest.TestCase):
         reader.Update()
         image = reader.GetOutput()
         extent = image.GetExtent()
-        shape_not_acquisition = calculate_target_downsample_shape(
+        shape_acquisition = calculate_target_downsample_shape(
             target_size, og_size, og_shape, acq=True)
-        expected_size = shape_not_acquisition[0] * \
-            shape_not_acquisition[1]*shape_not_acquisition[2]
+        expected_size = shape_acquisition[0] * \
+            shape_acquisition[1]*shape_acquisition[2]
         resulting_shape = (extent[1]+1, (extent[3]+1), (extent[5]+1))
         resulting_size = resulting_shape[0] * \
             resulting_shape[1]*resulting_shape[2]
@@ -140,7 +142,7 @@ class TestResampleReaders(unittest.TestCase):
                 extent = image.GetExtent()
                 resulting_shape = (extent[1]+1, (extent[3]+1), (extent[5]+1))
                 og_shape = (og_shape[2], og_shape[1], og_shape[0])
-                og_size = og_shape[0]*og_shape[1]*og_shape[2]
+                og_size = og_shape[0]*og_shape[1]*og_shape[2]*self.bytes_per_element
                 expected_shape = calculate_target_downsample_shape(
                     target_size, og_size, og_shape)
                 self.assertEqual(resulting_shape, expected_shape)

@@ -1131,7 +1131,7 @@ class cilBaseResampleReader(cilBaseReader):
             else:
                 shape = list(readshape)[::-1]
 
-            total_size = shape[0] * shape[1] * shape[2]
+            total_size = shape[0] * shape[1] * shape[2] * self.GetBytesPerElement()
 
             max_size = self.GetTargetSize()
 
@@ -1334,10 +1334,8 @@ class cilHDF5ResampleReader(cilBaseResampleReader, cilBaseHDF5Reader):
         # Here we read just the chunk from the hdf5 file:
         cropped_reader = HDF5SubsetReader()
         cropped_reader.SetInputConnection(reader.GetOutputPort())
-        dims = self.GetStoredArrayShape()
         # Set default extent to full extent:
-        cropped_reader.SetUpdateExtent(
-            (0, dims[0]-1, 0, dims[1]-1, 0, dims[2]-1))
+        cropped_reader.SetUpdateExtent((0, -1, 0, -1, 0, -1))
         self._ChunkReader = cropped_reader
         return cropped_reader
 
@@ -1346,6 +1344,9 @@ class cilHDF5ResampleReader(cilBaseResampleReader, cilBaseHDF5Reader):
         start_slice in the z direction'''
         num_slices_per_chunk = self._GetNumSlicesPerChunk()
         end_slice = start_slice + num_slices_per_chunk - 1
+        end_z_value = self.GetStoredArrayShape()[2]-1
+        if end_slice > end_z_value:
+            end_slice = end_z_value
         if start_slice < 0:
             raise ValueError('{} ERROR: Start slice cannot be negative.'
                              .format(self.__class__.__name__))
@@ -1653,6 +1654,185 @@ class cilHDF5CroppedReader(cilBaseCroppedReader, cilBaseHDF5Reader):
         reader.Update()
         read_data = reader.GetOutput()
         outData.ShallowCopy(read_data)
+
+        return 1
+
+
+# ------------ RESAMPLE FROM MEMORY: ------------------------------------------------------------------------------
+
+
+class vtkImageResampler(VTKPythonAlgorithmBase):
+    '''vtkAlgorithm resample vtkImageData to an approximate memory footprint.
+    '''
+    def __init__(self):
+        VTKPythonAlgorithmBase.__init__(self, nInputPorts=1, inputType="vtkImageData", nOutputPorts=1, outputType="vtkImageData")
+
+        self._TargetSize = 256**3
+        self._IsAcquisitionData = False
+
+
+    def SetIsAcquisitionData(self, value):
+        '''
+        Parameters
+        -----------
+        value: bool, default=False
+            whether the dataset is acquisition data.
+        '''
+        self._IsAcquisitionData = value
+
+    def GetIsAcquisitionData(self):
+        '''
+        returns whether the dataset is acquisition data.
+        '''
+        return self._IsAcquisitionData
+        
+
+    def SetTargetSize(self, value):
+        ''''
+        Parameters
+        -----------
+        value (int), default=256*256*256:
+            Total target size to downsample image to, in bytes.
+            The resampler will aim for this approximate memory footprint.'''
+        if not isinstance(value, int):
+            raise ValueError('Expected an integer. Got {}', type(value))
+        if not value == self.GetTargetSize():
+            self._TargetSize = value
+            self.Modified()
+
+    def GetTargetSize(self):
+        ''' Get the total target size to downsample image to, in bytes.'''
+        return self._TargetSize
+
+    def GetBytesPerElement(self):
+        ''' Get number of bytes per element'''
+        if hasattr(self, '_BytesPerElement'):
+            return self._BytesPerElement
+
+    def GetOutput(self):
+        return self.GetOutputDataObject(0)
+
+    def ReadDataSetInfo(self, inData):
+        self._ElementSpacing = inData.GetSpacing()
+        self._Origin = inData.GetOrigin()
+        self._Extent = inData.GetExtent()
+        self._StoredArrayShape = (self._Extent[1]+1, (self._Extent[3]+1), (self._Extent[5]+1))
+        self._BytesPerElement = Converter.vtkType_to_bytes[inData.GetScalarType()]
+
+    def GetElementSpacing(self):
+        ''' Returns the spacing of the input dataset as a tuple'''
+        return self._ElementSpacing
+
+    def GetOrigin(self):
+        ''' Returns the origin of the input dataset as a tuple'''
+        return self._Origin
+
+    def GetExtent(self):
+        ''' Returns the extent of the input dataset as a tuple'''
+        return self._Extent
+
+    def GetStoredArrayShape(self):
+        ''' Returns the shape of the input dataset as a tuple'''
+        return self._StoredArrayShape
+
+
+    def RequestData(self, request, inInfo, outInfo):
+        inData = vtk.vtkImageData.GetData(inInfo[0])
+        outData = vtk.vtkImageData.GetData(outInfo)
+
+        self.ReadDataSetInfo(inData)
+
+        extent = self.GetExtent()
+        shape = self.GetStoredArrayShape()
+
+        total_size = shape[0] * shape[1] * shape[2] * self.GetBytesPerElement()
+
+        max_size = self.GetTargetSize()
+
+        if total_size < max_size:  
+            # in this case we don't need to resample
+            outData.ShallowCopy(inData)
+
+        else:
+
+            # scaling is going to be similar in every axis
+            # (xy the same, z possibly different)
+            if not self.GetIsAcquisitionData():
+                xy_axes_magnification = np.power(max_size/total_size, 1/3)
+                num_slices_per_chunk = int(1/xy_axes_magnification) # number of slices in the z direction we are resampling together.
+            else:
+                # If we have acquisition data we don't want to resample in the z
+                # direction because then we would be averaging projections together,
+                # so we have one slice per chunk
+                num_slices_per_chunk = 1 # number of slices in the z direction we are resampling together.
+                xy_axes_magnification = np.power(max_size/total_size, 1/2)
+
+            # Each chunk will be the z slices that we will resample together to form one new slice.
+            # Each chunk will contain num_slices_per_chunk number of slices.
+
+            # indices of the first slice per chunk
+            start_sliceno_in_chunks = [i for i in range(
+                0, shape[2], num_slices_per_chunk)]
+
+            num_chunks = len(start_sliceno_in_chunks) # the number of chunks we will read in total
+
+            # in the case of acquisition data this will be 1 as num_chunks=shape[2]:
+            z_axis_magnification = num_chunks / (shape[2])
+
+            target_image_shape = (int(xy_axes_magnification * shape[0]),
+                                    int(xy_axes_magnification * shape[1]),
+                                    num_chunks)
+
+            resampler = vtk.vtkImageReslice()
+
+            element_spacing = self.GetElementSpacing()
+
+            resampler.SetOutputSpacing(
+                element_spacing[0]/xy_axes_magnification,
+                element_spacing[1]/xy_axes_magnification,
+                element_spacing[2]/z_axis_magnification)
+
+            resampler.SetInputData(inData)
+
+            # change the extent of the resampled image
+            extent = (0, target_image_shape[0]-1,
+                        0, target_image_shape[1]-1,
+                        0, target_image_shape[2]-1)
+
+            resampler.SetOutputExtent(extent)
+            resampler.Update()
+
+
+            # resampled data:
+            resampled_image = resampler.GetOutput()
+            new_spacing = [element_spacing[0]/xy_axes_magnification,
+                            element_spacing[1]/xy_axes_magnification,
+                            element_spacing[2]/z_axis_magnification]
+
+            original_origin = self.GetOrigin()
+
+            '''The new origin is based on where we need to position each slice in the world
+            If we have an image which is downsampled by 5 times, 
+            slices 0-4 are downsampled to a single slice and the image spacing is 5.
+            Slice 0 in image coordinates corresponds to slices 0-4 in the actual image.
+            The clipping planes will need to include points ranging from -0.5 to 4.49.
+            Therefore the slice needs to be centred half way through this range: at 2.
+            Because world coordinates = image coords * spacing + origin,
+            we need the origin to be 2 for this image.
+
+            In general, the origin must be at (image_spacing-1)/2 plus the original
+            position of the image's origin:'''
+            new_origin = tuple([(s-1)/2 + original_origin[i]
+                                for i, s in enumerate(new_spacing)])
+            resampled_image.SetOrigin(new_origin)
+            resampled_image.SetSpacing(
+                element_spacing[0]/xy_axes_magnification,
+                element_spacing[1]/xy_axes_magnification,
+                element_spacing[2]/z_axis_magnification)
+            
+            outData.ShallowCopy(resampled_image)              
+
+        return 1
 
 if __name__ == '__main__':
     '''this represent a good base to perform a test for the numpy-metaimage writer'''

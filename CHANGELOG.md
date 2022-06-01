@@ -1,13 +1,29 @@
 # Changelog
 
 
-## v22.x.x
+## v22.1.2
+* Changes released in 22.0.2, but also requires vtk version >= 9.0.3
+
+## v22.0.2
+* requires vtk 8.1.2
+* When a new image is loaded on the 3D viewer, reset camera position, slice and volume orientation and visibility, and clipping planes.
+* Fix downsampling of resample readers when working with datatypes other than uint8. Previously resulting size of image was multiple times greater than requested target size as uint8 type was always assumed.
+
+## v22.1.1
+* Changes released in 22.0.1, but also requires vtk version >= 9.0.3
+
+## v22.0.1
+* requires vtk 8.1.2
 * Fixes enabling and disabling slice with 's' key in 3D viewer
 * Adds widget for slicing a volume with the 'c' key in the 3D viewer
 * Add light to 3D viewer
 * Add a few utility methods for volume rendering in 3D viewer
 * Create utils/io.py with code to save current render as PNG
 * Increments number in name of file when saving render to PNG, so multiple captures can be made without them overwriting each other.
+* Add vtkImageResampler, which downsamples from memory
+* When a new 3D image is input, volume render is updated and clipping planes are cleared
+* No need to specify VTK array name when writing to HDF5
+* Allow setting both 4D index and 4D slice index when reading 4D HDF5 dataset
 
 ## v22.1.0
 * requires vtk version >= 9.0.3
