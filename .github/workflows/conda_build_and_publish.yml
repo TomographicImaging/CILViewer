@@ -19,7 +19,7 @@ jobs:
       uses: paskino/conda-package-publish-action@v1.4.3
       with:
         subDir: 'Wrappers/Python/conda-recipe'
-        channels: 'conda-forge -c paskino'
+        channels: 'conda-forge -c paskino -c ccpi'
         AnacondaToken: ${{ secrets.ANACONDA_TOKEN }}
         publish: ${{ github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags') }}
         test_all: ${{(github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')) || (github.ref == 'refs/heads/master')}}

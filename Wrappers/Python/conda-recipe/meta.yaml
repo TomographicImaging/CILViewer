@@ -32,6 +32,7 @@ requirements:
     - eqt
     - importlib_metadata    # [py<38]
     - h5py
+    - cil-data
 
 about:
   home: http://www.ccpi.ac.uk
