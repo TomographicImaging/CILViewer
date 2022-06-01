@@ -1,5 +1,6 @@
 ccpi_viewer.egg-info
 *.pyc
 __pycache__
+*.log
 
 Wrappers/Python/ccpi/viewer/version.py

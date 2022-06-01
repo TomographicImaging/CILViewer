@@ -28,9 +28,9 @@ class TestData(object):
     '''Class to return test data
     
     provides 1 dataset:
-    HEAD = 'headsq/quarter.nhdr'
+    HEAD = 'headsq.mha'
     '''
-    HEAD = 'headsq/quarter'
+    HEAD = 'headsq.mha'
     
     def __init__(self, **kwargs):
         self.data_dir = kwargs.get('data_dir', data_dir)
@@ -54,12 +54,7 @@ class TestData(object):
 
         data_file = os.path.join(self.data_dir, which)
 
-        reader = vtk.vtkImageReader2()
-        reader.SetFilePrefix(data_file)
-        reader.SetDataExtent(0, 63, 0, 63, 1, 93)
-        reader.SetDataSpacing(3.2, 3.2, 1.5)
-        reader.SetDataOrigin(0.0, 0.0, 0.0)
-        reader.SetDataScalarTypeToUnsignedShort()
-        reader.UpdateWholeExtent()
+        reader = vtk.vtkMetaImageReader()
+        reader.SetFileName(data_file)
         reader.Update()
         return reader.GetOutput()
