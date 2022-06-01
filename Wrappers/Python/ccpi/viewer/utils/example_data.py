@@ -1,11 +1,12 @@
 import os
 import os.path 
 import vtk
+import sys
 
 
-data_dir = os.path.abspath(os.path.join(
-        os.path.dirname(__file__),
-        '../data/')
+# this is the default location after pip install
+data_dir = os.path.abspath(
+    os.path.join(sys.prefix, 'share','cil')
 )
 
 class DATA(object):
