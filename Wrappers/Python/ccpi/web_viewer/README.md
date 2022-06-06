@@ -6,3 +6,5 @@ Follow these steps:
     - `mamba env create -f dev-environment.yml`
 - With the activated conda environment you can now start the web application:
     - `python web_app.py path/to/folder/of/data/to/use`
+- If you want to use the 2D viewer pass the 2D arg to the script i.e. --2D or -d:
+    - `python web_app.py --2D path/to/folder/of/data/to/use`
