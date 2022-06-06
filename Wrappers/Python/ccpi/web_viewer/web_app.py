@@ -15,9 +15,7 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-import faulthandler
-
-faulthandler.enable()
+import getopt
 import os
 import sys
 
@@ -27,7 +25,30 @@ from ccpi.web_viewer.trame_viewer2D import TrameViewer2D
 from ccpi.web_viewer.trame_viewer3D import TrameViewer3D
 
 TRAME_VIEWER = None
+VIEWER_2D = False
 
+
+def arg_parser():
+    """
+    Parse the passed arguments to the current
+    :return:
+    """
+    help_string = "web_app.py [optional args: -h, -d] <data_files>\n" \
+                  "Args:\n" \
+                  "-h: Show this help and exit the program\n" \
+                  "-d, --2D: Use the 2D viewer instead of the 3D viewer, the default is to just use the 3D viewer."
+    try:
+        opts, args = getopt.getopt(sys.argv[1:], "hd", ["2D"])
+    except getopt.GetoptError:
+        print(help_string)
+        sys.exit(2)
+    for opt, arg in opts:
+        if opt == '-h':
+            print(help_string)
+        elif opt in ("-d", "--2D"):
+            global VIEWER_2D
+            VIEWER_2D = True
+    return data_finder()
 
 def data_finder():
     """
@@ -36,8 +57,8 @@ def data_finder():
     """
     data_files = []
     for index, arg in enumerate(sys.argv):
-        if index == 0 or index == 1:
-            # this is the python script in index 0, and the if use 3d at index 1 so we want to skip
+        if index == 0 or arg[0] == '-':
+            # this is the python script in index 0 and not a passed arg
             continue
         if os.path.isfile(arg):
             data_files.append(arg)
@@ -55,15 +76,9 @@ def main() -> int:
     Create the main class and run the TrameViewer
     :return: int, exit code for the program
     """
-    data_files = data_finder()
+    data_files = arg_parser()
     global TRAME_VIEWER
-    use_3d_sys_arg = sys.argv[1]  # Expect the string True or False at this position
-    if use_3d_sys_arg.lower() != "true" and use_3d_sys_arg.lower() != "false":
-        print("This program expects the first arguement to either be [T/t]rue or [F/f]alse, and all following arguements to be paths to "
-              "data directories or files to be loaded.")
-        raise ValueError("First arg must be a string of true or false")
-    use_3d = use_3d_sys_arg.lower() == "true"
-    if use_3d:
+    if not VIEWER_2D:
         TRAME_VIEWER = TrameViewer3D(data_files)
         TRAME_VIEWER.start()
     else:
