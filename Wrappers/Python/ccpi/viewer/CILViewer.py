@@ -1112,11 +1112,6 @@ class CILViewer():
     def adjustCamera(self, resetcamera=False):
         self.ren.ResetCameraClippingRange()
 
-
-
-
-
-
         if resetcamera:
             self.ren.ResetCamera()
 
@@ -1131,24 +1126,10 @@ class CILViewer():
             .SetInterpolationTypeToNearest()
         self.renWin.Render()
 
-
-
-
-
-
-
-
     def setColourWindowLevel(self, window, level):
         self.imageSlice.GetProperty().SetColorLevel(level)
         self.imageSlice.GetProperty().SetColorWindow(window)
         self.imageSlice.Update()
-
-
-
-
-
-
-
 
         self.ren.Render()
         self.renWin.Render()
