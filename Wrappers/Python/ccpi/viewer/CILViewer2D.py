@@ -438,21 +438,34 @@ class CILInteractorStyle(vtk.vtkInteractorStyle):
         self.AdjustCamera()
         self.Render()
 
-    def OnKeyPress(self, interactor, event):
-        if self.GetInputData() is None:
-            return
-        if self.reslicing_enabled and interactor.GetKeyCode() == "x":
-            # Change the camera view point
+    def ChangeOrientation(self, new_slice_orientation):
+        orientation = self.GetSliceOrientation()
+        camera = vtk.vtkCamera()
+        camera.ParallelProjectionOn()
+        camera.SetFocalPoint(self.GetActiveCamera().GetFocalPoint())
+        camera.SetPosition(self.GetActiveCamera().GetPosition())
+        self.SetInitialCameraPosition(self.GetActiveCamera().GetPosition())
+        camera.SetViewUp(self.GetActiveCamera().GetViewUp())
 
-            orientation = self.GetSliceOrientation()
-            camera = vtk.vtkCamera()
-            camera.ParallelProjectionOn()
-            camera.SetFocalPoint(self.GetActiveCamera().GetFocalPoint())
-            camera.SetPosition(self.GetActiveCamera().GetPosition())
-            self.SetInitialCameraPosition(self.GetActiveCamera().GetPosition())
-            camera.SetViewUp(self.GetActiveCamera().GetViewUp())
-
-            # Rotation of camera depends on current orientation:
+        if new_slice_orientation == SLICE_ORIENTATION_XY:
+            # Equivalent to pressing z
+            if orientation == SLICE_ORIENTATION_YZ:
+                camera.Azimuth(90)
+            elif orientation == SLICE_ORIENTATION_XZ:
+                camera.Elevation(-90)
+                self.FlipCameraPosition(True)
+            camera.SetViewUp(0, -1, 0)
+        elif new_slice_orientation == SLICE_ORIENTATION_XZ:
+            # Equivalent to pressing y
+            if orientation == SLICE_ORIENTATION_XY:
+                camera.Elevation(90)
+                self.FlipCameraPosition(True)
+            elif orientation == SLICE_ORIENTATION_YZ:
+                self.FlipCameraPosition(True)
+                camera.Elevation(90)
+            camera.SetViewUp(0, 0, -1)
+        elif new_slice_orientation == SLICE_ORIENTATION_YZ:
+            # Equivalent to pressing x
             if orientation == SLICE_ORIENTATION_XY:
                 camera.Azimuth(270)
             elif orientation == SLICE_ORIENTATION_XZ:
@@ -460,61 +473,19 @@ class CILInteractorStyle(vtk.vtkInteractorStyle):
                 camera.Azimuth(90)
             camera.SetViewUp(0, -1, 0)
 
-            self.SetActiveCamera(camera)
-            self.SetSliceOrientation(SLICE_ORIENTATION_YZ)
-            self.UpdatePipeline(True)
+        self.SetActiveCamera(camera)
+        self.SetSliceOrientation(new_slice_orientation)
+        self.UpdatePipeline(True)
 
+    def OnKeyPress(self, interactor, event):
+        if self.GetInputData() is None:
+            return
+        if self.reslicing_enabled and interactor.GetKeyCode() == "x":
+            self.ChangeOrientation(SLICE_ORIENTATION_YZ)
         elif self.reslicing_enabled and interactor.GetKeyCode() == "y":
-            # Change the camera view point
-
-            orientation = self.GetSliceOrientation()
-
-            camera = vtk.vtkCamera()
-            camera.ParallelProjectionOn()
-            camera.SetFocalPoint(self.GetActiveCamera().GetFocalPoint())
-            camera.SetPosition(self.GetActiveCamera().GetPosition())
-            self.SetInitialCameraPosition(self.GetActiveCamera().GetPosition())
-            camera.SetViewUp(self.GetActiveCamera().GetViewUp())
-
-            # Rotation of camera depends on current orientation:
-            if orientation == SLICE_ORIENTATION_XY:
-                camera.Elevation(90)
-                self.FlipCameraPosition(True)
-
-            elif orientation == SLICE_ORIENTATION_YZ:
-                self.FlipCameraPosition(True)
-                camera.Elevation(90)
-
-            camera.SetViewUp(0, 0, -1)
-            self.SetActiveCamera(camera)
-            self.SetSliceOrientation(SLICE_ORIENTATION_XZ)
-            self.UpdatePipeline(True)
-
+            self.ChangeOrientation(SLICE_ORIENTATION_XZ)
         elif self.reslicing_enabled and interactor.GetKeyCode() == "z":
-            # Change the camera view point
-
-            orientation = self.GetSliceOrientation()
-            camera = vtk.vtkCamera()
-            camera.ParallelProjectionOn()
-            camera.SetPosition(self.GetActiveCamera().GetPosition())
-            self.SetInitialCameraPosition(self.GetActiveCamera().GetPosition())
-            camera.SetFocalPoint(self.GetActiveCamera().GetFocalPoint())
-            camera.SetViewUp(self.GetActiveCamera().GetViewUp())
-
-            # Rotation of camera depends on current orientation:
-            if orientation == SLICE_ORIENTATION_YZ:
-                camera.Azimuth(90)
-
-            elif orientation == SLICE_ORIENTATION_XZ:
-                camera.Elevation(-90)
-                self.FlipCameraPosition(True)
-
-            camera.SetViewUp(0, -1, 0)
-            self.SetActiveCamera(camera)
-            self.ResetCamera()
-            self.SetSliceOrientation(SLICE_ORIENTATION_XY)
-            self.UpdatePipeline(True)
-
+            self.ChangeOrientation(SLICE_ORIENTATION_XY)
         elif interactor.GetKeyCode() == "a":
             self.AutoWindowLevel()
         elif interactor.GetKeyCode() == "s":

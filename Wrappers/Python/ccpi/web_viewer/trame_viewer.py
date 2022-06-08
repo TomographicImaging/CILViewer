@@ -300,7 +300,10 @@ class TrameViewer:
         self.html_view.update()
 
     def switch_to_orientation(self, slice_orientation: int):
-        self.cil_viewer.sliceOrientation = slice_orientation
+        if hasattr(self.cil_viewer.style, "ChangeOrientation"):
+            self.cil_viewer.style.ChangeOrientation(slice_orientation)
+        else:
+            self.cil_viewer.sliceOrientation = slice_orientation
         self.cil_viewer.updatePipeline()
         self.html_view.update()
 
