@@ -18,7 +18,7 @@
 from trame import update_layout
 from trame.html import vuetify
 
-from ccpi.viewer.CILViewer2D import CILViewer2D
+from ccpi.viewer.CILViewer2D import CILViewer2D, SLICE_ORIENTATION_XY
 from ccpi.web_viewer.trame_viewer import TrameViewer
 
 
@@ -66,7 +66,6 @@ class TrameViewer2D(TrameViewer):
         self.slice_window_slider = self.construct_slice_window_slider()
         self.slice_level_slider = self.construct_slice_level_slider()
         self.tracing_switch = self.create_tracing_switch()
-        # self.line_profile_switch = self.create_line_profile_switch()
         self.interpolation_of_slice_switch = self.create_interpolation_of_slice_switch()
         self.reset_defaults_button = self.create_reset_defaults_button()
 
@@ -115,15 +114,6 @@ class TrameViewer2D(TrameViewer):
             solo=True
         )
 
-    # def create_line_profile_switch(self):
-    #     return vuetify.VSwitch(
-    #         label="Toggle Line Profiling",
-    #         v_model=("toggle_profiling", False),
-    #         hide_details=True,
-    #         dense=True,
-    #         solo=True,
-    #     )
-
     def create_interpolation_of_slice_switch(self):
         return vuetify.VSwitch(
             label="Toggle Interpolation",
@@ -147,14 +137,6 @@ class TrameViewer2D(TrameViewer):
             self.cil_viewer.imageTracer.On()
         else:
             self.cil_viewer.imageTracer.Off()
-
-    # def change_profiling(self, profiling: bool):
-    #     if not profiling:
-    #         self.SetEventInactive("SHOW_LINE_PROFILE_EVENT")
-    #         self.DisplayLineProfile(interactor, event, False)
-    #     else:
-    #         self.SetEventActive("SHOW_LINE_PROFILE_EVENT")
-    #         self.DisplayLineProfile(interactor, event, True)
 
     def change_interpolation(self, interpolation: bool):
         if not interpolation:
@@ -186,4 +168,16 @@ class TrameViewer2D(TrameViewer):
         update_layout(self.layout)
 
     def reset_defaults(self):
-        pass
+        app = vuetify.get_app_instance()
+        app.set(key="background_color", value="cil_viewer_blue")
+        app.set(key="slice", value=self.default_slice)
+        app.set(key="orientation", value=f"{SLICE_ORIENTATION_XY}")
+        app.set(key="slice_detailed_sliders", value=False)
+        window, level = self.cil_viewer.getSliceMapWindow((5., 95.))
+        app.set(key="slice_window_range", value=(window, level))
+        app.set(key="slice_window", value=window)
+        app.set(key="slice_level", value=level)
+        app.set(key="toggle_tracing", value=False)
+        app.set(key="toggle_interpolation", value=False)
+        self.cil_viewer.updatePipeline()
+        self.html_view.update()
