@@ -1048,7 +1048,7 @@ class vortexBaseTIFFImageReader(cilBaseReader):
         self.SetStoredArrayShape(readshape)
 
 
-        self.SetOutputVTKType(reader.GetOutput().GetScalarTypeAsString())
+        self.SetOutputVTKType(reader.GetOutput().GetScalarType())
 
         self.Modified()
     
@@ -1519,76 +1519,31 @@ class cilMetaImageResampleReader(cilBaseBinaryBlobResampleReader, cilBaseMetaIma
 
 class vortexTIFFResampleReader(cilBaseResampleReader, vortexBaseTIFFImageReader):
     def _GetInternalChunkReader(self):
-        ''' Returns a reader which can be used to read each chunk.
-        The reader is always going to read the header file: header.mhd, and
-        the data is always being read from chunk.raw a.k.a. self._ChunkFileName.
-        This method creates these files, with the header file containing the information
-        for a dataset which is equal to the size of a chunk needed in the downsampling.
-        
-        We have to make a new metaimage header so that the vtk.vtkMetaImageReader
-        knows the extent it needs to read when we read a chunk.
-        
-        TODO: In future we need to use the vtk.vtkImageReader2 to replace this
-        and remove the need for re-writing out chunks.
-        '''
-        tmpdir = tempfile.mkdtemp()
-        self._SetTempDir(tmpdir)
-        header_filename = os.path.join(tmpdir, "header.mhd")
-        reader = vtk.vtkMetaImageReader()
-        reader.SetFileName(header_filename)
-
-        chunk_file_name = os.path.join(tmpdir, "chunk.raw")
-        self._ChunkFileName = chunk_file_name
-
-        readshape = self.GetStoredArrayShape()
-        is_fortran = self.GetIsFortran()
-
-        if is_fortran:
-            shape = list(readshape)
-        else:
-            shape = list(readshape)[::-1]
-
-        chunk_shape = shape.copy()
-        if self._GetNumSlicesPerChunk() is not None:
-            num_slices_per_chunk = self._GetNumSlicesPerChunk()
-        else:
-            num_slices_per_chunk = shape[2]
-        chunk_shape[2] = num_slices_per_chunk
-
-        cilNumpyMETAImageWriter.WriteMETAImageHeader(
-            chunk_file_name,
-            header_filename,
-            self.GetMetaImageTypeCode(),
-            self.GetBigEndian(),
-            0,
-            tuple(chunk_shape),
-            spacing=tuple(self.GetElementSpacing()),
-            origin=self.GetOrigin()
-        )
+        '''returns a reader which will only read a specific chunk of the data.
+        This is a chunk which will get resampled into a single slice.''' 
+        reader = vtk.vtkTIFFReader()
         self._ChunkReader = reader
         return reader
 
-
     def UpdateChunkToRead(self, start_slice):
-        '''Read the next chunk from the image file,
-        and write out to self._ChunkFileName
-        It is self._ChunkFileName that is being read by the resampler
-        so essentially this method is updating which chunk of data the 
-        resampler will receive.
-        '''
+        ''' updates the chunk reader to read the next chunk starting at extent
+        start_slice in the z direction'''
+        num_slices_per_chunk = self._GetNumSlicesPerChunk()
+        end_slice = start_slice + num_slices_per_chunk - 1
+        end_z_value = self.GetStoredArrayShape()[2]-1
+        if end_slice > end_z_value:
+            end_slice = end_z_value
+        if start_slice < 0:
+            raise ValueError('{} ERROR: Start slice cannot be negative.'
+                             .format(self.__class__.__name__))
+        dims = self.GetStoredArrayShape()
 
-        # This is the length of the chunk we will read from the file in bytes:
-        chunk_length = self._GetSliceLengthInFile()*self._GetNumSlicesPerChunk()
-        
-        with open(self.GetFileName(), "rb") as image_file_object:
-            if start_slice < 0:
-                raise ValueError('{} ERROR: Start slice cannot be negative.'
-                                 .format(self.__class__.__name__))
-            chunk_location = self.GetFileHeaderLength() + start_slice*self._GetSliceLengthInFile()
-            with open(self._ChunkFileName, "wb") as chunk_file_object:
-                image_file_object.seek(chunk_location)
-                chunk = image_file_object.read(chunk_length)
-                chunk_file_object.write(chunk)
+        fnames = self.GetFileName()
+        chunk = vtk.vtkStringArray()
+        for i in range(start_slice, end_slice+1):
+            chunk.InsertNextValue(fnames[i])
+        self._ChunkReader.SetFileNames(chunk)
+
 # CROPPED READERS -----------------------------------------------------------------------------------
 
 class cilBaseCroppedReader(cilBaseReader):
