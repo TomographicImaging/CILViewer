@@ -287,9 +287,9 @@ class ViewerLinkObserver():
                 shouldPassEvent = False
             else:
                 # Set current window/level
-                window = self.sourceViewer.getColourWindow()
-                level = self.sourceViewer.getColourLevel()
-                self.targetVtkViewer.setColourWindowLevel(window, level)
+                window = self.sourceViewer.getSliceColorWindow()
+                level = self.sourceViewer.getSliceColorLevel()
+                self.targetVtkViewer.setSliceColorWindowLevel(window, level)
 
         # Update window level on mouse move
         if (event == "MouseMoveEvent" and self.sourceViewer.event.isActive("WINDOW_LEVEL_EVENT")):
@@ -297,9 +297,9 @@ class ViewerLinkObserver():
             if not self.linkWindowLevel:
                 shouldPassEvent = False
             else:
-                window = self.sourceViewer.getColourWindow()
-                level = self.sourceViewer.getColourLevel()
-                self.targetVtkViewer.setColourWindowLevel(window, level)
+                window = self.sourceViewer.getSliceColorWindow()
+                level = self.sourceViewer.getSliceColorLevel()
+                self.targetVtkViewer.setSliceColorWindowLevel(window, level)
 
         # Slice
         if (event == "MouseWheelForwardEvent" or event == "MouseWheelBackwardEvent" or state == 1026):
@@ -324,10 +324,10 @@ class ViewerLinkObserver():
 
             if window_level_link_event:
                 # Set current window/level
-                window = self.sourceViewer.getColourWindow()
-                level = self.sourceViewer.getColourLevel()
-                self.targetVtkViewer.setColourWindowLevel(window, level)
-
+                window = self.sourceViewer.getSliceColorWindow()
+                level = self.sourceViewer.getSliceColorLevel()
+                self.targetVtkViewer.setSliceColorWindowLevel(window, level)
+            
         # Check if event should be passed
         if (shouldPassEvent):
             # Pass event

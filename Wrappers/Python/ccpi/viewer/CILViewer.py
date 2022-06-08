@@ -168,100 +168,104 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
         if not (alt and ctrl and shift):
             self.SetEventInactive("ZOOM_EVENT")
 
-    def OnKeyPress(self, interactor, event):
+    def ToggleSliceInterpolation(self):
+        # toggle interpolation of image slice
+        is_interpolated = self._viewer.imageSlice.GetProperty().GetInterpolationType()
+        if is_interpolated:
+            self._viewer.imageSlice.GetProperty().SetInterpolationTypeToNearest()
+        else:
+            self._viewer.imageSlice.GetProperty().SetInterpolationTypeToLinear()
+        self._viewer.updatePipeline()
 
-        ctrl = interactor.GetControlKey()
-        shift = interactor.GetAltKey()
-        alt = interactor.GetShiftKey()
+    def SetVolumeClipping(self, clipping_on):
+        if hasattr(self._viewer, 'planew') and self._viewer.clipping_plane_initialised:
+            self._viewer.planew.SetEnabled(clipping_on)
+            self._viewer.getRenderer().Render()
+        else:
+            # Doesn't exist and turn it off do nothing else:
+            if clipping_on:
+                planew = self.CreateClippingPlane()
+                planew.On()
 
+    def ToggleVolumeClipping(self):
+        viewer = self._viewer
+        viewer.imageSlice.VisibilityOff()
+        # clip a volume render if available
+        if hasattr(self._viewer, 'planew') and self._viewer.clipping_plane_initialised:
+            is_enabled = viewer.planew.GetEnabled()
+            self.SetVolumeClipping(not is_enabled)
+        else:
+            self.SetVolumeClipping(True)
+        viewer.updatePipeline()
+
+    def ToggleSliceVisibility(self):
+        # toggle visibility of the slice
+        if self._viewer.imageSlice.GetVisibility():
+            self._viewer.imageSlice.VisibilityOff()
+        else:
+            self._viewer.imageSlice.VisibilityOn()
+        self._viewer.updatePipeline()
+
+    def SetVolumeVisibility(self, visibility):
+        if not visibility:
+            self._viewer.volume.VisibilityOff()
+            self._viewer.light.SwitchOff()
+        else:
+            self._viewer.volume.VisibilityOn()
+            self._viewer.light.SwitchOn()
+
+    def ToggleVolumeVisibility(self):
+        # toggle visibility of the volume render
+        if not self._viewer.volume_render_initialised:
+            self._viewer.installVolumeRenderActorPipeline()
+
+        self.SetVolumeVisibility(not self._viewer.volume.GetVisibility())
+
+        self._viewer.updatePipeline()
+
+    def ResetVolumeWindowLevel(self):
+        # reset color/window
+        cmin, cmax = self._viewer.ia.GetAutoRange()
+
+        # set the level to the average value between the percintiles
+        level = (cmin + cmax) / 2
+        # accommodates all values between the level an the percentiles
+        window = (cmax - cmin) / 2
+
+        self.SetInitialLevel(level)
+        self.SetInitialWindow(window)
+
+        self._viewer.imageSlice.GetProperty().SetColorLevel(self.GetInitialLevel())
+        self._viewer.imageSlice.GetProperty().SetColorWindow(self.GetInitialWindow())
+
+        self._viewer.imageSlice.Update()
+        self.Render()
+
+    def OnKeyPress(self, interactor, _):
         if interactor.GetKeyCode() == "x":
             self.SetSliceOrientation(SLICE_ORIENTATION_YZ)
             self.UpdatePipeline(resetcamera=True)
-
         elif interactor.GetKeyCode() == "y":
             self.SetSliceOrientation(SLICE_ORIENTATION_XZ)
             self.UpdatePipeline(resetcamera=True)
-
         elif interactor.GetKeyCode() == "z":
             self.SetSliceOrientation(SLICE_ORIENTATION_XY)
             self.UpdatePipeline(resetcamera=True)
-
         elif interactor.GetKeyCode() == "a":
-            # reset color/window
-            cmin, cmax = self._viewer.ia.GetAutoRange()
-
-            # set the level to the average value between the percintiles
-            level = (cmin + cmax) / 2
-            # accommodates all values between the level an the percentiles
-            window = (cmax - cmin) / 2
-
-            self.SetInitialLevel(level)
-            self.SetInitialWindow(window)
-
-            self._viewer.imageSlice.GetProperty().SetColorLevel(self.GetInitialLevel())
-            self._viewer.imageSlice.GetProperty().SetColorWindow(self.GetInitialWindow())
-
-            self._viewer.imageSlice.Update()
-            self.Render()
-
-        elif ctrl and not (alt and shift):
-            # CREATE ROI
-            position = interactor.GetEventPosition()
-            # print ("3D VIEWER MOUSE POSITION", position)
-
-        # elif alt and not (shift and ctrl):
-        #     # DELETE ROI
-        #     print ("DELETE ROI")
-
+            self.ResetVolumeWindowLevel()
         elif interactor.GetKeyCode() == "h":
             self.DisplayHelp()
-
         elif interactor.GetKeyCode() == "r":
             filename = "current_render"
             self.SaveRender(filename)
         elif interactor.GetKeyCode() == "v":
-            # toggle visibility of the volume render
-            if not self._viewer.volume_render_initialised:
-                self._viewer.installVolumeRenderActorPipeline()
-
-            if self._viewer.volume.GetVisibility():
-                self._viewer.volume.VisibilityOff()
-                self._viewer.light.SwitchOff()
-            else:
-                self._viewer.volume.VisibilityOn()
-                self._viewer.light.SwitchOn()
-            self._viewer.updatePipeline()
+            self.ToggleVolumeVisibility()
         elif interactor.GetKeyCode() == "s":
-            # toggle visibility of the slice
-
-            if self._viewer.imageSlice.GetVisibility():
-                self._viewer.imageSlice.VisibilityOff()
-            else:
-                self._viewer.imageSlice.VisibilityOn()
-            self._viewer.updatePipeline()
+            self.ToggleSliceVisibility()
         elif interactor.GetKeyCode() == "i":
-            # toggle interpolation of image slice
-            is_interpolated = self._viewer.imageSlice.GetProperty().GetInterpolationType()
-            if is_interpolated:
-                self._viewer.imageSlice.GetProperty().SetInterpolationTypeToNearest()
-            else:
-                self._viewer.imageSlice.GetProperty().SetInterpolationTypeToLinear()
-            self._viewer.updatePipeline()
+            self.ToggleSliceInterpolation()
         elif interactor.GetKeyCode() == "c" and self._viewer.volume_render_initialised:
-            viewer = self._viewer
-            viewer.imageSlice.VisibilityOff()
-            # clip a volume render if available
-            if hasattr(self._viewer, 'planew') and self._viewer.clipping_plane_initialised:
-                is_enabled = viewer.planew.GetEnabled()
-                viewer.planew.SetEnabled(not is_enabled)
-                # print ("should set to not", is_enabled)
-                viewer.getRenderer().Render()
-            else:
-                # print ("handling c")
-                planew = self.CreateClippingPlane()
-                planew.On()
-
-            viewer.updatePipeline()
+            self.ToggleVolumeClipping()
         else:
             print("Unhandled event %s" % interactor.GetKeyCode())
 
@@ -273,8 +277,8 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
         world_extent = self.GetImageWorldExtent()
         extent = [0, world_extent[0], 0, world_extent[1], 0, world_extent[2]]
         rep.SetWidgetBounds(*extent)
-        planew.SetInteractor(viewer.getInteractor())
         planew.SetRepresentation(rep)
+        planew.SetInteractor(viewer.getInteractor())
 
         rep.SetNormalToCamera()
         rep.SetOutlineTranslation(False)  # this means user can't move bounding box
@@ -547,10 +551,10 @@ class CILViewer():
         '''returns the active camera'''
         return self.ren.GetActiveCamera()
 
-    def getColourWindow(self):
+    def getSliceColorWindow(self):
         return self.imageSlice.GetProperty().GetColorWindow()
-
-    def getColourLevel(self):
+    
+    def getSliceColorLevel(self):
         return self.imageSlice.GetProperty().GetColorLevel()
 
     def createPolyDataActor(self, polydata):
@@ -768,6 +772,11 @@ class CILViewer():
         lgt.SwitchOff()
         self.getRenderer().AddLight(lgt)
         self.light = lgt
+    
+    def getVolumeRenderOpacityMethod(self):
+        if not hasattr(self, '_vol_render_opacity_method'):
+            self.setVolumeRenderOpacityMethod('gradient')
+        return self._vol_render_opacity_method
 
     def setVolumeRenderOpacityMethod(self, method='gradient'):
         '''
@@ -906,7 +915,7 @@ class CILViewer():
         '''
         Parameters
         -----------
-        min, max: float, default: (80., 99.)
+        min, max: float, default: the raw value of the 80. percentile for min, and the raw value of the 99. percentile for max.
             the upper and lower image values that the 
             color will be mapped to.
         update_pipeline: bool
@@ -1093,6 +1102,8 @@ class CILViewer():
             colors, opacity = self.getColorOpacityForVolumeRender()
 
             self.volume_property.SetColor(colors)
+            self.volume_property.SetScalarOpacity(opacity)
+        
 
             # Update whether we use our calculated opacity as the scalar or gradient opacity
             if self.getVolumeRenderOpacityMethod() == 'gradient':
@@ -1126,7 +1137,24 @@ class CILViewer():
             .SetInterpolationTypeToNearest()
         self.renWin.Render()
 
-    def setColourWindowLevel(self, window, level):
+    def setSliceColorWindowLevelPercentiles(self, min_percentage, max_percentage):
+        min_val, max_val = self.getVolumeMapWindow((min_percentage, max_percentage), 'scalar')
+        self.setScalarOpacityWindow(min_val, max_val)
+
+    def setSliceColorWindow(self, window):
+        self.imageSlice.GetProperty().SetColorWindow(window)
+        self.imageSlice.Update()
+        self.ren.Render()
+        self.renWin.Render()
+
+    def setSliceColorLevel(self, level):
+        self.imageSlice.GetProperty().SetColorLevel(level)
+        self.imageSlice.Update()
+        self.ren.Render()
+        self.renWin.Render()
+
+    def setSliceColorWindowLevel(self, window, level):
+        # Level is the average of min and max, and the window is the difference.
         self.imageSlice.GetProperty().SetColorLevel(level)
         self.imageSlice.GetProperty().SetColorWindow(window)
         self.imageSlice.Update()
@@ -1136,6 +1164,16 @@ class CILViewer():
 
     def saveRender(self, filename, renWin=None):
         '''Save the render window to PNG file'''
-        if renWin == None:
+        if renWin is None:
             renWin = self.renWin
-        SaveRenderToPNG(self.renWin, filename)
+        SaveRenderToPNG(renWin, filename)
+
+    def remove_clipping_plane(self):
+        self.volume.GetMapper().RemoveAllClippingPlanes()
+
+        # Now remove planew from the cil_viewer
+        del self.planew
+        self.clipping_plane_initialised = False
+
+        self.getRenderer().Render()
+        self.updatePipeline()
