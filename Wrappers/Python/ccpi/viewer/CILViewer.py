@@ -546,14 +546,14 @@ class CILViewer():
         '''returns the renderer'''
         return self.ren
 
-    def GetSliceOrientation(self):
+    def getSliceOrientation(self):
         return self.sliceOrientation
 
     def getActiveSlice(self):
-        return self.slicenos[self.GetSliceOrientation()]
+        return self.slicenos[self.getSliceOrientation()]
 
     def setActiveSlice(self, sliceno):
-        self.slicenos[self.GetSliceOrientation()] = sliceno
+        self.slicenos[self.getSliceOrientation()] = sliceno
 
     def getRenderWindow(self):
         '''returns the render window'''

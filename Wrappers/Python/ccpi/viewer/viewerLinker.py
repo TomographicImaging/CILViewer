@@ -272,7 +272,7 @@ class ViewerLinkObserver():
                     pick_position = sourceInteractorStyle.last_picked_voxel
                     targetInteractorStyle.last_picked_voxel = pick_position[:]
                     sliceno = pick_position[self.targetViewer.sliceOrientation]
-                    targetInteractorStyle.SetActiveSlice(sliceno)
+                    targetInteractorStyle.setActiveSlice(sliceno)
                     targetInteractorStyle.UpdatePipeline(True)
                     # the event has not been generated in the targetInteractor so it
                     # should not passed on to any linked interactors
@@ -308,7 +308,8 @@ class ViewerLinkObserver():
                 shouldPassEvent = False
             else:
                 # Linked, check if orientation is the same
-                if (self.sourceVtkViewer.GetSliceOrientation() != self.targetVtkViewer.GetSliceOrientation()):
+                if (self.sourceVtkViewer.getSliceOrientation() !=
+                        self.targetVtkViewer.getSliceOrientation()):
                     shouldPassEvent = False
 
         # KeyPress and orientation

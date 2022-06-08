@@ -171,6 +171,21 @@ def change_clipping(**kwargs):
     TRAME_VIEWER.change_clipping(kwargs["toggle_clipping"])
 
 
+@state.change("toggle_tracing")
+def change_tracing(**kwargs):
+    TRAME_VIEWER.change_tracing(kwargs["toggle_tracing"])
+
+
+@state.change("toggle_profiling")
+def change_profiling(**kwargs):
+    TRAME_VIEWER.change_profiling(kwargs["toggle_profiling"])
+
+
+@state.change("toggle_interpolation")
+def change_interpolation(**kwargs):
+    TRAME_VIEWER.change_interpolation(kwargs["toggle_interpolation"])
+
+
 @state.change("show_slice_histogram")
 def show_slice_histogram(**kwargs):
     TRAME_VIEWER.show_slice_histogram(kwargs["show_slice_histogram"])
