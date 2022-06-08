@@ -1,6 +1,7 @@
 # See examples/error_observer.py for an example of using the ErrorObserver
 # and EndObserver.
 
+
 class ErrorObserver:
 
     def __init__(self, callback_fn=print):
@@ -30,10 +31,10 @@ class ErrorObserver:
         return self.__get_error_message
 
 
-
 class EndObserver:
     ''' Occurs when the observed Algorithm finishes
     '''
+
     def __init__(self, error_observer, callback_fn):
         '''
         Parameters

@@ -1,0 +1,11 @@
+# run: conda env create --file environment.yml
+name: cilviewer_webapp
+dependencies:
+- python==3.9
+- matplotlib # Optional for more colormaps
+- h5py
+- pip
+- pip:
+  # Have to install Trame via pip due to unavailability on conda
+  - trame<2.0  # pin version for pip
+  - vtk==9.1
