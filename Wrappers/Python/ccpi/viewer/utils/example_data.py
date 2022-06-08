@@ -1,25 +1,27 @@
 import os
-import os.path 
+import os.path
 import vtk
 import sys
 
-
 # this is the default location after pip install
-data_dir = os.path.abspath(
-    os.path.join(sys.prefix, 'share','cil')
-)
+data_dir = os.path.abspath(os.path.join(sys.prefix, 'share', 'cil'))
+
 
 class DATA(object):
+
     @classmethod
     def dfile(cls):
         return None
+
     @classmethod
     def get(cls, **kwargs):
         ddir = kwargs.get('data_dir', data_dir)
         loader = TestData(data_dir=ddir)
         return loader.load(cls.dfile(), **kwargs)
 
+
 class HEAD(DATA):
+
     @classmethod
     def dfile(cls):
         return TestData.HEAD
@@ -32,10 +34,10 @@ class TestData(object):
     HEAD = 'headsq.mha'
     '''
     HEAD = 'headsq.mha'
-    
+
     def __init__(self, **kwargs):
         self.data_dir = kwargs.get('data_dir', data_dir)
-        
+
     def load(self, which, **kwargs):
         '''
         Return a test data of the requested image

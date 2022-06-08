@@ -1,6 +1,7 @@
 import unittest
 from ccpi.viewer.utils import example_data
 
+
 class TestExampleData(unittest.TestCase):
 
     def test_head_data(self):
@@ -10,7 +11,6 @@ class TestExampleData(unittest.TestCase):
 
         for i in range(0, len(expected_dimensions)):
             self.assertEqual(expected_dimensions[i], read_dimensions[i])
-
 
 
 if __name__ == '__main__':
