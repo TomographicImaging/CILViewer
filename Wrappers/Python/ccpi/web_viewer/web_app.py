@@ -23,7 +23,8 @@ import sys
 
 from trame import state
 
-from ccpi.web_viewer.trame_viewer import TrameViewer
+from ccpi.web_viewer.trame_viewer2D import TrameViewer2D
+from ccpi.web_viewer.trame_viewer3D import TrameViewer3D
 
 TRAME_VIEWER = None
 
@@ -35,8 +36,8 @@ def data_finder():
     """
     data_files = []
     for index, arg in enumerate(sys.argv):
-        if index == 0:
-            # this is the python script so we want to skip
+        if index == 0 or index == 1:
+            # this is the python script in index 0, and the if use 3d at index 1 so we want to skip
             continue
         if os.path.isfile(arg):
             data_files.append(arg)
@@ -56,8 +57,18 @@ def main() -> int:
     """
     data_files = data_finder()
     global TRAME_VIEWER
-    TRAME_VIEWER = TrameViewer(data_files)
-    TRAME_VIEWER.start()
+    use_3d_sys_arg = sys.argv[1]  # Expect the string True or False at this position
+    if use_3d_sys_arg.lower() != "true" and use_3d_sys_arg.lower() != "false":
+        print("This program expects the first arguement to either be [T/t]rue or [F/f]alse, and all following arguements to be paths to "
+              "data directories or files to be loaded.")
+        raise ValueError("First arg must be a string of true or false")
+    use_3d = use_3d_sys_arg.lower() == "true"
+    if use_3d:
+        TRAME_VIEWER = TrameViewer3D(data_files)
+        TRAME_VIEWER.start()
+    else:
+        TRAME_VIEWER = TrameViewer2D(data_files)
+        TRAME_VIEWER.start()
     return 0
 
 
