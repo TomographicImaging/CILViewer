@@ -444,8 +444,7 @@ class CILColorMaps(object):
                     colors.append([color[0], color[1], color[2]])
             except ImportError:
                 print("To use colormaps other than: ",
-                      "{}, please install matplotlib.".format(
-                          str(list(_color_map_dict.keys()))))
+                      "{}, please install matplotlib.".format(str(list(_color_map_dict.keys()))))
 
         else:
             colors = _color_map_dict[cmap]
@@ -457,7 +456,7 @@ class CILColorMaps(object):
         tf = vtk.vtkColorTransferFunction()
 
         colors = cls.get_color_map(cmap)
-            
+
         N = len(colors)
         for i, color in enumerate(colors):
             level = color_range[0] + \

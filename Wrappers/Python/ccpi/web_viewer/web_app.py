@@ -22,7 +22,6 @@ from trame import state
 
 from ccpi.web_viewer.trame_viewer import TrameViewer
 
-
 TRAME_VIEWER = None
 
 

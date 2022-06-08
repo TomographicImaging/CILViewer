@@ -60,8 +60,8 @@ setup(
     name="ccpi-viewer",
     version=version,
     packages=['ccpi', 'ccpi.viewer', 'ccpi.viewer.utils', 'ccpi.web_viewer'],
-	install_requires=requires,
-    zip_safe = False,
+    install_requires=requires,
+    zip_safe=False,
     # metadata for upload to PyPI
     author="Edoardo Pasca",
     author_email="edoardo.pasca@stfc.ac.uk",

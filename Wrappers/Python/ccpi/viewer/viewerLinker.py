@@ -327,7 +327,7 @@ class ViewerLinkObserver():
                 window = self.sourceViewer.getSliceColorWindow()
                 level = self.sourceViewer.getSliceColorLevel()
                 self.targetVtkViewer.setSliceColorWindowLevel(window, level)
-            
+
         # Check if event should be passed
         if (shouldPassEvent):
             # Pass event
