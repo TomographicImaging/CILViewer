@@ -16,8 +16,6 @@
 #   limitations under the License.
 #
 
-import os
-
 from ccpi.web_viewer.trame_viewer import TrameViewer
 
 try:
@@ -33,7 +31,6 @@ except ImportError:
 
 from trame import update_layout
 from trame.html import vuetify
-from vtkmodules.util import colors
 
 from ccpi.viewer.CILViewer import CILViewer
 from ccpi.viewer.CILViewer2D import SLICE_ORIENTATION_XY

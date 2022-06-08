@@ -16,7 +16,6 @@
 #   limitations under the License.
 #
 import os
-from typing import Union, TYPE_CHECKING
 
 from trame.html import vtk, vuetify
 from trame.layouts import SinglePageWithDrawer
@@ -343,6 +342,13 @@ class TrameViewer:
             self.cil_viewer.setSliceColorLevel(level=new_level)
         else:
             self.cil_viewer.setColorLevel(level=new_level)
+        self.cil_viewer.updatePipeline()
+        self.html_view.update()
+
+    def change_slice_number(self, slice_number):
+        if hasattr(self.cil_viewer, "updateSliceHistogram"):
+            self.cil_viewer.updateSliceHistogram()
+        self.cil_viewer.setActiveSlice(slice_number)
         self.cil_viewer.updatePipeline()
         self.html_view.update()
 

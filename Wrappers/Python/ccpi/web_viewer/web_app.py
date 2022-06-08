@@ -91,7 +91,6 @@ def main() -> int:
 def update_slice(**kwargs):
     TRAME_VIEWER.change_slice_number(kwargs["slice"])
 
-
 @state.change("orientation")
 def change_orientation(**kwargs):
     if "orientation" in kwargs:
