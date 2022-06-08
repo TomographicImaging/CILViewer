@@ -3,3 +3,7 @@ ccpi_viewer.egg-info
 __pycache__
 
 Wrappers/Python/ccpi/viewer/version.py
+Wrappers/Python/ccpi/web_viewer/data/*
+
+# Hide PyCharm or other Jetbrains IDE files
+.idea

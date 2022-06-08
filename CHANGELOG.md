@@ -1,6 +1,11 @@
 # Changelog
 
-## v22.x.x
+
+## v22.1.2
+* Changes released in 22.0.2, but also requires vtk version >= 9.0.3
+
+## v22.0.2
+* requires vtk 8.1.2
 * When a new image is loaded on the 3D viewer, reset camera position, slice and volume orientation and visibility, and clipping planes.
 * Fix downsampling of resample readers when working with datatypes other than uint8. Previously resulting size of image was multiple times greater than requested target size as uint8 type was always assumed.
 

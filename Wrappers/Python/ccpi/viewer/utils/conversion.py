@@ -41,17 +41,17 @@ class Converter(object):
     # Converting to vtk: --------------------------------
 
     MetaImageType_to_vtkType = {
-        'MET_CHAR': vtk.VTK_SIGNED_CHAR,      # int8
-        'MET_UCHAR': vtk.VTK_UNSIGNED_CHAR,   # uint8
-        'MET_SHORT': vtk.VTK_SHORT,           # int16
-        'MET_USHORT': vtk.VTK_UNSIGNED_SHORT, # uint16
-        'MET_INT': vtk.VTK_INT,               # int32
-        'MET_UINT': vtk.VTK_UNSIGNED_INT,     # uint32
-        'MET_FLOAT': vtk.VTK_FLOAT,           # float32
-        'MET_DOUBLE': vtk.VTK_DOUBLE,         # float64
+        'MET_CHAR': vtk.VTK_SIGNED_CHAR,  # int8
+        'MET_UCHAR': vtk.VTK_UNSIGNED_CHAR,  # uint8
+        'MET_SHORT': vtk.VTK_SHORT,  # int16
+        'MET_USHORT': vtk.VTK_UNSIGNED_SHORT,  # uint16
+        'MET_INT': vtk.VTK_INT,  # int32
+        'MET_UINT': vtk.VTK_UNSIGNED_INT,  # uint32
+        'MET_FLOAT': vtk.VTK_FLOAT,  # float32
+        'MET_DOUBLE': vtk.VTK_DOUBLE,  # float64
     }
 
-    dtype_name_to_vtkType  = {
+    dtype_name_to_vtkType = {
         'int8': vtk.VTK_SIGNED_CHAR,
         'uint8': vtk.VTK_UNSIGNED_CHAR,
         'int16': vtk.VTK_SHORT,
@@ -64,24 +64,24 @@ class Converter(object):
 
     # Converting from vtk to bytes: -------------------------------------------
     vtkType_to_bytes = {
-        vtk.VTK_SIGNED_CHAR: 1,    # int8
+        vtk.VTK_SIGNED_CHAR: 1,  # int8
         vtk.VTK_UNSIGNED_CHAR: 1,  # uint8
-        vtk.VTK_SHORT: 2,          # int16
-        vtk.VTK_UNSIGNED_SHORT: 2, # uint16
-        vtk.VTK_INT: 4,            # int32
-        vtk.VTK_UNSIGNED_INT: 4,   # uint32
-        vtk.VTK_FLOAT: 4,          # float32
-        vtk.VTK_DOUBLE: 8,         # float64
+        vtk.VTK_SHORT: 2,  # int16
+        vtk.VTK_UNSIGNED_SHORT: 2,  # uint16
+        vtk.VTK_INT: 4,  # int32
+        vtk.VTK_UNSIGNED_INT: 4,  # uint32
+        vtk.VTK_FLOAT: 4,  # float32
+        vtk.VTK_DOUBLE: 8,  # float64
     }
 
     dtype_name_to_MetaImageType = {
-        'int8': 'MET_CHAR',    # VTK_SIGNED_CHAR,     # int8
-        'uint8': 'MET_UCHAR',   # VTK_UNSIGNED_CHAR,   # uint8
-        'int16': 'MET_SHORT',   # VTK_SHORT,           # int16
+        'int8': 'MET_CHAR',  # VTK_SIGNED_CHAR,     # int8
+        'uint8': 'MET_UCHAR',  # VTK_UNSIGNED_CHAR,   # uint8
+        'int16': 'MET_SHORT',  # VTK_SHORT,           # int16
         'uint16': 'MET_USHORT',  # VTK_UNSIGNED_SHORT,  # uint16
-        'int32': 'MET_INT',     # VTK_INT,             # int32
-        'uint32': 'MET_UINT',    # VTK_UNSIGNED_INT,    # uint32
-        'float32': 'MET_FLOAT',   # VTK_FLOAT,           # float32
+        'int32': 'MET_INT',  # VTK_INT,             # int32
+        'uint32': 'MET_UINT',  # VTK_UNSIGNED_INT,    # uint32
+        'float32': 'MET_FLOAT',  # VTK_FLOAT,           # float32
         'float64': 'MET_DOUBLE',  # VTK_DOUBLE,          # float64
     }
 
@@ -91,7 +91,7 @@ class Converter(object):
     def numpy2vtkImage(nparray, spacing=(1., 1., 1.), origin=(0, 0, 0), deep=0, output=None):
 
         shape = numpy.shape(nparray)
-        if(nparray.flags["FNC"]):
+        if (nparray.flags["FNC"]):
 
             order = "F"
             i = 0
@@ -102,21 +102,21 @@ class Converter(object):
             k = 0
 
         nparray = nparray.ravel(order)
-        vtkarray = numpy_support.numpy_to_vtk(
-            num_array=nparray, deep=deep, array_type=numpy_support.get_vtk_array_type(nparray.dtype))
+        vtkarray = numpy_support.numpy_to_vtk(num_array=nparray,
+                                              deep=deep,
+                                              array_type=numpy_support.get_vtk_array_type(nparray.dtype))
         vtkarray.SetName('vtkarray')
 
         if output is None:
             img_data = vtk.vtkImageData()
         else:
             if output.GetNumberOfPoints() > 0:
-                raise ValueError(
-                    'Output variable must be an empty vtkImageData object.')
+                raise ValueError('Output variable must be an empty vtkImageData object.')
             else:
                 img_data = output
 
         img_data.GetPointData().AddArray(vtkarray)
-        img_data.SetExtent(0, shape[i]-1, 0, shape[1]-1, 0, shape[k]-1)
+        img_data.SetExtent(0, shape[i] - 1, 0, shape[1] - 1, 0, shape[k] - 1)
         img_data.GetPointData().SetActiveScalars('vtkarray')
         img_data.SetOrigin(origin)
         img_data.SetSpacing(spacing)
@@ -138,8 +138,7 @@ class Converter(object):
         The function imgdata.GetPointData().GetScalars() returns a pointer to a
         vtk<TYPE>Array where the data is stored as X-Y-Z.
         '''
-        img_data = numpy_support.vtk_to_numpy(
-            imgdata.GetPointData().GetScalars())
+        img_data = numpy_support.vtk_to_numpy(imgdata.GetPointData().GetScalars())
 
         dims = imgdata.GetDimensions()
         # print ("vtk2numpy: VTKImageData dims {0}".format(dims))
@@ -148,7 +147,7 @@ class Converter(object):
 
         img_data.shape = (dims[2], dims[1], dims[0])
 
-        if(order == 'F'):
+        if (order == 'F'):
             img_data = numpy.transpose(img_data, [2, 1, 0])
             img_data = numpy.asfortranarray(img_data)
 
@@ -156,7 +155,6 @@ class Converter(object):
 
 
 # TODO:  Get rid of the below and make a tiff to vtk method and a tiff resample reader.
-
 
     @staticmethod
     def vtkTiffStack2numpy(filenames):
@@ -175,9 +173,14 @@ class Converter(object):
         return Converter.vtk2numpy(reader.GetOutput())
 
     @staticmethod
-    def tiffStack2numpy(filename=None, indices=None, extent=None,
-                        sampleRate=None, flatField=None, darkField=None,
-                        filenames=None, tiffOrientation=1):
+    def tiffStack2numpy(filename=None,
+                        indices=None,
+                        extent=None,
+                        sampleRate=None,
+                        flatField=None,
+                        darkField=None,
+                        filenames=None,
+                        tiffOrientation=1):
         '''Converts a stack of TIFF files to numpy array.
 
         filename must contain the whole path. The filename is supposed to be named and
@@ -191,15 +194,22 @@ class Converter(object):
 
         if filename is not None and indices is not None:
             filenames = [filename % num for num in indices]
-        return Converter._tiffStack2numpy(filenames=filenames, extent=extent,
+        return Converter._tiffStack2numpy(filenames=filenames,
+                                          extent=extent,
                                           sampleRate=sampleRate,
                                           flatField=flatField,
                                           darkField=darkField)
 
     @staticmethod
-    def tiffStack2numpyEnforceBounds(filename=None, indices=None,
-                                     extent=None, sampleRate=None,
-                                     flatField=None, darkField=None, filenames=None, tiffOrientation=1, bounds=(512, 512, 512)):
+    def tiffStack2numpyEnforceBounds(filename=None,
+                                     indices=None,
+                                     extent=None,
+                                     sampleRate=None,
+                                     flatField=None,
+                                     darkField=None,
+                                     filenames=None,
+                                     tiffOrientation=1,
+                                     bounds=(512, 512, 512)):
         """
         Converts a stack of TIFF files to numpy array. This is constrained to a 512x512x512 cube
 
@@ -238,19 +248,17 @@ class Converter(object):
             reader.Update()
             img_ext = reader.GetOutput().GetExtent()
 
-            stack_extent = img_ext[0:5] + (file_index,)
+            stack_extent = img_ext[0:5] + (file_index, )
             size = stack_extent[1::2]
         else:
             size = extent[1::2]
 
         # Calculate re-sample rate
-        sample_rate = tuple(
-            map(lambda x, y: math.ceil(float(x)/y), size, bounds))
+        sample_rate = tuple(map(lambda x, y: math.ceil(float(x) / y), size, bounds))
 
         # If a user has defined resample rate, check to see which has higher factor and keep that
         if sampleRate is not None:
-            sampleRate = Converter.highest_tuple_element(
-                sampleRate, sample_rate)
+            sampleRate = Converter.highest_tuple_element(sampleRate, sample_rate)
         else:
             sampleRate = sample_rate
 
@@ -258,15 +266,14 @@ class Converter(object):
         list_sample_index = sampleRate[2]
         filenames = filenames[::list_sample_index]
 
-        return Converter._tiffStack2numpy(filenames=filenames, extent=extent,
+        return Converter._tiffStack2numpy(filenames=filenames,
+                                          extent=extent,
                                           sampleRate=sampleRate,
                                           flatField=flatField,
                                           darkField=darkField)
 
     @staticmethod
-    def _tiffStack2numpy(filenames,
-                         extent=None, sampleRate=None,
-                         flatField=None, darkField=None, tiffOrientation=1):
+    def _tiffStack2numpy(filenames, extent=None, sampleRate=None, flatField=None, darkField=None, tiffOrientation=1):
         '''Converts a stack of TIFF files to numpy array.
 
         filename must contain the whole path. The filename is supposed to be named and
@@ -299,13 +306,12 @@ class Converter(object):
                 # Extent
                 if extent is None:
                     sliced = reader.GetOutput().GetExtent()
-                    stack.SetExtent(sliced[0], sliced[1],
-                                    sliced[2], sliced[3], 0, nreduced-1)
+                    stack.SetExtent(sliced[0], sliced[1], sliced[2], sliced[3], 0, nreduced - 1)
 
                     if sampleRate is not None:
                         voi.SetSampleRate(sampleRate)
-                        ext = numpy.asarray(
-                            [(sliced[2*i+1] - sliced[2*i])/sampleRate[i] for i in range(3)], dtype=int)
+                        ext = numpy.asarray([(sliced[2 * i + 1] - sliced[2 * i]) / sampleRate[i] for i in range(3)],
+                                            dtype=int)
                         stack.SetExtent(0, ext[0], 0, ext[1], 0, nreduced - 1)
                 else:
                     sliced = extent
@@ -314,22 +320,20 @@ class Converter(object):
                     # Sample Rate
                     if sampleRate is not None:
                         voi.SetSampleRate(sampleRate)
-                        ext = numpy.asarray(
-                            [(sliced[2*i+1] - sliced[2*i])/sampleRate[i] for i in range(3)], dtype=int)
+                        ext = numpy.asarray([(sliced[2 * i + 1] - sliced[2 * i]) / sampleRate[i] for i in range(3)],
+                                            dtype=int)
                         # print ("ext {0}".format(ext))
-                        stack.SetExtent(0, ext[0], 0, ext[1], 0, nreduced-1)
+                        stack.SetExtent(0, ext[0], 0, ext[1], 0, nreduced - 1)
                     else:
-                        stack.SetExtent(
-                            0, sliced[1] - sliced[0], 0, sliced[3]-sliced[2], 0, nreduced-1)
+                        stack.SetExtent(0, sliced[1] - sliced[0], 0, sliced[3] - sliced[2], 0, nreduced - 1)
 
                 # Flatfield
                 if (flatField != None and darkField != None):
                     stack.AllocateScalars(vtk.VTK_FLOAT, 1)
                 else:
-                    stack.AllocateScalars(
-                        reader.GetOutput().GetScalarType(), 1)
+                    stack.AllocateScalars(reader.GetOutput().GetScalarType(), 1)
 
-                print("Image Size: %d" % ((sliced[1]+1)*(sliced[3]+1)))
+                print("Image Size: %d" % ((sliced[1] + 1) * (sliced[3] + 1)))
                 stack_image = Converter.vtk2numpy(stack)
                 print("Stack shape %s" % str(numpy.shape(stack_image)))
 
@@ -344,8 +348,7 @@ class Converter(object):
             if darkField != None and flatField != None:
                 print("Try to normalize")
                 # if numpy.shape(darkField) == numpy.shape(flatField) and numpy.shape(flatField) == numpy.shape(theSlice):
-                theSlice = Converter.normalize(
-                    theSlice, darkField, flatField, 0.01)
+                theSlice = Converter.normalize(theSlice, darkField, flatField, 0.01)
                 print(theSlice.dtype)
 
             print("Slice shape %s" % str(numpy.shape(theSlice)))
@@ -356,10 +359,10 @@ class Converter(object):
     @staticmethod
     def normalize(projection, dark, flat, def_val=0):
         a = (projection - dark)
-        b = (flat-dark)
+        b = (flat - dark)
         with numpy.errstate(divide='ignore', invalid='ignore'):
             c = numpy.true_divide(a, b)
-            c[~ numpy.isfinite(c)] = def_val  # set to not zero if 0/0
+            c[~numpy.isfinite(c)] = def_val  # set to not zero if 0/0
         return c
 
     @staticmethod
@@ -419,15 +422,20 @@ class cilNumpyMETAImageWriter(object):
 
     def SetSpacing(self, value):
         if not (isinstance(value, list) or isinstance(value, tuple)):
-            raise ValueError(
-                'Spacing should be a list or a tuple. Got', type(value))
+            raise ValueError('Spacing should be a list or a tuple. Got', type(value))
         if len(value) != len(self.__Array.shape):
             self.__Spacing = value
             self.Modified()
 
     @staticmethod
-    def WriteMETAImageHeader(data_filename, header_filename, typecode, big_endian,
-                             header_length, shape, spacing=(1., 1., 1.), origin=(0., 0., 0.)):
+    def WriteMETAImageHeader(data_filename,
+                             header_filename,
+                             typecode,
+                             big_endian,
+                             header_length,
+                             shape,
+                             spacing=(1., 1., 1.),
+                             origin=(0., 0., 0.)):
         '''Writes a NumPy array and a METAImage text header so that the npy file can be used as data file
 
         Parameters
@@ -461,10 +469,8 @@ class cilNumpyMETAImageWriter(object):
         header += 'NDims = {0}\n'.format(len(shape))
         header += 'DimSize = {} {} {}\n'.format(shape[0], shape[1], shape[2])
         header += 'ElementType = {}\n'.format(ar_type)
-        header += 'ElementSpacing = {} {} {}\n'.format(
-            spacing[0], spacing[1], spacing[2])
-        header += 'Position = {} {} {}\n'.format(
-            origin[0], origin[1], origin[2])
+        header += 'ElementSpacing = {} {} {}\n'.format(spacing[0], spacing[1], spacing[2])
+        header += 'Position = {} {} {}\n'.format(origin[0], origin[1], origin[2])
         # MSB (aka big-endian)
         # MSB = 'True' if descr['descr'][0] == '>' else 'False'
         header += 'ElementByteOrderMSB = {}\n'.format(big_endian)
@@ -496,8 +502,14 @@ class cilNumpyMETAImageWriter(object):
             shape = list(readshape)[::-1]
         header_length = npyhdr['header_length']
 
-        cilNumpyMETAImageWriter.WriteMETAImageHeader(datafname, hdrfname, typecode, big_endian,
-                                                     header_length, shape, spacing=spacing, origin=origin)
+        cilNumpyMETAImageWriter.WriteMETAImageHeader(datafname,
+                                                     hdrfname,
+                                                     typecode,
+                                                     big_endian,
+                                                     header_length,
+                                                     shape,
+                                                     spacing=spacing,
+                                                     origin=origin)
 
 
 def WriteNumpyAsMETAImage(array, filename, spacing=(1., 1., 1.), origin=(0., 0., 0.)):
@@ -531,7 +543,7 @@ def parseNpyHeader(filename):
         descr = ''
         i = 0
     with open(filename, 'rb') as f:
-        f.seek(6+2 + HEADER_LEN_SIZE)
+        f.seek(6 + 2 + HEADER_LEN_SIZE)
 
         while i < HEADER_LEN:
             c = f.read(1)
@@ -539,17 +551,21 @@ def parseNpyHeader(filename):
             #print (c)
             descr += c
             i += 1
-    return {'type': 'NUMPY',
-            'version_major': major,
-            'version_minor': minor,
-            'header_length': HEADER_LEN + 6 + 2 + HEADER_LEN_SIZE,
-            'description': eval(descr)}
+    return {
+        'type': 'NUMPY',
+        'version_major': major,
+        'version_minor': minor,
+        'header_length': HEADER_LEN + 6 + 2 + HEADER_LEN_SIZE,
+        'description': eval(descr)
+    }
+
 
 # BASE READERS -----------------------------------------------------------------------------------------
 
+
 class cilBaseReader(VTKPythonAlgorithmBase):
     '''Base class with methods for setting and getting information about image data'''
-    
+
     def __init__(self):
         VTKPythonAlgorithmBase.__init__(self, nInputPorts=0, nOutputPorts=1)
 
@@ -609,15 +625,15 @@ class cilBaseReader(VTKPythonAlgorithmBase):
         return Converter.vtkType_to_bytes[self.GetOutputVTKType()]
 
     def GetBigEndian(self):
-        ''' returns whether the data in self._FileName is big endian''' 
+        ''' returns whether the data in self._FileName is big endian'''
         return self._BigEndian
 
     def GetIsFortran(self):
-        ''' returns whether the data in self._FileName is saved in fortran order''' 
+        ''' returns whether the data in self._FileName is saved in fortran order'''
         return self._IsFortran
 
     def GetOutputVTKType(self):
-        ''' returns the VTK datatype the read data set will be returned in''' 
+        ''' returns the VTK datatype the read data set will be returned in'''
         return self._OutputVTKType
 
     def SetStoredArrayShape(self, value):
@@ -633,8 +649,7 @@ class cilBaseReader(VTKPythonAlgorithmBase):
         if not isinstance(value, tuple):
             raise ValueError('Expected tuple, got {}'.format(type(value)))
         if len(value) != 3:
-            raise ValueError(
-                'Expected tuple of length 3, got {}'.format(len(value)))
+            raise ValueError('Expected tuple of length 3, got {}'.format(len(value)))
         self._StoredArrayShape = value
 
     def SetFileHeaderLength(self, value):
@@ -693,7 +708,7 @@ class cilBaseReader(VTKPythonAlgorithmBase):
     def GetMetaImageTypeCode(self):
         ''' Returns the typecode in meta image format, that could be written
         to a metaimage header.'''
-        conversion_dict = {value : key for (key, value) in Converter.MetaImageType_to_vtkType.items()}
+        conversion_dict = {value: key for (key, value) in Converter.MetaImageType_to_vtkType.items()}
         return conversion_dict[self.GetOutputVTKType()]
 
     def GetElementSpacing(self):
@@ -739,12 +754,13 @@ class cilBaseReader(VTKPythonAlgorithmBase):
 
     def GetTypeCodeName(self):
         ''' returns a human-readable string containing the data type'''
-        conversion_dict = {value : key for (key, value) in Converter.dtype_name_to_vtkType.items()}
+        conversion_dict = {value: key for (key, value) in Converter.dtype_name_to_vtkType.items()}
         return conversion_dict[self.GetOutputVTKType()]
 
     def SetTypeCodeName(self, value):
         if value not in Converter.dtype_name_to_vtkType.keys():
-            raise ValueError("Unexpected Type: got {}. Please choose one of: {}".format(value, Converter.dtype_name_to_vtkType.keys()))
+            raise ValueError("Unexpected Type: got {}. Please choose one of: {}".format(
+                value, Converter.dtype_name_to_vtkType.keys()))
         self.SetOutputVTKType(Converter.dtype_name_to_vtkType[value])
 
     def ReadDataSetInfo(self):
@@ -775,12 +791,13 @@ class cilBaseReader(VTKPythonAlgorithmBase):
 
         return slice_length
 
+
 class cilBaseRawReader(cilBaseReader):
     '''Baseclass with methods for reading information about raw files.'''
+
     def __init__(self):
         VTKPythonAlgorithmBase.__init__(self, nInputPorts=0, nOutputPorts=1)
         super(cilBaseRawReader, self).__init__()
-
 
     def ReadDataSetInfo(self):
         '''Tries to read info about dataset
@@ -788,12 +805,14 @@ class cilBaseRawReader(cilBaseReader):
         reading raw image are not set.'''
         if self.GetStoredArrayShape() is None:
             raise Exception("StoredArrayShape must be set.")
-        
+
         if self.GetOutputVTKType() is None:
             raise Exception("Typecode must be set.")
 
+
 class cilBaseNumpyReader(cilBaseReader):
     ''' Baseclass with methods for reading information about numpy files'''
+
     def __init__(self):
         VTKPythonAlgorithmBase.__init__(self, nInputPorts=0, nOutputPorts=1)
         super(cilBaseNumpyReader, self).__init__()
@@ -807,7 +826,7 @@ class cilBaseNumpyReader(cilBaseReader):
             if array_descr == np.dtype(t).descr[0][1][1:]:
                 typecode = t
                 break
-        
+
         big_endian = True if descr['description']['descr'][0] == '>' else False
         readshape = descr['description']['shape']
         is_fortran = descr['description']['fortran_order']
@@ -839,8 +858,10 @@ class cilBaseNumpyReader(cilBaseReader):
     def ReadDataSetInfo(self):
         self.ReadNpyHeader()
 
+
 class cilBaseHDF5Reader(cilBaseReader):
     ''' Baseclass with methods for setting and getting information about hdf5 files'''
+
     def __init__(self):
         VTKPythonAlgorithmBase.__init__(self, nInputPorts=0, nOutputPorts=1)
         super(cilBaseHDF5Reader, self).__init__()
@@ -891,8 +912,8 @@ class cilBaseHDF5Reader(cilBaseReader):
         self.SetStoredArrayShape(shape)
         # get the datatype:
         typecode = str(np.dtype(reader.GetDataType()))
-        self.SetOutputVTKType(
-            Converter.dtype_name_to_vtkType[typecode])
+        self.SetOutputVTKType(Converter.dtype_name_to_vtkType[typecode])
+
 
 class cilBaseMetaImageReader(cilBaseReader):
     ''' Baseclass with methods for setting and 
@@ -902,7 +923,6 @@ class cilBaseMetaImageReader(cilBaseReader):
         VTKPythonAlgorithmBase.__init__(self, nInputPorts=0, nOutputPorts=1)
         super(cilBaseMetaImageReader, self).__init__()
         self._CompressedData = False
-        
 
     def ReadMetaImageHeader(self):
         ''' Read info from the metaimage file's header, 
@@ -957,8 +977,7 @@ class cilBaseMetaImageReader(cilBaseReader):
                     element_data_file = line.split('= ')[-1]
                     if element_data_file != 'LOCAL':  # then we have an mhd file with data in another file
                         file_path = os.path.dirname(self.GetFileName())
-                        element_data_file = os.path.join(
-                            file_path, element_data_file)
+                        element_data_file = os.path.join(file_path, element_data_file)
                         # print("Filename: ", element_data_file)
                         self.SetFileName(element_data_file)
                     else:
@@ -1091,6 +1110,7 @@ class cilBaseResampleReader(cilBaseReader):
     This BaseClass provides the methods needed to resample a file, if the filename
     and dataset info has been set (these will be set in instances of derived classes)
     '''
+
     def __init__(self):
         VTKPythonAlgorithmBase.__init__(self, nInputPorts=0, nOutputPorts=1)
         super(cilBaseResampleReader, self).__init__()
@@ -1099,7 +1119,6 @@ class cilBaseResampleReader(cilBaseReader):
         self._SlicePerChunk = None
         self._TempDir = None
         self._ChunkReader = None
-        
 
     def SetTargetSize(self, value):
         ''''
@@ -1132,7 +1151,6 @@ class cilBaseResampleReader(cilBaseReader):
         and remove the need for re-writing out chunks.
         '''
         raise NotImplemented
-
 
     def UpdateChunkToRead(self, start_slice):
         '''Read the next chunk from the image file,
@@ -1201,14 +1219,15 @@ class cilBaseResampleReader(cilBaseReader):
                 # scaling is going to be similar in every axis
                 # (xy the same, z possibly different)
                 if not self.GetIsAcquisitionData():
-                    xy_axes_magnification = np.power(max_size/total_size, 1/3)
-                    num_slices_per_chunk = int(1/xy_axes_magnification) # number of slices in the z direction we are resampling together.
+                    xy_axes_magnification = np.power(max_size / total_size, 1 / 3)
+                    num_slices_per_chunk = int(
+                        1 / xy_axes_magnification)  # number of slices in the z direction we are resampling together.
                 else:
                     # If we have acquisition data we don't want to resample in the z
                     # direction because then we would be averaging projections together,
                     # so we have one slice per chunk
-                    num_slices_per_chunk = 1 # number of slices in the z direction we are resampling together.
-                    xy_axes_magnification = np.power(max_size/total_size, 1/2)
+                    num_slices_per_chunk = 1  # number of slices in the z direction we are resampling together.
+                    xy_axes_magnification = np.power(max_size / total_size, 1 / 2)
 
                 # Each chunk will be the z slices that we will resample together to form one new slice.
                 # Each chunk will contain num_slices_per_chunk number of slices.
@@ -1218,44 +1237,39 @@ class cilBaseResampleReader(cilBaseReader):
 
                 # indices of the first slice per chunk
                 # we will read in num_slices_per_chunk slices at a time
-                start_sliceno_in_chunks = [i for i in range(
-                    0, shape[2], num_slices_per_chunk)]
+                start_sliceno_in_chunks = [i for i in range(0, shape[2], num_slices_per_chunk)]
 
-                num_chunks = len(start_sliceno_in_chunks) # the number of chunks we will read in total
+                num_chunks = len(start_sliceno_in_chunks)  # the number of chunks we will read in total
 
                 # in the case of acquisition data this will be 1 as num_chunks=shape[2]:
-                z_axis_magnification = num_chunks / (shape[2]) 
+                z_axis_magnification = num_chunks / (shape[2])
 
-                target_image_shape = (int(xy_axes_magnification * shape[0]),
-                                      int(xy_axes_magnification * shape[1]),
+                target_image_shape = (int(xy_axes_magnification * shape[0]), int(xy_axes_magnification * shape[1]),
                                       num_chunks)
 
                 resampler = vtk.vtkImageReslice()
 
                 element_spacing = self.GetElementSpacing()
 
-                resampler.SetOutputSpacing(
-                    element_spacing[0]/xy_axes_magnification,
-                    element_spacing[1]/xy_axes_magnification,
-                    element_spacing[2]/z_axis_magnification)
+                resampler.SetOutputSpacing(element_spacing[0] / xy_axes_magnification,
+                                           element_spacing[1] / xy_axes_magnification,
+                                           element_spacing[2] / z_axis_magnification)
                 # resampled data
                 resampled_image = outData
 
-                resampled_image.SetExtent(0, target_image_shape[0]-1,
-                                          0, target_image_shape[1]-1,
-                                          0, target_image_shape[2]-1)
+                resampled_image.SetExtent(0, target_image_shape[0] - 1, 0, target_image_shape[1] - 1, 0,
+                                          target_image_shape[2] - 1)
 
-                resampled_image.SetSpacing(
-                    element_spacing[0]/xy_axes_magnification,
-                    element_spacing[1]/xy_axes_magnification,
-                    element_spacing[2]/z_axis_magnification)
+                resampled_image.SetSpacing(element_spacing[0] / xy_axes_magnification,
+                                           element_spacing[1] / xy_axes_magnification,
+                                           element_spacing[2] / z_axis_magnification)
 
-                new_spacing = [element_spacing[0]/xy_axes_magnification,
-                               element_spacing[1]/xy_axes_magnification,
-                               element_spacing[2]/z_axis_magnification]
+                new_spacing = [
+                    element_spacing[0] / xy_axes_magnification, element_spacing[1] / xy_axes_magnification,
+                    element_spacing[2] / z_axis_magnification
+                ]
 
                 original_origin = self.GetOrigin()
-
                 '''The new origin is based on where we need to position each slice in the world
                 If we have an image which is downsampled by 5 times, 
                 slices 0-4 are downsampled to a single slice and the image spacing is 5.
@@ -1267,8 +1281,7 @@ class cilBaseResampleReader(cilBaseReader):
 
                 In general, the origin must be at (image_spacing-1)/2 plus the original
                 position of the image's origin:'''
-                new_origin = tuple([(s-1)/2 + original_origin[i]
-                                   for i, s in enumerate(new_spacing)])
+                new_origin = tuple([(s - 1) / 2 + original_origin[i] for i, s in enumerate(new_spacing)])
 
                 resampled_image.SetOrigin(new_origin)
 
@@ -1286,17 +1299,14 @@ class cilBaseResampleReader(cilBaseReader):
                     # print(i, reader.GetOutput().GetScalarComponentAsDouble(0,0,0,0))
 
                     # change the extent of the resampled image
-                    extent = (0, target_image_shape[0]-1,
-                              0, target_image_shape[1]-1,
-                              i, i)
+                    extent = (0, target_image_shape[0] - 1, 0, target_image_shape[1] - 1, i, i)
 
                     resampler.SetOutputExtent(extent)
                     resampler.Update()
                     # print(i, resampler.GetOutput().GetScalarComponentAsDouble(0,0,i,0))
 
                     ################# vtk way ####################
-                    resampled_image.CopyAndCastFrom(
-                        resampler.GetOutput(), extent)
+                    resampled_image.CopyAndCastFrom(resampler.GetOutput(), extent)
                     self.UpdateProgress(i / num_chunks)
         except Exception as e:
             raise Exception(e)
@@ -1437,10 +1447,12 @@ class cilNumpyResampleReader(cilBaseNumpyReader, cilBaseBinaryBlobResampleReader
     image = reader.GetOutput()
     
     '''
+
     def __init__(self):
         VTKPythonAlgorithmBase.__init__(self, nInputPorts=0, nOutputPorts=1)
         super(cilNumpyResampleReader, self).__init__()
-    
+
+
 class cilHDF5ResampleReader(cilBaseResampleReader, cilBaseHDF5Reader):
     '''vtkAlgorithm to load and resample a HDF5 file to an approximate memory footprint
 
@@ -1457,13 +1469,14 @@ class cilHDF5ResampleReader(cilBaseResampleReader, cilBaseHDF5Reader):
     image = reader.GetOutput()
     
     '''
+
     def __init__(self):
         VTKPythonAlgorithmBase.__init__(self, nInputPorts=0, nOutputPorts=1)
         super(cilHDF5ResampleReader, self).__init__()
 
     def _GetInternalChunkReader(self):
         '''returns a reader which will only read a specific chunk of the data.
-        This is a chunk which will get resampled into a single slice.''' 
+        This is a chunk which will get resampled into a single slice.'''
         reader = HDF5Reader()
         reader.SetFileName(self.GetFileName())
         if self.GetDatasetName() is not None:
@@ -1484,15 +1497,14 @@ class cilHDF5ResampleReader(cilBaseResampleReader, cilBaseHDF5Reader):
         start_slice in the z direction'''
         num_slices_per_chunk = self._GetNumSlicesPerChunk()
         end_slice = start_slice + num_slices_per_chunk - 1
-        end_z_value = self.GetStoredArrayShape()[2]-1
+        end_z_value = self.GetStoredArrayShape()[2] - 1
         if end_slice > end_z_value:
             end_slice = end_z_value
         if start_slice < 0:
-            raise ValueError('{} ERROR: Start slice cannot be negative.'
-                             .format(self.__class__.__name__))
+            raise ValueError('{} ERROR: Start slice cannot be negative.'.format(self.__class__.__name__))
         dims = self.GetStoredArrayShape()
-        self._ChunkReader.SetUpdateExtent(
-            (0, dims[0]-1, 0, dims[1]-1, start_slice, end_slice))
+        self._ChunkReader.SetUpdateExtent((0, dims[0] - 1, 0, dims[1] - 1, start_slice, end_slice))
+
 
 
 class cilMetaImageResampleReader(cilBaseBinaryBlobResampleReader, cilBaseMetaImageReader):
@@ -1546,6 +1558,7 @@ class vortexTIFFResampleReader(cilBaseResampleReader, vortexBaseTIFFImageReader)
 
 # CROPPED READERS -----------------------------------------------------------------------------------
 
+
 class cilBaseCroppedReader(cilBaseReader):
     '''vtkAlgorithm to crop in the z direction
     '''
@@ -1593,7 +1606,6 @@ class cilBaseCroppedReader(cilBaseReader):
         else:
             shape = list(readshape)[::-1]
 
-        
         tmpdir = tempfile.mkdtemp()
         header_filename = os.path.join(tmpdir, "header.mhd")
         reader = vtk.vtkMetaImageReader()
@@ -1601,7 +1613,6 @@ class cilBaseCroppedReader(cilBaseReader):
 
         slice_length = self._GetSliceLengthInFile()
 
-        
         try:
             if self.GetTargetZExtent()[1] >= shape[2] and self.GetTargetZExtent()[0] <= 0:
                 # in this case we don't need to crop, so we read the whole dataset
@@ -1613,14 +1624,13 @@ class cilBaseCroppedReader(cilBaseReader):
                 # data - chunk_file_name which we will fill below.
 
                 cilNumpyMETAImageWriter.WriteMETAImageHeader(chunk_file_name,
-                                                            header_filename,
-                                                            self.GetMetaImageTypeCode(),
-                                                            big_endian,
-                                                            0,
-                                                            tuple(shape),
-                                                            spacing=tuple(
-                                                                self.GetElementSpacing()),
-                                                            origin=self.GetOrigin())
+                                                             header_filename,
+                                                             self.GetMetaImageTypeCode(),
+                                                             big_endian,
+                                                             0,
+                                                             tuple(shape),
+                                                             spacing=tuple(self.GetElementSpacing()),
+                                                             origin=self.GetOrigin())
 
                 image_file = self.GetFileName()
                 # Writes the entire dataset to chunk_file_name
@@ -1629,7 +1639,7 @@ class cilBaseCroppedReader(cilBaseReader):
                     chunk_location = file_header_length
                     with open(chunk_file_name, "wb") as chunk_file_object:
                         image_file_object.seek(chunk_location)
-                        chunk_length = slice_length*end_slice
+                        chunk_length = slice_length * end_slice
                         chunk = image_file_object.read(chunk_length)
                         chunk_file_object.write(chunk)
 
@@ -1654,8 +1664,7 @@ class cilBaseCroppedReader(cilBaseReader):
                                                          big_endian,
                                                          0,
                                                          tuple(shape),
-                                                         spacing=tuple(
-                                                             self.GetElementSpacing()),
+                                                         spacing=tuple(self.GetElementSpacing()),
                                                          origin=self.GetOrigin())
             image_file = self.GetFileName()
             chunk_location = file_header_length + \
@@ -1666,8 +1675,7 @@ class cilBaseCroppedReader(cilBaseReader):
             with open(chunk_file_name, "wb") as chunk_file_object:
                 with open(image_file, "rb") as image_file_object:
                     image_file_object.seek(chunk_location)
-                    chunk_length = (self.GetTargetZExtent()[
-                                    1] - self.GetTargetZExtent()[0] + 1) * slice_length
+                    chunk_length = (self.GetTargetZExtent()[1] - self.GetTargetZExtent()[0] + 1) * slice_length
                     chunk = image_file_object.read(chunk_length)
                     chunk_file_object.write(chunk)
 
@@ -1677,8 +1685,7 @@ class cilBaseCroppedReader(cilBaseReader):
             # Once we have read the data, update the extent to reflect where
             # we have cut the cropped dataset out of the original image
             Data = vtk.vtkImageData()
-            extent = (0, shape[0]-1, 0, shape[1]-1,
-                      self.GetTargetZExtent()[0], self.GetTargetZExtent()[1])
+            extent = (0, shape[0] - 1, 0, shape[1] - 1, self.GetTargetZExtent()[0], self.GetTargetZExtent()[1])
             Data.SetExtent(extent)
             Data.SetSpacing(self.GetElementSpacing())
             Data.SetOrigin(self.GetOrigin())
@@ -1697,7 +1704,6 @@ class cilBaseCroppedReader(cilBaseReader):
             if os.path.exists(tmpdir):
                 shutil.rmtree(tmpdir)
         return 1
-
 
 
 class cilRawCroppedReader(cilBaseCroppedReader, cilBaseRawReader):
@@ -1759,10 +1765,10 @@ class cilMetaImageCroppedReader(cilBaseCroppedReader, cilBaseMetaImageReader):
     reader.Update()
     image = reader.GetOutput()
     '''
+
     def __init__(self):
         VTKPythonAlgorithmBase.__init__(self, nInputPorts=0, nOutputPorts=1)
         super(cilMetaImageCroppedReader, self).__init__()
-
 
 
 class cilHDF5CroppedReader(cilBaseCroppedReader, cilBaseHDF5Reader):
@@ -1833,12 +1839,16 @@ class cilHDF5CroppedReader(cilBaseCroppedReader, cilBaseHDF5Reader):
 class vtkImageResampler(VTKPythonAlgorithmBase):
     '''vtkAlgorithm resample vtkImageData to an approximate memory footprint.
     '''
+
     def __init__(self):
-        VTKPythonAlgorithmBase.__init__(self, nInputPorts=1, inputType="vtkImageData", nOutputPorts=1, outputType="vtkImageData")
+        VTKPythonAlgorithmBase.__init__(self,
+                                        nInputPorts=1,
+                                        inputType="vtkImageData",
+                                        nOutputPorts=1,
+                                        outputType="vtkImageData")
 
         self._TargetSize = 256**3
         self._IsAcquisitionData = False
-
 
     def SetIsAcquisitionData(self, value):
         '''
@@ -1854,7 +1864,6 @@ class vtkImageResampler(VTKPythonAlgorithmBase):
         returns whether the dataset is acquisition data.
         '''
         return self._IsAcquisitionData
-        
 
     def SetTargetSize(self, value):
         ''''
@@ -1885,7 +1894,7 @@ class vtkImageResampler(VTKPythonAlgorithmBase):
         self._ElementSpacing = inData.GetSpacing()
         self._Origin = inData.GetOrigin()
         self._Extent = inData.GetExtent()
-        self._StoredArrayShape = (self._Extent[1]+1, (self._Extent[3]+1), (self._Extent[5]+1))
+        self._StoredArrayShape = (self._Extent[1] + 1, (self._Extent[3] + 1), (self._Extent[5] + 1))
         self._BytesPerElement = Converter.vtkType_to_bytes[inData.GetScalarType()]
 
     def GetElementSpacing(self):
@@ -1904,7 +1913,6 @@ class vtkImageResampler(VTKPythonAlgorithmBase):
         ''' Returns the shape of the input dataset as a tuple'''
         return self._StoredArrayShape
 
-
     def RequestData(self, request, inInfo, outInfo):
         inData = vtk.vtkImageData.GetData(inInfo[0])
         outData = vtk.vtkImageData.GetData(outInfo)
@@ -1918,7 +1926,7 @@ class vtkImageResampler(VTKPythonAlgorithmBase):
 
         max_size = self.GetTargetSize()
 
-        if total_size < max_size:  
+        if total_size < max_size:
             # in this case we don't need to resample
             outData.ShallowCopy(inData)
 
@@ -1927,59 +1935,54 @@ class vtkImageResampler(VTKPythonAlgorithmBase):
             # scaling is going to be similar in every axis
             # (xy the same, z possibly different)
             if not self.GetIsAcquisitionData():
-                xy_axes_magnification = np.power(max_size/total_size, 1/3)
-                num_slices_per_chunk = int(1/xy_axes_magnification) # number of slices in the z direction we are resampling together.
+                xy_axes_magnification = np.power(max_size / total_size, 1 / 3)
+                num_slices_per_chunk = int(
+                    1 / xy_axes_magnification)  # number of slices in the z direction we are resampling together.
             else:
                 # If we have acquisition data we don't want to resample in the z
                 # direction because then we would be averaging projections together,
                 # so we have one slice per chunk
-                num_slices_per_chunk = 1 # number of slices in the z direction we are resampling together.
-                xy_axes_magnification = np.power(max_size/total_size, 1/2)
+                num_slices_per_chunk = 1  # number of slices in the z direction we are resampling together.
+                xy_axes_magnification = np.power(max_size / total_size, 1 / 2)
 
             # Each chunk will be the z slices that we will resample together to form one new slice.
             # Each chunk will contain num_slices_per_chunk number of slices.
 
             # indices of the first slice per chunk
-            start_sliceno_in_chunks = [i for i in range(
-                0, shape[2], num_slices_per_chunk)]
+            start_sliceno_in_chunks = [i for i in range(0, shape[2], num_slices_per_chunk)]
 
-            num_chunks = len(start_sliceno_in_chunks) # the number of chunks we will read in total
+            num_chunks = len(start_sliceno_in_chunks)  # the number of chunks we will read in total
 
             # in the case of acquisition data this will be 1 as num_chunks=shape[2]:
             z_axis_magnification = num_chunks / (shape[2])
 
-            target_image_shape = (int(xy_axes_magnification * shape[0]),
-                                    int(xy_axes_magnification * shape[1]),
-                                    num_chunks)
+            target_image_shape = (int(xy_axes_magnification * shape[0]), int(xy_axes_magnification * shape[1]),
+                                  num_chunks)
 
             resampler = vtk.vtkImageReslice()
 
             element_spacing = self.GetElementSpacing()
 
-            resampler.SetOutputSpacing(
-                element_spacing[0]/xy_axes_magnification,
-                element_spacing[1]/xy_axes_magnification,
-                element_spacing[2]/z_axis_magnification)
+            resampler.SetOutputSpacing(element_spacing[0] / xy_axes_magnification,
+                                       element_spacing[1] / xy_axes_magnification,
+                                       element_spacing[2] / z_axis_magnification)
 
             resampler.SetInputData(inData)
 
             # change the extent of the resampled image
-            extent = (0, target_image_shape[0]-1,
-                        0, target_image_shape[1]-1,
-                        0, target_image_shape[2]-1)
+            extent = (0, target_image_shape[0] - 1, 0, target_image_shape[1] - 1, 0, target_image_shape[2] - 1)
 
             resampler.SetOutputExtent(extent)
             resampler.Update()
 
-
             # resampled data:
             resampled_image = resampler.GetOutput()
-            new_spacing = [element_spacing[0]/xy_axes_magnification,
-                            element_spacing[1]/xy_axes_magnification,
-                            element_spacing[2]/z_axis_magnification]
+            new_spacing = [
+                element_spacing[0] / xy_axes_magnification, element_spacing[1] / xy_axes_magnification,
+                element_spacing[2] / z_axis_magnification
+            ]
 
             original_origin = self.GetOrigin()
-
             '''The new origin is based on where we need to position each slice in the world
             If we have an image which is downsampled by 5 times, 
             slices 0-4 are downsampled to a single slice and the image spacing is 5.
@@ -1991,17 +1994,16 @@ class vtkImageResampler(VTKPythonAlgorithmBase):
 
             In general, the origin must be at (image_spacing-1)/2 plus the original
             position of the image's origin:'''
-            new_origin = tuple([(s-1)/2 + original_origin[i]
-                                for i, s in enumerate(new_spacing)])
+            new_origin = tuple([(s - 1) / 2 + original_origin[i] for i, s in enumerate(new_spacing)])
             resampled_image.SetOrigin(new_origin)
-            resampled_image.SetSpacing(
-                element_spacing[0]/xy_axes_magnification,
-                element_spacing[1]/xy_axes_magnification,
-                element_spacing[2]/z_axis_magnification)
-            
-            outData.ShallowCopy(resampled_image)              
+            resampled_image.SetSpacing(element_spacing[0] / xy_axes_magnification,
+                                       element_spacing[1] / xy_axes_magnification,
+                                       element_spacing[2] / z_axis_magnification)
+
+            outData.ShallowCopy(resampled_image)
 
         return 1
+
 
 if __name__ == '__main__':
     '''this represent a good base to perform a test for the numpy-metaimage writer'''
@@ -2009,8 +2011,7 @@ if __name__ == '__main__':
     dimY = 64
     dimZ = 32
     # a = numpy.zeros((dimX,dimY,dimZ), dtype=numpy.uint16)
-    a = numpy.random.randint(0, size=(dimX, dimY, dimZ),
-                             high=127,  dtype=numpy.uint16)
+    a = numpy.random.randint(0, size=(dimX, dimY, dimZ), high=127, dtype=numpy.uint16)
     # for x in range(a.shape[0]):
     #    for y in range(a.shape[1]):
     #        for z in range(a.shape[2]):
@@ -2022,7 +2023,7 @@ if __name__ == '__main__':
     #arfn = os.path.abspath('C:/Users/ofn77899/Documents/Projects/CCPi/GitHub/CCPi-Simpleflex/data/head.npy')
     arfn = 'test'
     WriteNumpyAsMETAImage(a, arfn)
-    hdrdescr = parseNpyHeader(arfn+'.npy')
+    hdrdescr = parseNpyHeader(arfn + '.npy')
 
     #a = numpy.load(arfn+'.npy')
 
@@ -2031,7 +2032,7 @@ if __name__ == '__main__':
     # plt.show()
 
     reader = vtk.vtkMetaImageReader()
-    reader.SetFileName(arfn+'.mhd')
+    reader.SetFileName(arfn + '.mhd')
     reader.Update()
 
     if False:
@@ -2052,11 +2053,9 @@ if __name__ == '__main__':
             for y in range(a.shape[1]):
                 for x in range(a.shape[0]):
                     v1 = a[x][y][z]
-                    v2 = numpy.uint8(
-                        reader.GetOutput().GetScalarComponentAsFloat(x, y, z, 0))
+                    v2 = numpy.uint8(reader.GetOutput().GetScalarComponentAsFloat(x, y, z, 0))
                     # print ("value check {} {} {},".format((x,y,z) ,v1,v2))
                     is_same = v1 == v2
                     if not is_same:
-                        raise ValueError(
-                            'arrays do not match', v1, v2, x, y, z)
+                        raise ValueError('arrays do not match', v1, v2, x, y, z)
         print('YEEE array match!')

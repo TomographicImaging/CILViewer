@@ -3,10 +3,8 @@ import unittest
 
 import numpy as np
 import vtk
-from ccpi.viewer.utils.conversion import (Converter, cilRawCroppedReader,
-                                          cilMetaImageCroppedReader,
+from ccpi.viewer.utils.conversion import (Converter, cilRawCroppedReader, cilMetaImageCroppedReader,
                                           cilNumpyCroppedReader)
-
 
 
 class TestCroppedReaders(unittest.TestCase):
@@ -36,7 +34,7 @@ class TestCroppedReaders(unittest.TestCase):
         image = reader.GetOutput()
         extent = list(image.GetExtent())
         og_shape = np.shape(self.input_3D_array)
-        og_extent = [0, og_shape[2]-1, 0, og_shape[1]-1, 0, og_shape[0]-1]
+        og_extent = [0, og_shape[2] - 1, 0, og_shape[1] - 1, 0, og_shape[0] - 1]
         expected_extent = og_extent
         expected_extent[4] = target_z_extent[0]
         expected_extent[5] = target_z_extent[1]
@@ -44,7 +42,7 @@ class TestCroppedReaders(unittest.TestCase):
 
     def check_values(self, target_z_extent, read_cropped_image):
         read_cropped_array = Converter.vtk2numpy(read_cropped_image)
-        cropped_array = self.input_3D_array[target_z_extent[0]:target_z_extent[1]+1, :, :]
+        cropped_array = self.input_3D_array[target_z_extent[0]:target_z_extent[1] + 1, :, :]
         np.testing.assert_array_equal(cropped_array, read_cropped_array)
 
     def test_raw_cropped_reader(self):
@@ -63,12 +61,10 @@ class TestCroppedReaders(unittest.TestCase):
         # Check raw type code was set correctly:
         self.assertEqual(raw_type_code, reader.GetTypeCodeName())
 
-
     def test_meta_and_numpy_cropped_readers(self):
         readers = [cilNumpyCroppedReader(), cilMetaImageCroppedReader()]
         filenames = [self.numpy_filename_3D, self.meta_filename_3D]
-        subtest_labels = ['cilNumpyCroppedReader',
-                          'cilMetaImageCroppedReader']
+        subtest_labels = ['cilNumpyCroppedReader', 'cilMetaImageCroppedReader']
         for i, reader in enumerate(readers):
             with self.subTest(reader=subtest_labels[i]):
                 filename = filenames[i]
