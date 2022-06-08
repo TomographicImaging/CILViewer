@@ -32,7 +32,6 @@ from ccpi.viewer.utils.hdf5_io import HDF5Reader, HDF5SubsetReader
 
 import shutil
 
-
 # Converter class
 class Converter(object):
     # inspired by
@@ -1052,7 +1051,38 @@ class vortexBaseTIFFImageReader(cilBaseReader):
         self.SetOutputVTKType(reader.GetOutput().GetScalarTypeAsString())
 
         self.Modified()
-        
+    
+    
+    def RequestData(self, request, inInfo, outInfo):
+    
+        outData = vtk.vtkImageData.GetData(outInfo)
+
+        reader = vtk.vtkTIFFReader()
+        sa = vtk.vtkStringArray()
+        num_files = len (self.GetFileName())
+        for i,fn in enumerate(self.GetFileName()):
+            # should check if file is accessible etc
+            reader.SetFileName(fn)
+            reader.Update()
+            if i == 0:
+                extent = reader.GetOutput().GetExtent()
+                outData.SetExtent(
+                            0, extent[1] - extent[0], 
+                            0, extent[3] - extent[2], 
+                            0, num_files)
+                outData.AllocateScalars(reader.GetOutput().GetScalarType(), 1)
+
+            extent = (0, extent[1] - extent[0], 
+                      0, extent[3] - extent[2],
+                      i, i)
+            reader.GetOutput().SetExtent(*extent)
+
+            ################# vtk way ####################
+            outData.CopyAndCastFrom(
+                reader.GetOutput(), extent)
+            self.UpdateProgress(i / num_files)
+
+        return 1
 
 
 # ---------------------- RESAMPLE READERS -------------------------------------------------------------
