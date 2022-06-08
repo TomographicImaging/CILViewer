@@ -63,9 +63,7 @@ def main() -> int:
 
 @state.change("slice")
 def update_slice(**kwargs):
-    TRAME_VIEWER.cil_viewer.setActiveSlice(kwargs["slice"])
-    TRAME_VIEWER.cil_viewer.updatePipeline()
-    TRAME_VIEWER.html_view.update()
+    TRAME_VIEWER.change_slice_number(kwargs["slice"])
 
 
 @state.change("orientation")
@@ -145,6 +143,11 @@ def change_background_color(**kwargs):
 @state.change("toggle_clipping")
 def change_clipping(**kwargs):
     TRAME_VIEWER.change_clipping(kwargs["toggle_clipping"])
+
+
+@state.change("show_slice_histogram")
+def show_slice_histogram(**kwargs):
+    TRAME_VIEWER.show_slice_histogram(kwargs["show_slice_histogram"])
 
 
 if __name__ == "__main__":
