@@ -7,7 +7,7 @@ from ccpi.viewer.utils.conversion import (Converter, cilRawResampleReader, cilMe
                                           cilNumpyResampleReader, cilNumpyMETAImageWriter,
                                           vortexTIFFResampleReader)
 import warnings
-import pysnooper
+
 
 def calculate_target_downsample_shape(max_size, total_size, shape, acq=False):
     if not acq:
