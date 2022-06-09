@@ -12,6 +12,8 @@ build:
   noarch: python
   
 test:
+  requires:
+    - pillow
   source_files:
     - ./Wrappers/Python/test
 
