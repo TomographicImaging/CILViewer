@@ -1078,29 +1078,11 @@ class vortexBaseTIFFImageReader(cilBaseReader):
 
         reader = vtk.vtkTIFFReader()
         sa = vtk.vtkStringArray()
-        num_files = len (self.GetFileName())
-        for i,fn in enumerate(self.GetFileName()):
-            # should check if file is accessible etc
-            reader.SetFileName(fn)
-            reader.Update()
-            if i == 0:
-                extent = reader.GetOutput().GetExtent()
-                outData.SetExtent(
-                            0, extent[1] - extent[0], 
-                            0, extent[3] - extent[2], 
-                            0, num_files)
-                outData.AllocateScalars(reader.GetOutput().GetScalarType(), 1)
-
-            extent = (0, extent[1] - extent[0], 
-                      0, extent[3] - extent[2],
-                      i, i)
-            reader.GetOutput().SetExtent(*extent)
-
-            ################# vtk way ####################
-            outData.CopyAndCastFrom(
-                reader.GetOutput(), extent)
-            self.UpdateProgress(i / num_files)
-
+        for fn in self.GetFileName():
+            sa.InsertNextValue(fn)
+        reader.SetFileNames(sa)
+        reader.Update()
+        outData.CopyAndCastFrom(reader.GetOutput(), reader.GetOutput().GetExtent())
         return 1
 
 
