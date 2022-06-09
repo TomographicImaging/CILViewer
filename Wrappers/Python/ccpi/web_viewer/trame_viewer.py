@@ -145,7 +145,7 @@ class TrameViewer:
     def construct_drawer_layout(self):
         # The difference is that we use range slider instead of detailed sliders
         self.slice_interaction_col = vuetify.VCol([
-            self.toggle_slice_visibility, self.slice_slider, self.orientation_radio_buttons,
+            self.toggle_slice_visibility, self.slice_slider, self.orientation_radio_buttons, self.show_slice_histogram_switch,
             self.toggle_window_details_button, self.slice_window_range_slider, self.slice_window_slider,
             self.slice_level_slider
         ])
