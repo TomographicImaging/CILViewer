@@ -50,6 +50,7 @@ def arg_parser():
             VIEWER_2D = True
     return data_finder()
 
+
 def data_finder():
     """
     Finds all files that are needed to be passed to the TrameViewer that in a list that is digestible, using the passed args.
@@ -90,6 +91,7 @@ def main() -> int:
 @state.change("slice")
 def update_slice(**kwargs):
     TRAME_VIEWER.change_slice_number(kwargs["slice"])
+
 
 @state.change("orientation")
 def change_orientation(**kwargs):

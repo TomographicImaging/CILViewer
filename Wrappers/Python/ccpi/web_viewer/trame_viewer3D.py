@@ -23,10 +23,13 @@ try:
 except ImportError:
     # Add optional overload to allow plt.colormaps to be called without matplotlib
     from ccpi.viewer.utils import CILColorMaps
+
     class BackupColorMaps:
+
         @staticmethod
         def colormaps():
             return ['viridis', 'plasma', 'inferno', 'magma']
+
     plt = BackupColorMaps()
 
 from trame import update_layout
@@ -41,6 +44,7 @@ INITIAL_IMAGE = "head.mha"
 
 
 class TrameViewer3D(TrameViewer):
+
     def __init__(self, list_of_files=None):
         super().__init__(list_of_files=list_of_files, viewer_class=CILViewer)
 
@@ -111,25 +115,16 @@ class TrameViewer3D(TrameViewer):
     def construct_drawer_layout(self):
         # The difference is that we use range slider instead of detailed sliders
         self.slice_interaction_col = vuetify.VCol([
-            self.toggle_slice_visibility,
-            self.slice_slider,
-            self.orientation_radio_buttons,
-            self.toggle_window_details_button,
-            self.slice_window_range_slider,
-            self.slice_window_slider,
+            self.toggle_slice_visibility, self.slice_slider, self.orientation_radio_buttons,
+            self.toggle_window_details_button, self.slice_window_range_slider, self.slice_window_slider,
             self.slice_level_slider
         ])
         self.slice_interaction_row = vuetify.VRow(self.slice_interaction_col)
         self.slice_interaction_section = vuetify.VContainer(self.slice_interaction_row)
 
         self.volume_interaction_col = vuetify.VCol([
-            self.toggle_volume_visibility,
-            self.opacity_radio_buttons,
-            self.color_choice,
-            self.color_slider,
-            self.clipping_switch,
-            self.clipping_removal_button,
-            self.windowing_range_slider
+            self.toggle_volume_visibility, self.opacity_radio_buttons, self.color_choice, self.color_slider,
+            self.clipping_switch, self.clipping_removal_button, self.windowing_range_slider
         ])
         self.volume_interaction_row = vuetify.VRow(self.volume_interaction_col)
         self.volume_interaction_section = vuetify.VContainer(self.volume_interaction_row)
@@ -175,13 +170,7 @@ class TrameViewer3D(TrameViewer):
         self.reset_defaults_button = self.create_reset_defaults_button()
 
     def create_reset_defaults_button(self):
-        return vuetify.VBtn(
-            "Reset defaults",
-            hide_details=True,
-            dense=True,
-            solo=True,
-            click=self.reset_defaults
-        )
+        return vuetify.VBtn("Reset defaults", hide_details=True, dense=True, solo=True, click=self.reset_defaults)
 
     def create_reset_camera_button(self):
         return vuetify.VBtn(
@@ -203,14 +192,12 @@ class TrameViewer3D(TrameViewer):
         )
 
     def create_clipping_removal_button(self):
-        return vuetify.VBtn(
-            "Remove clipping",
-            hide_details=True,
-            dense=True,
-            solo=True,
-            disabled=self.disable_3d,
-            click=self.remove_clipping_plane
-        )
+        return vuetify.VBtn("Remove clipping",
+                            hide_details=True,
+                            dense=True,
+                            solo=True,
+                            disabled=self.disable_3d,
+                            click=self.remove_clipping_plane)
 
     def create_color_choice_selector(self):
         return vuetify.VSelect(
@@ -242,13 +229,11 @@ class TrameViewer3D(TrameViewer):
         )
 
     def create_toggle_slice_visibility(self):
-        return vuetify.VSwitch(
-            label="2D Slice visibility",
-            v_model=("slice_visibility", True),
-            hide_details=True,
-            dense=True,
-            solo=True
-        )
+        return vuetify.VSwitch(label="2D Slice visibility",
+                               v_model=("slice_visibility", True),
+                               hide_details=True,
+                               dense=True,
+                               solo=True)
 
     def construct_color_slider(self):
         if self.cmax > 100:
@@ -263,19 +248,17 @@ class TrameViewer3D(TrameViewer):
             max_value = 100
             step = 0.5
             self.color_slider_is_percentage = True
-        
-        return vuetify.VRangeSlider(
-            label="Color range",
-            hide_details=True,
-            solo=True,
-            v_model=("coloring", self.windowing_defaults),
-            min=min_value,
-            max=max_value,
-            step=step,
-            disabled=self.disable_3d,
-            thumb_label=True,
-            style="max-width: 300px"
-        )
+
+        return vuetify.VRangeSlider(label="Color range",
+                                    hide_details=True,
+                                    solo=True,
+                                    v_model=("coloring", self.windowing_defaults),
+                                    min=min_value,
+                                    max=max_value,
+                                    step=step,
+                                    disabled=self.disable_3d,
+                                    thumb_label=True,
+                                    style="max-width: 300px")
 
     def construct_windowing_slider(self):
         if self.cmax > 100:
@@ -291,18 +274,16 @@ class TrameViewer3D(TrameViewer):
             step = 0.5
             self.windowing_slider_is_percentage = True
 
-        return vuetify.VRangeSlider(
-            label="Windowing",
-            hide_details=True,
-            solo=True,
-            v_model=("windowing", self.windowing_defaults),
-            min=min_value,
-            max=max_value,
-            step=step,
-            disabled=self.disable_3d,
-            thumb_label=True,
-            style="max-width: 300px"
-        )
+        return vuetify.VRangeSlider(label="Windowing",
+                                    hide_details=True,
+                                    solo=True,
+                                    v_model=("windowing", self.windowing_defaults),
+                                    min=min_value,
+                                    max=max_value,
+                                    step=step,
+                                    disabled=self.disable_3d,
+                                    thumb_label=True,
+                                    style="max-width: 300px")
 
     def update_windowing_defaults(self, method="scalar"):
         self.update_slice_data()
@@ -466,5 +447,5 @@ class TrameViewer3D(TrameViewer):
         if hasattr(self.cil_viewer, "planew"):
             app = vuetify.get_app_instance()
             app.set(key="toggle_clipping", value=False)
-            
+
             self.cil_viewer.remove_clipping_plane()

@@ -1395,9 +1395,13 @@ class CILViewer2D():
         # TODO resample on image1
         # print ("setInputData2")
         self.installPipeline2()
-        
-    def setInputAsNumpy(self, numpyarray,  origin=(0, 0, 0), spacing=(1., 1., 1.),
-                        rescale=True, dtype=vtk.VTK_UNSIGNED_SHORT):
+
+    def setInputAsNumpy(self,
+                        numpyarray,
+                        origin=(0, 0, 0),
+                        spacing=(1., 1., 1.),
+                        rescale=True,
+                        dtype=vtk.VTK_UNSIGNED_SHORT):
         self.rescale[0] = rescale
 
         importer = Converter.numpy2vtkImporter(numpyarray, spacing, origin)
@@ -1431,7 +1435,7 @@ class CILViewer2D():
 
         self.installPipeline()
 
-    def displaySlice(self, sliceno= [0]):
+    def displaySlice(self, sliceno=[0]):
         self.setActiveSlice(sliceno)
         self.updatePipeline()
         self.renWin.Render()
@@ -1454,13 +1458,11 @@ class CILViewer2D():
 
     def updateMainVOI(self):
         # get the current slice
-        extent = [ i for i in self.img3D.GetExtent()]
+        extent = [i for i in self.img3D.GetExtent()]
         extent[self.sliceOrientation * 2] = self.getActiveSlice()
         extent[self.sliceOrientation * 2 + 1] = self.getActiveSlice()
-        self.voi.SetVOI(extent[0], extent[1],
-                   extent[2], extent[3],
-                   extent[4], extent[5])
-        self.log ("extent {0}".format(extent))
+        self.voi.SetVOI(extent[0], extent[1], extent[2], extent[3], extent[4], extent[5])
+        self.log("extent {0}".format(extent))
         self.voi.Update()
         self.log("VOI dimensions {0}".format(self.voi.GetOutput().GetDimensions()))
         return extent
@@ -1475,8 +1477,9 @@ class CILViewer2D():
             self.voi2.SetVOI(self.voi.GetVOI())
             self.imageSliceMapper2.SetOrientation(self.sliceOrientation)
             self.imageSlice2.Update()
-            
-        text = self.createAnnotationText("slice", (self.getActiveSlice(), self.img3D.GetDimensions()[self.sliceOrientation] - 1))
+
+        text = self.createAnnotationText("slice",
+                                         (self.getActiveSlice(), self.img3D.GetDimensions()[self.sliceOrientation] - 1))
         self.updateCornerAnnotation(text, 0)
 
         if self.displayHistogram:
@@ -1573,16 +1576,14 @@ class CILViewer2D():
 
         self.voi.SetInputData(self.img3D)
         #select one slice in Z
-        extent = [ i for i in self.img3D.GetExtent()]
+        extent = [i for i in self.img3D.GetExtent()]
         for i in range(len(self.slicenos)):
-            self.slicenos[i] = round((extent[i * 2+1] + extent[i * 2])/2)
+            self.slicenos[i] = round((extent[i * 2 + 1] + extent[i * 2]) / 2)
 
         extent[self.sliceOrientation * 2] = self.getActiveSlice()
         extent[self.sliceOrientation * 2 + 1] = self.getActiveSlice()
-        
-        self.voi.SetVOI(extent[0], extent[1],
-                extent[2], extent[3],
-                extent[4], extent[5])
+
+        self.voi.SetVOI(extent[0], extent[1], extent[2], extent[3], extent[4], extent[5])
 
         self.voi.SetVOI(extent[0], extent[1], extent[2], extent[3], extent[4], extent[5])
 
@@ -1613,8 +1614,8 @@ class CILViewer2D():
 
         self.imageSlice.Update()
 
-        self.imageTracer.SetProjectionPosition(self.style.image2world([0,0,0])[self.GetSliceOrientation()])
-        
+        self.imageTracer.SetProjectionPosition(self.style.image2world([0, 0, 0])[self.GetSliceOrientation()])
+
         self.AddActor(self.imageSlice, SLICE_ACTOR)
 
         self.imageTracer.SetViewProp(self.imageSlice)
@@ -1658,7 +1659,7 @@ class CILViewer2D():
             self.iren.Initialize()
             self.renWin.Render()
         else:
-            print ("installPipeline2 no data")
+            print("installPipeline2 no data")
 
     def installRectilinearWipePipeline(self):
         '''Create the pipeline for the rectilinear wipe'''
@@ -1666,11 +1667,11 @@ class CILViewer2D():
         extent1 = list(self.img3D.GetExtent())
         #extent is slice number N
         for i in range(len(self.slicenos)):
-            self.slicenos[i] = round((extent1[i * 2+1] + extent1[i * 2])/2)
+            self.slicenos[i] = round((extent1[i * 2 + 1] + extent1[i * 2]) / 2)
         active_slice_num = self.getActiveSlice()
         orient = self.GetSliceOrientation()
-        extent1[orient]   = active_slice_num
-        extent1[orient+1] = active_slice_num
+        extent1[orient] = active_slice_num
+        extent1[orient + 1] = active_slice_num
         extent2 = extent1[:]
 
         self.voi.SetVOI(*extent1)
@@ -1710,12 +1711,12 @@ class CILViewer2D():
         pos = list(camera.GetPosition())
         if self.flipCameraPosition:
             fp[self.sliceOrientation] = -self.getActiveSlice()
-            pos[self.sliceOrientation] = - pos[self.sliceOrientation]
+            pos[self.sliceOrientation] = -pos[self.sliceOrientation]
             self.flipCameraPosition = False
             # have to reset to false so it doesn't flip when we scroll.
         else:
             fp[self.sliceOrientation] = self.getActiveSlice()
-        
+
         camera.SetFocalPoint(fp)
         camera.SetPosition(pos)
 
@@ -1972,8 +1973,8 @@ class CILViewer2D():
                 extent_x[3] = self.getActiveSlice()
                 extent_y[2] = self.getActiveSlice()
                 extent_y[3] = self.getActiveSlice()
-                self.linePlotActor.SetDataObjectXComponent(0,0)
-                self.linePlotActor.SetDataObjectXComponent(1,2)
+                self.linePlotActor.SetDataObjectXComponent(0, 0)
+                self.linePlotActor.SetDataObjectXComponent(1, 2)
 
             elif self.GetSliceOrientation() == SLICE_ORIENTATION_YZ:
                 self.log("slice orientation : YZ")
@@ -2078,7 +2079,7 @@ class CILViewer2D():
             name = 'actor_{}'.format(present_actors.GetNumberOfItems()+1)'''
 
         self.ren.AddActor(actor)
-        self.actors[name]  = actor
+        self.actors[name] = actor
 
     def GetActorsDict(self):
         return self.actors

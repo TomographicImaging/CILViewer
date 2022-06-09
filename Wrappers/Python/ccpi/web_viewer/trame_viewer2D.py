@@ -23,6 +23,7 @@ from ccpi.web_viewer.trame_viewer import TrameViewer
 
 
 class TrameViewer2D(TrameViewer):
+
     def __init__(self, list_of_files: list = None):
         super().__init__(list_of_files=list_of_files, viewer_class=CILViewer2D)
 
@@ -72,47 +73,28 @@ class TrameViewer2D(TrameViewer):
     def construct_drawer_layout(self):
         # The difference is that we use range slider instead of detailed sliders
         self.slice_interaction_col = vuetify.VCol([
-            self.slice_slider,
-            self.orientation_radio_buttons,
-            self.auto_window_level_button,
-            self.toggle_window_details_button,
-            self.slice_window_range_slider,
-            self.slice_window_slider,
-            self.slice_level_slider,
-            self.tracing_switch,
-            self.interpolation_of_slice_switch
+            self.slice_slider, self.orientation_radio_buttons, self.auto_window_level_button,
+            self.toggle_window_details_button, self.slice_window_range_slider, self.slice_window_slider,
+            self.slice_level_slider, self.tracing_switch, self.interpolation_of_slice_switch
         ])
         self.slice_interaction_row = vuetify.VRow(self.slice_interaction_col)
         self.slice_interaction_section = vuetify.VContainer(self.slice_interaction_row)
         self.layout.drawer.children = [
-            "Choose model to load",
-            self.model_choice,
-            vuetify.VDivider(),
-            "Choose background color",
-            self.background_choice,
-            vuetify.VDivider(),
-            self.slice_interaction_section,
-            vuetify.VDivider(),
-            self.reset_defaults_button
+            "Choose model to load", self.model_choice,
+            vuetify.VDivider(), "Choose background color", self.background_choice,
+            vuetify.VDivider(), self.slice_interaction_section,
+            vuetify.VDivider(), self.reset_defaults_button
         ]
 
     def create_auto_window_level_button(self):
-        return vuetify.VBtn(
-            "Auto Window/Level",
-            hide_details=True,
-            dense=True,
-            solo=True,
-            click=self.auto_window_level
-        )
+        return vuetify.VBtn("Auto Window/Level", hide_details=True, dense=True, solo=True, click=self.auto_window_level)
 
     def create_tracing_switch(self):
-        return vuetify.VSwitch(
-            label="Toggle Tracing",
-            v_model=("toggle_tracing", False),
-            hide_details=True,
-            dense=True,
-            solo=True
-        )
+        return vuetify.VSwitch(label="Toggle Tracing",
+                               v_model=("toggle_tracing", False),
+                               hide_details=True,
+                               dense=True,
+                               solo=True)
 
     def create_interpolation_of_slice_switch(self):
         return vuetify.VSwitch(
@@ -124,13 +106,7 @@ class TrameViewer2D(TrameViewer):
         )
 
     def create_reset_defaults_button(self):
-        return vuetify.VBtn(
-            "Reset Defaults",
-            hide_details=True,
-            dense=True,
-            solo=True,
-            click=self.reset_defaults
-        )
+        return vuetify.VBtn("Reset Defaults", hide_details=True, dense=True, solo=True, click=self.reset_defaults)
 
     def change_tracing(self, tracing: bool):
         if tracing:

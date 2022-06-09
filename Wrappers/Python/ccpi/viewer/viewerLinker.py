@@ -308,8 +308,7 @@ class ViewerLinkObserver():
                 shouldPassEvent = False
             else:
                 # Linked, check if orientation is the same
-                if (self.sourceVtkViewer.getSliceOrientation() !=
-                        self.targetVtkViewer.getSliceOrientation()):
+                if (self.sourceVtkViewer.getSliceOrientation() != self.targetVtkViewer.getSliceOrientation()):
                     shouldPassEvent = False
 
         # KeyPress and orientation

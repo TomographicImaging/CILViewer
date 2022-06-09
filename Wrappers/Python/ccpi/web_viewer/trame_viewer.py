@@ -31,6 +31,7 @@ class TrameViewer:
     """
     This class is intended as a base class and not to be used outside of one of the TrameViewer2D and TrameViewer3D classes.
     """
+
     def __init__(self, viewer_class, list_of_files: list = None):
         # Load files and setup the CILViewer
         if list_of_files is None:
@@ -102,12 +103,7 @@ class TrameViewer:
         useful_file_list = []
         for file_path in self.list_of_files:
             file_name = os.path.basename(file_path)
-            useful_file_list.append(
-                {
-                    "text": file_name,
-                    "value": file_path
-                }
-            )
+            useful_file_list.append({"text": file_name, "value": file_path})
 
         return vuetify.VSelect(
             v_model=("file_name", self.default_file),
@@ -118,12 +114,10 @@ class TrameViewer:
 
     def create_background_selector(self):
         initial_list = dir(colors)
-        color_list = [
-            {
-                "text": "Miles blue",
-                "value": "cil_viewer_blue",
-            }
-        ]
+        color_list = [{
+            "text": "Miles blue",
+            "value": "cil_viewer_blue",
+        }]
         for color in initial_list:
             if "__" in color:
                 continue
@@ -132,32 +126,23 @@ class TrameViewer:
             else:
                 filtered_color = color
             filtered_color = filtered_color.capitalize()
-            color_list.append(
-                {
-                    "text": filtered_color,
-                    "value": color
-                }
-            )
-        return vuetify.VSelect(
-            v_model=("background_color", "cil_viewer_blue"),
-            items=("background_color_options", color_list),
-            hide_details=True,
-            solo=True
-        )
+            color_list.append({"text": filtered_color, "value": color})
+        return vuetify.VSelect(v_model=("background_color", "cil_viewer_blue"),
+                               items=("background_color_options", color_list),
+                               hide_details=True,
+                               solo=True)
 
     def create_slice_slider(self, disabled: bool = False):
-        return vuetify.VSlider(
-            v_model=("slice", self.default_slice),
-            min=0,
-            max=self.max_slice,
-            step=1,
-            hide_details=True,
-            dense=True,
-            label="Slice",
-            thumb_label=True,
-            disabled=disabled,
-            style="max-width: 300px"
-        )
+        return vuetify.VSlider(v_model=("slice", self.default_slice),
+                               min=0,
+                               max=self.max_slice,
+                               step=1,
+                               hide_details=True,
+                               dense=True,
+                               label="Slice",
+                               thumb_label=True,
+                               disabled=disabled,
+                               style="max-width: 300px")
 
     def create_toggle_window_details_button(self, disabled: bool = False):
         return vuetify.VSwitch(
@@ -200,18 +185,16 @@ class TrameViewer:
         else:
             style = "visibility: hidden; height: 0"
 
-        return vuetify.VSlider(
-            v_model=("slice_window", self.slice_window_default),
-            min=min_value,
-            max=max_value,
-            step=step,
-            hide_details=True,
-            disabled=disabled,
-            dense=True,
-            label="Slice window",
-            thumb_label=True,
-            style=style
-        )
+        return vuetify.VSlider(v_model=("slice_window", self.slice_window_default),
+                               min=min_value,
+                               max=max_value,
+                               step=step,
+                               hide_details=True,
+                               disabled=disabled,
+                               dense=True,
+                               label="Slice window",
+                               thumb_label=True,
+                               style=style)
 
     def construct_slice_level_slider(self, disabled: bool = False):
         if self.cmax > 100:
@@ -232,18 +215,16 @@ class TrameViewer:
         else:
             style = "visibility: hidden; height: 0"
 
-        return vuetify.VSlider(
-            v_model=("slice_level", self.slice_level_default),
-            min=min_value,
-            max=max_value,
-            step=step,
-            hide_details=True,
-            dense=True,
-            disabled=disabled,
-            label="Slice level",
-            thumb_label=True,
-            style=style
-        )
+        return vuetify.VSlider(v_model=("slice_level", self.slice_level_default),
+                               min=min_value,
+                               max=max_value,
+                               step=step,
+                               hide_details=True,
+                               dense=True,
+                               disabled=disabled,
+                               label="Slice level",
+                               thumb_label=True,
+                               style=style)
 
     def construct_slice_window_range_slider(self, disabled: bool = False):
         if self.cmax > 100:
@@ -308,17 +289,15 @@ class TrameViewer:
         # Update the slice slider when orientation changes as the number of slices changes
         self.update_slice_slider_data()
         if hasattr(self, "slice_slider") and self.slice_slider is not None:
-            self.slice_slider = vuetify.VSlider(
-                v_model=("slice", self.default_slice),
-                min=0,
-                max=self.max_slice,
-                step=1,
-                hide_details=True,
-                dense=True,
-                label="Slice",
-                thumb_label=True,
-                style="max-width: 300px"
-            )
+            self.slice_slider = vuetify.VSlider(v_model=("slice", self.default_slice),
+                                                min=0,
+                                                max=self.max_slice,
+                                                step=1,
+                                                hide_details=True,
+                                                dense=True,
+                                                label="Slice",
+                                                thumb_label=True,
+                                                style="max-width: 300px")
             self.construct_drawer_layout()
             update_layout(self.layout)
         self.cil_viewer.updatePipeline()
@@ -330,7 +309,8 @@ class TrameViewer:
         # Translate current color level and color window to range_min and range_max
         current_level = self.cil_viewer.getSliceColorLevel()
         current_window = self.cil_viewer.getSliceColorWindow()
-        range_min = (current_window - 2 * current_level) / -2  # The reverse of the window calculation in web_app.change_slice_window_level
+        range_min = (current_window - 2 *
+                     current_level) / -2  # The reverse of the window calculation in web_app.change_slice_window_level
         range_max = current_window + range_min
 
         # Setup the defaults pre-flip
@@ -373,9 +353,11 @@ class TrameViewer:
         self.html_view.update()
 
     def construct_drawer_layout(self):
-        raise NotImplementedError("This function is not implemented in the base class, but you can expect an implementation in it's sub"
-                                  " classes.")
+        raise NotImplementedError(
+            "This function is not implemented in the base class, but you can expect an implementation in it's sub"
+            " classes.")
 
     def create_drawer_ui_elements(self):
-        raise NotImplementedError("This function is not implemented in the base class, but you can expect an implementation in it's sub"
-                                  " classes.")
+        raise NotImplementedError(
+            "This function is not implemented in the base class, but you can expect an implementation in it's sub"
+            " classes.")
