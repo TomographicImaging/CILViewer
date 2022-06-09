@@ -1858,6 +1858,7 @@ class vtkImageResampler(VTKPythonAlgorithmBase):
             whether the dataset is acquisition data.
         '''
         self._IsAcquisitionData = value
+        self.Modified()
 
     def GetIsAcquisitionData(self):
         '''
