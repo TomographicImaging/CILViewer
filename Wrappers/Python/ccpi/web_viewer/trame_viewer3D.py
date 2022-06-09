@@ -322,23 +322,6 @@ class TrameViewer3D(TrameViewer):
         app.set(key="windowing", value=self.windowing_defaults)
         app.set(key="coloring", value=self.windowing_defaults)
 
-    def update_slice_slider_data(self):
-        super().update_slice_slider_data()
-        if hasattr(self, "slice_slider") and self.slice_slider is not None:
-            self.slice_slider = vuetify.VSlider(
-                v_model=("slice", self.default_slice),
-                min=0,
-                max=self.max_slice,
-                step=1,
-                hide_details=True,
-                dense=True,
-                label="Slice",
-                thumb_label=True,
-                style="max-width: 300px"
-            )
-            self.construct_drawer_layout()
-            update_layout(self.layout)
-
     def load_file(self, file_name, windowing_method="scalar"):
         # Perform the load before updating the UI
         super().load_file(file_name, windowing_method="scalar")

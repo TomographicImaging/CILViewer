@@ -17,6 +17,7 @@
 #
 import os
 
+from trame import update_layout
 from trame.html import vtk, vuetify
 from trame.layouts import SinglePageWithDrawer
 from vtkmodules.util import colors
@@ -304,6 +305,22 @@ class TrameViewer:
             self.cil_viewer.style.ChangeOrientation(slice_orientation)
         else:
             self.cil_viewer.sliceOrientation = slice_orientation
+        # Update the slice slider when orientation changes as the number of slices changes
+        self.update_slice_slider_data()
+        if hasattr(self, "slice_slider") and self.slice_slider is not None:
+            self.slice_slider = vuetify.VSlider(
+                v_model=("slice", self.default_slice),
+                min=0,
+                max=self.max_slice,
+                step=1,
+                hide_details=True,
+                dense=True,
+                label="Slice",
+                thumb_label=True,
+                style="max-width: 300px"
+            )
+            self.construct_drawer_layout()
+            update_layout(self.layout)
         self.cil_viewer.updatePipeline()
         self.html_view.update()
 
