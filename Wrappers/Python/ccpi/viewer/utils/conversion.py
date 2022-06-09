@@ -1063,7 +1063,10 @@ class vortexBaseTIFFImageReader(cilBaseReader):
         reader.Update()
         dimensions = reader.GetOutput().GetDimensions()
         zdim = len(self.GetFileName())
-        readshape = (dimensions[0], dimensions[1], zdim)
+        if self.GetIsFortran():
+            readshape = (dimensions[0], dimensions[1], zdim)
+        else:
+            readshape = (zdim, dimensions[1], dimensions[0])
         self.SetStoredArrayShape(readshape)
 
 
