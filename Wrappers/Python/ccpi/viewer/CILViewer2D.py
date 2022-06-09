@@ -450,7 +450,8 @@ class CILInteractorStyle(vtk.vtkInteractorStyle):
         if new_slice_orientation == SLICE_ORIENTATION_XY:
             # Equivalent to pressing z
             if orientation == SLICE_ORIENTATION_YZ:
-                camera.Azimuth(90)
+                self.FlipCameraPosition(True)
+                camera.Elevation(90)
             elif orientation == SLICE_ORIENTATION_XZ:
                 camera.Elevation(-90)
                 self.FlipCameraPosition(True)
@@ -461,8 +462,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyle):
                 camera.Elevation(90)
                 self.FlipCameraPosition(True)
             elif orientation == SLICE_ORIENTATION_YZ:
-                self.FlipCameraPosition(True)
-                camera.Elevation(90)
+                camera.Azimuth(90)
             camera.SetViewUp(0, 0, -1)
         elif new_slice_orientation == SLICE_ORIENTATION_YZ:
             # Equivalent to pressing x
