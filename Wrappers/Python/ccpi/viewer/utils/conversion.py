@@ -32,6 +32,7 @@ from ccpi.viewer.utils.hdf5_io import HDF5Reader, HDF5SubsetReader
 
 import shutil
 
+
 # Converter class
 class Converter(object):
     # inspired by
@@ -1014,7 +1015,6 @@ class vortexBaseTIFFImageReader(cilBaseReader):
         VTKPythonAlgorithmBase.__init__(self, nInputPorts=0, nOutputPorts=1)
         super(vortexBaseTIFFImageReader, self).__init__()
         self._CompressedData = False
-        
 
     def SetFileName(self, value):
         ''' Set the file name or path from which to read the image data
@@ -1024,15 +1024,15 @@ class vortexBaseTIFFImageReader(cilBaseReader):
         value: (str)
             file name or path
         '''
-        if isinstance (value, (list, tuple)):
-            for el in value:                
+        if isinstance(value, (list, tuple)):
+            for el in value:
                 if not os.path.exists(el):
                     raise ValueError('File does not exist!', el)
 
         else:
             value = [value]
             return self.SetFileName(value)
-            
+
         if value != self.GetFileName():
             self._FileName = value
             self.Modified()
@@ -1069,14 +1069,12 @@ class vortexBaseTIFFImageReader(cilBaseReader):
             readshape = (zdim, dimensions[1], dimensions[0])
         self.SetStoredArrayShape(readshape)
 
-
         self.SetOutputVTKType(reader.GetOutput().GetScalarType())
 
         self.Modified()
-    
-    
+
     def RequestData(self, request, inInfo, outInfo):
-    
+
         outData = vtk.vtkImageData.GetData(outInfo)
 
         reader = vtk.vtkTIFFReader()
@@ -1174,7 +1172,6 @@ class cilBaseResampleReader(cilBaseReader):
                 raise Exception("FileName must be set.")
 
             self.ReadDataSetInfo()
-
 
             # get basic info
             readshape = self.GetStoredArrayShape()
@@ -1310,6 +1307,7 @@ class cilBaseBinaryBlobResampleReader(cilBaseResampleReader):
     This BaseClass provides the methods needed to resample a file, if the filename
     and dataset info has been set (these will be set in instances of derived classes)
     '''
+
     def __init__(self):
         VTKPythonAlgorithmBase.__init__(self, nInputPorts=0, nOutputPorts=1)
         super(cilBaseBinaryBlobResampleReader, self).__init__()
@@ -1318,7 +1316,7 @@ class cilBaseBinaryBlobResampleReader(cilBaseResampleReader):
         self._SlicePerChunk = None
         self._TempDir = None
         self._ChunkReader = None
-        
+
     def _GetInternalChunkReader(self):
         ''' Returns a reader which can be used to read each chunk.
         The reader is always going to read the header file: header.mhd, and
@@ -1356,19 +1354,16 @@ class cilBaseBinaryBlobResampleReader(cilBaseResampleReader):
             num_slices_per_chunk = shape[2]
         chunk_shape[2] = num_slices_per_chunk
 
-        cilNumpyMETAImageWriter.WriteMETAImageHeader(
-            chunk_file_name,
-            header_filename,
-            self.GetMetaImageTypeCode(),
-            self.GetBigEndian(),
-            0,
-            tuple(chunk_shape),
-            spacing=tuple(self.GetElementSpacing()),
-            origin=self.GetOrigin()
-        )
+        cilNumpyMETAImageWriter.WriteMETAImageHeader(chunk_file_name,
+                                                     header_filename,
+                                                     self.GetMetaImageTypeCode(),
+                                                     self.GetBigEndian(),
+                                                     0,
+                                                     tuple(chunk_shape),
+                                                     spacing=tuple(self.GetElementSpacing()),
+                                                     origin=self.GetOrigin())
         self._ChunkReader = reader
         return reader
-
 
     def UpdateChunkToRead(self, start_slice):
         '''Read the next chunk from the image file,
@@ -1379,19 +1374,17 @@ class cilBaseBinaryBlobResampleReader(cilBaseResampleReader):
         '''
 
         # This is the length of the chunk we will read from the file in bytes:
-        chunk_length = self._GetSliceLengthInFile()*self._GetNumSlicesPerChunk()
-        
+        chunk_length = self._GetSliceLengthInFile() * self._GetNumSlicesPerChunk()
+
         with open(self.GetFileName(), "rb") as image_file_object:
             if start_slice < 0:
-                raise ValueError('{} ERROR: Start slice cannot be negative.'
-                                 .format(self.__class__.__name__))
-            chunk_location = self.GetFileHeaderLength() + start_slice*self._GetSliceLengthInFile()
+                raise ValueError('{} ERROR: Start slice cannot be negative.'.format(self.__class__.__name__))
+            chunk_location = self.GetFileHeaderLength() + start_slice * self._GetSliceLengthInFile()
             with open(self._ChunkFileName, "wb") as chunk_file_object:
                 image_file_object.seek(chunk_location)
                 chunk = image_file_object.read(chunk_length)
                 chunk_file_object.write(chunk)
 
-    
 
 class cilRawResampleReader(cilBaseBinaryBlobResampleReader, cilBaseRawReader):
     '''vtkAlgorithm to load and resample a raw file to an approximate memory footprint
@@ -1416,6 +1409,7 @@ class cilRawResampleReader(cilBaseBinaryBlobResampleReader, cilBaseRawReader):
     def __init__(self):
         VTKPythonAlgorithmBase.__init__(self, nInputPorts=0, nOutputPorts=1)
         super(cilRawResampleReader, self).__init__()
+
 
 class cilNumpyResampleReader(cilBaseNumpyReader, cilBaseBinaryBlobResampleReader):
     '''vtkAlgorithm to load and resample a numpy file to an approximate memory footprint
@@ -1491,7 +1485,6 @@ class cilHDF5ResampleReader(cilBaseResampleReader, cilBaseHDF5Reader):
         self._ChunkReader.SetUpdateExtent((0, dims[0] - 1, 0, dims[1] - 1, start_slice, end_slice))
 
 
-
 class cilMetaImageResampleReader(cilBaseBinaryBlobResampleReader, cilBaseMetaImageReader):
     '''vtkAlgorithm to load and resample a metaimage file to an approximate memory footprint
     
@@ -1513,11 +1506,11 @@ class cilMetaImageResampleReader(cilBaseBinaryBlobResampleReader, cilBaseMetaIma
         super(cilMetaImageResampleReader, self).__init__()
 
 
-
 class vortexTIFFResampleReader(cilBaseResampleReader, vortexBaseTIFFImageReader):
+
     def _GetInternalChunkReader(self):
         '''returns a reader which will only read a specific chunk of the data.
-        This is a chunk which will get resampled into a single slice.''' 
+        This is a chunk which will get resampled into a single slice.'''
         reader = vtk.vtkTIFFReader()
         self._ChunkReader = reader
         return reader
@@ -1527,19 +1520,19 @@ class vortexTIFFResampleReader(cilBaseResampleReader, vortexBaseTIFFImageReader)
         start_slice in the z direction'''
         num_slices_per_chunk = self._GetNumSlicesPerChunk()
         end_slice = start_slice + num_slices_per_chunk - 1
-        end_z_value = self.GetStoredArrayShape()[2]-1
+        end_z_value = self.GetStoredArrayShape()[2] - 1
         if end_slice > end_z_value:
             end_slice = end_z_value
         if start_slice < 0:
-            raise ValueError('{} ERROR: Start slice cannot be negative.'
-                             .format(self.__class__.__name__))
+            raise ValueError('{} ERROR: Start slice cannot be negative.'.format(self.__class__.__name__))
         dims = self.GetStoredArrayShape()
 
         fnames = self.GetFileName()
         chunk = vtk.vtkStringArray()
-        for i in range(start_slice, end_slice+1):
+        for i in range(start_slice, end_slice + 1):
             chunk.InsertNextValue(fnames[i])
         self._ChunkReader.SetFileNames(chunk)
+
 
 # CROPPED READERS -----------------------------------------------------------------------------------
 
