@@ -5,7 +5,7 @@ LABEL \
   author.name="Edoardo Pasca, Laura Murgatroyd , Samuel Jones" \
   author.email=edoardo.pasca@stfc.ac.uk \
   maintainer.email=edoardo.pasca@stfc.ac.uk \
-  maintainer.url=https://www.ccpsynerbi.ac.uk/  \
+  maintainer.url=https://www.ccpi.ac.uk/  \
   source.url=https://github.com/vais-ral/CILViewer  \
   licence="Apache License 2.0 (https://www.apache.org/licenses/LICENSE-2.0)"  \
   description="CILViewer Ubuntu"
