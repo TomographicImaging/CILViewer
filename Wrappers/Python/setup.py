@@ -72,7 +72,7 @@ setup(
     # could also include long_description, download_url, classifiers, etc.
     entry_points={
         'console_scripts': [
-            'cilwebapp = ccpi.web_viewer.web_app:main'
+            'web_cilviewer = ccpi.web_viewer.web_app:main'
         ]
     }
 )
