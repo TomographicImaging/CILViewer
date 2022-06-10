@@ -71,5 +71,4 @@ setup(
     url="http://www.ccpi.ac.uk",  # project home page
 
     # could also include long_description, download_url, classifiers, etc.
-    entry_points={'console_scripts': ['web_cilviewer = ccpi.web_viewer.web_app:main']}
-)
+    entry_points={'console_scripts': ['web_cilviewer = ccpi.web_viewer.web_app:main']})
