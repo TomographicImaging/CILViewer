@@ -11,7 +11,7 @@ build:
   number: {{ GIT_DESCRIBE_NUMBER }}
   noarch: python
   entry_points:
-   - web_cilviewer = ccpi.web_viewer.web_app:main
+    - web_cilviewer = ccpi.web_viewer.web_app:main
   
 test:
   source_files:
