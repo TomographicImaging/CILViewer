@@ -69,5 +69,7 @@ setup(
     license="Apache v2.0",
     keywords="3D data viewer",
     url="http://www.ccpi.ac.uk",  # project home page
+    package_data={'': ['viewer/data/*']},
+
     # could also include long_description, download_url, classifiers, etc.
-    entry_points={'console_scripts': ['web_cilviewer = ccpi.web_viewer.web_app:main']})
+)
