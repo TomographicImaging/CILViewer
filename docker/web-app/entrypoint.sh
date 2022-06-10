@@ -3,4 +3,4 @@
 . /home/abc/mambaforge/etc/profile.d/conda.sh
 conda activate cilviewer_webapp
 
-cilwebapp ./data
+xvfb-run -a web_cilviewer ./data --host 0.0.0.0 --server

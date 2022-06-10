@@ -21,7 +21,9 @@ WORKDIR ${HOME}
 USER root
 RUN apt-get update -y && \
     apt-get upgrade -y && \
-    apt-get install curl git -y
+    apt-get install curl git -y && \
+    # Add VTK dependencies and xvfb for running displays in a container
+    apt-get install libgl1 libxrender1 libgl1-mesa-dev xvfb -y
 
 USER ${NB_USER}:${NB_GROUP}
 
