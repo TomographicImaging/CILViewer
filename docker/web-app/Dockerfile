@@ -36,7 +36,10 @@ COPY clone-and-install.sh .
 RUN bash clone-and-install.sh
 RUN rm clone-and-install.sh
 
-COPY head.mha ./data/
+COPY create-data-folder.sh .
+RUN bash create-data-folder.sh
+RUN rm create-data-folder.sh
+
 COPY entrypoint.sh /usr/local/bin/
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 
