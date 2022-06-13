@@ -31,9 +31,9 @@ class TestData(object):
     '''Class to return test data
     
     provides 1 dataset:
-    HEAD = 'headsq.mha'
+    HEAD = 'head.mha'
     '''
-    HEAD = 'headsq.mha'
+    HEAD = 'head.mha'
 
     def __init__(self, **kwargs):
         self.data_dir = kwargs.get('data_dir', data_dir)
