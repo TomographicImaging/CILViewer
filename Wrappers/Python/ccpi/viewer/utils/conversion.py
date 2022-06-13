@@ -923,7 +923,10 @@ class cilBaseMetaImageReader(cilBaseReader):
         VTKPythonAlgorithmBase.__init__(self, nInputPorts=0, nOutputPorts=1)
         super(cilBaseMetaImageReader, self).__init__()
         self._CompressedData = False
+        self._ElementFile = None
 
+    # import pysnooper
+    # @pysnooper.snoop()
     def ReadMetaImageHeader(self):
         ''' Read info from the metaimage file's header, 
         including endianness, origin, spacing, shape and typecode,
@@ -976,12 +979,13 @@ class cilBaseMetaImageReader(cilBaseReader):
                 elif 'ElementDataFile' in line:  # signifies end of header
                     element_data_file = line.split('= ')[-1]
                     if element_data_file != 'LOCAL':  # then we have an mhd file with data in another file
-                        file_path = os.path.dirname(self.GetFileName())
-                        element_data_file = os.path.join(file_path, element_data_file)
+                        if not os.path.isabs(element_data_file):
+                            file_path = os.path.dirname(self.GetFileName())
+                            element_data_file = os.path.join(file_path, element_data_file)
                         # print("Filename: ", element_data_file)
-                        self.SetFileName(element_data_file)
                     else:
                         self.SetFileHeaderLength(header_length)
+                    self.SetElementFile(element_data_file)
                     break
 
         self.SetIsFortran(True)
@@ -1001,9 +1005,24 @@ class cilBaseMetaImageReader(cilBaseReader):
         value: bool
             whether the file is compressed'''
         self._CompressedData = value
+    def SetElementFile(self, value):
+        self._ElementFile = value
+        self.Modified()
 
     def ReadDataSetInfo(self):
         self.ReadMetaImageHeader()
+
+    # def RequestData(self, request, inInfo, outInfo):
+    
+    #     outData = vtk.vtkImageData.GetData(outInfo)
+
+    #     reader = vtk.vtkMETAImageReader()
+    #     reader.SetFileName(self.GetFileName)
+    #     reader.Update()
+    #     outData.CopyAndCastFrom(reader.GetOutput(), reader.GetOutput().GetExtent())
+    #     return 1
+
+    
 
 
 class vortexBaseTIFFImageReader(cilBaseReader):

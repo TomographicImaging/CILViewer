@@ -47,7 +47,8 @@ class TestResampleReaders(unittest.TestCase):
         shape = np.shape(self.input_3D_array)
         shape_to_write = shape[::-1]  # because it is not a fortran order array we have to swap
         cilNumpyMETAImageWriter.WriteMETAImageHeader(self.raw_filename_3D,
-                                                     self.mhd_filename_3D,
+                                                     #self.mhd_filename_3D,
+                                                     "raw_header.raw",
                                                      typecode,
                                                      big_endian,
                                                      header_length,
@@ -64,6 +65,8 @@ class TestResampleReaders(unittest.TestCase):
         writer.SetFileName(self.meta_filename_3D)
         writer.SetInputData(vtk_image)
         writer.SetCompression(False)
+        writer.Write()
+        writer.SetFileName("bis_"+self.mhd_filename_3D)
         writer.Write()
 
         # Create TIFF Files
@@ -138,8 +141,8 @@ class TestResampleReaders(unittest.TestCase):
             # why is this not in the previous test?
             self.assertEqual(resulting_shape, expected_shape[::-1])
             resulting_array = Converter.vtk2numpy(image)
-            # i = 1
-            # import matplotlib.pyplot as plt
+            i = 1
+            import matplotlib.pyplot as plt
             # im = plt.imread(self.tiff_fnames[i])
             # im = np.asarray(im, dtype=raw_type_code)
             
@@ -158,14 +161,14 @@ class TestResampleReaders(unittest.TestCase):
             # im_vtk = Converter.vtk2numpy(r.GetOutput())
             # im_vtk3d = Converter.vtk2numpy(r3d.GetOutput())
             # print (im_vtk3d.dtype, im_vtk3d.shape, im_vtk3d)
-            # fig, ax = plt.subplots(1,5)
+            fig, ax = plt.subplots(1,2)
             
-            # ax[0].imshow(resulting_array[i])
-            # ax[1].imshow(self.input_3D_array[i])
+            ax[0].imshow(resulting_array[i])
+            ax[1].imshow(self.input_3D_array[i])
             # ax[2].imshow(im)
             # ax[3].imshow(im_vtk[0])
             # ax[4].imshow(im_vtk3d[i])
-            # plt.show()
+            plt.show()
 
             np.testing.assert_array_equal(np.asfortranarray(self.input_3D_array), resulting_array)
 
@@ -209,7 +212,7 @@ class TestResampleReaders(unittest.TestCase):
     
 
     def tearDown(self):
-        files = [self.raw_filename_3D, self.numpy_filename_3D, self.meta_filename_3D, self.mhd_filename_3D] + self.tiff_fnames
+        files = [self.raw_filename_3D, self.numpy_filename_3D, self.meta_filename_3D] + self.tiff_fnames # , self.mhd_filename_3D
         for f in files:
             # print (f'removing {f}')
             os.remove(f)
