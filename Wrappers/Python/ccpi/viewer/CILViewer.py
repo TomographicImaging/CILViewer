@@ -1106,6 +1106,7 @@ class CILViewer():
         self.sliceActorNo = no
 
         self.updateVolumePipeline()
+        self.updateSliceHistogram()
 
         self.adjustCamera(resetcamera)
 

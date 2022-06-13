@@ -79,6 +79,7 @@ class TrameViewer3D(TrameViewer):
         self.slice_window_range_slider = None
         self.slice_window_slider = None
         self.slice_level_slider = None
+        self.show_slice_histogram_switch = None
         self.toggle_volume_visibility = None
         self.opacity_radio_buttons = None
         self.color_choice = None
@@ -115,7 +116,7 @@ class TrameViewer3D(TrameViewer):
     def construct_drawer_layout(self):
         # The difference is that we use range slider instead of detailed sliders
         self.slice_interaction_col = vuetify.VCol([
-            self.toggle_slice_visibility, self.slice_slider, self.orientation_radio_buttons,
+            self.toggle_slice_visibility, self.slice_slider, self.orientation_radio_buttons,  self.show_slice_histogram_switch,
             self.toggle_window_details_button, self.slice_window_range_slider, self.slice_window_slider,
             self.slice_level_slider
         ])
@@ -140,8 +141,6 @@ class TrameViewer3D(TrameViewer):
             vuetify.VDivider(),
             self.volume_interaction_section,
             vuetify.VDivider(),
-            # Select Volume of interest
-            vuetify.VDivider(),
             self.reset_cam_button,
             vuetify.VDivider(),
             self.reset_defaults_button
@@ -158,6 +157,7 @@ class TrameViewer3D(TrameViewer):
         self.slice_window_range_slider = self.construct_slice_window_range_slider(disabled=self.disable_2d)
         self.slice_window_slider = self.construct_slice_window_slider(disabled=self.disable_2d)
         self.slice_level_slider = self.construct_slice_level_slider(disabled=self.disable_2d)
+        self.show_slice_histogram_switch = self.construct_show_slice_histogram_switch(disabled=self.disable_2d)
         self.toggle_volume_visibility = self.create_toggle_volume_visibility()
         self.opacity_radio_buttons = self.create_opacity_radio_buttons()
         self.color_choice = self.create_color_choice_selector()
@@ -171,6 +171,16 @@ class TrameViewer3D(TrameViewer):
 
     def create_reset_defaults_button(self):
         return vuetify.VBtn("Reset defaults", hide_details=True, dense=True, solo=True, click=self.reset_defaults)
+
+    def construct_show_slice_histogram_switch(self, disabled: bool):
+        return vuetify.VSwitch(
+            label="Show slice histogram",
+            v_model=("show_slice_histogram", False),
+            hide_details=True,
+            dense=True,
+            solo=True,
+            disabled=disabled,
+        )
 
     def create_reset_camera_button(self):
         return vuetify.VBtn(
@@ -379,6 +389,7 @@ class TrameViewer3D(TrameViewer):
         app.set(key="slice_level", value=self.cil_viewer.getSliceColorLevel())
         app.set(key="background_color", value="cil_viewer_blue")
         app.set(key="toggle_clipping", value=False)
+        app.set(key="show_slice_histogram", value=False)
         # Ensure 2D is on
         if not self.cil_viewer.imageSlice.GetVisibility():
             self.switch_slice()
@@ -419,6 +430,8 @@ class TrameViewer3D(TrameViewer):
         else:
             self.cil_viewer.imageSlice.VisibilityOff()
             self.disable_2d = True
+            app = vuetify.get_app_instance()
+            app.set(key="show_slice_histogram", value=False)
         self.create_drawer_ui_elements()
         update_layout(self.layout)
         self.cil_viewer.updatePipeline()
@@ -449,3 +462,13 @@ class TrameViewer3D(TrameViewer):
             app.set(key="toggle_clipping", value=False)
 
             self.cil_viewer.remove_clipping_plane()
+            self.cil_viewer.getRenderer().Render()
+            self.cil_viewer.updatePipeline()
+
+    def show_slice_histogram(self, show_histogram):
+        self.cil_viewer.updateSliceHistogram()
+        if show_histogram:
+            self.cil_viewer.histogramPlotActor.VisibilityOn()
+        else:
+            self.cil_viewer.histogramPlotActor.VisibilityOff()
+        self.html_view.update()
