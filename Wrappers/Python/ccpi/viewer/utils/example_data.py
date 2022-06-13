@@ -3,7 +3,7 @@ import os.path
 import vtk
 import sys
 
-# this is the default location after pip install
+# this is the location where the cil-data module saves the datasets
 data_dir = os.path.abspath(os.path.join(sys.prefix, 'share', 'cil'))
 
 
