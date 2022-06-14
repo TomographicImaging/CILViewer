@@ -130,12 +130,12 @@ def change_coloring(**kwargs):
 
 @state.change("slice_window")
 def change_slice_window(**kwargs):
-    TRAME_VIEWER.change_slice_window(kwargs["slice_window"])
+    TRAME_VIEWER.change_slice_window(kwargs["slice_window"], kwargs["slice_level"])
 
 
 @state.change("slice_level")
 def change_slice_level(**kwargs):
-    TRAME_VIEWER.change_slice_level(kwargs["slice_level"])
+    TRAME_VIEWER.change_slice_level(kwargs["slice_level"], kwargs["slice_window"])
 
 
 @state.change("slice_window_range")

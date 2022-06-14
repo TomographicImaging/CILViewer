@@ -1154,7 +1154,7 @@ class CILViewer():
 
     def setSliceColorWindowLevelPercentiles(self, min_percentage, max_percentage):
         min_val, max_val = self.getVolumeMapWindow((min_percentage, max_percentage), 'scalar')
-        self.setScalarOpacityWindow(min_val, max_val)
+        self.setSliceColorWindowLevel(min_val, max_val)
 
     def setSliceColorWindow(self, window):
         self.imageSlice.GetProperty().SetColorWindow(window)
