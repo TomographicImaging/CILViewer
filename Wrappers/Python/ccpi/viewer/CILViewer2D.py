@@ -2118,7 +2118,6 @@ class CILViewer2D():
     def getSliceMapWindow(self, percentiles):
         ia = vtk.vtkImageHistogramStatistics()
         ia.SetInputData(self.img3D)
-        ia.Update()
         ia.SetAutoRangePercentiles(*percentiles)
         ia.Update()
         min, max = ia.GetAutoRange()
