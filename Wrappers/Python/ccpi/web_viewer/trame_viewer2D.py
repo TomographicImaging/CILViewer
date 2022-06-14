@@ -83,6 +83,8 @@ class TrameViewer2D(TrameViewer):
             "Choose model to load", self.model_choice,
             vuetify.VDivider(), "Choose background color", self.background_choice,
             vuetify.VDivider(), self.slice_interaction_section,
+            vuetify.VDivider(),
+            "Use Ctrl + Click on the slice, to show the ROI of the current slice, Click and drag to resize and repositon",
             vuetify.VDivider(), self.reset_defaults_button
         ]
 
