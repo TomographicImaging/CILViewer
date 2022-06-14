@@ -110,7 +110,7 @@ def change_opacity_mapping(**kwargs):
 
 @state.change("file_name")
 def change_model(**kwargs):
-    TRAME_VIEWER.load_file(kwargs['file_name'], windowing_method=kwargs['opacity'])
+    TRAME_VIEWER.load_file(kwargs['file_name'], windowing_method=kwargs.get('opacity', "scalar"))
 
 
 @state.change("color_map")
