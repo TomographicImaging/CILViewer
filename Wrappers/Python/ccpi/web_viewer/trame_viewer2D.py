@@ -15,8 +15,7 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-from trame import update_layout
-from trame.html import vuetify
+from trame.widgets import vuetify
 
 from ccpi.viewer.CILViewer2D import CILViewer2D, SLICE_ORIENTATION_XY
 from ccpi.web_viewer.trame_viewer import TrameViewer
@@ -50,13 +49,7 @@ class TrameViewer2D(TrameViewer):
 
         self.construct_drawer_layout()
 
-        self.layout.children += [
-            vuetify.VContainer(
-                fluid=True,
-                classes="pa-0 fill-height",
-                children=[self.html_view],
-            )
-        ]
+        self.layout.content = vuetify.VContainer(fluid=True, classes="pa-0 fill-height", children=[self.html_view])
         self.reset_defaults()
 
     def create_drawer_ui_elements(self):
@@ -83,7 +76,7 @@ class TrameViewer2D(TrameViewer):
         ])
         self.slice_interaction_row = vuetify.VRow(self.slice_interaction_col)
         self.slice_interaction_section = vuetify.VContainer(self.slice_interaction_row)
-        self.layout.drawer.children = [
+        self.layout.drawer = [
             "Choose model to load", self.model_choice,
             vuetify.VDivider(), "Choose background color", self.background_choice,
             vuetify.VDivider(), self.slice_interaction_section,
@@ -172,7 +165,7 @@ class TrameViewer2D(TrameViewer):
 
         # Reconstruct the drawer and push it
         self.construct_drawer_layout()
-        update_layout(self.layout)
+        self.layout.flush_content()
 
     def remove_roi(self):
         self.cil_viewer.style.RemoveROIWidget()

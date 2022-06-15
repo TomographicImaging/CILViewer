@@ -17,15 +17,17 @@
 #
 import os
 
-from trame import update_layout
-from trame.html import vtk, vuetify
-from trame.layouts import SinglePageWithDrawer
+from trame.app import get_server
+from trame.widgets import vtk, vuetify
+from trame.ui.vuetify import SinglePageWithDrawerLayout
 from vtkmodules.util import colors
 from vtkmodules.vtkIOImage import vtkMetaImageReader
 
 from ccpi.viewer.CILViewer2D import SLICE_ORIENTATION_XY, SLICE_ORIENTATION_XZ, SLICE_ORIENTATION_YZ
 from ccpi.viewer.utils.conversion import cilHDF5ResampleReader
 
+server = get_server()
+state, ctrl = server.state, server.controller
 
 class TrameViewer:
     """
@@ -66,16 +68,21 @@ class TrameViewer:
         self.slice_window_sliders_are_detailed = False
         self.slice_window_slider_is_percentage = False
 
-        self.html_view = vtk.VtkRemoteView(self.cil_viewer.renWin)
+        self.html_view = vtk.VtkRemoteView(self.cil_viewer.renWin, trame_server=server)
+        ctrl.view_update = self.html_view.update
+        ctrl.view_reset_camera = self.html_view.reset_camera
+        ctrl.on_server_ready.add(self.html_view.update)
 
         # Create page title using the class name of the viewer so it changes based on whatever is passed to this class
         page_title = f"{viewer_class.__name__} on web"
-        self.layout = SinglePageWithDrawer(page_title, on_ready=self.html_view.update, width=300)
+        self.layout = SinglePageWithDrawerLayout(server, on_ready=self.html_view.update, width=300)
         self.layout.title.set_text(page_title)
-        self.layout.logo.children = [vuetify.VIcon("mdi-skull", classes="mr-4")]
+        self.layout.icon = [vuetify.VIcon("mdi-skull", classes="mr-4")]
 
     def start(self):
-        self.layout.start()
+        # Could be static but we don't want it to start from just the class, so must be called on a constructed object where __init__
+        # has ran.
+        server.start()
 
     def load_file(self, file_name: str, windowing_method: str = "scalar"):
         if "data" not in file_name:
@@ -299,7 +306,7 @@ class TrameViewer:
                                                 thumb_label=True,
                                                 style="max-width: 300px")
             self.construct_drawer_layout()
-            update_layout(self.layout)
+            self.layout.flush_content()
         self.cil_viewer.updatePipeline()
         self.html_view.update()
 
