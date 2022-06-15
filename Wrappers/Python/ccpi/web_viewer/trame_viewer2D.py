@@ -88,8 +88,7 @@ class TrameViewer2D(TrameViewer):
             vuetify.VDivider(),
             "Use Ctrl + Click on the slice, to show the ROI of the current slice, Click and drag to resize and repositon.\n"
             "Move the ROI by using the middle mouse button",
-            vuetify.VDivider(),
-            self.remove_roi_button,
+            vuetify.VDivider(), self.remove_roi_button,
             vuetify.VDivider(), self.reset_defaults_button
         ]
 
