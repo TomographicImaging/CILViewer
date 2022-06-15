@@ -553,6 +553,13 @@ class CILInteractorStyle(vtk.vtkInteractorStyle):
                 # print ("remove event {}".format(ev))
                 self.SetEventInactive(ev)
 
+    def RemoveROIWidget(self):
+        self.SetEventActive("DELETE_ROI_EVENT")
+        self.GetROIWidget().Off()
+        self._viewer.updateCornerAnnotation("", 1, False)
+        self.SetDisplayHistogram(False)
+        self.Render()
+
     def OnLeftButtonPressEvent(self, interactor, event):
         # print ("INTERACTOR", interactor)
         if self.GetInputData() is None:
@@ -572,11 +579,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyle):
             self.log("Event %s is CREATE_ROI_EVENT" % (event))
 
         elif alt and not (shift and ctrl):
-            self.SetEventActive("DELETE_ROI_EVENT")
-            self.GetROIWidget().Off()
-            self._viewer.updateCornerAnnotation("", 1, False)
-            self.SetDisplayHistogram(False)
-            self.Render()
+            self.RemoveROIWidget()
             self.log("Event %s is DELETE_ROI_EVENT" % (event))
 
         elif not (ctrl and alt and shift):

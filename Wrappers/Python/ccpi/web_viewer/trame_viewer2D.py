@@ -39,6 +39,7 @@ class TrameViewer2D(TrameViewer):
         self.tracing_switch = None
         self.line_profile_switch = None
         self.interpolation_of_slice_switch = None
+        self.remove_roi_button = None
         self.reset_defaults_button = None
         self.slice_interaction_col = None
         self.slice_interaction_row = None
@@ -68,6 +69,7 @@ class TrameViewer2D(TrameViewer):
         self.slice_level_slider = self.construct_slice_level_slider()
         self.tracing_switch = self.create_tracing_switch()
         self.interpolation_of_slice_switch = self.create_interpolation_of_slice_switch()
+        self.remove_roi_button = self.create_remove_roi_button()
         self.reset_defaults_button = self.create_reset_defaults_button()
 
     def construct_drawer_layout(self):
@@ -84,9 +86,15 @@ class TrameViewer2D(TrameViewer):
             vuetify.VDivider(), "Choose background color", self.background_choice,
             vuetify.VDivider(), self.slice_interaction_section,
             vuetify.VDivider(),
-            "Use Ctrl + Click on the slice, to show the ROI of the current slice, Click and drag to resize and repositon",
+            "Use Ctrl + Click on the slice, to show the ROI of the current slice, Click and drag to resize and repositon.\n"
+            "Move the ROI by using the middle mouse button",
+            vuetify.VDivider(),
+            self.remove_roi_button,
             vuetify.VDivider(), self.reset_defaults_button
         ]
+
+    def create_remove_roi_button(self):
+        return vuetify.VBtn("Remove ROI", hide_details=True, dense=True, solo=True, click=self.remove_roi)
 
     def create_auto_window_level_button(self):
         return vuetify.VBtn("Auto Window/Level", hide_details=True, dense=True, solo=True, click=self.auto_window_level)
@@ -144,6 +152,9 @@ class TrameViewer2D(TrameViewer):
         # Reconstruct the drawer and push it
         self.construct_drawer_layout()
         update_layout(self.layout)
+
+    def remove_roi(self):
+        self.cil_viewer.style.RemoveROIWidget()
 
     def reset_defaults(self):
         app = vuetify.get_app_instance()
