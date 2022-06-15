@@ -294,9 +294,9 @@ class TrameViewer3D(TrameViewer):
                 and hasattr(self, "color_slider") and self.color_slider is not None:
             self.windowing_range_slider = self.construct_windowing_slider()
             self.color_slider = self.construct_color_slider()
-            self.slice_window_range_slider = self.construct_slice_window_range_slider()
-            self.slice_level_slider = self.construct_slice_level_slider()
-            self.slice_window_slider = self.construct_slice_window_slider()
+            self.slice_window_range_slider = self.construct_slice_window_range_slider(self.disable_2d)
+            self.slice_level_slider = self.construct_slice_level_slider(self.disable_2d)
+            self.slice_window_slider = self.construct_slice_window_slider(self.disable_2d)
             self.construct_drawer_layout()
             self.layout.flush_content()
         state["windowing"] = self.windowing_defaults
@@ -403,9 +403,9 @@ class TrameViewer3D(TrameViewer):
         super().change_window_level_detail_sliders(show_detailed)
 
         # Reconstruct the detailed sliders
-        self.slice_window_range_slider = self.construct_slice_window_range_slider()
-        self.slice_window_slider = self.construct_slice_window_slider()
-        self.slice_level_slider = self.construct_slice_level_slider()
+        self.slice_window_range_slider = self.construct_slice_window_range_slider(self.disable_2d)
+        self.slice_window_slider = self.construct_slice_window_slider(self.disable_2d)
+        self.slice_level_slider = self.construct_slice_level_slider(self.disable_2d)
 
         # Reconstruct the drawer and push it
         self.construct_drawer_layout()
