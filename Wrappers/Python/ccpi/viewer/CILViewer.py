@@ -493,8 +493,8 @@ class CILViewer():
         self.histogramPlotActor.SetYTitle("N")
         self.histogramPlotActor.SetXValuesToValue()
         self.histogramPlotActor.SetPlotColor(0, (0, 1, 1))
-        self.histogramPlotActor.SetPosition2(0.85, 0.9)
-        self.histogramPlotActor.SetPosition(0.15, 0.05)
+        self.histogramPlotActor.SetPosition2(0.98, 0.98)
+        self.histogramPlotActor.SetPosition(0., 0.)
         self.addActor(self.histogramPlotActor)
         self.histogramPlotActor.VisibilityOff()  # Off by default
 
