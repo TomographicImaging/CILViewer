@@ -68,7 +68,7 @@ class TrameViewer:
         self.slice_window_sliders_are_detailed = False
         self.slice_window_slider_is_percentage = False
 
-        self.html_view = vtk.VtkRemoteView(self.cil_viewer.renWin, trame_server=server)
+        self.html_view = vtk.VtkRemoteView(self.cil_viewer.renWin, trame_server=server, ref="view")
         ctrl.view_update = self.html_view.update
         ctrl.view_reset_camera = self.html_view.reset_camera
         ctrl.on_server_ready.add(self.html_view.update)

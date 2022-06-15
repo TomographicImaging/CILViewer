@@ -105,7 +105,7 @@ class TrameViewer3D(TrameViewer):
 
         self.construct_drawer_layout()
 
-        # self.layout.content = vuetify.VContainer(fluid=True, classes="pa-0 fill-height", children=[self.html_view])
+        self.layout.content.children = [vuetify.VContainer(fluid=True, classes="pa-0 fill-height", children=[self.html_view])]
 
         # Setup default state
         self.set_default_button_state()
@@ -127,14 +127,14 @@ class TrameViewer3D(TrameViewer):
         self.volume_interaction_row = vuetify.VRow(self.volume_interaction_col)
         self.volume_interaction_section = vuetify.VContainer(self.volume_interaction_row)
 
-        # self.layout.drawer = [
-        #     "Choose model to load", self.model_choice,
-        #     vuetify.VDivider(), "Choose background color", self.background_choice,
-        #     vuetify.VDivider(), self.slice_interaction_section,
-        #     vuetify.VDivider(), self.volume_interaction_section,
-        #     vuetify.VDivider(), self.reset_cam_button,
-        #     vuetify.VDivider(), self.reset_defaults_button
-        # ]
+        self.layout.drawer.children = [
+            "Choose model to load", self.model_choice,
+            vuetify.VDivider(), "Choose background color", self.background_choice,
+            vuetify.VDivider(), self.slice_interaction_section,
+            vuetify.VDivider(), self.volume_interaction_section,
+            vuetify.VDivider(), self.reset_cam_button,
+            vuetify.VDivider(), self.reset_defaults_button
+        ]
 
     def create_drawer_ui_elements(self):
         # replace this with the list browser? # https://kitware.github.io/trame/docs/module-widgets.html#ListBrowser
@@ -301,7 +301,6 @@ class TrameViewer3D(TrameViewer):
             self.layout.flush_content()
         state["windowing"] = self.windowing_defaults
         state["coloring"] = self.windowing_defaults
-        state.flush()
 
     def load_file(self, file_name, windowing_method="scalar"):
         # Perform the load before updating the UI
@@ -379,7 +378,6 @@ class TrameViewer3D(TrameViewer):
         state["background_color"] = "cil_viewer_blue"
         state["toggle_clipping"] = False
         state["show_slice_histogram"] = False
-        state.flush()
         # Ensure 2D is on
         if not self.cil_viewer.imageSlice.GetVisibility():
             self.switch_slice()
@@ -421,7 +419,6 @@ class TrameViewer3D(TrameViewer):
             self.cil_viewer.imageSlice.VisibilityOff()
             self.disable_2d = True
             state["show_slice_histogram"] = False
-            state.flush()
         self.create_drawer_ui_elements()
         self.layout.flush_content()
         self.cil_viewer.updatePipeline()
@@ -442,14 +439,12 @@ class TrameViewer3D(TrameViewer):
     def change_clipping(self, clipping_on):
         if clipping_on:
             state["slice_visibility"] = False
-            state.flush()
         self.cil_viewer.style.SetVolumeClipping(clipping_on)
         self.cil_viewer.updatePipeline()
 
     def remove_clipping_plane(self):
         if hasattr(self.cil_viewer, "planew"):
             state["toggle_clipping"] = False
-            state.flush()
             self.cil_viewer.remove_clipping_plane()
             self.cil_viewer.getRenderer().Render()
             self.cil_viewer.updatePipeline()
