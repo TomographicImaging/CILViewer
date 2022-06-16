@@ -52,8 +52,9 @@ class TrameViewer2D(TrameViewer):
 
         self.construct_drawer_layout()
 
-        self.layout.content = vuetify.VContainer(fluid=True, classes="pa-0 fill-height", children=[self.html_view])
+        self.layout.content.children = [vuetify.VContainer(fluid=True, classes="pa-0 fill-height", children=[self.html_view])]
         self.reset_defaults()
+        self.layout.flush_content()
 
     def create_drawer_ui_elements(self):
         self.model_choice = self.create_model_selector()
@@ -79,7 +80,7 @@ class TrameViewer2D(TrameViewer):
         ])
         self.slice_interaction_row = vuetify.VRow(self.slice_interaction_col)
         self.slice_interaction_section = vuetify.VContainer(self.slice_interaction_row)
-        self.layout.drawer = [
+        self.layout.drawer.children = [
             "Choose model to load", self.model_choice,
             vuetify.VDivider(), "Choose background color", self.background_choice,
             vuetify.VDivider(), self.slice_interaction_section,
