@@ -19,9 +19,8 @@ def report (*args, **kwargs):
         print (k, v)
 
 ############### Handle events
-def OnMouseWheelForward(self, interactor, event):
-    style = interactor
-    interactor = style.GetInteractor()
+def OnMouseWheelForward(self, interactor_style, event):
+    interactor = interactor_style.GetInteractor()
     current_slice = self.GetSlice()
     # smin = self.GetSliceMin()
     smax = self.GetSliceMax()
@@ -32,10 +31,10 @@ def OnMouseWheelForward(self, interactor, event):
         self.SetSlice(current_slice + advance)
         v.cornerAnnotation.SetText(0, 'slice {}/{}'.format(self.GetSlice(), smax))
         OnMouseMove(self, interactor, event)
+    return 1
 
-def OnMouseWheelBackward(self, interactor, event):
-    style = interactor
-    interactor = style.GetInteractor()
+def OnMouseWheelBackward(self, interactor_style, event):
+    interactor = interactor_style.GetInteractor()
     current_slice = self.GetSlice()
     smin = self.GetSliceMin()
     smax = self.GetSliceMax()
@@ -46,28 +45,87 @@ def OnMouseWheelBackward(self, interactor, event):
         self.SetSlice(current_slice - advance)
         self.cornerAnnotation.SetText(0, 'slice {}/{}'.format(self.GetSlice(), smax))
         OnMouseMove(self, interactor, event)
+    return 1
 
-def OnMouseMove(self, interactor, event):
+def OnMouseMove(self, interactor_style, event):
     self.cornerAnnotation.SetText(1, 'Level {}\nWindow {}'.format(self.GetColorLevel(), self.GetColorWindow()))
+    self.cornerAnnotation.SetText(3, '{}'.format(self.GetImageActor()))
+    if hasattr(self, 'imageTracer'):
+        self.cornerAnnotation.SetText(2, 'Tracer Enabled {}'.format(self.imageTracer.GetEnabled()))
     return 0
-
-def OnKeyPress(self, interactor, event):
-    # this guy gets the interactorstyle
-    style = interactor
-    interactor = style.GetInteractor()
     
+
+def OnKeyPress(self, interactor_style, event):
+    interactor = interactor_style.GetInteractor()
+    spacing = self.GetInput().GetSpacing()
+    we = self.GetImageActor().GetDisplayExtent()
+    bounds = [spacing[0] * we[0], spacing[0] * we[1] , 
+        spacing[1] * we[2], spacing[1] * we[3],
+        spacing[2] * we[4], spacing[2] * we[5] ]
     if interactor.GetKeyCode() == "x":
         self.SetSliceOrientationToYZ()
+        if hasattr(self, 'imageTracer'):
+            self.imageTracer.SetProjectionNormalToXAxes()        
+            bounds[0] = self.GetImageActor().GetSliceNumber() * spacing[0]
+            bounds[1] = self.GetImageActor().GetSliceNumber() * spacing[0]
+            self.imageTracer.PlaceWidget(*bounds)
     elif interactor.GetKeyCode() == "y":
         self.SetSliceOrientationToXZ()
+        if hasattr(self, 'imageTracer'):
+            self.imageTracer.SetProjectionNormalToYAxes()
+            bounds[2] = self.GetImageActor().GetSliceNumber() * spacing[1]
+            bounds[3] = self.GetImageActor().GetSliceNumber() * spacing[1]
+            self.imageTracer.PlaceWidget(*bounds)
     elif interactor.GetKeyCode() == "z":
         self.SetSliceOrientationToXY()
+        if hasattr(self, 'imageTracer'):
+            self.imageTracer.SetProjectionNormalToZAxes()
+            bounds[4] = self.GetImageActor().GetSliceNumber() * spacing[2]
+            bounds[5] = self.GetImageActor().GetSliceNumber() * spacing[2]
+            self.imageTracer.PlaceWidget(*bounds)
     elif interactor.GetKeyCode() == "t":
+        if not hasattr( self, 'imageTracer'):
+            v = self
+            # ImageTracer
+            v.imageTracer = vtk.vtkImageTracerWidget()
+            self.imageTracer.SetViewProp(self.GetImageActor())
+            # self.imageTracer.SetInputData(self.GetInput())
+            # set Interactor
+            v.imageTracer.SetInteractor(interactor)
+            v.imageTracer.SetCaptureRadius(1.5)
+            # v.imageTracer.GetLineProperty().SetColor(0.8, 0.8, 1.0)
+            v.imageTracer.GetLineProperty().SetLineWidth(3.0)
+            v.imageTracer.GetHandleProperty().SetColor(0.4, 0.4, 1.0)
+            # v.imageTracer.GetSelectedHandleProperty().SetColor(1.0, 1.0, 1.0)
+            # Set the size of the glyph handle
+            v.imageTracer.GetGlyphSource().SetScale(10.0)
+            # Set the initial rotation of the glyph if desired.  The default glyph
+            # set internally by the widget is a '+' so rotating 45 deg. gives a 'x'
+            v.imageTracer.GetGlyphSource().SetRotationAngle(45.0)
+            v.imageTracer.GetGlyphSource().Modified()
+            v.imageTracer.ProjectToPlaneOn()
+            # v.imageTracer.SnapToImageOn()
+            # v.imageTracer.SetHandleRightMouseButton(True)
+            # Set autoclose to on
+            # v.imageTracer.AutoCloseOn()
+            # v.imageTracer.SetProjectionNormal(2)
+            # v.imageTracer.SetProjectionPosition(0)
+            # self.imageTracer.SetEnabled(True)
+            # self.imageTracer.On()
+            # self.imageTracer.InteractionOn()
+            
+            
         if (self.imageTracer.GetEnabled()):
+            self.imageTracer.SetEnabled(False)
             self.imageTracer.Off()
+            self.imageTracer.InteractionOff()
+            self.imageTracer.HandleLeftMouseButtonOff()
         else:
+            self.imageTracer.SetEnabled(True)
             self.imageTracer.On()
-
+            self.imageTracer.InteractionOn()
+            self.imageTracer.HandleLeftMouseButtonOn()
+        self.cornerAnnotation.SetText(2, 'Tracer Enabled {}'.format(self.imageTracer.GetEnabled()))
 
 if __name__=='__main__':
     # fpath = 'C:/Users/ofn77899/Data/LizardHead/astra'
@@ -114,8 +172,7 @@ if __name__=='__main__':
         
         v = vtk.vtkImageViewer2()
         iren = vtk.vtkRenderWindowInteractor()
-        # iren = v.GetInteractorStyle().GetInteractor()
-
+        
         v.GetRenderWindow().SetInteractor(iren)
         v.GetRenderWindow().SetSize(600,600)
         v.SetInputData(reader.GetOutput())
@@ -123,7 +180,7 @@ if __name__=='__main__':
         v.SetColorWindow(899)
         v.SetSlice(42)
         v.SetupInteractor(iren)
-        v.GetRenderer().SetBackground(.1, .2, .4)
+        # v.GetRenderer().SetBackground(.1, .2, .4)
         v.GetInteractorStyle().SetInteractionModeToImageSlicing()
 
         # corner annotation
@@ -141,7 +198,7 @@ if __name__=='__main__':
         ori.SetOutlineColor(0.9300, 0.5700, 0.1300)
         ori.SetInteractor(iren)
         ori.SetOrientationMarker(om)
-        ori.SetViewport(0.0, 0.0, 0.4, 0.4)
+        ori.SetViewport(0.0, 0.0, 0.2, 0.2)
         ori.SetEnabled(1)
         ori.InteractiveOff()
 
@@ -161,28 +218,6 @@ if __name__=='__main__':
         # v.cursorActor.SetMapper(v.cursorMapper)
         # v.GetRenderer().AddActor(v.cursorActor)
 
-        # ImageTracer
-        v.imageTracer = vtk.vtkImageTracerWidget()
-        # set Interactor
-        v.imageTracer.SetInteractor(iren)
-        v.imageTracer.SetCaptureRadius(1.5)
-        v.imageTracer.GetLineProperty().SetColor(0.8, 0.8, 1.0)
-        v.imageTracer.GetLineProperty().SetLineWidth(3.0)
-        v.imageTracer.GetHandleProperty().SetColor(0.4, 0.4, 1.0)
-        v.imageTracer.GetSelectedHandleProperty().SetColor(1.0, 1.0, 1.0)
-        # Set the size of the glyph handle
-        v.imageTracer.GetGlyphSource().SetScale(2.0)
-        # Set the initial rotation of the glyph if desired.  The default glyph
-        # set internally by the widget is a '+' so rotating 45 deg. gives a 'x'
-        v.imageTracer.GetGlyphSource().SetRotationAngle(45.0)
-        v.imageTracer.GetGlyphSource().Modified()
-        v.imageTracer.ProjectToPlaneOn()
-        v.imageTracer.SetHandleLeftMouseButton(True)
-        # Set autoclose to on
-        v.imageTracer.AutoCloseOn()
-        v.imageTracer.SetProjectionNormal(2)
-        v.imageTracer.SetProjectionPosition(0)
-        v.imageTracer.SetViewProp(v.GetImageActor())
         
 
         style = v.GetInteractorStyle()
@@ -199,6 +234,7 @@ if __name__=='__main__':
 
         # print (type(A))
         # iren = v.GetRenderWindow().GetInteractor()
+        # v.GetImageActor().SetOpacity(0.2)
         iren.Initialize()
         iren.Start()
         
