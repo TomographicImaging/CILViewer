@@ -8,5 +8,4 @@ Wrappers/Python/ccpi/web_viewer/data/*
 # Hide PyCharm or other Jetbrains IDE files
 .idea
 
-# Prevent windows from converting line endings:
-*.sh    text eol=lf 
+
