@@ -57,7 +57,6 @@ class TrameViewer2D(TrameViewer):
             )
         ]
         self.reset_defaults()
-        
 
     def create_drawer_ui_elements(self):
         self.model_choice = self.create_model_selector()
