@@ -23,6 +23,7 @@ from ccpi.web_viewer.trame_viewer import TrameViewer
 
 
 class TrameViewer2D(TrameViewer):
+
     def __init__(self, list_of_files: list = None):
         self.first_load = True
         super().__init__(list_of_files=list_of_files, viewer_class=CILViewer2D)
