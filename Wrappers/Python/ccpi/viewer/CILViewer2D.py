@@ -503,7 +503,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyle):
             # set the level to the average value between the percintiles
             level = (cmin + cmax) / 2
             # accommodates all values between the level an the percentiles
-            window = (cmax - cmin) / 2
+            window = (cmax - cmin)
 
             self.SetInitialLevel(level)
             self.SetInitialWindow(window)
@@ -964,7 +964,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyle):
                 # set the level to the average between the percentiles
                 level = (cmin + cmax) / 2
                 # accommodates all values between the level an the percentiles
-                window = (cmax - cmin) / 2
+                window = cmax - cmin
 
                 self.SetInitialLevel(level)
                 self.SetInitialWindow(window)
@@ -1634,7 +1634,7 @@ class CILViewer2D():
         # set the level to the average between the percentiles
         level = (cmin + cmax) / 2
         # accomodates all values between the level an the percentiles
-        window = (cmax - cmin) / 2
+        window = (cmax - cmin)
 
         self.InitialLevel = level
         self.InitialWindow = window
