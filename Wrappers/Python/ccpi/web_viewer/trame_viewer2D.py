@@ -98,6 +98,8 @@ class TrameViewer2D(TrameViewer):
         if not self.first_load:
             self.update_slice_slider_data()
             self.update_slice_windowing_defaults()
+            self.create_drawer_ui_elements()
+            self.construct_drawer_layout()
             self.reset_defaults()
         else:
             self.first_load = False
