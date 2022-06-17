@@ -23,8 +23,8 @@ from ccpi.web_viewer.trame_viewer import TrameViewer
 
 
 class TrameViewer2D(TrameViewer):
-
     def __init__(self, list_of_files: list = None):
+        self.first_load = True
         super().__init__(list_of_files=list_of_files, viewer_class=CILViewer2D)
 
         self.model_choice = None
@@ -92,6 +92,24 @@ class TrameViewer2D(TrameViewer):
             vuetify.VDivider(), self.remove_roi_button,
             vuetify.VDivider(), self.reset_defaults_button
         ]
+
+    def load_file(self, file_name, windowing_method="scalar"):
+        super().load_file(file_name, windowing_method="scalar")
+        if not self.first_load:
+            self.update_slice_slider_data()
+            self.update_slice_windowing_defaults()
+            self.reset_defaults()
+        else:
+            self.first_load = False
+
+    def update_slice_windowing_defaults(self):
+        self.update_slice_data()
+        if hasattr(self, "slice_window_range_slider") and self.slice_window_range_slider:
+            self.slice_window_range_slider = self.construct_slice_window_range_slider()
+            self.slice_level_slider = self.construct_slice_level_slider()
+            self.slice_window_slider = self.construct_slice_window_slider()
+            self.construct_drawer_layout()
+            update_layout(self.layout)
 
     def create_remove_roi_button(self):
         return vuetify.VBtn("Remove ROI", hide_details=True, dense=True, solo=True, click=self.remove_roi)
@@ -168,3 +186,4 @@ class TrameViewer2D(TrameViewer):
         app.set(key="toggle_interpolation", value=False)
         self.cil_viewer.updatePipeline()
         self.html_view.update()
+        update_layout(self.layout)

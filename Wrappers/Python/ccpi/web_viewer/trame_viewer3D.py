@@ -308,7 +308,7 @@ class TrameViewer3D(TrameViewer):
 
     def load_file(self, file_name, windowing_method="scalar"):
         # Perform the load before updating the UI
-        super().load_file(file_name, windowing_method="scalar")
+        super().load_file(file_name, windowing_method=windowing_method)
         # Update default values, there is an assumption this will not be called in the __init__ of this class.
         self.update_slice_slider_data()
         self.update_windowing_defaults(windowing_method)
