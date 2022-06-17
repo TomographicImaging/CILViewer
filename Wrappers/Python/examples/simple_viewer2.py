@@ -52,6 +52,8 @@ def OnMouseMove(self, interactor_style, event):
     self.cornerAnnotation.SetText(3, '{}'.format(self.GetImageActor()))
     if hasattr(self, 'imageTracer'):
         self.cornerAnnotation.SetText(2, 'Tracer Enabled {}'.format(self.imageTracer.GetEnabled()))
+        if self.imageTracer.GetEnabled():
+            pass
     return 0
     
 
@@ -68,21 +70,21 @@ def OnKeyPress(self, interactor_style, event):
             self.imageTracer.SetProjectionNormalToXAxes()        
             bounds[0] = self.GetImageActor().GetSliceNumber() * spacing[0]
             bounds[1] = self.GetImageActor().GetSliceNumber() * spacing[0]
-            self.imageTracer.PlaceWidget(*bounds)
+            self.imageTracer.SetProjectionPosition(bounds[0])
     elif interactor.GetKeyCode() == "y":
         self.SetSliceOrientationToXZ()
         if hasattr(self, 'imageTracer'):
             self.imageTracer.SetProjectionNormalToYAxes()
             bounds[2] = self.GetImageActor().GetSliceNumber() * spacing[1]
             bounds[3] = self.GetImageActor().GetSliceNumber() * spacing[1]
-            self.imageTracer.PlaceWidget(*bounds)
+            self.imageTracer.SetProjectionPosition(bounds[2])
     elif interactor.GetKeyCode() == "z":
         self.SetSliceOrientationToXY()
         if hasattr(self, 'imageTracer'):
             self.imageTracer.SetProjectionNormalToZAxes()
             bounds[4] = self.GetImageActor().GetSliceNumber() * spacing[2]
             bounds[5] = self.GetImageActor().GetSliceNumber() * spacing[2]
-            self.imageTracer.PlaceWidget(*bounds)
+            self.imageTracer.SetProjectionPosition(bounds[4])
     elif interactor.GetKeyCode() == "t":
         if not hasattr( self, 'imageTracer'):
             v = self
@@ -104,28 +106,38 @@ def OnKeyPress(self, interactor_style, event):
             v.imageTracer.GetGlyphSource().SetRotationAngle(45.0)
             v.imageTracer.GetGlyphSource().Modified()
             v.imageTracer.ProjectToPlaneOn()
+
             # v.imageTracer.SnapToImageOn()
             # v.imageTracer.SetHandleRightMouseButton(True)
             # Set autoclose to on
             # v.imageTracer.AutoCloseOn()
             # v.imageTracer.SetProjectionNormal(2)
             # v.imageTracer.SetProjectionPosition(0)
-            # self.imageTracer.SetEnabled(True)
+            self.imageTracer.SetEnabled(False)
             # self.imageTracer.On()
             # self.imageTracer.InteractionOn()
             
             
         if (self.imageTracer.GetEnabled()):
             self.imageTracer.SetEnabled(False)
-            self.imageTracer.Off()
             self.imageTracer.InteractionOff()
             self.imageTracer.HandleLeftMouseButtonOff()
+            self.imageTracer.Off()
         else:
             self.imageTracer.SetEnabled(True)
-            self.imageTracer.On()
             self.imageTracer.InteractionOn()
             self.imageTracer.HandleLeftMouseButtonOn()
+            self.imageTracer.On()
         self.cornerAnnotation.SetText(2, 'Tracer Enabled {}'.format(self.imageTracer.GetEnabled()))
+
+def OnLeftButtonClick(self, style, event):
+    if hasattr( self, 'imageTracer'):
+        if self.imageTracer.GetEnabled():
+            self.cornerAnnotation.SetText(2, 'button click Tracer Enabled {}'.format(self.imageTracer.GetEnabled()))
+        else:
+            style.OnLeftButtonDown()
+    else:
+        style.OnLeftButtonDown()
 
 if __name__=='__main__':
     # fpath = 'C:/Users/ofn77899/Data/LizardHead/astra'
@@ -170,7 +182,8 @@ if __name__=='__main__':
     if use_vtk:
 
         
-        v = vtk.vtkImageViewer2()
+        v = vtk.vtkImageViewer2()   
+        # v = vtk.vtkResliceImageViewer()
         iren = vtk.vtkRenderWindowInteractor()
         
         v.GetRenderWindow().SetInteractor(iren)
@@ -226,9 +239,11 @@ if __name__=='__main__':
         priority = 1
 
         pOnKeyPress = partial(OnKeyPress, v)
+        pOnLeftButtonClick = partial(OnLeftButtonClick, v)
         style.AddObserver("MouseWheelForwardEvent", pOnMouseWheelForward, priority)
         style.AddObserver("MouseWheelBackwardEvent", pOnMouseWheelBackward, priority)
         style.AddObserver('KeyPressEvent', pOnKeyPress, 1.0)
+        style.AddObserver('LeftButtonPressEvent', pOnLeftButtonClick, 1.0)
         # pOnMouseMove = partial(OnMouseMove, v)
         # style.AddObserver("MouseMoveEvent", pOnMouseMove, priority/2)
 
