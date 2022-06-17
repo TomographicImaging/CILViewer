@@ -56,6 +56,8 @@ class TrameViewer2D(TrameViewer):
                 children=[self.html_view],
             )
         ]
+        self.reset_defaults()
+        
 
     def create_drawer_ui_elements(self):
         self.model_choice = self.create_model_selector()
@@ -160,7 +162,7 @@ class TrameViewer2D(TrameViewer):
         app.set(key="background_color", value="cil_viewer_blue")
         app.set(key="slice", value=self.default_slice)
         app.set(key="orientation", value=f"{SLICE_ORIENTATION_XY}")
-        app.set(key="slice_window_range", value=self.cil_viewer.getSliceMapWindow((0., 95.)))
+        app.set(key="slice_window_range", value=self.cil_viewer.getSliceMapWindow((60., 95.)))
         app.set(key="slice_window", value=self.cil_viewer.getSliceColorWindow())
         app.set(key="slice_level", value=self.cil_viewer.getSliceColorLevel())
         app.set(key="toggle_tracing", value=False)
