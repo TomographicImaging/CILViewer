@@ -374,3 +374,20 @@ class TrameViewer:
         raise NotImplementedError(
             "This function is not implemented in the base class, but you can expect an implementation in it's sub"
             " classes.")
+
+            self.cil_viewer.getRenderer().Render()
+            self.cil_viewer.updatePipeline()
+
+    def show_slice_histogram(self, show_histogram):
+        self.cil_viewer.updateSliceHistogram()
+        if show_histogram:
+            self.cil_viewer.histogramPlotActor.VisibilityOn()
+        else:
+            self.cil_viewer.histogramPlotActor.VisibilityOff()
+        self.html_view.update()
+
+    def change_slice_number(self, slice_number):
+        self.cil_viewer.updateSliceHistogram()
+        self.cil_viewer.setActiveSlice(slice_number)
+        self.cil_viewer.updatePipeline()
+        self.html_view.update()

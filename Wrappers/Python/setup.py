@@ -68,6 +68,7 @@ setup(
     description='CCPi CILViewer',
     license="Apache v2.0",
     keywords="3D data viewer",
-    url="http://www.ccpi.ac.uk",  # project home page, if any
+    url="http://www.ccpi.ac.uk",  # project home page
+
     # could also include long_description, download_url, classifiers, etc.
     entry_points={'console_scripts': ['web_cilviewer = ccpi.web_viewer.web_app:main']})
