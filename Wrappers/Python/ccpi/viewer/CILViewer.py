@@ -1184,13 +1184,9 @@ class CILViewer():
 
     def validateValue(self, value, axis):
         dims = self.img3D.GetDimensions()
-        max_slice = [x-1 for x in dims]
+        max_slice = [x - 1 for x in dims]
 
-        axis_int = {
-            'x': 0,
-            'y': 1,
-            'z': 2
-        }
+        axis_int = {'x': 0, 'y': 1, 'z': 2}
 
         if axis in axis_int.keys():
             i = axis_int[axis]
@@ -1212,8 +1208,8 @@ class CILViewer():
         #use 255 bins
         delta = irange[1] - irange[0]
         nbins = 255
-        self.sliceIA.SetComponentSpacing(delta/nbins, 0, 0)
-        self.sliceIA.SetComponentExtent(0, nbins-1, 0, 0, 0, 0)
+        self.sliceIA.SetComponentSpacing(delta / nbins, 0, 0)
+        self.sliceIA.SetComponentExtent(0, nbins - 1, 0, 0, 0, 0)
         self.sliceIA.Update()
 
         self.histogramPlotActor.AddDataSetInputConnection(self.sliceIA.GetOutputPort())
