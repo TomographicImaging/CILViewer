@@ -227,10 +227,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
         # reset color/window
         cmin, cmax = self._viewer.ia.GetAutoRange()
 
-        # set the level to the average value between the percintiles
-        level = (cmin + cmax) / 2
-        # accommodates all values between the level an the percentiles
-        window = (cmax - cmin) / 2
+        window, level = self.getSliceWindowLevelFromRange(cmin, cmax)
 
         self.SetInitialLevel(level)
         self.SetInitialWindow(window)
@@ -1068,10 +1065,7 @@ class CILViewer():
         self.ia.Update()
 
         cmin, cmax = self.ia.GetAutoRange()
-        # set the level to the average between the percentiles
-        level = (cmin + cmax) / 2
-        # accomodates all values between the level an the percentiles
-        window = (cmax - cmin) / 2
+        window, level = self.getSliceWindowLevelFromRange(cmin, cmax)
 
         self.InitialLevel = level
         self.InitialWindow = window
@@ -1225,3 +1219,11 @@ class CILViewer():
 
         self.getRenderer().Render()
         self.updatePipeline()
+
+    def getSliceWindowLevelFromRange(self, cmin, cmax):
+        # set the level to the average between the percentiles
+        level = (cmin + cmax) / 2
+        # accommodates all values between the level an the percentiles
+        window = cmax - cmin
+
+        return window, level
