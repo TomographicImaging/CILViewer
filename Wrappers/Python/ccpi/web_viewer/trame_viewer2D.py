@@ -15,14 +15,17 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
+from trame.app import get_server
 from trame.widgets import vuetify
 
 from ccpi.viewer.CILViewer2D import CILViewer2D, SLICE_ORIENTATION_XY
 from ccpi.web_viewer.trame_viewer import TrameViewer
 
+server = get_server()
+state, ctrl = server.state, server.controller
+
 
 class TrameViewer2D(TrameViewer):
-
     def __init__(self, list_of_files: list = None):
         self.first_load = True
         super().__init__(list_of_files=list_of_files, viewer_class=CILViewer2D)
@@ -149,10 +152,9 @@ class TrameViewer2D(TrameViewer):
         cmin, cmax = self.cil_viewer.ia.GetAutoRange()
         level = (cmin + cmax) / 2
         window = cmax - cmin
-        app = vuetify.get_app_instance()
-        app.set(key="slice_window_range", value=(window, level))
-        app.set(key="slice_window", value=window)
-        app.set(key="slice_level", value=level)
+        state["slice_window_range"] = window, level
+        state["slice_window"] = window
+        state["slice_level"] = level
         self.cil_viewer.updatePipeline()
 
     def change_window_level_detail_sliders(self, show_detailed: bool):
@@ -171,15 +173,14 @@ class TrameViewer2D(TrameViewer):
         self.cil_viewer.style.RemoveROIWidget()
 
     def reset_defaults(self):
-        app = vuetify.get_app_instance()
-        app.set(key="background_color", value="cil_viewer_blue")
-        app.set(key="slice", value=self.default_slice)
-        app.set(key="orientation", value=f"{SLICE_ORIENTATION_XY}")
-        app.set(key="slice_window_range", value=self.cil_viewer.getSliceMapWindow((5., 95.)))
-        app.set(key="slice_window", value=self.cil_viewer.getSliceColorWindow())
-        app.set(key="slice_level", value=self.cil_viewer.getSliceColorLevel())
-        app.set(key="toggle_tracing", value=False)
-        app.set(key="toggle_interpolation", value=False)
+        state["background_color"] = "cil_viewer_blue"
+        state["slice"] = self.default_slice
+        state["orientation"] = f"{SLICE_ORIENTATION_XY}"
+        state["slice_window_range"] = self.cil_viewer.getSliceMapWindow((5., 95.))
+        state["slice_window"] = self.cil_viewer.getSliceColorWindow()
+        state["slice_level"] = self.cil_viewer.getSliceColorLevel()
+        state["toggle_tracing"] = False
+        state["toggle_interpolation"] = False
         self.cil_viewer.updatePipeline()
         self.html_view.update()
         update_layout(self.layout)
