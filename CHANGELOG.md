@@ -21,6 +21,8 @@
   - CILViewer2D and 3D:
      - fix definition of window range to be = max - min
 - added get_color_transfer_function
+- added CIL-Data dependency, and `example_data.py` to load the head data from that repo
+- added examples of running the 2D and 3D viewers without Qt
 
 ## v22.1.2
 * Changes released in 22.0.2, but also requires vtk version >= 9.0.3
