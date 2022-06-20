@@ -4,7 +4,8 @@
 - Renamed all classes bearing name baseReader to ReaderInterface as they provide the interface not a abstract reader class.
 - Added TIFF resample reader
 - web_viewer:
-  - uses trame for viewer3D
+  - uses trame for viewer3D and viewer2D
+  - add entry point for running the web viewers
   - added docker container to be deployed
 - GitHub Action: autoyapf added
 - Added example_data and dependency on cil-data
