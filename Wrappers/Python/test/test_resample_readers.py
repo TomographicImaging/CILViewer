@@ -4,8 +4,7 @@ import unittest
 import numpy as np
 import vtk
 from ccpi.viewer.utils.conversion import (Converter, cilRawResampleReader, cilMetaImageResampleReader,
-                                          cilNumpyResampleReader, cilNumpyMETAImageWriter,
-                                          vortexTIFFResampleReader)
+                                          cilNumpyResampleReader, cilNumpyMETAImageWriter, vortexTIFFResampleReader)
 import warnings
 
 
@@ -31,7 +30,8 @@ class TestResampleReaders(unittest.TestCase):
         self.bytes_per_element = int(bits / 8)
         shape = (5, 10, 6)
         self.input_3D_array = np.random.randint(10, size=shape, dtype=eval(f"np.uint{bits}"))
-        self.input_3D_array = np.reshape(np.arange(self.input_3D_array.size), newshape=shape).astype(dtype=eval(f"np.uint{bits}"))
+        self.input_3D_array = np.reshape(np.arange(self.input_3D_array.size),
+                                         newshape=shape).astype(dtype=eval(f"np.uint{bits}"))
         bytes_3D_array = bytes(self.input_3D_array)
         self.raw_filename_3D = 'test_3D_data.raw'
         with open(self.raw_filename_3D, 'wb') as f:
@@ -63,7 +63,6 @@ class TestResampleReaders(unittest.TestCase):
         writer.SetInputData(vtk_image)
         writer.SetCompression(False)
         writer.Write()
-        
 
         # Create TIFF Files
         twriter = vtk.vtkTIFFWriter()
@@ -80,7 +79,7 @@ class TestResampleReaders(unittest.TestCase):
             # twriter.Write()
             im = Image.fromarray(arr[i])
             im.save(fnames[-1])
-            
+
         self.tiff_fnames = fnames
 
     def resample_reader_test1(self, reader, target_size):
@@ -93,7 +92,6 @@ class TestResampleReaders(unittest.TestCase):
         reader.Update()
         og_shape = np.shape(self.input_3D_array)
         raw_type_code = str(self.input_3D_array.dtype)
-        
 
         if target_size < self.input_3D_array.size * self.bytes_per_element:
             # Check raw type code was set correctly:
@@ -136,7 +134,6 @@ class TestResampleReaders(unittest.TestCase):
             resulting_array = Converter.vtk2numpy(image)
             np.testing.assert_array_equal(np.asfortranarray(self.input_3D_array), resulting_array)
 
-
     def test_raw_resample_reader(self):
         og_shape = np.shape(self.input_3D_array)
         reader = cilRawResampleReader()
@@ -148,13 +145,13 @@ class TestResampleReaders(unittest.TestCase):
         reader.SetStoredArrayShape(og_shape)
         self.resample_reader_test1(reader, 100)
         self.resample_reader_test1(reader, 100 * 8 * 2)
-    
+
     def test_tiff_resample_reader(self):
         reader = vortexTIFFResampleReader()
         reader.SetFileName(self.tiff_fnames)
         self.resample_reader_test1(reader, 100)
         self.resample_reader_test1(reader, 100 * 8 * 2)
-    
+
     def test_meta_resample_reader_mha(self):
         reader = cilMetaImageResampleReader()
         reader.SetFileName(self.meta_filename_3D)
@@ -173,10 +170,9 @@ class TestResampleReaders(unittest.TestCase):
         self.resample_reader_test1(reader, 100)
         self.resample_reader_test1(reader, 100 * 8 * 2)
 
-    
-
     def tearDown(self):
-        files = [self.raw_filename_3D, self.numpy_filename_3D, self.meta_filename_3D] + self.tiff_fnames + [ self.mhd_filename_3D ]
+        files = [self.raw_filename_3D, self.numpy_filename_3D, self.meta_filename_3D
+                 ] + self.tiff_fnames + [self.mhd_filename_3D]
         for f in files:
             # print (f'removing {f}')
             os.remove(f)
