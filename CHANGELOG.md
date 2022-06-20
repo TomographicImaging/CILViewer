@@ -1,5 +1,8 @@
 # Changelog
 
+## v22.x.x
+- Renamed all classes bearing name baseReader to ReaderInterface as they provide the interface not a abstract reader class.
+- Added TIFF resample reader
 
 ## v22.1.2
 * Changes released in 22.0.2, but also requires vtk version >= 9.0.3

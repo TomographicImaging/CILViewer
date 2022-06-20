@@ -563,7 +563,7 @@ def parseNpyHeader(filename):
 # BASE READERS -----------------------------------------------------------------------------------------
 
 
-class cilBaseReader(VTKPythonAlgorithmBase):
+class cilReaderInterface(VTKPythonAlgorithmBase):
     '''Base class with methods for setting and getting information about image data'''
 
     def __init__(self):
@@ -792,12 +792,12 @@ class cilBaseReader(VTKPythonAlgorithmBase):
         return slice_length
 
 
-class cilBaseRawReader(cilBaseReader):
+class cilRawReaderInterface(cilReaderInterface):
     '''Baseclass with methods for reading information about raw files.'''
 
     def __init__(self):
         VTKPythonAlgorithmBase.__init__(self, nInputPorts=0, nOutputPorts=1)
-        super(cilBaseRawReader, self).__init__()
+        super(cilRawReaderInterface, self).__init__()
 
     def ReadDataSetInfo(self):
         '''Tries to read info about dataset
@@ -810,12 +810,12 @@ class cilBaseRawReader(cilBaseReader):
             raise Exception("Typecode must be set.")
 
 
-class cilBaseNumpyReader(cilBaseReader):
+class cilNumpyReaderInterface(cilReaderInterface):
     ''' Baseclass with methods for reading information about numpy files'''
 
     def __init__(self):
         VTKPythonAlgorithmBase.__init__(self, nInputPorts=0, nOutputPorts=1)
-        super(cilBaseNumpyReader, self).__init__()
+        super(cilNumpyReaderInterface, self).__init__()
 
     def ReadNpyHeader(self):
         '''extract info from the npy header'''
@@ -859,12 +859,12 @@ class cilBaseNumpyReader(cilBaseReader):
         self.ReadNpyHeader()
 
 
-class cilBaseHDF5Reader(cilBaseReader):
+class cilHDF5ReaderInterface(cilReaderInterface):
     ''' Baseclass with methods for setting and getting information about hdf5 files'''
 
     def __init__(self):
         VTKPythonAlgorithmBase.__init__(self, nInputPorts=0, nOutputPorts=1)
-        super(cilBaseHDF5Reader, self).__init__()
+        super(cilHDF5ReaderInterface, self).__init__()
         self._DatasetName = None
 
     def SetDatasetName(self, value):
@@ -915,13 +915,13 @@ class cilBaseHDF5Reader(cilBaseReader):
         self.SetOutputVTKType(Converter.dtype_name_to_vtkType[typecode])
 
 
-class cilBaseMetaImageReader(cilBaseReader):
+class cilMetaImageReaderInterface(cilReaderInterface):
     ''' Baseclass with methods for setting and 
     getting information about metaimage files (.mha or .mhd)'''
 
     def __init__(self):
         VTKPythonAlgorithmBase.__init__(self, nInputPorts=0, nOutputPorts=1)
-        super(cilBaseMetaImageReader, self).__init__()
+        super(cilMetaImageReaderInterface, self).__init__()
         self._CompressedData = False
         self._ElementFile = None
 
@@ -1009,29 +1009,20 @@ class cilBaseMetaImageReader(cilBaseReader):
         self._ElementFile = value
         self.Modified()
 
+    def GetElementFile(self):
+        return self._ElementFile
+
     def ReadDataSetInfo(self):
-        self.ReadMetaImageHeader()
+        self.ReadMetaImageHeader() 
+        
 
-    # def RequestData(self, request, inInfo, outInfo):
-    
-    #     outData = vtk.vtkImageData.GetData(outInfo)
-
-    #     reader = vtk.vtkMETAImageReader()
-    #     reader.SetFileName(self.GetFileName)
-    #     reader.Update()
-    #     outData.CopyAndCastFrom(reader.GetOutput(), reader.GetOutput().GetExtent())
-    #     return 1
-
-    
-
-
-class vortexBaseTIFFImageReader(cilBaseReader):
+class vortexTIFFImageReaderInterface(cilReaderInterface):
     ''' Baseclass with methods for setting and 
     getting information about tiff'''
 
     def __init__(self):
         VTKPythonAlgorithmBase.__init__(self, nInputPorts=0, nOutputPorts=1)
-        super(vortexBaseTIFFImageReader, self).__init__()
+        super(vortexTIFFImageReaderInterface, self).__init__()
         self._CompressedData = False
         
 
@@ -1092,24 +1083,10 @@ class vortexBaseTIFFImageReader(cilBaseReader):
         self.SetOutputVTKType(reader.GetOutput().GetScalarType())
 
         self.Modified()
-    
-    
-    def RequestData(self, request, inInfo, outInfo):
-    
-        outData = vtk.vtkImageData.GetData(outInfo)
-
-        reader = vtk.vtkTIFFReader()
-        sa = vtk.vtkStringArray()
-        for fn in self.GetFileName():
-            sa.InsertNextValue(fn)
-        reader.SetFileNames(sa)
-        reader.Update()
-        outData.CopyAndCastFrom(reader.GetOutput(), reader.GetOutput().GetExtent())
-        return 1
 
 
 # ---------------------- RESAMPLE READERS -------------------------------------------------------------
-class cilBaseResampleReader(cilBaseReader):
+class cilBaseResampleReader(cilReaderInterface):
     '''vtkAlgorithm to load and resample a file to an approximate memory footprint.
     This BaseClass provides the methods needed to resample a file, if the filename
     and dataset info has been set (these will be set in instances of derived classes)
@@ -1412,7 +1389,7 @@ class cilBaseBinaryBlobResampleReader(cilBaseResampleReader):
 
     
 
-class cilRawResampleReader(cilBaseBinaryBlobResampleReader, cilBaseRawReader):
+class cilRawResampleReader(cilBaseBinaryBlobResampleReader, cilRawReaderInterface):
     '''vtkAlgorithm to load and resample a raw file to an approximate memory footprint
 
     Example
@@ -1436,7 +1413,7 @@ class cilRawResampleReader(cilBaseBinaryBlobResampleReader, cilBaseRawReader):
         VTKPythonAlgorithmBase.__init__(self, nInputPorts=0, nOutputPorts=1)
         super(cilRawResampleReader, self).__init__()
 
-class cilNumpyResampleReader(cilBaseNumpyReader, cilBaseBinaryBlobResampleReader):
+class cilNumpyResampleReader(cilNumpyReaderInterface, cilBaseBinaryBlobResampleReader):
     '''vtkAlgorithm to load and resample a numpy file to an approximate memory footprint
     
     Example
@@ -1457,7 +1434,7 @@ class cilNumpyResampleReader(cilBaseNumpyReader, cilBaseBinaryBlobResampleReader
         super(cilNumpyResampleReader, self).__init__()
 
 
-class cilHDF5ResampleReader(cilBaseResampleReader, cilBaseHDF5Reader):
+class cilHDF5ResampleReader(cilBaseResampleReader, cilHDF5ReaderInterface):
     '''vtkAlgorithm to load and resample a HDF5 file to an approximate memory footprint
 
     Example
@@ -1511,7 +1488,7 @@ class cilHDF5ResampleReader(cilBaseResampleReader, cilBaseHDF5Reader):
 
 
 
-class cilMetaImageResampleReader(cilBaseBinaryBlobResampleReader, cilBaseMetaImageReader):
+class cilMetaImageResampleReader(cilBaseBinaryBlobResampleReader, cilMetaImageReaderInterface):
     '''vtkAlgorithm to load and resample a metaimage file to an approximate memory footprint
     
     Example
@@ -1531,9 +1508,34 @@ class cilMetaImageResampleReader(cilBaseBinaryBlobResampleReader, cilBaseMetaIma
         VTKPythonAlgorithmBase.__init__(self, nInputPorts=0, nOutputPorts=1)
         super(cilMetaImageResampleReader, self).__init__()
 
+    def UpdateChunkToRead(self, start_slice):
+        '''Read the next chunk from the image file,
+        and write out to self._ChunkFileName
+        It is self._ChunkFileName that is being read by the resampler
+        so essentially this method is updating which chunk of data the 
+        resampler will receive.
+        '''
+
+        # This is the length of the chunk we will read from the file in bytes:
+        chunk_length = self._GetSliceLengthInFile()*self._GetNumSlicesPerChunk()
+        
+        data_fname = self.GetElementFile()
+        if data_fname == 'LOCAL':
+            data_fname = self.GetFileName()
+        
+        with open(data_fname, "rb") as image_file_object:
+            if start_slice < 0:
+                raise ValueError('{} ERROR: Start slice cannot be negative.'
+                                 .format(self.__class__.__name__))
+            chunk_location = self.GetFileHeaderLength() + start_slice*self._GetSliceLengthInFile()
+            with open(self._ChunkFileName, "wb") as chunk_file_object:
+                image_file_object.seek(chunk_location)
+                chunk = image_file_object.read(chunk_length)
+                chunk_file_object.write(chunk)
 
 
-class vortexTIFFResampleReader(cilBaseResampleReader, vortexBaseTIFFImageReader):
+
+class vortexTIFFResampleReader(cilBaseResampleReader, vortexTIFFImageReaderInterface):
     def _GetInternalChunkReader(self):
         '''returns a reader which will only read a specific chunk of the data.
         This is a chunk which will get resampled into a single slice.''' 
@@ -1563,7 +1565,7 @@ class vortexTIFFResampleReader(cilBaseResampleReader, vortexBaseTIFFImageReader)
 # CROPPED READERS -----------------------------------------------------------------------------------
 
 
-class cilBaseCroppedReader(cilBaseReader):
+class cilBaseCroppedReader(cilReaderInterface):
     '''vtkAlgorithm to crop in the z direction
     '''
 
@@ -1710,7 +1712,7 @@ class cilBaseCroppedReader(cilBaseReader):
         return 1
 
 
-class cilRawCroppedReader(cilBaseCroppedReader, cilBaseRawReader):
+class cilRawCroppedReader(cilBaseCroppedReader, cilRawReaderInterface):
     '''vtkAlgorithm to load and crop a raw file
 
     Example
@@ -1735,7 +1737,7 @@ class cilRawCroppedReader(cilBaseCroppedReader, cilBaseRawReader):
         super(cilRawCroppedReader, self).__init__()
 
 
-class cilNumpyCroppedReader(cilBaseCroppedReader, cilBaseNumpyReader):
+class cilNumpyCroppedReader(cilBaseCroppedReader, cilNumpyReaderInterface):
     '''vtkAlgorithm to load and crop a numpy file
 
     Example
@@ -1755,7 +1757,7 @@ class cilNumpyCroppedReader(cilBaseCroppedReader, cilBaseNumpyReader):
         super(cilNumpyCroppedReader, self).__init__()
 
 
-class cilMetaImageCroppedReader(cilBaseCroppedReader, cilBaseMetaImageReader):
+class cilMetaImageCroppedReader(cilBaseCroppedReader, cilMetaImageReaderInterface):
     '''vtkAlgorithm to load and resample a metaimage file to an approximate memory footprint
 
     Example
@@ -1775,7 +1777,7 @@ class cilMetaImageCroppedReader(cilBaseCroppedReader, cilBaseMetaImageReader):
         super(cilMetaImageCroppedReader, self).__init__()
 
 
-class cilHDF5CroppedReader(cilBaseCroppedReader, cilBaseHDF5Reader):
+class cilHDF5CroppedReader(cilBaseCroppedReader, cilHDF5ReaderInterface):
     '''vtkAlgorithm to load and crop a hdf5 file
 
     Example
