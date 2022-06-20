@@ -925,8 +925,6 @@ class cilMetaImageReaderInterface(cilReaderInterface):
         self._CompressedData = False
         self._ElementFile = None
 
-    # import pysnooper
-    # @pysnooper.snoop()
     def ReadMetaImageHeader(self):
         ''' Read info from the metaimage file's header, 
         including endianness, origin, spacing, shape and typecode,
@@ -1014,7 +1012,7 @@ class cilMetaImageReaderInterface(cilReaderInterface):
 
     def ReadDataSetInfo(self):
         self.ReadMetaImageHeader() 
-        
+
 
 class vortexTIFFImageReaderInterface(cilReaderInterface):
     ''' Baseclass with methods for setting and 
@@ -1066,7 +1064,6 @@ class vortexTIFFImageReaderInterface(cilReaderInterface):
         # this should set or do nothing
         self.SetIsFortran(True)
         self.SetBigEndian(False)
-        # self.SetFileHeaderLength(file_header_length)
         # get one slice size
         reader = vtk.vtkTIFFReader()
         reader.SetFileName(self.GetFileName()[0])
