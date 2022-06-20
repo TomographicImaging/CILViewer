@@ -2117,16 +2117,89 @@ class CILViewer2D():
             # rectilinear wipe visualises 2 images in the same pipeline
             pass
 
-    def getSliceMapRange(self, percentiles):
-        ia = vtk.vtkImageHistogramStatistics()
-        ia.SetInputData(self.img3D)
+    def getSliceMapRange(self, percentiles, method='scalar'):
+        ia = self.getImageHistogramStatistics(method, slice=True)
         ia.SetAutoRangePercentiles(*percentiles)
         ia.Update()
         min, max = ia.GetAutoRange()
         return min, max
+
+    def setSliceMapRange(self, min, max):
+        '''
+        Parameters
+        -----------
+        min, max: float, default: the raw value of the 80. percentile for min, and the raw value of the 99. percentile for max.
+            the upper and lower image values that the 
+            color will be mapped to.
+        update_pipeline: bool
+            whether to immediately update the pipeline with this new
+            setting
+        '''
+        window, level = self.getSliceWindowLevelFromRange(min, max)
+        self.setSliceColorLevel(level)
+        self.setSliceColorWindow(window)
+
+    def getFullSliceRange(self, method):
+        '''
+        Parameters
+        -----------
+        method: string : ['scalar', 'gradient']
+            'scalar' - returns full range of values in image slice
+            'gradient' - returns full range of values in image slice's gradient
+        '''
+
+        return self.getSliceMapRange((0, 100), method)
 
     def getSliceColorWindow(self):
         return self.imageSlice.GetProperty().GetColorWindow()
 
     def getSliceColorLevel(self):
         return self.imageSlice.GetProperty().GetColorLevel()
+
+    def getImageHistogramStatistics(self, method, slice=False):
+        '''
+        returns histogram statistics for either the image
+        or gradient of the image depending on the method
+        if slice = True, calculates for the slice instead of
+        the entire image volume.
+        '''
+        ia = vtk.vtkImageHistogramStatistics()
+
+        if slice:
+            input_data = self.voi.GetOutput()
+        else:
+            input_data = self.img3D
+
+        if method == 'scalar':
+            ia.SetInputData(input_data)
+        else:
+            grad = vtk.vtkImageGradientMagnitude()
+            grad.SetInputData(input_data)
+            grad.SetDimensionality(3)
+            grad.Update()
+            ia.SetInputData(grad.GetOutput())
+        ia.Update()
+        return ia
+
+    def getVolumeMapRange(self, percentiles, method):
+        '''
+        uses percentiles to generate min and max values in either
+        the image or image gradient (depending on method) for which
+        the colormap or opacity are displayed.
+        '''
+        ia = self.getImageHistogramStatistics(method)
+        ia.SetAutoRangePercentiles(*percentiles)
+        ia.Update()
+        min, max = ia.GetAutoRange()
+        return min, max
+
+    def getFullVolumeRange(self, method):
+        '''
+        Parameters
+        -----------
+        method: string : ['scalar', 'gradient']
+            'scalar' - returns full range of values in image
+            'gradient' - returns full range of values in image gradient
+        '''
+
+        return self.getVolumeMapRange((0, 100), method)

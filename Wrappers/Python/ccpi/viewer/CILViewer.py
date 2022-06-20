@@ -998,17 +998,25 @@ class CILViewer():
 
         return colors, opacity
 
-    def getImageHistogramStatistics(self, method):
+    def getImageHistogramStatistics(self, method, slice=False):
         '''
         returns histogram statistics for either the image
         or gradient of the image depending on the method
+        if slice = True, calculates for the slice instead of
+        the entire image volume.
         '''
         ia = vtk.vtkImageHistogramStatistics()
+
+        if slice:
+            input_data = self.voi.GetOutput()
+        else:
+            input_data = self.img3D
+
         if method == 'scalar':
-            ia.SetInputData(self.img3D)
+            ia.SetInputData(input_data)
         else:
             grad = vtk.vtkImageGradientMagnitude()
-            grad.SetInputData(self.img3D)
+            grad.SetInputData(input_data)
             grad.SetDimensionality(3)
             grad.Update()
             ia.SetInputData(grad.GetOutput())
@@ -1027,7 +1035,7 @@ class CILViewer():
         min, max = ia.GetAutoRange()
         return min, max
 
-    def getVolumeRange(self, method):
+    def getFullVolumeRange(self, method):
         '''
         Parameters
         -----------
@@ -1147,8 +1155,8 @@ class CILViewer():
         self.renWin.Render()
 
     def setSliceColorPercentiles(self, min_percentage, max_percentage):
-        min_val, max_val = self.getVolumeMapRange((min_percentage, max_percentage), 'scalar')
-        self.setSliceColorWindowLevel(min_val, max_val)
+        min_val, max_val = self.getSliceMapRange((min_percentage, max_percentage), 'scalar')
+        self.setSliceMapRange(min_val, max_val)
 
     def setSliceColorWindow(self, window):
         self.imageSlice.GetProperty().SetColorWindow(window)
@@ -1170,6 +1178,39 @@ class CILViewer():
 
         self.ren.Render()
         self.renWin.Render()
+
+    def getSliceMapRange(self, percentiles, method='scalar'):
+        ia = self.getImageHistogramStatistics(method, slice=True)
+        ia.SetAutoRangePercentiles(*percentiles)
+        ia.Update()
+        min, max = ia.GetAutoRange()
+        return min, max
+
+    def setSliceMapRange(self, min, max):
+        '''
+        Parameters
+        -----------
+        min, max: float, default: the raw value of the 80. percentile for min, and the raw value of the 99. percentile for max.
+            the upper and lower image values that the 
+            color will be mapped to.
+        update_pipeline: bool
+            whether to immediately update the pipeline with this new
+            setting
+        '''
+        window, level = self.getSliceWindowLevelFromRange(min, max)
+        self.setSliceColorLevel(level)
+        self.setSliceColorWindow(window)
+
+    def getFullSliceRange(self, method):
+        '''
+        Parameters
+        -----------
+        method: string : ['scalar', 'gradient']
+            'scalar' - returns full range of values in image slice
+            'gradient' - returns full range of values in image slice's gradient
+        '''
+
+        return self.getSliceMapRange((0, 100), method)
 
     def saveRender(self, filename, renWin=None):
         '''Save the render window to PNG file'''
