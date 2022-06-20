@@ -29,6 +29,7 @@ from ccpi.viewer.utils.conversion import cilHDF5ResampleReader
 server = get_server()
 state, ctrl = server.state, server.controller
 
+
 class TrameViewer:
     """
     This class is intended as a base class and not to be used outside of one of the TrameViewer2D and TrameViewer3D classes.

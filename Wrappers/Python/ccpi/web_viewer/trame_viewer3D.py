@@ -105,7 +105,9 @@ class TrameViewer3D(TrameViewer):
 
         self.construct_drawer_layout()
 
-        self.layout.content.children = [vuetify.VContainer(fluid=True, classes="pa-0 fill-height", children=[self.html_view])]
+        self.layout.content.children = [
+            vuetify.VContainer(fluid=True, classes="pa-0 fill-height", children=[self.html_view])
+        ]
 
         # Setup default state
         self.set_default_button_state()

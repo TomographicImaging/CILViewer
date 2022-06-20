@@ -26,6 +26,7 @@ state, ctrl = server.state, server.controller
 
 
 class TrameViewer2D(TrameViewer):
+
     def __init__(self, list_of_files: list = None):
         self.first_load = True
         super().__init__(list_of_files=list_of_files, viewer_class=CILViewer2D)
@@ -52,7 +53,9 @@ class TrameViewer2D(TrameViewer):
 
         self.construct_drawer_layout()
 
-        self.layout.content.children = [vuetify.VContainer(fluid=True, classes="pa-0 fill-height", children=[self.html_view])]
+        self.layout.content.children = [
+            vuetify.VContainer(fluid=True, classes="pa-0 fill-height", children=[self.html_view])
+        ]
         self.reset_defaults()
         self.layout.flush_content()
 
