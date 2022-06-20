@@ -223,14 +223,11 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
 
         self._viewer.updatePipeline()
 
-    def ResetVolumeWindowLevel(self):
+    def ResetSliceWindowLevel(self):
         # reset color/window
         cmin, cmax = self._viewer.ia.GetAutoRange()
 
-        # set the level to the average value between the percintiles
-        level = (cmin + cmax) / 2
-        # accommodates all values between the level an the percentiles
-        window = (cmax - cmin) / 2
+        window, level = self.getSliceWindowLevelFromRange(cmin, cmax)
 
         self.SetInitialLevel(level)
         self.SetInitialWindow(window)
@@ -252,7 +249,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
             self.SetSliceOrientation(SLICE_ORIENTATION_XY)
             self.UpdatePipeline(resetcamera=True)
         elif interactor.GetKeyCode() == "a":
-            self.ResetVolumeWindowLevel()
+            self.ResetSliceWindowLevel()
         elif interactor.GetKeyCode() == "h":
             self.DisplayHelp()
         elif interactor.GetKeyCode() == "r":
@@ -485,6 +482,22 @@ class CILViewer():
 
         self.actors = {}
 
+        # Setup the slice histogram:
+        self.sliceIA = vtk.vtkImageAccumulate()
+        self.histogramPlotActor = vtk.vtkXYPlotActor()
+        self.histogramPlotActor.ExchangeAxesOff()
+        self.histogramPlotActor.SetXLabelFormat("%g")
+        self.histogramPlotActor.SetXLabelFormat("%g")
+        self.histogramPlotActor.SetAdjustXLabels(3)
+        self.histogramPlotActor.SetXTitle("Level")
+        self.histogramPlotActor.SetYTitle("N")
+        self.histogramPlotActor.SetXValuesToValue()
+        self.histogramPlotActor.SetPlotColor(0, (0, 1, 1))
+        self.histogramPlotActor.SetPosition2(0.85, 0.9)
+        self.histogramPlotActor.SetPosition(0.15, 0.05)
+        self.addActor(self.histogramPlotActor)
+        self.histogramPlotActor.VisibilityOff()  # Off by default
+
         # Help text
         self.helpActor = vtk.vtkActor2D()
         self.helpActor.GetPositionCoordinate().SetCoordinateSystemToNormalizedDisplay()
@@ -572,7 +585,6 @@ class CILViewer():
         # actor
         actor = vtk.vtkActor()
         actor.SetMapper(mapper)
-        #actor.GetProperty().SetOpacity(0.8)
         return actor
 
     def setPolyDataActor(self, actor):
@@ -1053,10 +1065,7 @@ class CILViewer():
         self.ia.Update()
 
         cmin, cmax = self.ia.GetAutoRange()
-        # set the level to the average between the percentiles
-        level = (cmin + cmax) / 2
-        # accomodates all values between the level an the percentiles
-        window = (cmax - cmin) / 2
+        window, level = self.getSliceWindowLevelFromRange(cmin, cmax)
 
         self.InitialLevel = level
         self.InitialWindow = window
@@ -1167,6 +1176,40 @@ class CILViewer():
             renWin = self.renWin
         SaveRenderToPNG(renWin, filename)
 
+    def validateValue(self, value, axis):
+        dims = self.img3D.GetDimensions()
+        max_slice = [x - 1 for x in dims]
+
+        axis_int = {'x': 0, 'y': 1, 'z': 2}
+
+        if axis in axis_int.keys():
+            i = axis_int[axis]
+        else:
+            raise KeyError
+
+        if value < 0:
+            return 0
+        if value > max_slice[i]:
+            return max_slice[i]
+        else:
+            return value
+
+    def updateSliceHistogram(self):
+        irange = self.voi.GetOutput().GetScalarRange()
+        self.sliceIA.SetInputData(self.voi.GetOutput())
+        self.sliceIA.IgnoreZeroOn()
+
+        #use 255 bins
+        delta = irange[1] - irange[0]
+        nbins = 255
+        self.sliceIA.SetComponentSpacing(delta / nbins, 0, 0)
+        self.sliceIA.SetComponentExtent(0, nbins - 1, 0, 0, 0, 0)
+        self.sliceIA.Update()
+
+        self.histogramPlotActor.AddDataSetInputConnection(self.sliceIA.GetOutputPort())
+        self.histogramPlotActor.SetXRange(irange[0], irange[1])
+        self.histogramPlotActor.SetYRange(self.sliceIA.GetOutput().GetScalarRange())
+
     def remove_clipping_plane(self):
         self.volume.GetMapper().RemoveAllClippingPlanes()
 
@@ -1176,3 +1219,11 @@ class CILViewer():
 
         self.getRenderer().Render()
         self.updatePipeline()
+
+    def getSliceWindowLevelFromRange(self, cmin, cmax):
+        # set the level to the average between the percentiles
+        level = (cmin + cmax) / 2
+        # accommodates all values between the level an the percentiles
+        window = cmax - cmin
+
+        return window, level
