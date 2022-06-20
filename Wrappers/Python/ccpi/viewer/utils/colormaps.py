@@ -463,7 +463,7 @@ class CILColorMaps(object):
                 (color_range[1] - color_range[0]) * i / (N-1)
             tf.AddRGBPoint(level, color[0], color[1], color[2])
 
-        return tf 
+        return tf
 
     @staticmethod
     def get_opacity_transfer_function(x, function, *params):
