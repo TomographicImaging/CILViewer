@@ -10,9 +10,14 @@
 - GitHub Action: autoyapf added
 - Added example_data and dependency on cil-data
 - CILViewer2D: 
-  - renamed getColourLevel -> getSliceColourLevel, getColourWindow -> getSliceColourWindow, setColourWindowLevel -> setSliceColourWindowLevel
   - add ChangeOrientation, AutoWindowLevel, getSliceWindowLevelFromRange
-  - Backward incompatible rename of a few methods
+  - Backward incompatible rename of a few methods: 
+    - Get/SetActiveSlice -> get/setActiveSlice, 
+    - GetSliceOrientation -> getSliceOrientation, 
+    - setColourWindowLevel -> setColorWindowLevel, 
+    - getColourLevel -> getSliceColourLevel, 
+    - getColourWindow -> getSliceColorWindow, 
+    - setColourWindowLevel -> setSliceColorWindowLevel
 - CILViewer3D:
   - added methods in interactor style to enable interaction with web app, rather than just key event binding
   - add volume render opacity scalar and gradient
