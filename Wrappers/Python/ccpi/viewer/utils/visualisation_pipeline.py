@@ -182,7 +182,7 @@ class cilPlaneClipper(object):
                 origin = [0, 0, 0]
                 norm = 1
 
-                orientation = interactor.GetSliceOrientation()
+                orientation = interactor.getSliceOrientation()
 
                 spac = interactor.GetInputData().GetSpacing()
                 orig = interactor.GetInputData().GetOrigin()
@@ -191,7 +191,7 @@ class cilPlaneClipper(object):
                 #print("Current active slice in image coords:", interactor.GetActiveSlice())
 
                 current_slice = [0, 0, 0]
-                current_slice[orientation] = interactor.GetActiveSlice()
+                current_slice[orientation] = interactor.getActiveSlice()
                 current_slice = interactor.image2world(current_slice)
 
                 #print("Current active slice in world coords: ", current_slice)
@@ -200,7 +200,7 @@ class cilPlaneClipper(object):
                 beta_down = 0.5
 
                 slice_above = [0, 0, 0]
-                slice_above[orientation] = interactor.GetActiveSlice() + beta_up
+                slice_above[orientation] = interactor.getActiveSlice() + beta_up
                 slice_above = interactor.image2world(slice_above)
 
                 normal[orientation] = norm
@@ -209,7 +209,7 @@ class cilPlaneClipper(object):
 
                 # update the  plane below
                 slice_below = [0, 0, 0]
-                slice_below[orientation] = interactor.GetActiveSlice() - beta_down
+                slice_below[orientation] = interactor.getActiveSlice() - beta_down
                 slice_below = interactor.image2world(slice_below)
 
                 origin_below = [i for i in origin]

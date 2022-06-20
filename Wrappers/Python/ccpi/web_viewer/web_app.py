@@ -15,14 +15,40 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
+import getopt
 import os
 import sys
 
 from trame import state
 
-from ccpi.web_viewer.trame_viewer import TrameViewer
+from ccpi.web_viewer.trame_viewer2D import TrameViewer2D
+from ccpi.web_viewer.trame_viewer3D import TrameViewer3D
 
 TRAME_VIEWER = None
+VIEWER_2D = False
+
+
+def arg_parser():
+    """
+    Parse the passed arguments to the current
+    :return:
+    """
+    help_string = "web_app.py [optional args: -h, -d] <data_files>\n" \
+                  "Args:\n" \
+                  "-h: Show this help and exit the program\n" \
+                  "-d, --2D: Use the 2D viewer instead of the 3D viewer, the default is to just use the 3D viewer."
+    try:
+        opts, args = getopt.getopt(sys.argv[1:], "hd", ["2D"])
+    except getopt.GetoptError:
+        print(help_string)
+        sys.exit(2)
+    for opt, arg in opts:
+        if opt == '-h':
+            print(help_string)
+        elif opt in ("-d", "--2D"):
+            global VIEWER_2D
+            VIEWER_2D = True
+    return data_finder()
 
 
 def data_finder():
@@ -32,8 +58,8 @@ def data_finder():
     """
     data_files = []
     for index, arg in enumerate(sys.argv):
-        if index == 0:
-            # this is the python script so we want to skip
+        if index == 0 or arg[0] == '-':
+            # this is the python script in index 0 and not a passed arg
             continue
         if os.path.isfile(arg):
             data_files.append(arg)
@@ -51,10 +77,14 @@ def main() -> int:
     Create the main class and run the TrameViewer
     :return: int, exit code for the program
     """
-    data_files = data_finder()
+    data_files = arg_parser()
     global TRAME_VIEWER
-    TRAME_VIEWER = TrameViewer(data_files)
-    TRAME_VIEWER.start()
+    if not VIEWER_2D:
+        TRAME_VIEWER = TrameViewer3D(data_files)
+        TRAME_VIEWER.start()
+    else:
+        TRAME_VIEWER = TrameViewer2D(data_files)
+        TRAME_VIEWER.start()
     return 0
 
 
@@ -80,7 +110,7 @@ def change_opacity_mapping(**kwargs):
 
 @state.change("file_name")
 def change_model(**kwargs):
-    TRAME_VIEWER.load_file(kwargs['file_name'], windowing_method=kwargs['opacity'])
+    TRAME_VIEWER.load_file(kwargs['file_name'], windowing_method=kwargs.get('opacity', "scalar"))
 
 
 @state.change("color_map")
@@ -100,12 +130,12 @@ def change_coloring(**kwargs):
 
 @state.change("slice_window")
 def change_slice_window(**kwargs):
-    TRAME_VIEWER.change_slice_window(kwargs["slice_window"])
+    TRAME_VIEWER.change_slice_window(kwargs["slice_window"], kwargs["slice_level"])
 
 
 @state.change("slice_level")
 def change_slice_level(**kwargs):
-    TRAME_VIEWER.change_slice_level(kwargs["slice_level"])
+    TRAME_VIEWER.change_slice_level(kwargs["slice_level"], kwargs["slice_window"])
 
 
 @state.change("slice_window_range")
@@ -140,6 +170,21 @@ def change_background_color(**kwargs):
 @state.change("toggle_clipping")
 def change_clipping(**kwargs):
     TRAME_VIEWER.change_clipping(kwargs["toggle_clipping"])
+
+
+@state.change("toggle_tracing")
+def change_tracing(**kwargs):
+    TRAME_VIEWER.change_tracing(kwargs["toggle_tracing"])
+
+
+@state.change("toggle_profiling")
+def change_profiling(**kwargs):
+    TRAME_VIEWER.change_profiling(kwargs["toggle_profiling"])
+
+
+@state.change("toggle_interpolation")
+def change_interpolation(**kwargs):
+    TRAME_VIEWER.change_interpolation(kwargs["toggle_interpolation"])
 
 
 @state.change("show_slice_histogram")
