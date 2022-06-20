@@ -17,6 +17,8 @@
   - add volume render opacity scalar and gradient
   - add slice histogram
   - fix method to change window and level for slice actor, by range or percentiles
+  - CILViewer2D and 3D:
+     - fix definition of window range to be = max - min
 - added get_color_transfer_function
 
 ## v22.1.2
