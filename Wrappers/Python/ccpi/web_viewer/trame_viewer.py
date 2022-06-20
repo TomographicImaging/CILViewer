@@ -375,7 +375,6 @@ class TrameViewer:
             "This function is not implemented in the base class, but you can expect an implementation in it's sub"
             " classes.")
 
-
     def show_slice_histogram(self, show_histogram):
         self.cil_viewer.updateSliceHistogram()
         if show_histogram:
