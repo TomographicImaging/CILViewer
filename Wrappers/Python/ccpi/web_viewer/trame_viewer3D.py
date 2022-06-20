@@ -458,3 +458,9 @@ class TrameViewer3D(TrameViewer):
         else:
             self.cil_viewer.histogramPlotActor.VisibilityOff()
         self.html_view.update()
+
+    def change_slice_number(self, slice_number):
+        self.cil_viewer.updateSliceHistogram()
+        self.cil_viewer.setActiveSlice(slice_number)
+        self.cil_viewer.updatePipeline()
+        self.html_view.update()

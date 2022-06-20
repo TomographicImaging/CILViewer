@@ -189,3 +189,8 @@ class TrameViewer2D(TrameViewer):
         self.cil_viewer.updatePipeline()
         self.html_view.update()
         self.layout.flush_content()
+
+    def change_slice_number(self, slice_number):
+        self.cil_viewer.setActiveSlice(slice_number)
+        self.cil_viewer.updatePipeline()
+        self.html_view.update()
