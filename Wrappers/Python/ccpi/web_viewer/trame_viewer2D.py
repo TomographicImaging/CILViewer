@@ -155,7 +155,7 @@ class TrameViewer2D(TrameViewer):
     def auto_window_level(self):
         cmin, cmax = self.cil_viewer.ia.GetAutoRange()
         level = (cmin + cmax) / 2
-        window = (cmax - cmin) / 2
+        window = cmax - cmin
         app = vuetify.get_app_instance()
         app.set(key="slice_window_range", value=(window, level))
         app.set(key="slice_window", value=window)
