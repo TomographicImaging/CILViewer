@@ -422,11 +422,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyle):
     def AutoWindowLevel(self):
         # reset color/window
         cmin, cmax = self._viewer.ia.GetAutoRange()
-
-        # set the level to the average value between the percintiles
-        level = (cmin + cmax) / 2
-        # accommodates all values between the level an the percentiles
-        window = (cmax - cmin) / 2
+        window, level = self.getSliceWindowLevelFromRange(cmin, cmax)
 
         self.SetInitialLevel(level)
         self.SetInitialWindow(window)
@@ -930,10 +926,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyle):
                 # reset color/window
                 cmin, cmax = self._viewer.iacursor.GetAutoRange()
 
-                # set the level to the average between the percentiles
-                level = (cmin + cmax) / 2
-                # accommodates all values between the level an the percentiles
-                window = (cmax - cmin) / 2
+                window, level = self.getSliceWindowLevelFromRange(cmin, cmax)
 
                 self.SetInitialLevel(level)
                 self.SetInitialWindow(window)
@@ -1596,10 +1589,8 @@ class CILViewer2D():
         self.ia.SetAutoRangePercentiles(5.0, 95.)
         self.ia.Update()
         cmin, cmax = self.ia.GetAutoRange()
-        # set the level to the average between the percentiles
-        level = (cmin + cmax) / 2
-        # accomodates all values between the level an the percentiles
-        window = (cmax - cmin) / 2
+
+        window, level = self.getSliceWindowLevelFromRange(cmin, cmax)
 
         self.InitialLevel = level
         self.InitialWindow = window
@@ -2060,6 +2051,14 @@ class CILViewer2D():
 
     def getColourLevel(self):
         return self.imageSlice.GetProperty().GetColorLevel()
+
+    def getSliceWindowLevelFromRange(self, cmin, cmax):
+        # set the level to the average between the percentiles
+        level = (cmin + cmax) / 2
+        # accommodates all values between the level an the percentiles
+        window = cmax - cmin
+
+        return window, level
 
     def AddActor(self, actor, name=None):
         '''print("ADDING ACTOR", name)
