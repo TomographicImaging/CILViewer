@@ -78,7 +78,6 @@ class TrameViewer:
         page_title = f"{viewer_class.__name__} on web"
         self.layout = SinglePageWithDrawerLayout(server, on_ready=self.html_view.update, width=300)
         self.layout.title.set_text(page_title)
-        self.layout.icon = [vuetify.VIcon("mdi-skull", classes="mr-4")]
 
     def start(self):
         # Could be static but we don't want it to start from just the class, so must be called on a constructed object where __init__
