@@ -291,8 +291,8 @@ class TrameViewer3D(TrameViewer):
     def update_windowing_defaults(self, method="scalar"):
         self.update_slice_data()
         # Set cmin and cmax after set_slice_defaults because set_slice only uses scalar whereas we need to support gradient in 3D
-        self.cmin, self.cmax = self.cil_viewer.getVolumeMapWindow((0., 100.), method)
-        self.windowing_defaults = self.cil_viewer.getVolumeMapWindow((80., 99.), method)
+        self.cmin, self.cmax = self.cil_viewer.getVolumeMapRange((0., 100.), method)
+        self.windowing_defaults = self.cil_viewer.getVolumeMapRange((80., 99.), method)
         if hasattr(self, "windowing_range_slider") and self.windowing_range_slider is not None \
                 and hasattr(self, "color_slider") and self.color_slider is not None:
             self.windowing_range_slider = self.construct_windowing_slider()
@@ -348,9 +348,9 @@ class TrameViewer3D(TrameViewer):
                 self.cil_viewer.setGradientOpacityPercentiles(min_value, max_value)
         else:
             if windowing_method == "scalar":
-                self.cil_viewer.setScalarOpacityWindow(min_value, max_value)
+                self.cil_viewer.setScalarOpacityRange(min_value, max_value)
             else:
-                self.cil_viewer.setGradientOpacityWindow(min_value, max_value)
+                self.cil_viewer.setGradientOpacityRange(min_value, max_value)
         if hasattr(self, "html_view"):
             self.html_view.update()
 
@@ -377,7 +377,7 @@ class TrameViewer3D(TrameViewer):
         app.set(key="slice_visibility", value=True)
         app.set(key="volume_visibility", value=True)
         app.set(key="slice_detailed_sliders", value=False)
-        app.set(key="slice_window_range", value=self.cil_viewer.getVolumeMapWindow((5., 95.), "scalar"))
+        app.set(key="slice_window_range", value=self.cil_viewer.getVolumeMapRange((5., 95.), "scalar"))
         app.set(key="slice_window", value=self.cil_viewer.getSliceColorWindow())
         app.set(key="slice_level", value=self.cil_viewer.getSliceColorLevel())
         app.set(key="background_color", value="cil_viewer_blue")
@@ -400,7 +400,7 @@ class TrameViewer3D(TrameViewer):
         if self.color_slider_is_percentage:
             self.cil_viewer.setVolumeColorPercentiles(min_value, max_value)
         else:
-            self.cil_viewer.setVolumeColorWindow(min_value, max_value)
+            self.cil_viewer.setVolumeColorRange(min_value, max_value)
         if hasattr(self, "html_view"):
             self.html_view.update()
 
