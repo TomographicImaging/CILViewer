@@ -463,28 +463,7 @@ class CILColorMaps(object):
                 (color_range[1] - color_range[0]) * i / (N-1)
             tf.AddRGBPoint(level, color[0], color[1], color[2])
 
-        return tf
-
-    @staticmethod
-    def get_lookup_table(cmap, color_range):
-
-        tf = vtk.vtkLookupTable()
-
-        colors = CILColorMaps.get_color_map(cmap)
-        
-        N = len(colors)
-        x = numpy.linspace(0, N, num=N)
-        scaling = 0.1
-        opacity = CILColorMaps.get_opacity_transfer_function(x, relu, color_range[0], color_range[1], scaling)
-        
-        for i, color in enumerate(colors):
-            # level = color_range[0] + \
-            #     (color_range[1] - color_range[0]) * i / (N-1)
-            tf.SetTableValue(i, color[0], color[1], color[2], opacity.GetValue(i))
-
-        return tf
-
-    
+        return tf 
 
     @staticmethod
     def get_opacity_transfer_function(x, function, *params):
