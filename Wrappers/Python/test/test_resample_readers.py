@@ -32,8 +32,6 @@ class TestResampleReaders(unittest.TestCase):
         shape = (5, 10, 6)
         self.input_3D_array = np.random.randint(10, size=shape, dtype=eval(f"np.uint{bits}"))
         self.input_3D_array = np.reshape(np.arange(self.input_3D_array.size), newshape=shape).astype(dtype=eval(f"np.uint{bits}"))
-        # for i in range(self.input_3D_array.shape[0]):
-        #     self.input_3D_array[i] = i
         bytes_3D_array = bytes(self.input_3D_array)
         self.raw_filename_3D = 'test_3D_data.raw'
         with open(self.raw_filename_3D, 'wb') as f:
@@ -134,7 +132,6 @@ class TestResampleReaders(unittest.TestCase):
             image = reader.GetOutput()
             resulting_shape = image.GetDimensions()
             expected_shape = np.shape(self.input_3D_array)
-            # why is this not in the previous test?
             self.assertEqual(resulting_shape, expected_shape[::-1])
             resulting_array = Converter.vtk2numpy(image)
             np.testing.assert_array_equal(np.asfortranarray(self.input_3D_array), resulting_array)
