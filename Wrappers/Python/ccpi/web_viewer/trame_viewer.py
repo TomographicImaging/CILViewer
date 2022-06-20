@@ -261,7 +261,7 @@ class TrameViewer:
     def update_slice_data(self):
         if hasattr(self.cil_viewer, "getSliceMapWindow"):
             self.cmin, self.cmax = self.cil_viewer.getSliceMapWindow((0., 100.))
-            self.slice_window_range_defaults = self.cil_viewer.getSliceMapWindow((60., 95.))
+            self.slice_window_range_defaults = self.cil_viewer.getSliceMapWindow((5., 95.))
         else:
             self.cmin, self.cmax = self.cil_viewer.getVolumeMapWindow((0., 100.), "scalar")
             self.slice_window_range_defaults = self.cil_viewer.getVolumeMapWindow((5., 95.), "scalar")

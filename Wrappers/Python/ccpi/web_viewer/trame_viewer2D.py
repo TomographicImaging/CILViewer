@@ -182,7 +182,7 @@ class TrameViewer2D(TrameViewer):
         app.set(key="background_color", value="cil_viewer_blue")
         app.set(key="slice", value=self.default_slice)
         app.set(key="orientation", value=f"{SLICE_ORIENTATION_XY}")
-        app.set(key="slice_window_range", value=self.cil_viewer.getSliceMapWindow((60., 95.)))
+        app.set(key="slice_window_range", value=self.cil_viewer.getSliceMapWindow((5., 95.)))
         app.set(key="slice_window", value=self.cil_viewer.getSliceColorWindow())
         app.set(key="slice_level", value=self.cil_viewer.getSliceColorLevel())
         app.set(key="toggle_tracing", value=False)
