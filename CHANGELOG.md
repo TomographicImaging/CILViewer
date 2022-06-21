@@ -3,6 +3,30 @@
 ## v22.x.x
 - Renamed all classes bearing name baseReader to ReaderInterface as they provide the interface not a abstract reader class.
 - Added TIFF resample reader
+- web_viewer:
+  - added web viewer using trame for viewer3D and viewer2D
+  - add entry point for running the web viewers
+  - added docker container to be deployed
+- GitHub Action: autoyapf added
+- Added example_data module to load the head data from the CIL-Data repository
+- CILViewer2D: 
+  - add ChangeOrientation, AutoWindowLevel, getSliceWindowLevelFromRange
+  - Backward incompatible rename of a few methods: 
+    - Get/SetActiveSlice -> get/setActiveSlice, 
+    - GetSliceOrientation -> getSliceOrientation, 
+    - setColourWindowLevel -> setColorWindowLevel, 
+    - getColourLevel -> getSliceColourLevel, 
+    - getColourWindow -> getSliceColorWindow, 
+    - setColourWindowLevel -> setSliceColorWindowLevel
+  - fix definition of window range to be = max - min
+- CILViewer3D:
+  - added methods in interactor style to enable interaction with web app, rather than just key event binding
+  - add volume render opacity scalar and gradient
+  - add slice histogram
+  - fix method to change window and level for slice actor, by range or percentiles
+  - fix definition of window range to be = max - min
+- colormaps: added get_color_transfer_function
+- added examples of running the 2D and 3D viewers without Qt
 
 ## v22.1.2
 * Changes released in 22.0.2, but also requires vtk version >= 9.0.3

@@ -19,10 +19,13 @@ import getopt
 import os
 import sys
 
-from trame import state
+from trame.app import get_server
 
 from ccpi.web_viewer.trame_viewer2D import TrameViewer2D
 from ccpi.web_viewer.trame_viewer3D import TrameViewer3D
+
+server = get_server()
+state, ctrl = server.state, server.controller
 
 TRAME_VIEWER = None
 VIEWER_2D = False
