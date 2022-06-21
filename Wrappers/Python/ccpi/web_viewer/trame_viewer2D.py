@@ -194,3 +194,24 @@ class TrameViewer2D(TrameViewer):
         self.cil_viewer.setActiveSlice(slice_number)
         self.cil_viewer.updatePipeline()
         self.html_view.update()
+
+    def change_slice_level(self, new_level: float, current_window: float = None):
+        self.cil_viewer.setColorLevel(level=new_level)
+        self.cil_viewer.updatePipeline()
+        self.html_view.update()
+
+    def change_slice_window(self, new_window: float, current_level: float = None):
+        self.cil_viewer.setColorWindow(window=new_window)
+        self.cil_viewer.updatePipeline()
+        self.html_view.update()
+
+    def change_slice_window_range(self, window: float, level: float):
+        self.cil_viewer.setColorWindowLevel(window, level)
+        self.cil_viewer.updatePipeline()
+        self.html_view.update()
+
+    def update_slice_data(self):
+        self.cmin, self.cmax = self.cil_viewer.getSliceMapRange((0., 100.))
+        self.slice_window_range_defaults = self.cil_viewer.getSliceMapRange((5., 95.))
+        self.slice_level_default = self.cil_viewer.getSliceColorLevel()
+        self.slice_window_default = self.cil_viewer.getSliceColorWindow()
