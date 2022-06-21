@@ -161,6 +161,9 @@ class TrameViewer:
             solo=True,
         )
 
+    def create_auto_window_level_button(self):
+        return vuetify.VBtn("Auto Window/Level", hide_details=True, dense=True, solo=True, click=self.auto_window_level)
+
     def create_orientation_radio_buttons(self, disabled: bool = False):
         return vuetify.VRadioGroup(
             children=[
@@ -266,12 +269,8 @@ class TrameViewer:
         )
 
     def update_slice_data(self):
-        if hasattr(self.cil_viewer, "getSliceMapRange"):
-            self.cmin, self.cmax = self.cil_viewer.getSliceMapRange((0., 100.))
-            self.slice_window_range_defaults = self.cil_viewer.getSliceMapRange((5., 95.))
-        else:
-            self.cmin, self.cmax = self.cil_viewer.getVolumeMapRange((0., 100.), "scalar")
-            self.slice_window_range_defaults = self.cil_viewer.getVolumeMapRange((5., 95.), "scalar")
+        self.cmin, self.cmax = self.cil_viewer.getVolumeMapRange((0., 100.), "scalar")
+        self.slice_window_range_defaults = self.cil_viewer.getVolumeMapRange((5., 95.), "scalar")
         self.slice_level_default = self.cil_viewer.getSliceColorLevel()
         self.slice_window_default = self.cil_viewer.getSliceColorWindow()
 
@@ -366,6 +365,14 @@ class TrameViewer:
             self.cil_viewer.setColorLevel(level=new_level)
         self.cil_viewer.updatePipeline()
         self.html_view.update()
+
+    def auto_window_level(self):
+        cmin, cmax = self.cil_viewer.ia.GetAutoRange()
+        window, level = self.cil_viewer.getSliceWindowLevelFromRange(cmin, cmax)
+        state["slice_window_range"] = window, level
+        state["slice_window"] = window
+        state["slice_level"] = level
+        self.cil_viewer.updatePipeline()
 
     def change_slice_number(self, slice_number):
         if hasattr(self.cil_viewer, "updateSliceHistogram"):

@@ -120,6 +120,9 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
 
     def ShowActor(self, actorno):
         self._viewer.showActor(actorno)
+    
+    def UpdateImageSlice(self):
+        self._viewer.imageSlice.Update()
 
     def mouseInteraction(self, interactor, event):
         shift = interactor.GetShiftKey()
@@ -227,27 +230,26 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
     def AutoWindowLevelOnSliceRange(self, update_slice=True):
         '''Auto-adjusts window-level for the slice, based on the 5 and 95th percentiles of the current slice.'''
         cmin, cmax = self._viewer.ia.GetAutoRange()
-        window, level = self.getSliceWindowLevelFromRange(cmin, cmax)
+        window, level = self._viewer.getSliceWindowLevelFromRange(cmin, cmax)
 
-        self._viewer.imageSlice.GetProperty().SetColorLevel(window)
-        self._viewer.imageSlice.GetProperty().SetColorWindow(level)
+        self._viewer.imageSlice.GetProperty().SetColorLevel(level)
+        self._viewer.imageSlice.GetProperty().SetColorWindow(window)
 
         if update_slice:
             self.UpdateImageSlice()
-            self.AdjustCamera()
             self.Render()
 
     def AutoWindowLevelOnVolumeRange(self, update_slice=True):
         '''Auto-adjusts window-level for the slice, based on the 5 and 95th percentiles of the whole image volume.'''
-        cmin, cmax = self._viewer.getVolumeMapRange(5, 95)
-        window, level = self.getSliceWindowLevelFromRange(cmin, cmax)
+        cmin, cmax = self._viewer.getVolumeMapRange((5., 95.), method="scalar")
+        window, level = self._viewer.getSliceWindowLevelFromRange(cmin, cmax)
 
-        self._viewer.imageSlice.GetProperty().SetColorLevel(window)
-        self._viewer.imageSlice.GetProperty().SetColorWindow(level)
+        self._viewer.imageSlice.GetProperty().SetColorLevel(level)
+        self._viewer.imageSlice.GetProperty().SetColorWindow(window)
 
         if update_slice:
             self.UpdateImageSlice()
-            self.AdjustCamera()
+            #self.AdjustCamera()
             self.Render()
 
     def OnKeyPress(self, interactor, _):

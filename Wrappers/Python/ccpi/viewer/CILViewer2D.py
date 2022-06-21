@@ -422,10 +422,12 @@ class CILInteractorStyle(vtk.vtkInteractorStyle):
     def AutoWindowLevelOnSliceRange(self, update_slice=True):
         '''Auto-adjusts window-level for the slice, based on the 5 and 95th percentiles of the current slice.'''
         cmin, cmax = self._viewer.ia.GetAutoRange()
-        window, level = self.getSliceWindowLevelFromRange(cmin, cmax)
+        print("Auto range for slice: ", cmin, cmax)
+        print("Percentiles: ", self._viewer.ia.GetAutoRangePercentiles())
+        window, level = self._viewer.getSliceWindowLevelFromRange(cmin, cmax)
 
-        self._viewer.imageSlice.GetProperty().SetColorLevel(window)
-        self._viewer.imageSlice.GetProperty().SetColorWindow(level)
+        self._viewer.imageSlice.GetProperty().SetColorLevel(level)
+        self._viewer.imageSlice.GetProperty().SetColorWindow(window)
 
         if update_slice:
             self.UpdateImageSlice()
@@ -434,11 +436,12 @@ class CILInteractorStyle(vtk.vtkInteractorStyle):
 
     def AutoWindowLevelOnVolumeRange(self, update_slice=True):
         '''Auto-adjusts window-level for the slice, based on the 5 and 95th percentiles of the whole image volume.'''
-        cmin, cmax = self._viewer.getVolumeMapRange(5, 95)
-        window, level = self.getSliceWindowLevelFromRange(cmin, cmax)
+        cmin, cmax = self._viewer.getVolumeMapRange((5., 95.), method="scalar")
+        print("Auto range for volume: ", cmin, cmax)
+        window, level = self._viewer.getSliceWindowLevelFromRange(cmin, cmax)
 
-        self._viewer.imageSlice.GetProperty().SetColorLevel(window)
-        self._viewer.imageSlice.GetProperty().SetColorWindow(level)
+        self._viewer.imageSlice.GetProperty().SetColorLevel(level)
+        self._viewer.imageSlice.GetProperty().SetColorWindow(window)
 
         if update_slice:
             self.UpdateImageSlice()
@@ -2186,7 +2189,7 @@ class CILViewer2D():
         ia.Update()
         return ia
 
-    def getVolumeMapRange(self, percentiles, method):
+    def getVolumeMapRange(self, percentiles, method="scalar"):
         '''
         uses percentiles to generate min and max values in either
         the image or image gradient (depending on method) for which
@@ -2198,7 +2201,7 @@ class CILViewer2D():
         min, max = ia.GetAutoRange()
         return min, max
 
-    def getFullVolumeRange(self, method):
+    def getFullVolumeRange(self, method="scalar"):
         '''
         Parameters
         -----------

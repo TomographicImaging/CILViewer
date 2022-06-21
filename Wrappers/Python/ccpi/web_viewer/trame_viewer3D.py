@@ -79,6 +79,7 @@ class TrameViewer3D(TrameViewer):
         self.slice_slider = None
         self.toggle_window_details_button = None
         self.orientation_radio_buttons = None
+        self.auto_window_level_button = None
         self.slice_window_range_slider = None
         self.slice_window_slider = None
         self.slice_level_slider = None
@@ -115,7 +116,7 @@ class TrameViewer3D(TrameViewer):
     def construct_drawer_layout(self):
         # The difference is that we use range slider instead of detailed sliders
         self.slice_interaction_col = vuetify.VCol([
-            self.toggle_slice_visibility, self.slice_slider, self.orientation_radio_buttons,
+            self.toggle_slice_visibility, self.slice_slider, self.orientation_radio_buttons, self.auto_window_level_button,
             self.show_slice_histogram_switch, self.toggle_window_details_button, self.slice_window_range_slider,
             self.slice_window_slider, self.slice_level_slider
         ])
@@ -145,6 +146,7 @@ class TrameViewer3D(TrameViewer):
         self.toggle_slice_visibility = self.create_toggle_slice_visibility()
         self.slice_slider = self.create_slice_slider(disabled=self.disable_2d)
         self.toggle_window_details_button = self.create_toggle_window_details_button(disabled=self.disable_2d)
+        self.auto_window_level_button = self.create_auto_window_level_button(disabled=self.disable_2d)
         self.orientation_radio_buttons = self.create_orientation_radio_buttons(disabled=self.disable_2d)
         self.slice_window_range_slider = self.construct_slice_window_range_slider(disabled=self.disable_2d)
         self.slice_window_slider = self.construct_slice_window_slider(disabled=self.disable_2d)
@@ -375,8 +377,8 @@ class TrameViewer3D(TrameViewer):
         state["volume_visibility"] = True
         state["slice_detailed_sliders"] = False
         state["slice_window_range"] = self.cil_viewer.getVolumeMapRange((5., 95.), "scalar")
-        state["slice_window"] = self.cil_viewer.getSliceColorWindow()
-        state["slice_level"] = self.cil_viewer.getSliceColorLevel()
+        state["slice_window"] = self.cil_viewer.style.GetInitialWindow()
+        state["slice_level"] = self.cil_viewer.style.GetInitialLevel()
         state["background_color"] = "cil_viewer_blue"
         state["toggle_clipping"] = False
         state["show_slice_histogram"] = False

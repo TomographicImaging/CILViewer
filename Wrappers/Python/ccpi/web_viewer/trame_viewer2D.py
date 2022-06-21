@@ -117,8 +117,6 @@ class TrameViewer2D(TrameViewer):
     def create_remove_roi_button(self):
         return vuetify.VBtn("Remove ROI", hide_details=True, dense=True, solo=True, click=self.remove_roi)
 
-    def create_auto_window_level_button(self):
-        return vuetify.VBtn("Auto Window/Level", hide_details=True, dense=True, solo=True, click=self.auto_window_level)
 
     def create_tracing_switch(self):
         return vuetify.VSwitch(label="Toggle Tracing",
@@ -152,14 +150,6 @@ class TrameViewer2D(TrameViewer):
             self.cil_viewer.imageSlice.GetProperty().SetInterpolationTypeToLinear()
         self.cil_viewer.updatePipeline()
 
-    def auto_window_level(self):
-        cmin, cmax = self.cil_viewer.ia.GetAutoRange()
-        level = (cmin + cmax) / 2
-        window = cmax - cmin
-        state["slice_window_range"] = window, level
-        state["slice_window"] = window
-        state["slice_level"] = level
-        self.cil_viewer.updatePipeline()
 
     def change_window_level_detail_sliders(self, show_detailed: bool):
         super().change_window_level_detail_sliders(show_detailed)
@@ -180,10 +170,13 @@ class TrameViewer2D(TrameViewer):
         state["background_color"] = "cil_viewer_blue"
         state["slice"] = self.default_slice
         state["orientation"] = f"{SLICE_ORIENTATION_XY}"
-        min, max = self.cil_viewer.getSliceMapRange((5., 95.))
+
+        # resets to window-level based on 5th, 95th percentiles over volume:
+        min, max = self.cil_viewer.getVolumeMapRange((5., 95.))
         state["slice_window_range"] = (min, max)
-        state["slice_window"] = self.cil_viewer.getSliceColorWindow()
-        state["slice_level"] = self.cil_viewer.getSliceColorLevel()
+        state["slice_window"] = self.cil_viewer.style.GetInitialWindow()
+        state["slice_level"] = self.cil_viewer.style.GetInitialLevel()
+
         state["toggle_tracing"] = False
         state["toggle_interpolation"] = False
         self.cil_viewer.updatePipeline()
