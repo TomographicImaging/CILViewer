@@ -2117,7 +2117,7 @@ class CILViewer2D():
             # rectilinear wipe visualises 2 images in the same pipeline
             pass
 
-    def getSliceMapWindow(self, percentiles):
+    def getSliceMapRange(self, percentiles):
         ia = vtk.vtkImageHistogramStatistics()
         ia.SetInputData(self.img3D)
         ia.SetAutoRangePercentiles(*percentiles)

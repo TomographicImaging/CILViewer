@@ -259,12 +259,12 @@ class TrameViewer:
         )
 
     def update_slice_data(self):
-        if hasattr(self.cil_viewer, "getSliceMapWindow"):
-            self.cmin, self.cmax = self.cil_viewer.getSliceMapWindow((0., 100.))
-            self.slice_window_range_defaults = self.cil_viewer.getSliceMapWindow((5., 95.))
+        if hasattr(self.cil_viewer, "getSliceMapRange"):
+            self.cmin, self.cmax = self.cil_viewer.getSliceMapRange((0., 100.))
+            self.slice_window_range_defaults = self.cil_viewer.getSliceMapRange((5., 95.))
         else:
-            self.cmin, self.cmax = self.cil_viewer.getVolumeMapWindow((0., 100.), "scalar")
-            self.slice_window_range_defaults = self.cil_viewer.getVolumeMapWindow((5., 95.), "scalar")
+            self.cmin, self.cmax = self.cil_viewer.getVolumeMapRange((0., 100.), "scalar")
+            self.slice_window_range_defaults = self.cil_viewer.getVolumeMapRange((5., 95.), "scalar")
         self.slice_level_default = self.cil_viewer.getSliceColorLevel()
         self.slice_window_default = self.cil_viewer.getSliceColorWindow()
 
@@ -326,7 +326,7 @@ class TrameViewer:
             if self.slice_window_slider_is_percentage:
                 min_percentage = level - window / 2
                 max_percentage = window + level - window / 2
-                self.cil_viewer.setSliceColorWindowLevelPercentiles(min_percentage, max_percentage)
+                self.cil_viewer.setSliceColorPercentiles(min_percentage, max_percentage)
             else:
                 self.cil_viewer.setSliceColorWindowLevel(window, level)
         else:
@@ -339,7 +339,7 @@ class TrameViewer:
             if self.slice_window_slider_is_percentage:
                 if current_level is None:
                     current_level = new_window
-                self.cil_viewer.setSliceColorWindowLevelPercentiles(new_window, current_level)
+                self.cil_viewer.setSliceColorPercentiles(new_window, current_level)
             else:
                 self.cil_viewer.setSliceColorWindow(window=new_window)
         else:
@@ -352,7 +352,7 @@ class TrameViewer:
             if self.slice_window_slider_is_percentage:
                 if current_window is None:
                     current_window = new_level
-                self.cil_viewer.setSliceColorWindowLevelPercentiles(current_window, new_level)
+                self.cil_viewer.setSliceColorPercentiles(current_window, new_level)
             else:
                 self.cil_viewer.setSliceColorLevel(level=new_level)
         else:
