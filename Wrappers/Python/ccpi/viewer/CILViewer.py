@@ -848,8 +848,8 @@ class CILViewer():
             whether to immediately update the pipeline with this new
             setting
         '''
-        go_min, go_max = self.getVolumeMapWindow((min, max), 'gradient')
-        self.setGradientOpacityWindow(go_min, go_max, update_pipeline)
+        go_min, go_max = self.getVolumeMapRange((min, max), 'gradient')
+        self.setGradientOpacityRange(go_min, go_max, update_pipeline)
 
     def setScalarOpacityPercentiles(self, min, max, update_pipeline=True):
         '''
@@ -858,23 +858,23 @@ class CILViewer():
             opacity will be mapped to if setVolumeRenderOpacityMethod
             has been set to 'scalar'.
         '''
-        so_min, so_max = self.getVolumeMapWindow((min, max), 'scalar')
-        self.setScalarOpacityWindow(so_min, so_max, update_pipeline)
+        so_min, so_max = self.getVolumeMapRange((min, max), 'scalar')
+        self.setScalarOpacityRange(so_min, so_max, update_pipeline)
 
     def setVolumeColorPercentiles(self, min, max, update_pipeline=True):
         '''
         min, max: int, default: (85., 95.)
             the percentiles on the image values upon which the colours will be mapped to
         '''
-        cmin, cmax = self.getVolumeMapWindow((min, max), 'scalar')
-        self.setVolumeColorWindow(cmin, cmax, update_pipeline)
+        cmin, cmax = self.getVolumeMapRange((min, max), 'scalar')
+        self.setVolumeColorRange(cmin, cmax, update_pipeline)
 
-    def setGradientOpacityWindow(self, min, max, update_pipeline=True):
+    def setGradientOpacityRange(self, min, max, update_pipeline=True):
         '''
         Parameters
         -----------
         min, max: float, default: (80., 99.)
-            the pupper and lower image gradient values that the 
+            the upper and lower image gradient values that the 
             opacity will be mapped to if setVolumeRenderOpacityMethod
             has been set to 'gradient'.
         update_pipeline: bool
@@ -885,18 +885,18 @@ class CILViewer():
         if update_pipeline:
             self.updateVolumePipeline()
 
-    def getGradientOpacityWindow(self):
+    def getGradientOpacityRange(self):
         '''
         Returns
         -----------
         (min, max): tuple, default: (80., 99.)
-            the pupper and lower image gradient values that the 
+            the upper and lower image gradient values that the 
             opacity will be mapped to if setVolumeRenderOpacityMethod
             has been set to 'gradient'.
         '''
         return self.gradient_opacity_limits
 
-    def setScalarOpacityWindow(self, min, max, update_pipeline=True):
+    def setScalarOpacityRange(self, min, max, update_pipeline=True):
         '''
         Parameters
         -----------
@@ -912,7 +912,7 @@ class CILViewer():
         if update_pipeline:
             self.updateVolumePipeline()
 
-    def getScalarOpacityWindow(self):
+    def getScalarOpacityRange(self):
         '''
         Returns
         -----------
@@ -923,7 +923,7 @@ class CILViewer():
         '''
         return self.scalar_opacity_limits
 
-    def setVolumeColorWindow(self, min, max, update_pipeline=True):
+    def setVolumeColorRange(self, min, max, update_pipeline=True):
         '''
         Parameters
         -----------
@@ -938,7 +938,7 @@ class CILViewer():
         if update_pipeline:
             self.updateVolumePipeline()
 
-    def getVolumeColorWindow(self):
+    def getVolumeColorRange(self):
         '''
         Returns
         -----------
@@ -1015,7 +1015,7 @@ class CILViewer():
         ia.Update()
         return ia
 
-    def getVolumeMapWindow(self, percentiles, method):
+    def getVolumeMapRange(self, percentiles, method):
         '''
         uses percentiles to generate min and max values in either
         the image or image gradient (depending on method) for which
@@ -1036,7 +1036,7 @@ class CILViewer():
             'gradient' - returns full range of values in image gradient
         '''
 
-        return self.getVolumeMapWindow((0, 100), method)
+        return self.getVolumeMapRange((0, 100), method)
 
     def getMappingArray(self, color_num, method):
         '''
@@ -1146,8 +1146,8 @@ class CILViewer():
             .SetInterpolationTypeToNearest()
         self.renWin.Render()
 
-    def setSliceColorWindowLevelPercentiles(self, min_percentage, max_percentage):
-        min_val, max_val = self.getVolumeMapWindow((min_percentage, max_percentage), 'scalar')
+    def setSliceColorPercentiles(self, min_percentage, max_percentage):
+        min_val, max_val = self.getVolumeMapRange((min_percentage, max_percentage), 'scalar')
         self.setSliceColorWindowLevel(min_val, max_val)
 
     def setSliceColorWindow(self, window):

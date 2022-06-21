@@ -564,7 +564,7 @@ def parseNpyHeader(filename):
 # BASE READERS -----------------------------------------------------------------------------------------
 
 
-class cilBaseReader(VTKPythonAlgorithmBase):
+class cilReaderInterface(VTKPythonAlgorithmBase):
     '''Base class with methods for setting and getting information about image data'''
 
     def __init__(self):
@@ -793,12 +793,12 @@ class cilBaseReader(VTKPythonAlgorithmBase):
         return slice_length
 
 
-class cilBaseRawReader(cilBaseReader):
+class cilRawReaderInterface(cilReaderInterface):
     '''Baseclass with methods for reading information about raw files.'''
 
     def __init__(self):
         VTKPythonAlgorithmBase.__init__(self, nInputPorts=0, nOutputPorts=1)
-        super(cilBaseRawReader, self).__init__()
+        super(cilRawReaderInterface, self).__init__()
 
     def ReadDataSetInfo(self):
         '''Tries to read info about dataset
@@ -811,12 +811,12 @@ class cilBaseRawReader(cilBaseReader):
             raise Exception("Typecode must be set.")
 
 
-class cilBaseNumpyReader(cilBaseReader):
+class cilNumpyReaderInterface(cilReaderInterface):
     ''' Baseclass with methods for reading information about numpy files'''
 
     def __init__(self):
         VTKPythonAlgorithmBase.__init__(self, nInputPorts=0, nOutputPorts=1)
-        super(cilBaseNumpyReader, self).__init__()
+        super(cilNumpyReaderInterface, self).__init__()
 
     def ReadNpyHeader(self):
         '''extract info from the npy header'''
@@ -860,12 +860,12 @@ class cilBaseNumpyReader(cilBaseReader):
         self.ReadNpyHeader()
 
 
-class cilBaseHDF5Reader(cilBaseReader):
+class cilHDF5ReaderInterface(cilReaderInterface):
     ''' Baseclass with methods for setting and getting information about hdf5 files'''
 
     def __init__(self):
         VTKPythonAlgorithmBase.__init__(self, nInputPorts=0, nOutputPorts=1)
-        super(cilBaseHDF5Reader, self).__init__()
+        super(cilHDF5ReaderInterface, self).__init__()
         self._DatasetName = None
 
     def SetDatasetName(self, value):
@@ -916,14 +916,15 @@ class cilBaseHDF5Reader(cilBaseReader):
         self.SetOutputVTKType(Converter.dtype_name_to_vtkType[typecode])
 
 
-class cilBaseMetaImageReader(cilBaseReader):
+class cilMetaImageReaderInterface(cilReaderInterface):
     ''' Baseclass with methods for setting and 
     getting information about metaimage files (.mha or .mhd)'''
 
     def __init__(self):
         VTKPythonAlgorithmBase.__init__(self, nInputPorts=0, nOutputPorts=1)
-        super(cilBaseMetaImageReader, self).__init__()
+        super(cilMetaImageReaderInterface, self).__init__()
         self._CompressedData = False
+        self._ElementFile = None
 
     def ReadMetaImageHeader(self):
         ''' Read info from the metaimage file's header, 
@@ -977,12 +978,13 @@ class cilBaseMetaImageReader(cilBaseReader):
                 elif 'ElementDataFile' in line:  # signifies end of header
                     element_data_file = line.split('= ')[-1]
                     if element_data_file != 'LOCAL':  # then we have an mhd file with data in another file
-                        file_path = os.path.dirname(self.GetFileName())
-                        element_data_file = os.path.join(file_path, element_data_file)
+                        if not os.path.isabs(element_data_file):
+                            file_path = os.path.dirname(self.GetFileName())
+                            element_data_file = os.path.join(file_path, element_data_file)
                         # print("Filename: ", element_data_file)
-                        self.SetFileName(element_data_file)
                     else:
                         self.SetFileHeaderLength(header_length)
+                    self.SetElementFile(element_data_file)
                     break
 
         self.SetIsFortran(True)
@@ -1003,14 +1005,85 @@ class cilBaseMetaImageReader(cilBaseReader):
             whether the file is compressed'''
         self._CompressedData = value
 
+    def SetElementFile(self, value):
+        self._ElementFile = value
+        self.Modified()
+
+    def GetElementFile(self):
+        return self._ElementFile
+
     def ReadDataSetInfo(self):
         self.ReadMetaImageHeader()
 
 
+class vortexTIFFImageReaderInterface(cilReaderInterface):
+    ''' Baseclass with methods for setting and 
+    getting information about tiff'''
+
+    def __init__(self):
+        VTKPythonAlgorithmBase.__init__(self, nInputPorts=0, nOutputPorts=1)
+        super(vortexTIFFImageReaderInterface, self).__init__()
+        self._CompressedData = False
+
+    def SetFileName(self, value):
+        ''' Set the file name or path from which to read the image data
+
+        Parameters
+        -----------
+        value: (str)
+            file name or path
+        '''
+        if isinstance(value, (list, tuple)):
+            for el in value:
+                if not os.path.exists(el):
+                    raise ValueError('File does not exist!', el)
+
+        else:
+            value = [value]
+            return self.SetFileName(value)
+
+        if value != self.GetFileName():
+            self._FileName = value
+            self.Modified()
+
+    def GetIsCompressedData(self):
+        ''' Gets whether the image file is compressed.
+        If True then we can't resample it.'''
+        return self._CompressedData
+
+    def SetIsCompressedData(self, value):
+        ''' Sets whether the image file is compressed.
+        If True then we can't resample it.
+
+        Parameters
+        -----------
+        value: bool
+            whether the file is compressed'''
+        self._CompressedData = value
+
+    def ReadDataSetInfo(self):
+        # this should set or do nothing
+        self.SetIsFortran(True)
+        self.SetBigEndian(False)
+        # get one slice size
+        reader = vtk.vtkTIFFReader()
+        reader.SetFileName(self.GetFileName()[0])
+        reader.Update()
+        dimensions = reader.GetOutput().GetDimensions()
+        zdim = len(self.GetFileName())
+        if self.GetIsFortran():
+            readshape = (dimensions[0], dimensions[1], zdim)
+        else:
+            readshape = (zdim, dimensions[1], dimensions[0])
+        self.SetStoredArrayShape(readshape)
+
+        self.SetOutputVTKType(reader.GetOutput().GetScalarType())
+
+        self.Modified()
+
+
 # ---------------------- RESAMPLE READERS -------------------------------------------------------------
-
-
-class cilBaseResampleReader(cilBaseReader):
+class cilBaseResampleReader(cilReaderInterface):
     '''vtkAlgorithm to load and resample a file to an approximate memory footprint.
     This BaseClass provides the methods needed to resample a file, if the filename
     and dataset info has been set (these will be set in instances of derived classes)
@@ -1055,40 +1128,7 @@ class cilBaseResampleReader(cilBaseReader):
         TODO: In future we need to use the vtk.vtkImageReader2 to replace this
         and remove the need for re-writing out chunks.
         '''
-        tmpdir = tempfile.mkdtemp()
-        self._SetTempDir(tmpdir)
-        header_filename = os.path.join(tmpdir, "header.mhd")
-        reader = vtk.vtkMetaImageReader()
-        reader.SetFileName(header_filename)
-
-        chunk_file_name = os.path.join(tmpdir, "chunk.raw")
-        self._ChunkFileName = chunk_file_name
-
-        readshape = self.GetStoredArrayShape()
-        is_fortran = self.GetIsFortran()
-
-        if is_fortran:
-            shape = list(readshape)
-        else:
-            shape = list(readshape)[::-1]
-
-        chunk_shape = shape.copy()
-        if self._GetNumSlicesPerChunk() is not None:
-            num_slices_per_chunk = self._GetNumSlicesPerChunk()
-        else:
-            num_slices_per_chunk = shape[2]
-        chunk_shape[2] = num_slices_per_chunk
-
-        cilNumpyMETAImageWriter.WriteMETAImageHeader(chunk_file_name,
-                                                     header_filename,
-                                                     self.GetMetaImageTypeCode(),
-                                                     self.GetBigEndian(),
-                                                     0,
-                                                     tuple(chunk_shape),
-                                                     spacing=tuple(self.GetElementSpacing()),
-                                                     origin=self.GetOrigin())
-        self._ChunkReader = reader
-        return reader
+        raise NotImplemented
 
     def UpdateChunkToRead(self, start_slice):
         '''Read the next chunk from the image file,
@@ -1097,18 +1137,7 @@ class cilBaseResampleReader(cilBaseReader):
         so essentially this method is updating which chunk of data the 
         resampler will receive.
         '''
-
-        # This is the length of the chunk we will read from the file in bytes:
-        chunk_length = self._GetSliceLengthInFile() * self._GetNumSlicesPerChunk()
-
-        with open(self.GetFileName(), "rb") as image_file_object:
-            if start_slice < 0:
-                raise ValueError('{} ERROR: Start slice cannot be negative.'.format(self.__class__.__name__))
-            chunk_location = self.GetFileHeaderLength() + start_slice * self._GetSliceLengthInFile()
-            with open(self._ChunkFileName, "wb") as chunk_file_object:
-                image_file_object.seek(chunk_location)
-                chunk = image_file_object.read(chunk_length)
-                chunk_file_object.write(chunk)
+        raise NotImplemented
 
     def _SetNumSlicesPerChunk(self, value):
         '''
@@ -1268,7 +1297,91 @@ class cilBaseResampleReader(cilBaseReader):
         return 1
 
 
-class cilRawResampleReader(cilBaseResampleReader, cilBaseRawReader):
+class cilBaseBinaryBlobResampleReader(cilBaseResampleReader):
+    '''vtkAlgorithm to load and resample a file to an approximate memory footprint.
+    This BaseClass provides the methods needed to resample a file, if the filename
+    and dataset info has been set (these will be set in instances of derived classes)
+    '''
+
+    def __init__(self):
+        VTKPythonAlgorithmBase.__init__(self, nInputPorts=0, nOutputPorts=1)
+        super(cilBaseBinaryBlobResampleReader, self).__init__()
+
+        self._TargetSize = 256**3
+        self._SlicePerChunk = None
+        self._TempDir = None
+        self._ChunkReader = None
+
+    def _GetInternalChunkReader(self):
+        ''' Returns a reader which can be used to read each chunk.
+        The reader is always going to read the header file: header.mhd, and
+        the data is always being read from chunk.raw a.k.a. self._ChunkFileName.
+        This method creates these files, with the header file containing the information
+        for a dataset which is equal to the size of a chunk needed in the downsampling.
+        
+        We have to make a new metaimage header so that the vtk.vtkMetaImageReader
+        knows the extent it needs to read when we read a chunk.
+        
+        TODO: In future we need to use the vtk.vtkImageReader2 to replace this
+        and remove the need for re-writing out chunks.
+        '''
+        tmpdir = tempfile.mkdtemp()
+        self._SetTempDir(tmpdir)
+        header_filename = os.path.join(tmpdir, "header.mhd")
+        reader = vtk.vtkMetaImageReader()
+        reader.SetFileName(header_filename)
+
+        chunk_file_name = os.path.join(tmpdir, "chunk.raw")
+        self._ChunkFileName = chunk_file_name
+
+        readshape = self.GetStoredArrayShape()
+        is_fortran = self.GetIsFortran()
+
+        if is_fortran:
+            shape = list(readshape)
+        else:
+            shape = list(readshape)[::-1]
+
+        chunk_shape = shape.copy()
+        if self._GetNumSlicesPerChunk() is not None:
+            num_slices_per_chunk = self._GetNumSlicesPerChunk()
+        else:
+            num_slices_per_chunk = shape[2]
+        chunk_shape[2] = num_slices_per_chunk
+
+        cilNumpyMETAImageWriter.WriteMETAImageHeader(chunk_file_name,
+                                                     header_filename,
+                                                     self.GetMetaImageTypeCode(),
+                                                     self.GetBigEndian(),
+                                                     0,
+                                                     tuple(chunk_shape),
+                                                     spacing=tuple(self.GetElementSpacing()),
+                                                     origin=self.GetOrigin())
+        self._ChunkReader = reader
+        return reader
+
+    def UpdateChunkToRead(self, start_slice):
+        '''Read the next chunk from the image file,
+        and write out to self._ChunkFileName
+        It is self._ChunkFileName that is being read by the resampler
+        so essentially this method is updating which chunk of data the 
+        resampler will receive.
+        '''
+
+        # This is the length of the chunk we will read from the file in bytes:
+        chunk_length = self._GetSliceLengthInFile() * self._GetNumSlicesPerChunk()
+
+        with open(self.GetFileName(), "rb") as image_file_object:
+            if start_slice < 0:
+                raise ValueError('{} ERROR: Start slice cannot be negative.'.format(self.__class__.__name__))
+            chunk_location = self.GetFileHeaderLength() + start_slice * self._GetSliceLengthInFile()
+            with open(self._ChunkFileName, "wb") as chunk_file_object:
+                image_file_object.seek(chunk_location)
+                chunk = image_file_object.read(chunk_length)
+                chunk_file_object.write(chunk)
+
+
+class cilRawResampleReader(cilBaseBinaryBlobResampleReader, cilRawReaderInterface):
     '''vtkAlgorithm to load and resample a raw file to an approximate memory footprint
 
     Example
@@ -1293,7 +1406,7 @@ class cilRawResampleReader(cilBaseResampleReader, cilBaseRawReader):
         super(cilRawResampleReader, self).__init__()
 
 
-class cilNumpyResampleReader(cilBaseNumpyReader, cilBaseResampleReader):
+class cilNumpyResampleReader(cilNumpyReaderInterface, cilBaseBinaryBlobResampleReader):
     '''vtkAlgorithm to load and resample a numpy file to an approximate memory footprint
     
     Example
@@ -1314,7 +1427,7 @@ class cilNumpyResampleReader(cilBaseNumpyReader, cilBaseResampleReader):
         super(cilNumpyResampleReader, self).__init__()
 
 
-class cilHDF5ResampleReader(cilBaseResampleReader, cilBaseHDF5Reader):
+class cilHDF5ResampleReader(cilBaseResampleReader, cilHDF5ReaderInterface):
     '''vtkAlgorithm to load and resample a HDF5 file to an approximate memory footprint
 
     Example
@@ -1367,7 +1480,7 @@ class cilHDF5ResampleReader(cilBaseResampleReader, cilBaseHDF5Reader):
         self._ChunkReader.SetUpdateExtent((0, dims[0] - 1, 0, dims[1] - 1, start_slice, end_slice))
 
 
-class cilMetaImageResampleReader(cilBaseResampleReader, cilBaseMetaImageReader):
+class cilMetaImageResampleReader(cilBaseBinaryBlobResampleReader, cilMetaImageReaderInterface):
     '''vtkAlgorithm to load and resample a metaimage file to an approximate memory footprint
     
     Example
@@ -1387,11 +1500,63 @@ class cilMetaImageResampleReader(cilBaseResampleReader, cilBaseMetaImageReader):
         VTKPythonAlgorithmBase.__init__(self, nInputPorts=0, nOutputPorts=1)
         super(cilMetaImageResampleReader, self).__init__()
 
+    def UpdateChunkToRead(self, start_slice):
+        '''Read the next chunk from the image file,
+        and write out to self._ChunkFileName
+        It is self._ChunkFileName that is being read by the resampler
+        so essentially this method is updating which chunk of data the 
+        resampler will receive.
+        '''
+
+        # This is the length of the chunk we will read from the file in bytes:
+        chunk_length = self._GetSliceLengthInFile() * self._GetNumSlicesPerChunk()
+
+        data_fname = self.GetElementFile()
+        if data_fname == 'LOCAL':
+            data_fname = self.GetFileName()
+
+        with open(data_fname, "rb") as image_file_object:
+            if start_slice < 0:
+                raise ValueError('{} ERROR: Start slice cannot be negative.'.format(self.__class__.__name__))
+            chunk_location = self.GetFileHeaderLength() + start_slice * self._GetSliceLengthInFile()
+            with open(self._ChunkFileName, "wb") as chunk_file_object:
+                image_file_object.seek(chunk_location)
+                chunk = image_file_object.read(chunk_length)
+                chunk_file_object.write(chunk)
+
+
+class vortexTIFFResampleReader(cilBaseResampleReader, vortexTIFFImageReaderInterface):
+
+    def _GetInternalChunkReader(self):
+        '''returns a reader which will only read a specific chunk of the data.
+        This is a chunk which will get resampled into a single slice.'''
+        reader = vtk.vtkTIFFReader()
+        self._ChunkReader = reader
+        return reader
+
+    def UpdateChunkToRead(self, start_slice):
+        ''' updates the chunk reader to read the next chunk starting at extent
+        start_slice in the z direction'''
+        num_slices_per_chunk = self._GetNumSlicesPerChunk()
+        end_slice = start_slice + num_slices_per_chunk - 1
+        end_z_value = self.GetStoredArrayShape()[2] - 1
+        if end_slice > end_z_value:
+            end_slice = end_z_value
+        if start_slice < 0:
+            raise ValueError('{} ERROR: Start slice cannot be negative.'.format(self.__class__.__name__))
+        dims = self.GetStoredArrayShape()
+
+        fnames = self.GetFileName()
+        chunk = vtk.vtkStringArray()
+        for i in range(start_slice, end_slice + 1):
+            chunk.InsertNextValue(fnames[i])
+        self._ChunkReader.SetFileNames(chunk)
+
 
 # CROPPED READERS -----------------------------------------------------------------------------------
 
 
-class cilBaseCroppedReader(cilBaseReader):
+class cilBaseCroppedReader(cilReaderInterface):
     '''vtkAlgorithm to crop in the z direction
     '''
 
@@ -1538,7 +1703,7 @@ class cilBaseCroppedReader(cilBaseReader):
         return 1
 
 
-class cilRawCroppedReader(cilBaseCroppedReader, cilBaseRawReader):
+class cilRawCroppedReader(cilBaseCroppedReader, cilRawReaderInterface):
     '''vtkAlgorithm to load and crop a raw file
 
     Example
@@ -1563,7 +1728,7 @@ class cilRawCroppedReader(cilBaseCroppedReader, cilBaseRawReader):
         super(cilRawCroppedReader, self).__init__()
 
 
-class cilNumpyCroppedReader(cilBaseCroppedReader, cilBaseNumpyReader):
+class cilNumpyCroppedReader(cilBaseCroppedReader, cilNumpyReaderInterface):
     '''vtkAlgorithm to load and crop a numpy file
 
     Example
@@ -1583,7 +1748,7 @@ class cilNumpyCroppedReader(cilBaseCroppedReader, cilBaseNumpyReader):
         super(cilNumpyCroppedReader, self).__init__()
 
 
-class cilMetaImageCroppedReader(cilBaseCroppedReader, cilBaseMetaImageReader):
+class cilMetaImageCroppedReader(cilBaseCroppedReader, cilMetaImageReaderInterface):
     '''vtkAlgorithm to load and resample a metaimage file to an approximate memory footprint
 
     Example
@@ -1603,7 +1768,7 @@ class cilMetaImageCroppedReader(cilBaseCroppedReader, cilBaseMetaImageReader):
         super(cilMetaImageCroppedReader, self).__init__()
 
 
-class cilHDF5CroppedReader(cilBaseCroppedReader, cilBaseHDF5Reader):
+class cilHDF5CroppedReader(cilBaseCroppedReader, cilHDF5ReaderInterface):
     '''vtkAlgorithm to load and crop a hdf5 file
 
     Example
@@ -1690,6 +1855,7 @@ class vtkImageResampler(VTKPythonAlgorithmBase):
             whether the dataset is acquisition data.
         '''
         self._IsAcquisitionData = value
+        self.Modified()
 
     def GetIsAcquisitionData(self):
         '''

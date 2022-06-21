@@ -180,7 +180,7 @@ class TrameViewer2D(TrameViewer):
         state["background_color"] = "cil_viewer_blue"
         state["slice"] = self.default_slice
         state["orientation"] = f"{SLICE_ORIENTATION_XY}"
-        min, max = self.cil_viewer.getSliceMapWindow((5., 95.))
+        min, max = self.cil_viewer.getSliceMapRange((5., 95.))
         state["slice_window_range"] = (min, max)
         state["slice_window"] = self.cil_viewer.getSliceColorWindow()
         state["slice_level"] = self.cil_viewer.getSliceColorLevel()
