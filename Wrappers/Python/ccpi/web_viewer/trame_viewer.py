@@ -106,12 +106,15 @@ class TrameViewer:
         reader.Update()
         self.cil_viewer.setInput3DData(reader.GetOutput())
 
-    def create_model_selector(self):
+    def _create_model_selector_list(self):
         useful_file_list = []
         for file_path in self.list_of_files:
             file_name = os.path.basename(file_path)
             useful_file_list.append({"text": file_name, "value": file_path})
+        return useful_file_list
 
+    def create_model_selector(self):
+        useful_file_list = self._create_model_selector_list()
         return vuetify.VSelect(
             v_model=("file_name", self.default_file),
             items=("file_name_options", useful_file_list),
@@ -119,7 +122,8 @@ class TrameViewer:
             solo=True,
         )
 
-    def create_background_selector(self):
+    @staticmethod
+    def _create_background_color_list():
         initial_list = dir(colors)
         color_list = [{
             "text": "Miles blue",
@@ -134,6 +138,10 @@ class TrameViewer:
                 filtered_color = color
             filtered_color = filtered_color.capitalize()
             color_list.append({"text": filtered_color, "value": color})
+        return color_list
+
+    def create_background_selector(self):
+        color_list = self._create_background_color_list()
         return vuetify.VSelect(v_model=("background_color", "cil_viewer_blue"),
                                items=("background_color_options", color_list),
                                hide_details=True,
