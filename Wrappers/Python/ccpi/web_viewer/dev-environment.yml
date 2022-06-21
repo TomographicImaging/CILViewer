@@ -1,5 +1,5 @@
 # run: conda env create --file environment.yml
-name: cilviewer_webapp_trame2
+name: cilviewer_webapp
 dependencies:
 - python==3.9
 - matplotlib # Optional for more colormaps
