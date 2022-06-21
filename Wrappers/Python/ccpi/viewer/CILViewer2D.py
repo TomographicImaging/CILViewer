@@ -419,20 +419,31 @@ class CILInteractorStyle(vtk.vtkInteractorStyle):
         if self.GetViewerEvent("SHOW_LINE_PROFILE_EVENT"):
             self.DisplayLineProfile(interactor, event, True)
 
-    def AutoWindowLevel(self):
-        # reset color/window
+    def AutoWindowLevelOnSliceRange(self, update_slice=True):
+        '''Auto-adjusts window-level for the slice, based on the 5 and 95th percentiles of the current slice.'''
         cmin, cmax = self._viewer.ia.GetAutoRange()
         window, level = self.getSliceWindowLevelFromRange(cmin, cmax)
 
-        self.SetInitialLevel(level)
-        self.SetInitialWindow(window)
+        self._viewer.imageSlice.GetProperty().SetColorLevel(window)
+        self._viewer.imageSlice.GetProperty().SetColorWindow(level)
 
-        self._viewer.imageSlice.GetProperty().SetColorLevel(self.GetInitialLevel())
-        self._viewer.imageSlice.GetProperty().SetColorWindow(self.GetInitialWindow())
+        if update_slice:
+            self.UpdateImageSlice()
+            self.AdjustCamera()
+            self.Render()
 
-        self.UpdateImageSlice()
-        self.AdjustCamera()
-        self.Render()
+    def AutoWindowLevelOnVolumeRange(self, update_slice=True):
+        '''Auto-adjusts window-level for the slice, based on the 5 and 95th percentiles of the whole image volume.'''
+        cmin, cmax = self._viewer.getVolumeMapRange(5, 95)
+        window, level = self.getSliceWindowLevelFromRange(cmin, cmax)
+
+        self._viewer.imageSlice.GetProperty().SetColorLevel(window)
+        self._viewer.imageSlice.GetProperty().SetColorWindow(level)
+
+        if update_slice:
+            self.UpdateImageSlice()
+            self.AdjustCamera()
+            self.Render()
 
     def ChangeOrientation(self, new_slice_orientation):
         orientation = self.GetSliceOrientation()
@@ -483,7 +494,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyle):
         elif self.reslicing_enabled and interactor.GetKeyCode() == "z":
             self.ChangeOrientation(SLICE_ORIENTATION_XY)
         elif interactor.GetKeyCode() == "a":
-            self.AutoWindowLevel()
+            self.AutoWindowLevelOnSliceRange()
         elif interactor.GetKeyCode() == "s":
             filename = "current_render"
             self.SaveRender(filename)
@@ -1183,6 +1194,7 @@ class CILViewer2D():
         #Actors
         self.voi = vtk.vtkExtractVOI()
         self.ia = vtk.vtkImageHistogramStatistics()
+        self.ia.SetAutoRangePercentiles(5.0, 95.)
         self.iacursor = vtk.vtkImageHistogramStatistics()
         self.voicursor = vtk.vtkExtractVOI()
         #self.sliceActorNo = 0
@@ -1464,7 +1476,6 @@ class CILViewer2D():
         return extent
 
     def updateImageWithOverlayPipeline(self, resetcamera=False):
-        extent = self.updateMainVOI()
         self.ia.Update()
         self.imageSliceMapper.SetOrientation(self.sliceOrientation)
         self.imageSlice.Update()
@@ -1584,22 +1595,16 @@ class CILViewer2D():
         self.voi.SetVOI(extent[0], extent[1], extent[2], extent[3], extent[4], extent[5])
 
         self.voi.Update()
-        # set window/level for current slices
+
+        # set window/level for slice based on values in entire volume:
         self.ia.SetInputData(self.voi.GetOutput())
-        self.ia.SetAutoRangePercentiles(5.0, 95.)
         self.ia.Update()
-        cmin, cmax = self.ia.GetAutoRange()
-
-        window, level = self.getSliceWindowLevelFromRange(cmin, cmax)
-
-        self.InitialLevel = level
-        self.InitialWindow = window
+        self.style.AutoWindowLevelOnVolumeRange(update_slice=False)
+        self.InitialLevel = self.getColourLevel()
+        self.InitialWindow = self.getColourWindow()
         self.log("level {0} window {1}".format(self.InitialLevel, self.InitialWindow))
 
         self.imageSliceMapper.SetInputConnection(self.voi.GetOutputPort())
-
-        self.imageSlice.GetProperty().SetColorLevel(self.InitialLevel)
-        self.imageSlice.GetProperty().SetColorWindow(self.InitialWindow)
 
         if self.image_is_downsampled:
             self.imageSlice.GetProperty().SetInterpolationTypeToLinear()

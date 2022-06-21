@@ -223,20 +223,32 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
 
         self._viewer.updatePipeline()
 
-    def ResetSliceWindowLevel(self):
-        # reset color/window
-        cmin, cmax = self._viewer.ia.GetAutoRange()
 
+    def AutoWindowLevelOnSliceRange(self, update_slice=True):
+        '''Auto-adjusts window-level for the slice, based on the 5 and 95th percentiles of the current slice.'''
+        cmin, cmax = self._viewer.ia.GetAutoRange()
         window, level = self.getSliceWindowLevelFromRange(cmin, cmax)
 
-        self.SetInitialLevel(level)
-        self.SetInitialWindow(window)
+        self._viewer.imageSlice.GetProperty().SetColorLevel(window)
+        self._viewer.imageSlice.GetProperty().SetColorWindow(level)
 
-        self._viewer.imageSlice.GetProperty().SetColorLevel(self.GetInitialLevel())
-        self._viewer.imageSlice.GetProperty().SetColorWindow(self.GetInitialWindow())
+        if update_slice:
+            self.UpdateImageSlice()
+            self.AdjustCamera()
+            self.Render()
 
-        self._viewer.imageSlice.Update()
-        self.Render()
+    def AutoWindowLevelOnVolumeRange(self, update_slice=True):
+        '''Auto-adjusts window-level for the slice, based on the 5 and 95th percentiles of the whole image volume.'''
+        cmin, cmax = self._viewer.getVolumeMapRange(5, 95)
+        window, level = self.getSliceWindowLevelFromRange(cmin, cmax)
+
+        self._viewer.imageSlice.GetProperty().SetColorLevel(window)
+        self._viewer.imageSlice.GetProperty().SetColorWindow(level)
+
+        if update_slice:
+            self.UpdateImageSlice()
+            self.AdjustCamera()
+            self.Render()
 
     def OnKeyPress(self, interactor, _):
         if interactor.GetKeyCode() == "x":
@@ -249,7 +261,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
             self.SetSliceOrientation(SLICE_ORIENTATION_XY)
             self.UpdatePipeline(resetcamera=True)
         elif interactor.GetKeyCode() == "a":
-            self.ResetSliceWindowLevel()
+            self.AutoWindowLevelOnSliceRange()
         elif interactor.GetKeyCode() == "h":
             self.DisplayHelp()
         elif interactor.GetKeyCode() == "r":
@@ -470,6 +482,7 @@ class CILViewer():
 
         self.voi = vtk.vtkExtractVOI()
         self.ia = vtk.vtkImageHistogramStatistics()
+        self.ia.SetAutoRangePercentiles(5.0, 95.)
         self.sliceActorNo = 0
 
         # Viewer Event manager
@@ -1069,14 +1082,11 @@ class CILViewer():
         self.voi.Update()
 
         self.ia.SetInputData(self.voi.GetOutput())
-        self.ia.SetAutoRangePercentiles(5.0, 95.)
         self.ia.Update()
 
-        cmin, cmax = self.ia.GetAutoRange()
-        window, level = self.getSliceWindowLevelFromRange(cmin, cmax)
-
-        self.InitialLevel = level
-        self.InitialWindow = window
+        self.style.AutoWindowLevelOnVolumeRange(update_slice=False)
+        self.InitialLevel = self.getColourLevel()
+        self.InitialWindow = self.getColourWindow()
 
         self.imageSliceMapper.SetInputConnection(self.voi.GetOutputPort())
         self.imageSlice.Update()
@@ -1261,6 +1271,12 @@ class CILViewer():
 
         self.getRenderer().Render()
         self.updatePipeline()
+
+    def getColourWindow(self):
+        return self.imageSlice.GetProperty().GetColorWindow()
+
+    def getColourLevel(self):
+        return self.imageSlice.GetProperty().GetColorLevel()
 
     def getSliceWindowLevelFromRange(self, cmin, cmax):
         # set the level to the average between the percentiles
