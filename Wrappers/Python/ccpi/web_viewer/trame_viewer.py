@@ -38,7 +38,7 @@ class TrameViewer:
     def __init__(self, viewer_class, list_of_files: list = None):
         # Load files and setup the CILViewer
         if list_of_files is None:
-            raise AttributeError("list_of_files cannot be None as we need data to load in the viewer!")
+            raise ValueError("list_of_files cannot be None as we need data to load in the viewer!")
         self.list_of_files = list_of_files
 
         self.default_file = None
