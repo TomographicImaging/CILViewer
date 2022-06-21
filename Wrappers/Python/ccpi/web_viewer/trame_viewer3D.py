@@ -15,6 +15,7 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
+from trame.app import get_server
 
 from ccpi.web_viewer.trame_viewer import TrameViewer
 
@@ -32,12 +33,14 @@ except ImportError:
 
     plt = BackupColorMaps()
 
-from trame import update_layout
-from trame.html import vuetify
+from trame.widgets import vuetify
 
 from ccpi.viewer.CILViewer import CILViewer
 from ccpi.viewer.CILViewer2D import SLICE_ORIENTATION_XY
 from ccpi.web_viewer.camera_data import CameraData
+
+server = get_server()
+state, ctrl = server.state, server.controller
 
 DEFAULT_SLICE = 32
 INITIAL_IMAGE = "head.mha"
@@ -102,12 +105,8 @@ class TrameViewer3D(TrameViewer):
 
         self.construct_drawer_layout()
 
-        self.layout.children += [
-            vuetify.VContainer(
-                fluid=True,
-                classes="pa-0 fill-height",
-                children=[self.html_view],
-            )
+        self.layout.content.children = [
+            vuetify.VContainer(fluid=True, classes="pa-0 fill-height", children=[self.html_view])
         ]
 
         # Setup default state
@@ -297,14 +296,13 @@ class TrameViewer3D(TrameViewer):
                 and hasattr(self, "color_slider") and self.color_slider is not None:
             self.windowing_range_slider = self.construct_windowing_slider()
             self.color_slider = self.construct_color_slider()
-            self.slice_window_range_slider = self.construct_slice_window_range_slider()
-            self.slice_level_slider = self.construct_slice_level_slider()
-            self.slice_window_slider = self.construct_slice_window_slider()
+            self.slice_window_range_slider = self.construct_slice_window_range_slider(self.disable_2d)
+            self.slice_level_slider = self.construct_slice_level_slider(self.disable_2d)
+            self.slice_window_slider = self.construct_slice_window_slider(self.disable_2d)
             self.construct_drawer_layout()
-            update_layout(self.layout)
-        app = vuetify.get_app_instance()
-        app.set(key="windowing", value=self.windowing_defaults)
-        app.set(key="coloring", value=self.windowing_defaults)
+            self.layout.flush_content()
+        state["windowing"] = self.windowing_defaults
+        state["coloring"] = self.windowing_defaults
 
     def load_file(self, file_name, windowing_method="scalar"):
         # Perform the load before updating the UI
@@ -367,22 +365,21 @@ class TrameViewer3D(TrameViewer):
 
     def set_default_button_state(self):
         # Don't reset file name
-        app = vuetify.get_app_instance()
-        app.set(key="slice", value=self.default_slice)
-        app.set(key="orientation", value=f"{SLICE_ORIENTATION_XY}")
-        app.set(key="opacity", value="scalar")
-        app.set(key="color_map", value="viridis")
-        app.set(key="windowing", value=self.windowing_defaults)
-        app.set(key="coloring", value=self.windowing_defaults)
-        app.set(key="slice_visibility", value=True)
-        app.set(key="volume_visibility", value=True)
-        app.set(key="slice_detailed_sliders", value=False)
-        app.set(key="slice_window_range", value=self.cil_viewer.getVolumeMapRange((5., 95.), "scalar"))
-        app.set(key="slice_window", value=self.cil_viewer.getSliceColorWindow())
-        app.set(key="slice_level", value=self.cil_viewer.getSliceColorLevel())
-        app.set(key="background_color", value="cil_viewer_blue")
-        app.set(key="toggle_clipping", value=False)
-        app.set(key="show_slice_histogram", value=False)
+        state["slice"] = self.default_slice
+        state["orientation"] = f"{SLICE_ORIENTATION_XY}"
+        state["opacity"] = "scalar"
+        state["color_map"] = "viridis"
+        state["windowing"] = self.windowing_defaults
+        state["coloring"] = self.windowing_defaults
+        state["slice_visibility"] = True
+        state["volume_visibility"] = True
+        state["slice_detailed_sliders"] = False
+        state["slice_window_range"] = self.cil_viewer.getVolumeMapRange((5., 95.), "scalar")
+        state["slice_window"] = self.cil_viewer.getSliceColorWindow()
+        state["slice_level"] = self.cil_viewer.getSliceColorLevel()
+        state["background_color"] = "cil_viewer_blue"
+        state["toggle_clipping"] = False
+        state["show_slice_histogram"] = False
         # Ensure 2D is on
         if not self.cil_viewer.imageSlice.GetVisibility():
             self.switch_slice()
@@ -408,13 +405,13 @@ class TrameViewer3D(TrameViewer):
         super().change_window_level_detail_sliders(show_detailed)
 
         # Reconstruct the detailed sliders
-        self.slice_window_range_slider = self.construct_slice_window_range_slider()
-        self.slice_window_slider = self.construct_slice_window_slider()
-        self.slice_level_slider = self.construct_slice_level_slider()
+        self.slice_window_range_slider = self.construct_slice_window_range_slider(self.disable_2d)
+        self.slice_window_slider = self.construct_slice_window_slider(self.disable_2d)
+        self.slice_level_slider = self.construct_slice_level_slider(self.disable_2d)
 
         # Reconstruct the drawer and push it
         self.construct_drawer_layout()
-        update_layout(self.layout)
+        self.layout.flush_content()
 
     def change_slice_visibility(self, visibility):
         if visibility:
@@ -423,10 +420,9 @@ class TrameViewer3D(TrameViewer):
         else:
             self.cil_viewer.imageSlice.VisibilityOff()
             self.disable_2d = True
-            app = vuetify.get_app_instance()
-            app.set(key="show_slice_histogram", value=False)
+            state["show_slice_histogram"] = False
         self.create_drawer_ui_elements()
-        update_layout(self.layout)
+        self.layout.flush_content()
         self.cil_viewer.updatePipeline()
 
     def change_volume_visibility(self, visibility):
@@ -439,21 +435,18 @@ class TrameViewer3D(TrameViewer):
             self.disable_3d = True
         self.cil_viewer.style.SetVolumeVisibility(visibility)
         self.create_drawer_ui_elements()
-        update_layout(self.layout)
+        self.layout.flush_content()
         self.cil_viewer.updatePipeline()
 
     def change_clipping(self, clipping_on):
-        app = vuetify.get_app_instance()
         if clipping_on:
-            app.set(key="slice_visibility", value=False)
+            state["slice_visibility"] = False
         self.cil_viewer.style.SetVolumeClipping(clipping_on)
         self.cil_viewer.updatePipeline()
 
     def remove_clipping_plane(self):
         if hasattr(self.cil_viewer, "planew"):
-            app = vuetify.get_app_instance()
-            app.set(key="toggle_clipping", value=False)
-
+            state["toggle_clipping"] = False
             self.cil_viewer.remove_clipping_plane()
             self.cil_viewer.getRenderer().Render()
             self.cil_viewer.updatePipeline()
