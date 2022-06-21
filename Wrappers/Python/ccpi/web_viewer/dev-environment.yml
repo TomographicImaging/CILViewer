@@ -7,5 +7,5 @@ dependencies:
 - pip
 - pip:
   # Have to install Trame via pip due to unavailability on conda
-  - trame  # pin version for pip
+  - trame<2.0  # pin version for pip
   - vtk==9.1
