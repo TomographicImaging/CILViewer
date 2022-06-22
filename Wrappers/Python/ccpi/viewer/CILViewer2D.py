@@ -20,10 +20,11 @@ import numpy
 from ccpi.viewer.utils import Converter
 
 from ccpi.viewer.CILViewerBase import (ALT_KEY, CONTROL_KEY, CROSSHAIR_ACTOR, CURSOR_ACTOR, HELP_ACTOR, HISTOGRAM_ACTOR,
-                                     LINEPLOT_ACTOR, OVERLAY_ACTOR, SHIFT_KEY, SLICE_ACTOR, SLICE_ORIENTATION_XY,
-                                     SLICE_ORIENTATION_XZ, SLICE_ORIENTATION_YZ)
+                                       LINEPLOT_ACTOR, OVERLAY_ACTOR, SHIFT_KEY, SLICE_ACTOR, SLICE_ORIENTATION_XY,
+                                       SLICE_ORIENTATION_XZ, SLICE_ORIENTATION_YZ)
 
 from ccpi.viewer.CILViewerBase import CILViewerBase
+
 
 class CILInteractorStyle(vtk.vtkInteractorStyle):
 
@@ -1091,7 +1092,7 @@ class CILViewer2D(CILViewerBase):
 
     def __init__(self, dimx=600, dimy=600, ren=None, renWin=None, iren=None, debug=True):
         CILViewerBase.__init__(self, dimx=600, dimy=600, ren=None, renWin=None, iren=None, debug=True)
-        
+
         self.style = CILInteractorStyle(self)
         self.iren.SetInteractorStyle(self.style)
         self.iren.SetRenderWindow(self.renWin)
@@ -1099,14 +1100,14 @@ class CILViewer2D(CILViewerBase):
 
         self.debug = debug
         self.style.debug = debug
-        
+
         self.camera = vtk.vtkCamera()
         self.camera.ParallelProjectionOn()
         self.flipCameraPosition = False
         self.ren.SetActiveCamera(self.camera)
 
         self.axes_initialised = False
-        
+
         #Actors
         self.iacursor = vtk.vtkImageHistogramStatistics()
         self.voicursor = vtk.vtkExtractVOI()
@@ -1623,7 +1624,6 @@ class CILViewer2D(CILViewerBase):
             self.getInteractor().SetKeyCode(axis)
             self.style.OnKeyPress(self.getInteractor(), "KeyPressEvent")
 
-
     def setVisualisationDownsampling(self, value):
         self.visualisation_downsampling = value
         if value != [1, 1, 1]:
@@ -1703,9 +1703,6 @@ class CILViewer2D(CILViewerBase):
 
         return text
 
-
-
-
     def updateROIHistogram(self):
         self.log("Updating hist")
 
@@ -1763,7 +1760,6 @@ class CILViewer2D(CILViewerBase):
         self.histogramPlotActor.AddDataSetInputConnection(self.roiIA.GetOutputPort())
         self.histogramPlotActor.SetXRange(irange[0], irange[1])
         self.histogramPlotActor.SetYRange(self.roiIA.GetOutput().GetScalarRange())
-
 
     def updateLinePlot(self, imagecoordinate, display):
 
@@ -1881,7 +1877,6 @@ class CILViewer2D(CILViewerBase):
             self.crosshairsActor.VisibilityOff()
 
             self.renWin.Render()
-
 
     def AddActor(self, actor, name=None):
         '''print("ADDING ACTOR", name)

@@ -17,10 +17,9 @@
 import numpy
 import vtk
 from ccpi.viewer.CILViewerBase import (ALT_KEY, CONTROL_KEY, CROSSHAIR_ACTOR, CURSOR_ACTOR, HELP_ACTOR, HISTOGRAM_ACTOR,
-                                     LINEPLOT_ACTOR, OVERLAY_ACTOR, SHIFT_KEY, SLICE_ACTOR, SLICE_ORIENTATION_XY,
-                                     SLICE_ORIENTATION_XZ, SLICE_ORIENTATION_YZ)
+                                       LINEPLOT_ACTOR, OVERLAY_ACTOR, SHIFT_KEY, SLICE_ACTOR, SLICE_ORIENTATION_XY,
+                                       SLICE_ORIENTATION_XZ, SLICE_ORIENTATION_YZ)
 from ccpi.viewer.utils import colormaps
-
 
 from ccpi.viewer.CILViewerBase import CILViewerBase
 
@@ -473,7 +472,6 @@ class CILViewer(CILViewerBase):
 
         self.iren.Initialize()
 
-
     def getCamera(self):
         '''returns the active camera'''
         return self.ren.GetActiveCamera()
@@ -539,7 +537,6 @@ class CILViewer(CILViewerBase):
     def addActor(self, actor):
         '''Adds an actor to the render'''
         return self.showActor(0, actor)
-
 
     def setInput3DData(self, imageData):
         self.img3D = imageData
@@ -903,7 +900,6 @@ class CILViewer(CILViewerBase):
                                                                        self.maximum_opacity)
 
         return colors, opacity
-
 
     def getMappingArray(self, color_num, method):
         '''

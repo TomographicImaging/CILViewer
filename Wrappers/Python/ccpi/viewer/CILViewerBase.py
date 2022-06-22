@@ -1,4 +1,3 @@
-
 import vtk
 from ccpi.viewer.utils.io import SaveRenderToPNG
 
@@ -54,6 +53,7 @@ class ViewerEventManager(object):
     def isAllInactive(self):
         """Returns True if all events are inactive"""
         return all(not x for x in self.events.values())
+
 
 class CILViewerBase():
 
@@ -136,7 +136,7 @@ class CILViewerBase():
 
     def getRenderer(self):
         return self.ren
-    
+
     def getRenderWindow(self):
         '''returns the render window'''
         return self.renWin
