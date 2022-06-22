@@ -15,6 +15,7 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
+import inspect
 import os
 
 from trame.app import get_server
@@ -35,7 +36,7 @@ class TrameViewer:
     This class is intended as a base class and not to be used outside of one of the TrameViewer2D and TrameViewer3D classes.
     """
 
-    def __init__(self, viewer_class, list_of_files: list = None):
+    def __init__(self, viewer, list_of_files: list = None):
         # Load files and setup the CILViewer
         if list_of_files is None:
             raise ValueError("list_of_files cannot be None as we need data to load in the viewer!")
@@ -50,7 +51,10 @@ class TrameViewer:
             self.default_file = list_of_files[0]
 
         # Create the relevant CILViewer
-        self.cil_viewer = viewer_class()
+        if inspect.isclass(viewer):
+            self.cil_viewer = viewer()
+        else:
+            self.cil_viewer = viewer
         self.load_file(self.default_file)
 
         # Set the defaults of the base class state
@@ -75,7 +79,10 @@ class TrameViewer:
         ctrl.on_server_ready.add(self.html_view.update)
 
         # Create page title using the class name of the viewer so it changes based on whatever is passed to this class
-        page_title = f"{viewer_class.__name__} on web"
+        if inspect.isclass(viewer):
+            page_title = f"{viewer.__name__} on web"
+        else:
+            page_title = f"{viewer.__class__.__name__} on web"
         self.layout = SinglePageWithDrawerLayout(server, on_ready=self.html_view.update, width=300)
         self.layout.title.set_text(page_title)
 

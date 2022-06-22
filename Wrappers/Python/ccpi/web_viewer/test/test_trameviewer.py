@@ -20,16 +20,24 @@ import sys
 import unittest
 from unittest import mock
 
-from ccpi.web_viewer.trame_viewer import TrameViewer
+from ccpi.web_viewer.trame_viewer import TrameViewer, server
 
 
 class TrameViewerTest(unittest.TestCase):
-    def setUp(self):
+    @mock.patch("ccpi.web_viewer.trame_viewer.vtk")
+    def setUp(self, vtk_module):
         # Get the head data
         self.head_path = os.path.join(sys.prefix, 'share', 'cil', 'head.mha')
         self.file_list = [self.head_path]
-        self.trame_viewer = TrameViewer(mock.MagicMock, self.file_list)
-        self.viewer_class = self.trame_viewer.cil_viewer
+
+        # add the cil_viewer and defaults for a default __init__
+        self.cil_viewer = mock.MagicMock()
+        self.cil_viewer.getSliceMapRange.return_value = [0, 3790]
+
+        self.trame_viewer = TrameViewer(self.cil_viewer, self.file_list)
+
+        # Assert on the mocks/patched objects after __init__
+        vtk_module.VtkRemoteView.assert_called_once_with(self.cil_viewer.renWin, trame_server=server, ref="view")
 
     def test_trame_viewer_init_throws_when_list_of_files_is_none(self):
         with self.assertRaises(ValueError) as cm:
@@ -132,7 +140,7 @@ class TrameViewerTest(unittest.TestCase):
 
     def test_construct_drawer_layout_raises_error(self):
         pass
-    
+
     def test_create_drawer_ui_elements_raises_error(self):
         pass
 
