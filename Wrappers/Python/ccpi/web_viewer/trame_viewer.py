@@ -329,15 +329,12 @@ class TrameViewer:
         self.slice_window_sliders_are_detailed = show_detailed
 
     def change_slice_window_range(self, window: float, level: float):
-        if hasattr(self.cil_viewer, "setSliceColorWindowLevel"):
-            if self.slice_window_slider_is_percentage:
-                min_percentage = level - window / 2
-                max_percentage = window + level - window / 2
-                self.cil_viewer.setSliceColorPercentiles(min_percentage, max_percentage)
-            else:
-                self.cil_viewer.setSliceColorWindowLevel(window, level)
+        if hasattr(self, 'slice_window_slider_is_percentage') and self.slice_window_slider_is_percentage:
+            min_percentage = level - window / 2
+            max_percentage = window + level - window / 2
+            self.cil_viewer.setSliceColorPercentiles(min_percentage, max_percentage)
         else:
-            self.cil_viewer.setColorWindowLevel(window, level)
+            self.cil_viewer.setSliceColorWindowLevel(window, level)
         self.cil_viewer.updatePipeline()
         self.html_view.update()
 
@@ -355,15 +352,12 @@ class TrameViewer:
         self.html_view.update()
 
     def change_slice_level(self, new_level: float, current_window: float = None):
-        if hasattr(self.cil_viewer, "setSliceColorLevel"):
-            if self.slice_window_slider_is_percentage:
-                if current_window is None:
-                    current_window = new_level
-                self.cil_viewer.setSliceColorPercentiles(current_window, new_level)
-            else:
-                self.cil_viewer.setSliceColorLevel(level=new_level)
+        if hasattr(self, "slice_window_slider_is_percentage") and self.slice_window_slider_is_percentage:
+            if current_window is None:
+                current_window = new_level
+            self.cil_viewer.setSliceColorPercentiles(current_window, new_level)
         else:
-            self.cil_viewer.setColorLevel(level=new_level)
+            self.cil_viewer.setSliceColorLevel(level=new_level)
         self.cil_viewer.updatePipeline()
         self.html_view.update()
 
