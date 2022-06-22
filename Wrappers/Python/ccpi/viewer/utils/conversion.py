@@ -1829,6 +1829,112 @@ class cilHDF5CroppedReader(cilBaseCroppedReader, cilHDF5ReaderInterface):
 
         return 1
 
+class vortexTIFFCroppedReader(cilBaseCroppedReader, vortexTIFFImageReaderInterface):
+    '''vtkAlgorithm to load and crop a TIFF files
+
+    Example
+    -------
+    This example reads a HDF5 image from the
+    'entry1/tomo_entry/data/data' dataset of the
+    file: data.nxs and crops it to extent (0, 2, 3, 5, 1, 2):
+
+    reader = cilHDF5CroppedReader()
+    reader.SetFileName('data.nxs')
+    reader.SetDatasetName('entry1/tomo_entry/data/data')
+    reader.SetTargetExtent((0, 2, 3, 5, 1, 2))
+    reader.Update()
+    image = reader.GetOutput()
+    
+    '''
+
+    def __init__(self):
+        VTKPythonAlgorithmBase.__init__(self, nInputPorts=0, nOutputPorts=1)
+        super(vortexTIFFCroppedReader, self).__init__()
+        self._TargetExtent = None
+
+    def SetTargetExtent(self, value):
+        ''' 
+        Set the target extent to crop to. Unlike other cropped readers,
+        the HDF5CroppedReader can crop in all dimensions
+
+        Parameters
+        -----------
+        value: list of len 5
+            the extent to crop the dataset to
+        '''
+        self._TargetExtent = value
+
+    def GetTargetExtent(self):
+        ''' Returns the target extent to crop to. Unlike other cropped readers,
+        the HDF5CroppedReader can crop in all dimensions'''
+        return self._TargetExtent
+
+    def RequestData(self, request, inInfo, outInfo):
+        outData = vtk.vtkImageData.GetData(outInfo)
+
+        self.ReadDataSetInfo()
+
+        # get basic info
+        big_endian = self.GetBigEndian()
+        readshape = self.GetStoredArrayShape()
+        file_header_length = self.GetFileHeaderLength()
+        is_fortran = self.GetIsFortran()
+
+        if is_fortran:
+            shape = list(readshape)
+        else:
+            shape = list(readshape)[::-1]
+
+        tmpdir = tempfile.mkdtemp()
+        reader = vtk.vtkTIFFImageReader()
+        sa = vtk.vtkStringArray()
+
+        
+        try:
+            if self.GetTargetZExtent()[1] >= shape[2] and self.GetTargetZExtent()[0] <= 0:
+                # in this case we don't need to crop, so we read the whole dataset
+                # print("Don't crop")
+                for el in self.GetFileName():
+                    sa.InsertNextValue(el)
+                reader.SetFileNames(sa.GetOutput())        
+                reader.Update()
+                outData.ShallowCopy(reader.GetOutput())
+
+                return 1
+
+            # In the case we do need to crop: ---------------------------------------------
+
+            shape[2] = self.GetTargetZExtent()[1] - self.GetTargetZExtent()[0] + 1
+
+            
+            image_file = self.GetFileName()[self.GetTargetZExtent()[0]:self.GetTargetZExtent()[1]]
+            for el in image_file:
+                sa.InsertNextValue(el)
+            reader.SetFileNames(sa.GetOutput()) 
+            reader.Update()
+
+            # Once we have read the data, update the extent to reflect where
+            # we have cut the cropped dataset out of the original image
+            Data = vtk.vtkImageData()
+            extent = (0, shape[0] - 1, 0, shape[1] - 1, self.GetTargetZExtent()[0], self.GetTargetZExtent()[1])
+            Data.SetExtent(extent)
+            Data.SetSpacing(self.GetElementSpacing())
+            Data.SetOrigin(self.GetOrigin())
+            Data.AllocateScalars(self.GetOutputVTKType(), 1)
+
+            read_data = reader.GetOutput()
+            read_data.SetExtent(extent)
+
+            Data.CopyAndCastFrom(read_data, extent)
+            outData.ShallowCopy(Data)
+
+        except Exception as e:
+            print("Exception", e)
+            raise Exception(e)
+        finally:
+            if os.path.exists(tmpdir):
+                shutil.rmtree(tmpdir)
+        return 1
 
 # ------------ RESAMPLE FROM MEMORY: ------------------------------------------------------------------------------
 
