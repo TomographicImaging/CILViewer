@@ -56,7 +56,6 @@ class ViewerEventManager(object):
         return all(not x for x in self.events.values())
 
 class CILViewerBase():
-    '''Simple 3D Viewer based on VTK classes'''
 
     def __init__(self, dimx=600, dimy=600, renWin=None, iren=None, ren=None, debug=False):
         # Handle arguments:
