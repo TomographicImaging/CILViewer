@@ -92,8 +92,6 @@ class TrameViewer:
         server.start()
 
     def load_file(self, file_name: str, windowing_method: str = "scalar"):
-        if "data" not in file_name:
-            file_name = os.path.join("data", file_name)
         if ".nxs" in file_name:
             self.load_nexus_file(file_name)
         else:
@@ -281,14 +279,9 @@ class TrameViewer:
         )
 
     def update_slice_data(self):
-        if hasattr(self.cil_viewer, "getSliceMapRange"):
-            self.cmin, self.cmax = self.cil_viewer.getSliceMapRange((0., 100.))
-            self.slice_window_range_defaults = self.cil_viewer.getSliceMapRange((5., 95.))
-        else:
-            self.cmin, self.cmax = self.cil_viewer.getVolumeMapRange((0., 100.), "scalar")
-            self.slice_window_range_defaults = self.cil_viewer.getVolumeMapRange((5., 95.), "scalar")
-        self.slice_level_default = self.cil_viewer.getSliceColorLevel()
-        self.slice_window_default = self.cil_viewer.getSliceColorWindow()
+        raise NotImplementedError(
+            "This function is not implemented in the base class, but you can expect an implementation in it's sub"
+            " classes.")
 
     def update_slice_slider_data(self):
         self.max_slice = self.cil_viewer.img3D.GetExtent()[self.cil_viewer.sliceOrientation * 2 + 1]

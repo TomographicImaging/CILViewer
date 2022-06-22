@@ -20,19 +20,28 @@ import sys
 import unittest
 from unittest import mock
 
+from vtkmodules.util import colors
+
+from ccpi.viewer.CILViewer2D import SLICE_ORIENTATION_XY, SLICE_ORIENTATION_XZ, SLICE_ORIENTATION_YZ
 from ccpi.web_viewer.trame_viewer import TrameViewer, server
 
 
 class TrameViewerTest(unittest.TestCase):
+    # This test has the potential to be flaky on minor version numbers of trame, due to private API usage.
+    def check_vuetify_default(self, object_to_check, expected_default):
+        self.assertEqual(object_to_check._py_attr["v_model"][1], expected_default)
+
     @mock.patch("ccpi.web_viewer.trame_viewer.vtk")
-    def setUp(self, vtk_module):
+    @mock.patch("ccpi.web_viewer.trame_viewer.TrameViewer.update_slice_data")
+    def setUp(self, _, vtk_module):
         # Get the head data
         self.head_path = os.path.join(sys.prefix, 'share', 'cil', 'head.mha')
-        self.file_list = [self.head_path]
+        self.file_list = [self.head_path, "other_file_path_dir/other_file"]
 
         # add the cil_viewer and defaults for a default __init__
         self.cil_viewer = mock.MagicMock()
-        self.cil_viewer.getSliceMapRange.return_value = [0, 3790]
+        self.map_range = [0, 3790]
+        self.cil_viewer.getSliceMapRange.return_value = self.map_range
 
         self.trame_viewer = TrameViewer(self.cil_viewer, self.file_list)
 
@@ -45,83 +54,267 @@ class TrameViewerTest(unittest.TestCase):
         self.assertEqual(str(cm.exception), "list_of_files cannot be None as we need data to load in the viewer!")
 
     def test_trame_viewer_default_file_selects_head_by_default(self):
-        pass
+        self.assertEqual(self.trame_viewer.default_file, self.head_path)
 
-    def test_trame_viewer_default_file_select_first_in_list_if_no_head(self):
-        pass
+    @mock.patch("ccpi.web_viewer.trame_viewer.vtkMetaImageReader")  # for the loading
+    @mock.patch("ccpi.web_viewer.trame_viewer.vtk")
+    @mock.patch("ccpi.web_viewer.trame_viewer.TrameViewer.update_slice_data")
+    def test_trame_viewer_default_file_select_first_in_list_if_no_head(self, _, __, ___):
+        self.file_list = ["other_file_path_dir/other_file", "other_file_path_dir2/other_file2"]
+        self.trame_viewer = TrameViewer(self.cil_viewer, self.file_list)
 
-    def test_trame_viewer_loads_default_file_initially(self):
-        pass
+        self.assertEqual(self.trame_viewer.default_file, "other_file_path_dir/other_file")
+
+    @mock.patch("ccpi.web_viewer.trame_viewer.TrameViewer.update_slice_data")
+    @mock.patch("ccpi.web_viewer.trame_viewer.vtk")
+    @mock.patch("ccpi.web_viewer.trame_viewer.TrameViewer.load_image")
+    def test_trame_viewer_loads_default_file_initially(self, load_image, _, __):
+        self.trame_viewer = TrameViewer(self.cil_viewer, self.file_list)
+
+        load_image.assert_called_once_with(self.trame_viewer.default_file)
 
     def test_load_file_properly_uses_load_nexus_for_nexus_files(self):
-        pass
+        self.trame_viewer.load_nexus_file = mock.MagicMock()
+        self.trame_viewer.load_image = mock.MagicMock()
+
+        self.trame_viewer.load_file("file_path/file.nxs")
+
+        self.trame_viewer.load_nexus_file.assert_called_once_with("file_path/file.nxs")
+        self.trame_viewer.load_image.assert_not_called()
 
     def test_load_file_does_not_load_nexus_for_none_nexus_files(self):
-        pass
+        self.trame_viewer.load_nexus_file = mock.MagicMock()
+        self.trame_viewer.load_image = mock.MagicMock()
 
-    def test_model_selector_list_is_generated_from_list_of_files(self):
-        pass
+        self.trame_viewer.load_file("file_path/file.mha")
+
+        self.trame_viewer.load_nexus_file.assert_not_called()
+        self.trame_viewer.load_image.assert_called_once_with("file_path/file.mha")
+
+    def test_model_selector_list_is_generated_from_list_of_files_with_base_names_as_text_and_path_as_value(self):
+        model_list = self.trame_viewer._create_model_selector_list()
+        self.assertEqual(len(model_list), 2)
+        self.assertEqual(model_list[0], {
+            'text': 'head.mha',
+            'value': self.head_path
+        })
+        self.assertEqual(model_list[1], {
+            'text': 'other_file',
+            'value': "other_file_path_dir/other_file"
+        })
 
     def test_model_create_model_selector_starts_with_default_file(self):
-        pass
+        model_selector = self.trame_viewer.create_model_selector()
+
+        self.check_vuetify_default(model_selector, self.trame_viewer.default_file)
 
     def test_create_background_color_list_generate_properly(self):
-        pass
+        color_list = self.trame_viewer._create_background_color_list()
+        # This changes with the number of VTK colors + 1 (miles_blue) - python defaults (__builtins__, __cached__ etc)
+        self.assertEqual(len(color_list), len(dir(colors)) + 1 - 8)
+        self.assertEqual(color_list[0], {
+            "text": "Miles blue",
+            "value": "cil_viewer_blue",
+        })
 
     def test_create_background_selector_defaults_to_miles_blue(self):
-        pass
+        model_selector = self.trame_viewer.create_background_selector()
 
+        self.check_vuetify_default(model_selector, "cil_viewer_blue")
+
+    # This test has the potential to be flaky on minor version numbers of trame, due to private API usage.
     def test_create_slice_slider_min_max_default(self):
-        pass
+        self.trame_viewer.max_slice = mock.MagicMock()
+        self.trame_viewer.default_slice = mock.MagicMock()
+        slice_slider = self.trame_viewer.create_slice_slider()
+
+        self.assertEqual(slice_slider._py_attr["min"], 0)
+        self.assertEqual(slice_slider._py_attr["max"], self.trame_viewer.max_slice)
+        self.check_vuetify_default(slice_slider, self.trame_viewer.default_slice)
 
     def test_create_toggle_details_button_starts_false(self):
-        pass
+        details_button = self.trame_viewer.create_toggle_window_details_button()
+
+        self.check_vuetify_default(details_button, False)
 
     def test_create_orientation_radio_buttons_has_3_orientations_and_defaults_to_XY(self):
-        pass
+        orientation_buttons = self.trame_viewer.create_orientation_radio_buttons()
+        buttons_checked = 0
+        for orientation_button in orientation_buttons.children:
+            if 'label="XY"' in orientation_button.html:
+                self.assertIn(f'value="{SLICE_ORIENTATION_XY}"', orientation_button.html)
+            elif 'label=XZ' in orientation_button.html:
+                self.assertIn(f'value="{SLICE_ORIENTATION_XZ}"', orientation_button.html)
+            elif 'label=ZY' in orientation_button.html:
+                self.assertIn(f'value="{SLICE_ORIENTATION_YZ}"', orientation_button.html)
+            buttons_checked += 1
+        self.assertEqual(buttons_checked, 3)
+        self.check_vuetify_default(orientation_buttons, str(SLICE_ORIENTATION_XY))
 
     def test_construct_slice_window_slider_uses_percentage_when_cmax_less_than_100(self):
-        pass
+        self.trame_viewer.cmax = 1
+        slice_window_slider = self.trame_viewer.construct_slice_window_slider()
+
+        self.assertEqual(self.trame_viewer.slice_window_slider_is_percentage, True)
+        self.assertIn('max="100"', slice_window_slider.html)
+        self.assertIn('min="0"', slice_window_slider.html)
+        self.assertIn('step="0.5"', slice_window_slider.html)
+        self.check_vuetify_default(slice_window_slider, self.trame_viewer.slice_window_default)
 
     def test_construct_slice_window_slider_does_not_use_percentage_when_cmax_more_than_100(self):
-        pass
+        self.trame_viewer.cmax = 102
+        self.trame_viewer.cmin = 0
+        slice_window_slider = self.trame_viewer.construct_slice_window_slider()
+
+        self.assertEqual(self.trame_viewer.slice_window_slider_is_percentage, False)
+        self.assertIn(f'max="{self.trame_viewer.cmax}"', slice_window_slider.html)
+        self.assertIn('min="0"', slice_window_slider.html)
+        self.assertIn('step="1"', slice_window_slider.html)
+        self.check_vuetify_default(slice_window_slider, self.trame_viewer.slice_window_default)
+
+    def test_construct_slice_window_slider_shows_if_detailed_is_true(self):
+        self.trame_viewer.slice_window_sliders_are_detailed = True
+        self.trame_viewer.cmax = 1
+        slice_window_slider = self.trame_viewer.construct_slice_window_slider()
+
+        self.assertIn(f'style="max-width: 300px"', slice_window_slider.html)
+
+    def test_construct_slice_window_slider_hides_if_detailed_is_false(self):
+        self.trame_viewer.slice_window_sliders_are_detailed = False
+        self.trame_viewer.cmax = 1
+        slice_window_slider = self.trame_viewer.construct_slice_window_slider()
+
+        self.assertIn(f'style="visibility: hidden; height: 0"', slice_window_slider.html)
 
     def test_construct_slice_level_slider_uses_percentage_when_cmax_less_than_100(self):
-        pass
+        self.trame_viewer.cmax = 1
+        slice_level_slider = self.trame_viewer.construct_slice_level_slider()
+
+        self.assertEqual(self.trame_viewer.slice_level_slider_is_percentage, True)
+        self.assertIn('max="100"', slice_level_slider.html)
+        self.assertIn('min="0"', slice_level_slider.html)
+        self.assertIn('step="0.5"', slice_level_slider.html)
+        self.check_vuetify_default(slice_level_slider, self.trame_viewer.slice_level_default)
 
     def test_construct_slice_level_slider_does_not_use_percentage_when_cmax_more_than_100(self):
-        pass
+        self.trame_viewer.cmax = 102
+        self.trame_viewer.cmin = 0
+        slice_level_slider = self.trame_viewer.construct_slice_level_slider()
+
+        self.assertEqual(self.trame_viewer.slice_level_slider_is_percentage, False)
+        self.assertIn(f'max="{self.trame_viewer.cmax}"', slice_level_slider.html)
+        self.assertIn('min="0"', slice_level_slider.html)
+        self.assertIn('step="1"', slice_level_slider.html)
+        self.check_vuetify_default(slice_level_slider, self.trame_viewer.slice_level_default)
+
+    def test_construct_slice_level_slider_shows_if_detailed_is_true(self):
+        self.trame_viewer.slice_window_sliders_are_detailed = True
+        self.trame_viewer.cmax = 1
+        slice_level_slider = self.trame_viewer.construct_slice_level_slider()
+
+        self.assertIn(f'style="max-width: 300px"', slice_level_slider.html)
+
+    def test_construct_slice_level_slider_hides_if_detailed_is_false(self):
+        self.trame_viewer.slice_window_sliders_are_detailed = False
+        self.trame_viewer.cmax = 1
+        slice_level_slider = self.trame_viewer.construct_slice_level_slider()
+
+        self.assertIn(f'style="visibility: hidden; height: 0"', slice_level_slider.html)
 
     def test_construct_slice_window_range_slider_uses_percentage_when_cmax_less_than_100(self):
-        pass
+        self.trame_viewer.cmax = 1
+        slice_window_slider = self.trame_viewer.construct_slice_window_slider()
+
+        self.assertEqual(self.trame_viewer.slice_window_slider_is_percentage, True)
+        self.assertIn('max="100"', slice_window_slider.html)
+        self.assertIn('min="0"', slice_window_slider.html)
+        self.assertIn('step="0.5"', slice_window_slider.html)
+        self.check_vuetify_default(slice_window_slider, self.trame_viewer.slice_window_default)
 
     def test_construct_slice_window_range_slider_does_not_use_percentage_when_cmax_more_than_100(self):
-        pass
+        self.trame_viewer.cmax = 102
+        self.trame_viewer.cmin = 0
+        self.trame_viewer.slice_window_range_defaults = self.map_range
+        slice_window_range_slider = self.trame_viewer.construct_slice_window_range_slider()
+
+        self.assertEqual(self.trame_viewer.slice_window_slider_is_percentage, False)
+        self.assertIn(f'max="{self.trame_viewer.cmax}"', slice_window_range_slider.html)
+        self.assertIn('min="0"', slice_window_range_slider.html)
+        self.assertIn('step="1"', slice_window_range_slider.html)
+        self.check_vuetify_default(slice_window_range_slider, self.map_range)
+
+    def test_construct_slice_window_range_slider_shows_if_detailed_is_false(self):
+        self.trame_viewer.slice_window_sliders_are_detailed = False
+        self.trame_viewer.cmax = 1
+        slice_window_range_slider = self.trame_viewer.construct_slice_window_range_slider()
+
+        self.assertIn(f'style="max-width: 300px"', slice_window_range_slider.html)
+
+    def test_construct_slice_window_range_slider_hides_if_detailed_is_true(self):
+        self.trame_viewer.slice_window_sliders_are_detailed = True
+        self.trame_viewer.cmax = 1
+        slice_window_range_slider = self.trame_viewer.construct_slice_window_range_slider()
+
+        self.assertIn(f'style="visibility: hidden; height: 0"', slice_window_range_slider.html)
 
     def test_update_slice_data_raises_error(self):
-        pass
+        with self.assertRaises(NotImplementedError) as cm:
+            self.trame_viewer.update_slice_data()
+        self.assertEqual(str(cm.exception), "This function is not implemented in the base class, but you can expect an implementation in "
+                                            "it's sub classes.")
 
     def test_update_slice_slider_data_updates_max_slice_and_default_slice(self):
-        pass
+        self.trame_viewer.cil_viewer.img3D.GetExtent.return_value = [0, 97, 0, 0, 0]
+        self.trame_viewer.cil_viewer.sliceOrientation = 0
+
+        self.trame_viewer.update_slice_slider_data()
+
+        self.assertEqual(self.trame_viewer.max_slice, 97)
+        self.assertEqual(self.trame_viewer.default_slice, 48)
+
+    def test_change_background_changes_background_color_handles_miles_blue_in_cil_viewer(self):
+        color_name = "cil_viewer_blue"
+        color = (.1, .2, .4)
+
+        self.trame_viewer.change_background_color(color_name)
+
+        self.trame_viewer.cil_viewer.ren.SetBackground.assert_called_once_with(color)
 
     def test_change_background_changes_background_color_in_cil_viewer(self):
-        pass
+        color_name = "alice_blue"
+        color = getattr(colors, color_name)
+
+        self.trame_viewer.change_background_color(color_name)
+
+        self.trame_viewer.cil_viewer.ren.SetBackground.assert_called_once_with(color)
 
     def test_switch_orientation_calls_change_orientation_in_cil_viewer(self):
-        pass
+        delattr(self.trame_viewer.cil_viewer.style, "ChangeOrientation")  # So we can test the hasattr statements
+        self.trame_viewer.switch_to_orientation(SLICE_ORIENTATION_YZ)
 
-    # Ensure the defaults are updated
-    def test_switch_orientation_calls_update_slice_slider_data(self):
-        pass
+        self.assertEqual(self.cil_viewer.sliceOrientation, SLICE_ORIENTATION_YZ)
 
-    def test_switch_orientation_remakes_the_slice_slider(self):
-        pass
+        self.trame_viewer.cil_viewer.style.ChangeOrientation = mock.MagicMock()
+        self.trame_viewer.switch_to_orientation(SLICE_ORIENTATION_XZ)
 
-    def test_switch_orientation_flushes_the_layout_after_renamking_the_slice_slider(self):
-        pass
+        self.trame_viewer.cil_viewer.style.ChangeOrientation.assert_called_once_with(SLICE_ORIENTATION_XZ)
 
-    def test_switch_orientation_updates_cil_viewer_pipeline(self):
-        pass
+    @mock.patch("ccpi.web_viewer.trame_viewer.vuetify.VSlider")
+    @mock.patch("ccpi.web_viewer.trame_viewer.TrameViewer.update_slice_slider_data")
+    def test_switch_orientation_calls_update_slice_slider_data(self, update_slice_slider_data, vslider):
+        vslider_mock = mock.MagicMock()
+        vslider.return_value = vslider_mock
+        self.trame_viewer.slice_slider = mock.MagicMock()
+        self.trame_viewer.construct_drawer_layout = mock.MagicMock()
+        self.trame_viewer.layout.flush_content = mock.MagicMock()
+
+        self.trame_viewer.switch_to_orientation(0)
+
+        # Here the updates will happen
+        update_slice_slider_data.assert_called_once()
+        self.assertEqual(self.trame_viewer.slice_slider, vslider_mock)
+        self.trame_viewer.construct_drawer_layout.assert_called_once()
+        self.trame_viewer.layout.flush_content.assert_called_once()
 
     def test_change_window_level_detail_sliders_sets_window_and_level_defaults_for_slices(self):
         pass

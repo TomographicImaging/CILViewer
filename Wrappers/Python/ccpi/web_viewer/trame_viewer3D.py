@@ -458,3 +458,9 @@ class TrameViewer3D(TrameViewer):
         else:
             self.cil_viewer.histogramPlotActor.VisibilityOff()
         self.html_view.update()
+
+    def update_slice_data(self):
+        self.cmin, self.cmax = self.cil_viewer.getVolumeMapRange((0., 100.), "scalar")
+        self.slice_window_range_defaults = self.cil_viewer.getVolumeMapRange((5., 95.), "scalar")
+        self.slice_level_default = self.cil_viewer.getSliceColorLevel()
+        self.slice_window_default = self.cil_viewer.getSliceColorWindow()
