@@ -12,7 +12,7 @@ class TestCroppedReaders(unittest.TestCase):
     def setUp(self):
         # Generate random 3D array and write to HDF5:
         np.random.seed(1)
-        shape = (5, 4, 6) # was 10 times larger
+        shape = (5, 4, 6)  # was 10 times larger
         bits = 8
         self.input_3D_array = np.random.randint(10, size=shape, dtype=eval(f"np.uint{bits}"))
         self.input_3D_array = np.reshape(np.arange(self.input_3D_array.size),
@@ -105,7 +105,7 @@ class TestCroppedReaders(unittest.TestCase):
         # Check raw type code was set correctly:
         self.assertEqual(raw_type_code, reader.GetTypeCodeName())
         self.check_values(target_z_extent, reader.GetOutput())
-        
+
     def tearDown(self):
         files = [self.raw_filename_3D, self.numpy_filename_3D, self.meta_filename_3D] + self.tiff_fnames
         for f in files:

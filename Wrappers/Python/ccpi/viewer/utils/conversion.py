@@ -1829,6 +1829,7 @@ class cilHDF5CroppedReader(cilBaseCroppedReader, cilHDF5ReaderInterface):
 
         return 1
 
+
 class vortexTIFFCroppedReader(cilBaseCroppedReader, vortexTIFFImageReaderInterface):
     '''vtkAlgorithm to load and crop a TIFF files
 
@@ -1889,14 +1890,13 @@ class vortexTIFFCroppedReader(cilBaseCroppedReader, vortexTIFFImageReaderInterfa
         reader = vtk.vtkTIFFImageReader()
         sa = vtk.vtkStringArray()
 
-        
         try:
             if self.GetTargetZExtent()[1] >= shape[2] and self.GetTargetZExtent()[0] <= 0:
                 # in this case we don't need to crop, so we read the whole dataset
                 # print("Don't crop")
                 for el in self.GetFileName():
                     sa.InsertNextValue(el)
-                reader.SetFileNames(sa.GetOutput())        
+                reader.SetFileNames(sa.GetOutput())
                 reader.Update()
                 outData.ShallowCopy(reader.GetOutput())
 
@@ -1906,11 +1906,10 @@ class vortexTIFFCroppedReader(cilBaseCroppedReader, vortexTIFFImageReaderInterfa
 
             shape[2] = self.GetTargetZExtent()[1] - self.GetTargetZExtent()[0] + 1
 
-            
             image_file = self.GetFileName()[self.GetTargetZExtent()[0]:self.GetTargetZExtent()[1]]
             for el in image_file:
                 sa.InsertNextValue(el)
-            reader.SetFileNames(sa.GetOutput()) 
+            reader.SetFileNames(sa.GetOutput())
             reader.Update()
 
             # Once we have read the data, update the extent to reflect where
@@ -1935,6 +1934,7 @@ class vortexTIFFCroppedReader(cilBaseCroppedReader, vortexTIFFImageReaderInterfa
             if os.path.exists(tmpdir):
                 shutil.rmtree(tmpdir)
         return 1
+
 
 # ------------ RESAMPLE FROM MEMORY: ------------------------------------------------------------------------------
 
