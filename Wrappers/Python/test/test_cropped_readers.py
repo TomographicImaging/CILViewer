@@ -4,7 +4,7 @@ import unittest
 import numpy as np
 import vtk
 from ccpi.viewer.utils.conversion import (Converter, cilRawCroppedReader, cilMetaImageCroppedReader,
-                                          cilNumpyCroppedReader)
+                                          cilNumpyCroppedReader, vortexTIFFCroppedReader)
 
 
 class TestCroppedReaders(unittest.TestCase):
@@ -12,7 +12,11 @@ class TestCroppedReaders(unittest.TestCase):
     def setUp(self):
         # Generate random 3D array and write to HDF5:
         np.random.seed(1)
-        self.input_3D_array = np.random.randint(10, size=(50, 100, 60), dtype=np.uint8)
+        shape = (5, 4, 6) # was 10 times larger
+        bits = 8
+        self.input_3D_array = np.random.randint(10, size=shape, dtype=eval(f"np.uint{bits}"))
+        self.input_3D_array = np.reshape(np.arange(self.input_3D_array.size),
+                                         newshape=shape).astype(dtype=eval(f"np.uint{bits}"))
         bytes_3D_array = bytes(self.input_3D_array)
         self.raw_filename_3D = 'test_3D_data.raw'
         with open(self.raw_filename_3D, 'wb') as f:
@@ -28,6 +32,22 @@ class TestCroppedReaders(unittest.TestCase):
         writer.SetInputData(vtk_image)
         writer.SetCompression(False)
         writer.Write()
+        # Write TIFFs
+        fnames = []
+        arr = self.input_3D_array
+        from PIL import Image
+        for i in range(arr.shape[0]):
+            fname = 'tiff_test_file_{:03d}.tiff'.format(i)
+            fnames.append(os.path.abspath(fname))
+            # Using vtk the Y axis gets reversed
+            # vtk_image = Converter.numpy2vtkImage(np.expand_dims(arr[i,:,:], axis=0))
+            # twriter.SetFileName(fnames[-1])
+            # twriter.SetInputData(vtk_image)
+            # twriter.Write()
+            im = Image.fromarray(arr[i])
+            im.save(fnames[-1])
+
+        self.tiff_fnames = fnames
 
     def check_extent(self, reader, target_z_extent):
         reader.Update()
@@ -74,8 +94,20 @@ class TestCroppedReaders(unittest.TestCase):
                 self.check_extent(reader, target_z_extent)
                 self.check_values(target_z_extent, reader.GetOutput())
 
+    def test_tiff_cropped_reader(self):
+        target_z_extent = [1, 3]
+        reader = vortexTIFFCroppedReader()
+        # og_shape = np.shape(self.input_3D_array)
+        reader.SetFileName(self.tiff_fnames)
+        reader.SetTargetZExtent(tuple(target_z_extent))
+        raw_type_code = str(self.input_3D_array.dtype)
+        self.check_extent(reader, target_z_extent)
+        # Check raw type code was set correctly:
+        self.assertEqual(raw_type_code, reader.GetTypeCodeName())
+        self.check_values(target_z_extent, reader.GetOutput())
+        
     def tearDown(self):
-        files = [self.raw_filename_3D, self.numpy_filename_3D, self.meta_filename_3D]
+        files = [self.raw_filename_3D, self.numpy_filename_3D, self.meta_filename_3D] + self.tiff_fnames
         for f in files:
             os.remove(f)
 
