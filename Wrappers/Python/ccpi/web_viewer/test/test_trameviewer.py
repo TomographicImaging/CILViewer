@@ -316,8 +316,24 @@ class TrameViewerTest(unittest.TestCase):
         self.trame_viewer.construct_drawer_layout.assert_called_once()
         self.trame_viewer.layout.flush_content.assert_called_once()
 
+    def test_change_window_level_detail_sliders_does_nothing_if_slice_window_sliders_are_detailed_is_false_and_passed_false(self):
+        self.trame_viewer.slice_window_sliders_are_detailed = False
+
+        self.cil_viewer.getSliceColorLevel.assert_not_called()
+        self.cil_viewer.getSliceColorWindow.assert_not_called()
+
     def test_change_window_level_detail_sliders_sets_window_and_level_defaults_for_slices(self):
-        pass
+        self.trame_viewer.cil_viewer.getSliceColorLevel.return_value = 200
+        self.trame_viewer.cil_viewer.getSliceColorWindow.return_value = 100
+        expected_defaults = [150, 250]
+        value_of_show_detailed = True
+
+        self.trame_viewer.change_window_level_detail_sliders(value_of_show_detailed)
+
+        self.assertEqual(self.trame_viewer.slice_window_range_defaults, expected_defaults)
+        self.assertEqual(self.trame_viewer.slice_level_default, 200)
+        self.assertEqual(self.trame_viewer.slice_window_default, 100)
+        self.assertEqual(self.trame_viewer.slice_window_sliders_are_detailed, value_of_show_detailed)
 
     def test_change_slice_window_range_raises_error(self):
         pass
