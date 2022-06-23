@@ -348,10 +348,24 @@ class TrameViewerTest(unittest.TestCase):
         pass
 
     def test_construct_drawer_layout_raises_error(self):
-        pass
+        with self.assertRaises(NotImplementedError) as cm:
+            self.trame_viewer.construct_drawer_layout()
+        self.assertEqual(str(cm.exception), "This function is not implemented in the base class, but you can expect an implementation in "
+                                            "it's sub classes.")
 
     def test_create_drawer_ui_elements_raises_error(self):
-        pass
+        with self.assertRaises(NotImplementedError) as cm:
+            self.trame_viewer.create_drawer_ui_elements()
+        self.assertEqual(str(cm.exception), "This function is not implemented in the base class, but you can expect an implementation in "
+                                            "it's sub classes.")
 
     def test_show_slice_histogram_will_set_the_state_of_histogramPlotActor(self):
-        pass
+        self.trame_viewer.show_slice_histogram(True)
+
+        self.trame_viewer.cil_viewer.updateSliceHistogram.assert_called_once()
+        self.trame_viewer.cil_viewer.histogramPlotActor.VisibilityOn.assert_called_once()
+
+        self.trame_viewer.show_slice_histogram(False)
+
+        self.trame_viewer.cil_viewer.histogramPlotActor.VisibilityOff.assert_called_once()
+        self.trame_viewer.cil_viewer.histogramPlotActor.VisibilityOn.assert_called_once()
