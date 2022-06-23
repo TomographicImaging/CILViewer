@@ -31,6 +31,15 @@ TRAME_VIEWER = None
 VIEWER_2D = False
 
 
+def reset_viewer2d():
+    set_viewer2d(False)
+
+
+def set_viewer2d(new_value):
+    global VIEWER_2D
+    VIEWER_2D = new_value
+
+
 def arg_parser():
     """
     Parse the passed arguments to the current
@@ -102,7 +111,7 @@ def change_orientation(**kwargs):
         orientation = kwargs["orientation"]
         if orientation is not int:
             orientation = int(orientation)
-        TRAME_VIEWER.switch_to_orientation(int(orientation))
+        TRAME_VIEWER.switch_to_orientation(orientation)
 
 
 @state.change("opacity")
