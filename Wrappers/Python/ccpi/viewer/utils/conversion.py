@@ -1829,6 +1829,7 @@ class cilHDF5CroppedReader(cilBaseCroppedReader, cilHDF5ReaderInterface):
 
         return 1
 
+
 class vortexTIFFCroppedReader(cilBaseCroppedReader, vortexTIFFImageReaderInterface):
     '''vtkAlgorithm to load and crop a TIFF files
 
@@ -1935,6 +1936,7 @@ class vortexTIFFCroppedReader(cilBaseCroppedReader, vortexTIFFImageReaderInterfa
         outData.ShallowCopy(Data)
 
         return 1
+
 
 # ------------ RESAMPLE FROM MEMORY: ------------------------------------------------------------------------------
 
