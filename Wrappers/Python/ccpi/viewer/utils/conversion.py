@@ -1853,23 +1853,6 @@ class vortexTIFFCroppedReader(cilBaseCroppedReader, vortexTIFFImageReaderInterfa
         super(vortexTIFFCroppedReader, self).__init__()
         self._TargetExtent = None
 
-    def SetTargetExtent(self, value):
-        ''' 
-        Set the target extent to crop to. Unlike other cropped readers,
-        the HDF5CroppedReader can crop in all dimensions
-
-        Parameters
-        -----------
-        value: list of len 5
-            the extent to crop the dataset to
-        '''
-        self._TargetExtent = value
-
-    def GetTargetExtent(self):
-        ''' Returns the target extent to crop to. Unlike other cropped readers,
-        the HDF5CroppedReader can crop in all dimensions'''
-        return self._TargetExtent
-
     def RequestData(self, request, inInfo, outInfo):
         outData = vtk.vtkImageData.GetData(outInfo)
 
@@ -1890,13 +1873,8 @@ class vortexTIFFCroppedReader(cilBaseCroppedReader, vortexTIFFImageReaderInterfa
         reader = vtk.vtkTIFFReader()
         sa = vtk.vtkStringArray()
 
-        # Either the TargetExtent or TargetZExtent should have been set.
-        # We prioritise the TargetExtent
-        if self.GetTargetExtent() is None:
-            extent = [0, -1, 0, -1, self.GetTargetZExtent()[0], self.GetTargetZExtent()[1]]
-        else:
-            extent = self.GetTargetExtent()
-
+        extent = [0, -1, 0, -1, self.GetTargetZExtent()[0], self.GetTargetZExtent()[1]]
+        
         # crop on Z
         if extent[5] >= shape[2] and extent[4] <= 0:
             # in this case we don't need to crop, so we read the whole dataset
