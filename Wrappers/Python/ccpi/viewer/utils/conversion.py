@@ -1903,7 +1903,7 @@ class vortexTIFFCroppedReader(cilBaseCroppedReader, vortexTIFFImageReaderInterfa
             # print("Don't crop")
             for el in self.GetFileName():
                 sa.InsertNextValue(el)
-            reader.SetFileNames(sa)        
+            reader.SetFileNames(sa)
             reader.Update()
             outData.ShallowCopy(reader.GetOutput())
 
@@ -1913,15 +1913,15 @@ class vortexTIFFCroppedReader(cilBaseCroppedReader, vortexTIFFImageReaderInterfa
 
         shape[2] = self.GetTargetZExtent()[1] - self.GetTargetZExtent()[0] + 1
 
-        image_file = self.GetFileName()[extent[4]:extent[5]+1]
+        image_file = self.GetFileName()[extent[4]:extent[5] + 1]
         for el in image_file:
             sa.InsertNextValue(el)
-        reader.SetFileNames(sa) 
+        reader.SetFileNames(sa)
         reader.Update()
 
         # Once we have read the data, update the extent to reflect where
         # we have cut the cropped dataset out of the original image
-        
+
         Data = vtk.vtkImageData()
         extent = (0, shape[0] - 1, 0, shape[1] - 1, self.GetTargetZExtent()[0], self.GetTargetZExtent()[1])
         Data.SetExtent(extent)
