@@ -65,7 +65,6 @@ class TestResampleReaders(unittest.TestCase):
         writer.Write()
 
         # Create TIFF Files
-        twriter = vtk.vtkTIFFWriter()
         fnames = []
         arr = self.input_3D_array
         from PIL import Image

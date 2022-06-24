@@ -1886,54 +1886,54 @@ class vortexTIFFCroppedReader(cilBaseCroppedReader, vortexTIFFImageReaderInterfa
             shape = list(readshape)[::-1]
 
         tmpdir = tempfile.mkdtemp()
-        reader = vtk.vtkTIFFImageReader()
+        reader = vtk.vtkTIFFReader()
         sa = vtk.vtkStringArray()
 
-        
-        try:
-            if self.GetTargetZExtent()[1] >= shape[2] and self.GetTargetZExtent()[0] <= 0:
-                # in this case we don't need to crop, so we read the whole dataset
-                # print("Don't crop")
-                for el in self.GetFileName():
-                    sa.InsertNextValue(el)
-                reader.SetFileNames(sa.GetOutput())        
-                reader.Update()
-                outData.ShallowCopy(reader.GetOutput())
+        # Either the TargetExtent or TargetZExtent should have been set.
+        # We prioritise the TargetExtent
+        if self.GetTargetExtent() is None:
+            extent = [0, -1, 0, -1, self.GetTargetZExtent()[0], self.GetTargetZExtent()[1]]
+        else:
+            extent = self.GetTargetExtent()
 
-                return 1
-
-            # In the case we do need to crop: ---------------------------------------------
-
-            shape[2] = self.GetTargetZExtent()[1] - self.GetTargetZExtent()[0] + 1
-
-            
-            image_file = self.GetFileName()[self.GetTargetZExtent()[0]:self.GetTargetZExtent()[1]]
-            for el in image_file:
+        # crop on Z
+        if extent[5] >= shape[2] and extent[4] <= 0:
+            # in this case we don't need to crop, so we read the whole dataset
+            # print("Don't crop")
+            for el in self.GetFileName():
                 sa.InsertNextValue(el)
-            reader.SetFileNames(sa.GetOutput()) 
+            reader.SetFileNames(sa)        
             reader.Update()
+            outData.ShallowCopy(reader.GetOutput())
 
-            # Once we have read the data, update the extent to reflect where
-            # we have cut the cropped dataset out of the original image
-            Data = vtk.vtkImageData()
-            extent = (0, shape[0] - 1, 0, shape[1] - 1, self.GetTargetZExtent()[0], self.GetTargetZExtent()[1])
-            Data.SetExtent(extent)
-            Data.SetSpacing(self.GetElementSpacing())
-            Data.SetOrigin(self.GetOrigin())
-            Data.AllocateScalars(self.GetOutputVTKType(), 1)
+            return 1
 
-            read_data = reader.GetOutput()
-            read_data.SetExtent(extent)
+        # In the case we do need to crop: ---------------------------------------------
 
-            Data.CopyAndCastFrom(read_data, extent)
-            outData.ShallowCopy(Data)
+        shape[2] = self.GetTargetZExtent()[1] - self.GetTargetZExtent()[0] + 1
 
-        except Exception as e:
-            print("Exception", e)
-            raise Exception(e)
-        finally:
-            if os.path.exists(tmpdir):
-                shutil.rmtree(tmpdir)
+        image_file = self.GetFileName()[extent[4]:extent[5]+1]
+        for el in image_file:
+            sa.InsertNextValue(el)
+        reader.SetFileNames(sa) 
+        reader.Update()
+
+        # Once we have read the data, update the extent to reflect where
+        # we have cut the cropped dataset out of the original image
+        
+        Data = vtk.vtkImageData()
+        extent = (0, shape[0] - 1, 0, shape[1] - 1, self.GetTargetZExtent()[0], self.GetTargetZExtent()[1])
+        Data.SetExtent(extent)
+        Data.SetSpacing(self.GetElementSpacing())
+        Data.SetOrigin(self.GetOrigin())
+        Data.AllocateScalars(self.GetOutputVTKType(), 1)
+
+        read_data = reader.GetOutput()
+        read_data.SetExtent(extent)
+
+        Data.CopyAndCastFrom(read_data, extent)
+        outData.ShallowCopy(Data)
+
         return 1
 
 # ------------ RESAMPLE FROM MEMORY: ------------------------------------------------------------------------------

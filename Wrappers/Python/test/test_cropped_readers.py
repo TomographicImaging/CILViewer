@@ -64,7 +64,7 @@ class TestCroppedReaders(unittest.TestCase):
         read_cropped_array = Converter.vtk2numpy(read_cropped_image)
         cropped_array = self.input_3D_array[target_z_extent[0]:target_z_extent[1] + 1, :, :]
         np.testing.assert_array_equal(cropped_array, read_cropped_array)
-
+        
     def test_raw_cropped_reader(self):
         target_z_extent = [1, 3]
         reader = cilRawCroppedReader()
