@@ -1874,7 +1874,7 @@ class vortexTIFFCroppedReader(cilBaseCroppedReader, vortexTIFFImageReaderInterfa
         sa = vtk.vtkStringArray()
 
         extent = [0, -1, 0, -1, self.GetTargetZExtent()[0], self.GetTargetZExtent()[1]]
-        
+
         # crop on Z
         if extent[5] >= shape[2] and extent[4] <= 0:
             # in this case we don't need to crop, so we read the whole dataset
