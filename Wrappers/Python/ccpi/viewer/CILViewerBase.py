@@ -1,22 +1,10 @@
 import vtk
+from ccpi.viewer import (ALT_KEY, CONTROL_KEY, CROSSHAIR_ACTOR, CURSOR_ACTOR,
+                         HELP_ACTOR, HISTOGRAM_ACTOR, LINEPLOT_ACTOR,
+                         OVERLAY_ACTOR, SHIFT_KEY, SLICE_ACTOR,
+                         SLICE_ORIENTATION_XY, SLICE_ORIENTATION_XZ,
+                         SLICE_ORIENTATION_YZ)
 from ccpi.viewer.utils.io import SaveRenderToPNG
-
-SLICE_ORIENTATION_XY = 2  # Z
-SLICE_ORIENTATION_XZ = 1  # Y
-SLICE_ORIENTATION_YZ = 0  # X
-
-CONTROL_KEY = 8
-SHIFT_KEY = 4
-ALT_KEY = -128
-
-SLICE_ACTOR = 'slice_actor'
-OVERLAY_ACTOR = 'overlay_actor'
-HISTOGRAM_ACTOR = 'histogram_actor'
-HELP_ACTOR = 'help_actor'
-CURSOR_ACTOR = 'cursor_actor'
-CROSSHAIR_ACTOR = 'crosshair_actor'
-LINEPLOT_ACTOR = 'lineplot_actor'
-WIPE_ACTOR = 'wipe_actor'
 
 
 class ViewerEventManager(object):
@@ -56,6 +44,14 @@ class ViewerEventManager(object):
 
 
 class CILViewerBase():
+    '''
+    Base Class for CILViewers.
+
+    When making a subclass, the following must be set in the __init__:
+
+    SetInteractorStyle(style)
+
+    '''
 
     def __init__(self, dimx=600, dimy=600, renWin=None, iren=None, ren=None, debug=False):
         # Handle arguments:
@@ -76,6 +72,8 @@ class CILViewerBase():
             self.iren = iren
         else:
             self.iren = vtk.vtkRenderWindowInteractor()
+
+        self.iren.SetRenderWindow(self.renWin)
 
         self.ren.SetBackground(.1, .2, .4)
 
@@ -131,6 +129,11 @@ class CILViewerBase():
         self.histogramPlotActor.SetXValuesToValue()
         self.histogramPlotActor.SetPlotColor(0, (0, 1, 1))
 
+    def setInteractorStyle(self, style):
+        self.style = style
+        self.iren.SetInteractorStyle(self.style)
+        self.iren.Initialize()
+
     def getInteractor(self):
         return self.iren
 
@@ -140,6 +143,10 @@ class CILViewerBase():
     def getRenderWindow(self):
         '''returns the render window'''
         return self.renWin
+
+    def getCamera(self):
+        '''returns the active camera'''
+        return self.ren.GetActiveCamera()
 
     def getSliceOrientation(self):
         return self.sliceOrientation
@@ -196,16 +203,18 @@ class CILViewerBase():
         min, max = ia.GetAutoRange()
         return min, max
 
-    def getVolumeRange(self, method):
+    def getFullVolumeRange(self, method):
         '''
         Parameters
         -----------
         method: string : ['scalar', 'gradient']
-            'scalar' - returns full range of values in image
-            'gradient' - returns full range of values in image gradient
+            'scalar' - returns full range of values in the 3D image
+            'gradient' - returns full range of values in 3D image's gradient
         '''
 
-        return self.getVolumeMapRange((0, 100), method)
+        ia = self.getImageHistogramStatistics(method)
+
+        return ia.GetMinimum(), ia.GetMaximum()
 
     # Set interpolation on
     def setInterpolateOn(self):
@@ -219,6 +228,9 @@ class CILViewerBase():
         self.renWin.Render()
 
     def setSliceColorWindowLevel(self, window, level):
+        '''
+        Set the window and level for the 2D slice of the 3D image.
+        '''
         # Level is the average of min and max, and the window is the difference.
         self.imageSlice.GetProperty().SetColorLevel(level)
         self.imageSlice.GetProperty().SetColorWindow(window)
@@ -232,18 +244,29 @@ class CILViewerBase():
         self.setSliceColorWindowLevel(min_val, max_val)
 
     def setSliceColorWindow(self, window):
+        '''
+        Set the window for the 2D slice of the 3D image.
+        '''
         self.imageSlice.GetProperty().SetColorWindow(window)
         self.imageSlice.Update()
         self.ren.Render()
         self.renWin.Render()
 
     def setSliceColorLevel(self, level):
+        '''
+        Set the level for the 2D slice of the 3D image.
+        '''
         self.imageSlice.GetProperty().SetColorLevel(level)
         self.imageSlice.Update()
         self.ren.Render()
         self.renWin.Render()
 
     def getSliceMapRange(self, percentiles):
+        '''
+        uses percentiles to generate min and max values in
+        the 2D slice of the 3D image, for which
+        the colormap is displayed.
+        '''
         ia = vtk.vtkImageHistogramStatistics()
         ia.SetInputData(self.img3D)
         ia.SetAutoRangePercentiles(*percentiles)
@@ -253,9 +276,7 @@ class CILViewerBase():
 
     def saveRender(self, filename, renWin=None):
         '''Save the render window to PNG file'''
-        # screenshot code:
-
-        if renWin == None:
+        if renWin is None:
             renWin = self.renWin
         SaveRenderToPNG(self.renWin, filename)
 
@@ -276,3 +297,6 @@ class CILViewerBase():
             return max_slice[i]
         else:
             return value
+
+    def setInput3DData(self, imageData):
+        raise NotImplementedError("Implemented in the subclasses.")

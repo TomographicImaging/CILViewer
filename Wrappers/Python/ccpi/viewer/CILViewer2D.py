@@ -14,16 +14,15 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-import vtk
 import numpy
-
-from ccpi.viewer.utils import Converter
-
-from ccpi.viewer.CILViewerBase import (ALT_KEY, CONTROL_KEY, CROSSHAIR_ACTOR, CURSOR_ACTOR, HELP_ACTOR, HISTOGRAM_ACTOR,
-                                       LINEPLOT_ACTOR, OVERLAY_ACTOR, SHIFT_KEY, SLICE_ACTOR, SLICE_ORIENTATION_XY,
-                                       SLICE_ORIENTATION_XZ, SLICE_ORIENTATION_YZ)
-
+import vtk
+from ccpi.viewer import (ALT_KEY, CONTROL_KEY, CROSSHAIR_ACTOR, CURSOR_ACTOR,
+                         HELP_ACTOR, HISTOGRAM_ACTOR, LINEPLOT_ACTOR,
+                         OVERLAY_ACTOR, SHIFT_KEY, SLICE_ACTOR,
+                         SLICE_ORIENTATION_XY, SLICE_ORIENTATION_XZ,
+                         SLICE_ORIENTATION_YZ)
 from ccpi.viewer.CILViewerBase import CILViewerBase
+from ccpi.viewer.utils import Converter
 
 
 class CILInteractorStyle(vtk.vtkInteractorStyle):
@@ -1093,10 +1092,7 @@ class CILViewer2D(CILViewerBase):
     def __init__(self, dimx=600, dimy=600, ren=None, renWin=None, iren=None, debug=True):
         CILViewerBase.__init__(self, dimx=600, dimy=600, ren=None, renWin=None, iren=None, debug=True)
 
-        self.style = CILInteractorStyle(self)
-        self.iren.SetInteractorStyle(self.style)
-        self.iren.SetRenderWindow(self.renWin)
-        self.iren.Initialize()
+        self.setInteractorStyle(CILInteractorStyle(self))
 
         self.debug = debug
         self.style.debug = debug
