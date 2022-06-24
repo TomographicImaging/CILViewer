@@ -47,7 +47,7 @@ class CILViewerBase():
 
     When making a subclass, the following must be set in the __init__:
 
-    SetInteractorStyle(style)
+    self.setInteractorStyle(style)
 
     '''
 
