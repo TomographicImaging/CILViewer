@@ -16,11 +16,9 @@
 
 import numpy
 import vtk
-from ccpi.viewer  import (ALT_KEY, CONTROL_KEY, CROSSHAIR_ACTOR, CURSOR_ACTOR,
-                         HELP_ACTOR, HISTOGRAM_ACTOR, LINEPLOT_ACTOR,
-                         OVERLAY_ACTOR, SHIFT_KEY, SLICE_ACTOR,
-                         SLICE_ORIENTATION_XY, SLICE_ORIENTATION_XZ,
-                         SLICE_ORIENTATION_YZ)
+from ccpi.viewer import (ALT_KEY, CONTROL_KEY, CROSSHAIR_ACTOR, CURSOR_ACTOR, HELP_ACTOR, HISTOGRAM_ACTOR,
+                         LINEPLOT_ACTOR, OVERLAY_ACTOR, SHIFT_KEY, SLICE_ACTOR, SLICE_ORIENTATION_XY,
+                         SLICE_ORIENTATION_XZ, SLICE_ORIENTATION_YZ)
 from ccpi.viewer.CILViewerBase import CILViewerBase
 from ccpi.viewer.utils import colormaps
 

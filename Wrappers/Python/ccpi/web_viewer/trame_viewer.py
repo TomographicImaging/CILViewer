@@ -335,7 +335,8 @@ class TrameViewer:
         self.html_view.update()
 
     def change_slice_window(self, new_window: float, current_level: float = None):
-        if hasattr(self, "slice_window_slider_is_percentage") and self.slice_window_slider_is_percentage and current_level is None:
+        if hasattr(self, "slice_window_slider_is_percentage"
+                   ) and self.slice_window_slider_is_percentage and current_level is None:
             current_level = new_window
             self.cil_viewer.setSliceColorPercentiles(new_window, current_level)
         else:
