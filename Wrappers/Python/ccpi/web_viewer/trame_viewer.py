@@ -267,7 +267,7 @@ class TrameViewer:
 
     def update_slice_data(self):
         self.slice_window_range_defaults = self.cil_viewer.getSliceMapRange((5., 95.))
-        self.cmin, self.cmax = self.cil_viewer.getVolumeMapRange((0., 100.), "scalar")
+        self.cmin, self.cmax = self.cil_viewer.getImageMapRange((0., 100.), "scalar")
         self.slice_level_default = self.cil_viewer.getSliceColorLevel()
         self.slice_window_default = self.cil_viewer.getSliceColorWindow()
 

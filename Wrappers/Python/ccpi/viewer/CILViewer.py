@@ -741,7 +741,7 @@ class CILViewer(CILViewerBase):
             whether to immediately update the pipeline with this new
             setting
         '''
-        go_min, go_max = self.getVolumeMapRange((min, max), 'gradient')
+        go_min, go_max = self.getImageMapRange((min, max), 'gradient')
         self.setGradientOpacityRange(go_min, go_max, update_pipeline)
 
     def setScalarOpacityPercentiles(self, min, max, update_pipeline=True):
@@ -751,7 +751,7 @@ class CILViewer(CILViewerBase):
             opacity will be mapped to if setVolumeRenderOpacityMethod
             has been set to 'scalar'.
         '''
-        so_min, so_max = self.getVolumeMapRange((min, max), 'scalar')
+        so_min, so_max = self.getImageMapRange((min, max), 'scalar')
         self.setScalarOpacityRange(so_min, so_max, update_pipeline)
 
     def setVolumeColorPercentiles(self, min, max, update_pipeline=True):
@@ -759,7 +759,7 @@ class CILViewer(CILViewerBase):
         min, max: int, default: (85., 95.)
             the percentiles on the image values upon which the colours will be mapped to
         '''
-        cmin, cmax = self.getVolumeMapRange((min, max), 'scalar')
+        cmin, cmax = self.getImageMapRange((min, max), 'scalar')
         self.setVolumeColorRange(cmin, cmax, update_pipeline)
 
     def setGradientOpacityRange(self, min, max, update_pipeline=True):

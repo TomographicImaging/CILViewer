@@ -189,7 +189,7 @@ class CILViewerBase():
         ia.Update()
         return ia
 
-    def getVolumeMapRange(self, percentiles, method):
+    def getImageMapRange(self, percentiles, method):
         '''
         uses percentiles to generate min and max values in either
         the image or image gradient (depending on method) for which
@@ -201,7 +201,7 @@ class CILViewerBase():
         min, max = ia.GetAutoRange()
         return min, max
 
-    def getFullVolumeRange(self, method):
+    def getFullImageRange(self, method):
         '''
         Parameters
         -----------
@@ -238,7 +238,7 @@ class CILViewerBase():
 
     def setSliceColorPercentiles(self, min_percentage, max_percentage):
         #TODO: LATER: FIX THIS METHOD - IT DOESN'T WORK CORRECTLY
-        min_val, max_val = self.getVolumeMapRange((min_percentage, max_percentage), 'scalar')
+        min_val, max_val = self.getImageMapRange((min_percentage, max_percentage), 'scalar')
         self.setSliceColorWindowLevel(min_val, max_val)
 
     def setSliceColorWindow(self, window):
