@@ -1540,6 +1540,7 @@ class cilTIFFResampleReader(cilBaseResampleReader, cilTIFFImageReaderInterface):
     image = reader.GetOutput()
     
     '''
+
     def _GetInternalChunkReader(self):
         '''returns a reader which will only read a specific chunk of the data.
         This is a chunk which will get resampled into a single slice.'''
