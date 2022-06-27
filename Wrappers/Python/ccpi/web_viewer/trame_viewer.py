@@ -73,6 +73,8 @@ class TrameViewer:
         self.slice_window_sliders_are_detailed = False
         self.slice_window_slider_is_percentage = False
 
+        # VtkLocalView would allow the user to use their own GPU locally, but requires serialisation of various VTK actors that the
+        # framework is not capable of serialisation, hence using RemoteView and being dependent on a web server with a GPU available to it.
         self.html_view = vtk.VtkRemoteView(self.cil_viewer.renWin, trame_server=server, ref="view")
         ctrl.view_update = self.html_view.update
         ctrl.view_reset_camera = self.html_view.reset_camera
