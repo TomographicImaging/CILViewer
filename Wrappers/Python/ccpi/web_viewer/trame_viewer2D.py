@@ -94,7 +94,7 @@ class TrameViewer2D(TrameViewer):
             vuetify.VDivider(), self.reset_defaults_button
         ]
 
-    def load_file(self, file_name, windowing_method="scalar"):
+    def load_file(self, file_name, _="scalar"):
         super().load_file(file_name, windowing_method="scalar")
         if not self.first_load:
             self.update_slice_slider_data()
