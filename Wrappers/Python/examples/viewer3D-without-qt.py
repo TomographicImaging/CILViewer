@@ -1,8 +1,8 @@
 from ccpi.viewer import viewer3D
-from ccpi.viewer.utils import data_example
+from ccpi.viewer.utils import example_data
 
 v = viewer3D()
 # Load head data
-data = data_example.HEAD.get()
+data = example_data.HEAD.get()
 v.setInputData(data)
 v.startRenderLoop()

@@ -292,8 +292,8 @@ class TrameViewer3D(TrameViewer):
     def update_windowing_defaults(self, method="scalar"):
         self.update_slice_data()
         # Set cmin and cmax after set_slice_defaults because set_slice only uses scalar whereas we need to support gradient in 3D
-        self.cmin, self.cmax = self.cil_viewer.getVolumeMapRange((0., 100.), method)
-        self.windowing_defaults = self.cil_viewer.getVolumeMapRange((80., 99.), method)
+        self.cmin, self.cmax = self.cil_viewer.getImageMapRange((0., 100.), method)
+        self.windowing_defaults = self.cil_viewer.getImageMapRange((80., 99.), method)
         if hasattr(self, "windowing_range_slider") and self.windowing_range_slider is not None \
                 and hasattr(self, "color_slider") and self.color_slider is not None:
             self.windowing_range_slider = self.construct_windowing_slider()
@@ -376,7 +376,7 @@ class TrameViewer3D(TrameViewer):
         state["slice_visibility"] = True
         state["volume_visibility"] = True
         state["slice_detailed_sliders"] = False
-        state["slice_window_range"] = self.cil_viewer.getVolumeMapRange((5., 95.), "scalar")
+        state["slice_window_range"] = self.cil_viewer.getImageMapRange((5., 95.), "scalar")
         state["slice_window"] = self.cil_viewer.style.GetInitialWindow()
         state["slice_level"] = self.cil_viewer.style.GetInitialLevel()
         state["background_color"] = "cil_viewer_blue"
