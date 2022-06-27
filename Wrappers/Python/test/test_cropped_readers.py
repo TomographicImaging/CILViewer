@@ -4,7 +4,7 @@ import unittest
 import numpy as np
 import vtk
 from ccpi.viewer.utils.conversion import (Converter, cilRawCroppedReader, cilMetaImageCroppedReader,
-                                          cilNumpyCroppedReader, vortexTIFFCroppedReader)
+                                          cilNumpyCroppedReader, cilTIFFCroppedReader)
 
 
 class TestCroppedReaders(unittest.TestCase):
@@ -96,7 +96,7 @@ class TestCroppedReaders(unittest.TestCase):
 
     def test_tiff_cropped_reader(self):
         target_z_extent = [1, 3]
-        reader = vortexTIFFCroppedReader()
+        reader = cilTIFFCroppedReader()
         # og_shape = np.shape(self.input_3D_array)
         reader.SetFileName(self.tiff_fnames)
         reader.SetTargetZExtent(tuple(target_z_extent))

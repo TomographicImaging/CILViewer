@@ -4,7 +4,7 @@ import unittest
 import numpy as np
 import vtk
 from ccpi.viewer.utils.conversion import (Converter, cilRawResampleReader, cilMetaImageResampleReader,
-                                          cilNumpyResampleReader, cilNumpyMETAImageWriter, vortexTIFFResampleReader)
+                                          cilNumpyResampleReader, cilNumpyMETAImageWriter, cilTIFFResampleReader)
 import warnings
 
 
@@ -146,7 +146,7 @@ class TestResampleReaders(unittest.TestCase):
         self.resample_reader_test1(reader, 100 * 8 * 2)
 
     def test_tiff_resample_reader(self):
-        reader = vortexTIFFResampleReader()
+        reader = cilTIFFResampleReader()
         reader.SetFileName(self.tiff_fnames)
         self.resample_reader_test1(reader, 100)
         self.resample_reader_test1(reader, 100 * 8 * 2)

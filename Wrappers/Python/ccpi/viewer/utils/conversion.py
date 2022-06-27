@@ -1016,13 +1016,13 @@ class cilMetaImageReaderInterface(cilReaderInterface):
         self.ReadMetaImageHeader()
 
 
-class vortexTIFFImageReaderInterface(cilReaderInterface):
+class cilTIFFImageReaderInterface(cilReaderInterface):
     ''' Baseclass with methods for setting and 
     getting information about tiff'''
 
     def __init__(self):
         VTKPythonAlgorithmBase.__init__(self, nInputPorts=0, nOutputPorts=1)
-        super(vortexTIFFImageReaderInterface, self).__init__()
+        super(cilTIFFImageReaderInterface, self).__init__()
         self._CompressedData = False
 
     def SetFileName(self, value):
@@ -1525,7 +1525,7 @@ class cilMetaImageResampleReader(cilBaseBinaryBlobResampleReader, cilMetaImageRe
                 chunk_file_object.write(chunk)
 
 
-class vortexTIFFResampleReader(cilBaseResampleReader, vortexTIFFImageReaderInterface):
+class cilTIFFResampleReader(cilBaseResampleReader, cilTIFFImageReaderInterface):
 
     def _GetInternalChunkReader(self):
         '''returns a reader which will only read a specific chunk of the data.
@@ -1830,19 +1830,18 @@ class cilHDF5CroppedReader(cilBaseCroppedReader, cilHDF5ReaderInterface):
         return 1
 
 
-class vortexTIFFCroppedReader(cilBaseCroppedReader, vortexTIFFImageReaderInterface):
+class cilTIFFCroppedReader(cilBaseCroppedReader, cilTIFFImageReaderInterface):
     '''vtkAlgorithm to load and crop a TIFF files
 
     Example
     -------
-    This example reads a HDF5 image from the
-    'entry1/tomo_entry/data/data' dataset of the
-    file: data.nxs and crops it to extent (0, 2, 3, 5, 1, 2):
+    This example reads from a list of tiff filenames = tiff_fnames
+    and crops it on the z axis to extent (1, 3):
 
-    reader = cilHDF5CroppedReader()
-    reader.SetFileName('data.nxs')
-    reader.SetDatasetName('entry1/tomo_entry/data/data')
-    reader.SetTargetExtent((0, 2, 3, 5, 1, 2))
+
+    reader = cilTIFFCroppedReader()
+    reader.SetFileName(tiff_fnames)
+    reader.SetTargetZExtent([1,3])
     reader.Update()
     image = reader.GetOutput()
     
@@ -1850,7 +1849,7 @@ class vortexTIFFCroppedReader(cilBaseCroppedReader, vortexTIFFImageReaderInterfa
 
     def __init__(self):
         VTKPythonAlgorithmBase.__init__(self, nInputPorts=0, nOutputPorts=1)
-        super(vortexTIFFCroppedReader, self).__init__()
+        super(cilTIFFCroppedReader, self).__init__()
         self._TargetExtent = None
 
     def RequestData(self, request, inInfo, outInfo):
@@ -1859,9 +1858,7 @@ class vortexTIFFCroppedReader(cilBaseCroppedReader, vortexTIFFImageReaderInterfa
         self.ReadDataSetInfo()
 
         # get basic info
-        big_endian = self.GetBigEndian()
         readshape = self.GetStoredArrayShape()
-        file_header_length = self.GetFileHeaderLength()
         is_fortran = self.GetIsFortran()
 
         if is_fortran:
@@ -1869,7 +1866,6 @@ class vortexTIFFCroppedReader(cilBaseCroppedReader, vortexTIFFImageReaderInterfa
         else:
             shape = list(readshape)[::-1]
 
-        tmpdir = tempfile.mkdtemp()
         reader = vtk.vtkTIFFReader()
         sa = vtk.vtkStringArray()
 
