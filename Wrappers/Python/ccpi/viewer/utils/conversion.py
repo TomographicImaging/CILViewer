@@ -1526,7 +1526,20 @@ class cilMetaImageResampleReader(cilBaseBinaryBlobResampleReader, cilMetaImageRe
 
 
 class cilTIFFResampleReader(cilBaseResampleReader, cilTIFFImageReaderInterface):
+    '''vtkAlgorithm to load and resample a list of TIFF files to an approximate memory footprint
+    
+    Example
+    --------
+    This example reads a metaimage dataset from the file: data.mha and downsamples
+    it to an approx. size of 1GB:
 
+    reader = cilTIFFResampleReader()
+    reader.SetFileName(filenames)
+    reader.SetTargetSize(1024*1024*1024)
+    reader.Update()
+    image = reader.GetOutput()
+    
+    '''
     def _GetInternalChunkReader(self):
         '''returns a reader which will only read a specific chunk of the data.
         This is a chunk which will get resampled into a single slice.'''
