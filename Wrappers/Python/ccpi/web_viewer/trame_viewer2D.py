@@ -107,6 +107,7 @@ class TrameViewer2D(TrameViewer):
 
     def update_slice_windowing_defaults(self):
         self.update_slice_data()
+
         if hasattr(self, "slice_window_range_slider") and self.slice_window_range_slider:
             self.slice_window_range_slider = self.construct_slice_window_range_slider()
             self.slice_level_slider = self.construct_slice_level_slider()

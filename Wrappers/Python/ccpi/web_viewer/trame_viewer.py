@@ -182,22 +182,18 @@ class TrameViewer:
         )
 
     def construct_slice_window_slider(self, disabled: bool = False):
-        if self.cmax > 100:
+        if not self.window_level_sliders_are_percentages:
             # Use actual value
             min_value = self.cmin
             max_value = self.cmax
             step = 1
             v_model = ("slice_window", self.slice_window_default)
-            self.window_level_sliders_are_percentages = False
         else:
             # Use percentages
             min_value = 0
             max_value = 100
             step = 0.5
-            # In this case the actual window will be ((cmax-cmin)/100 * the value on the slider)
-            v_model=("slice_window_as_percentage",  self.convert_value_to_percentage(self.slice_window_default))
-            
-            self.window_level_sliders_are_percentages = True
+            v_model=("slice_window_as_percentage",  self.slice_window_default)
 
         if self.slice_window_sliders_are_detailed:
             style = "max-width: 300px"
@@ -216,20 +212,18 @@ class TrameViewer:
                                style=style)
 
     def construct_slice_level_slider(self, disabled: bool = False):
-        if self.cmax > 100:
+        if not self.window_level_sliders_are_percentages:
             # Use actual value
             min_value = self.cmin
             max_value = self.cmax
             step = 1
             v_model = ("slice_level", self.slice_level_default)
-            self.window_level_sliders_are_percentages = False
         else:
             # Use percentages
             min_value = 0
             max_value = 100
             step = 0.5
-            v_model = ("slice_level_as_percentage", self.convert_value_to_percentage(self.slice_level_default))
-            self.window_level_sliders_are_percentages = True
+            v_model = ("slice_level_as_percentage", self.slice_level_default)
 
         if self.slice_window_sliders_are_detailed:
             style = "max-width: 300px"
@@ -248,22 +242,18 @@ class TrameViewer:
                                style=style)
 
     def construct_slice_window_range_slider(self, disabled: bool = False):
-        if self.cmax > 100:
+        if not self.window_level_sliders_are_percentages:
             # Use actual values
             min_value = self.cmin
             max_value = self.cmax
             step = 1
             v_model = ("slice_window_range", self.slice_window_range_defaults)
-            self.window_level_sliders_are_percentages = False
         else:
             # Use percentages
             min_value = 0
             max_value = 100
             step = 0.5
-            min_percentile = self.convert_value_to_percentage(self.slice_window_range_defaults[0])
-            max_percentile = self.convert_value_to_percentage(self.slice_window_range_defaults[1])
-            v_model=("slice_window_percentiles", [min_percentile, max_percentile])
-            self.window_level_sliders_are_percentages = True
+            v_model=("slice_window_percentiles", self.slice_window_range_defaults)
 
         if not self.slice_window_sliders_are_detailed:
             style = "max-width: 300px"
@@ -285,9 +275,17 @@ class TrameViewer:
 
     def update_slice_data(self):
         self.cmin, self.cmax = self.cil_viewer.getImageMapRange((0., 100.), "scalar")
-        self.slice_window_range_defaults = self.cil_viewer.getImageMapRange((5., 95.), "scalar")
-        self.slice_level_default = self.cil_viewer.getSliceColorLevel()
-        self.slice_window_default = self.cil_viewer.getSliceColorWindow()
+
+        if self.cmax > 100:
+            self.window_level_sliders_are_percentages = False
+            self.slice_window_range_defaults = self.cil_viewer.getImageMapRange((5., 95.), "scalar")
+            self.slice_level_default = self.cil_viewer.getSliceColorLevel()
+            self.slice_window_default = self.cil_viewer.getSliceColorWindow()
+        else:
+            self.window_level_sliders_are_percentages = True
+            self.slice_window_range_defaults = [5., 95.]
+            self.slice_level_default = self.convert_value_to_percentage(self.cil_viewer.getSliceColorLevel())
+            self.slice_window_default = self.convert_value_to_percentage(self.cil_viewer.getSliceColorWindow())
 
     def update_slice_slider_data(self):
         self.max_slice = self.cil_viewer.img3D.GetExtent()[self.cil_viewer.sliceOrientation * 2 + 1]
@@ -334,10 +332,15 @@ class TrameViewer:
                      ) / -2  # The reverse of the window calculation in web_app.change_slice_window_level_range
         range_max = current_window + range_min
 
-        # Setup the defaults pre-flip
-        self.slice_window_range_defaults = [range_min, range_max]
-        self.slice_level_default = current_level
-        self.slice_window_default = current_window
+        # Setup the defaults pre-flip between detailed / not detailed:
+        if not self.window_level_sliders_are_percentages:
+            self.slice_window_range_defaults = [range_min, range_max]
+            self.slice_level_default = current_level
+            self.slice_window_default = current_window
+        else:
+            self.slice_window_range_defaults = [self.convert_value_to_percentage(range_min), self.convert_value_to_percentage(range_max)]
+            self.slice_level_default = self.convert_value_to_percentage(current_level)
+            self.slice_window_default = self.convert_value_to_percentage(current_window)
 
         # Toggle the detailed sliders
         self.slice_window_sliders_are_detailed = show_detailed
@@ -382,7 +385,6 @@ class TrameViewer:
             state["slice_window_percentiles"] = self.cil_viewer.ia.GetAutoRangePercentiles()
             state["slice_window_as_percentage"] = self.convert_value_to_percentage(window)
             state["slice_level_as_percentage"] = self.convert_value_to_percentage(level)
-
         else:
             state["slice_window_range"] = cmin, cmax
             state["slice_window"] = window
