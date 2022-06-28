@@ -30,8 +30,8 @@ class TrameViewer2DTest(unittest.TestCase):
 
     @mock.patch("ccpi.web_viewer.trame_viewer2D.CILViewer2D")
     @mock.patch("ccpi.web_viewer.trame_viewer.vtk")
-    @mock.patch("ccpi.web_viewer.trame_viewer.TrameViewer.update_slice_data")
-    def setUp(self, _, vtk_module, cil_viewer):
+    # @mock.patch("ccpi.web_viewer.trame_viewer.TrameViewer.update_slice_data")
+    def setUp(self, vtk_module, cil_viewer):
         # Get the head data
         self.head_path = os.path.join(sys.prefix, 'share', 'cil', 'head.mha')
         self.file_list = [self.head_path, "other_file_path_dir/other_file"]
@@ -40,6 +40,7 @@ class TrameViewer2DTest(unittest.TestCase):
         self.cil_viewer = cil_viewer
         self.map_range = [0, 3790]
         self.cil_viewer.getSliceMapRange.return_value = self.map_range
+        self.cil_viewer.getImageMapRange.return_value = self.map_range
 
         self.trame_viewer = TrameViewer2D(self.file_list)
 
@@ -345,12 +346,11 @@ class TrameViewer2DTest(unittest.TestCase):
     def test_update_slice_data_sets_cmin_cmax_level_and_window(self):
         slice_return = (random.random(), random.random())
         self.trame_viewer.cil_viewer.getSliceMapRange = mock.MagicMock(return_value=slice_return)
+        self.trame_viewer.cil_viewer.getImageMapRange = mock.MagicMock(return_value=slice_return)
 
         self.trame_viewer.update_slice_data()
 
-        self.assertIn(call((5., 95.)), self.trame_viewer.cil_viewer.getSliceMapRange.call_args_list)
-        self.assertIn(call((0., 100.)), self.trame_viewer.cil_viewer.getSliceMapRange.call_args_list)
-        self.assertEqual(self.trame_viewer.cil_viewer.getSliceMapRange.call_count, 2)
+        self.trame_viewer.cil_viewer.getSliceMapRange.assert_called_once_with((5., 95.))
         self.assertEqual(self.trame_viewer.cmin, slice_return[0])
         self.assertEqual(self.trame_viewer.cmax, slice_return[1])
         self.assertEqual(self.trame_viewer.slice_window_range_defaults, slice_return)

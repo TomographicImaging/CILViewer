@@ -41,7 +41,7 @@ class TrameViewer3DTest(unittest.TestCase):
         # add the cil_viewer and defaults for a default __init__
         self.cil_viewer = cil_viewer
         self.map_range = [0, 3790]
-        self.cil_viewer.getVolumeMapRange.return_value = self.map_range
+        self.cil_viewer.getImageMapRange.return_value = self.map_range
         self.cil_viewer.getSliceMapRange.return_value = self.map_range
 
         self.trame_viewer = TrameViewer3D(self.file_list)
@@ -365,7 +365,7 @@ class TrameViewer3DTest(unittest.TestCase):
         self.trame_viewer.update_slice_data.assert_called_once_with()
 
     def test_update_windowing_defaults_does_not_update_gui_if_no_window_range_slider(self):
-        self.cil_viewer.getVolumeMapRange = mock.MagicMock(return_value=(0, 100))
+        self.cil_viewer.getImageMapRange = mock.MagicMock(return_value=(0, 100))
         self.trame_viewer.construct_windowing_slider = mock.MagicMock()
         self.trame_viewer.construct_color_slider = mock.MagicMock()
         self.trame_viewer.construct_slice_window_range_slider = mock.MagicMock()
@@ -377,8 +377,8 @@ class TrameViewer3DTest(unittest.TestCase):
         passed_method = mock.MagicMock()
         self.trame_viewer.update_windowing_defaults(passed_method)
 
-        self.assertIn(call((0., 100.), passed_method), self.cil_viewer.getVolumeMapRange.call_args_list)
-        self.assertIn(call((80., 99.), passed_method), self.cil_viewer.getVolumeMapRange.call_args_list)
+        self.assertIn(call((0., 100.), passed_method), self.cil_viewer.getImageMapRange.call_args_list)
+        self.assertIn(call((80., 99.), passed_method), self.cil_viewer.getImageMapRange.call_args_list)
         self.assertEqual(self.trame_viewer.cmin, 0)
         self.assertEqual(self.trame_viewer.cmax, 100)
         self.trame_viewer.construct_windowing_slider.assert_not_called()
@@ -388,7 +388,7 @@ class TrameViewer3DTest(unittest.TestCase):
         self.trame_viewer.construct_slice_window_slider.assert_not_called()
 
     def test_update_windowing_defaults_does_not_update_gui_if_window_present_but_window_range_slider_is_None(self):
-        self.cil_viewer.getVolumeMapRange = mock.MagicMock(return_value=(0, 100))
+        self.cil_viewer.getImageMapRange = mock.MagicMock(return_value=(0, 100))
         self.trame_viewer.construct_windowing_slider = mock.MagicMock()
         self.trame_viewer.construct_color_slider = mock.MagicMock()
         self.trame_viewer.construct_slice_window_range_slider = mock.MagicMock()
@@ -400,8 +400,8 @@ class TrameViewer3DTest(unittest.TestCase):
         passed_method = mock.MagicMock()
         self.trame_viewer.update_windowing_defaults(passed_method)
 
-        self.assertIn(call((0., 100.), passed_method), self.cil_viewer.getVolumeMapRange.call_args_list)
-        self.assertIn(call((80., 99.), passed_method), self.cil_viewer.getVolumeMapRange.call_args_list)
+        self.assertIn(call((0., 100.), passed_method), self.cil_viewer.getImageMapRange.call_args_list)
+        self.assertIn(call((80., 99.), passed_method), self.cil_viewer.getImageMapRange.call_args_list)
         self.assertEqual(self.trame_viewer.cmin, 0)
         self.assertEqual(self.trame_viewer.cmax, 100)
         self.trame_viewer.construct_windowing_slider.assert_not_called()
@@ -411,7 +411,7 @@ class TrameViewer3DTest(unittest.TestCase):
         self.trame_viewer.construct_slice_window_slider.assert_not_called()
 
     def test_update_windowing_defaults_updates_level_window_sliders_if_window_range_slider_present(self):
-        self.cil_viewer.getVolumeMapRange = mock.MagicMock(return_value=(0, 100))
+        self.cil_viewer.getImageMapRange = mock.MagicMock(return_value=(0, 100))
         self.trame_viewer.construct_windowing_slider = mock.MagicMock()
         self.trame_viewer.construct_color_slider = mock.MagicMock()
         self.trame_viewer.construct_slice_window_range_slider = mock.MagicMock()
@@ -422,8 +422,8 @@ class TrameViewer3DTest(unittest.TestCase):
         passed_method = mock.MagicMock()
         self.trame_viewer.update_windowing_defaults(passed_method)
 
-        self.assertIn(call((0., 100.), passed_method), self.cil_viewer.getVolumeMapRange.call_args_list)
-        self.assertIn(call((80., 99.), passed_method), self.cil_viewer.getVolumeMapRange.call_args_list)
+        self.assertIn(call((0., 100.), passed_method), self.cil_viewer.getImageMapRange.call_args_list)
+        self.assertIn(call((80., 99.), passed_method), self.cil_viewer.getImageMapRange.call_args_list)
         self.assertEqual(self.trame_viewer.cmin, 0)
         self.assertEqual(self.trame_viewer.cmax, 100)
         self.trame_viewer.construct_windowing_slider.assert_called_once_with()
@@ -642,7 +642,7 @@ class TrameViewer3DTest(unittest.TestCase):
         self.assertEqual(state["slice_visibility"], True)
         self.assertEqual(state["volume_visibility"], True)
         self.assertEqual(state["slice_detailed_sliders"], False)
-        self.assertEqual(state["slice_window_range"], self.cil_viewer.getVolumeMapRange((5., 95.), "scalar"))
+        self.assertEqual(state["slice_window_range"], self.cil_viewer.getImageMapRange((5., 95.), "scalar"))
         self.assertEqual(state["slice_window"], self.cil_viewer.getSliceColorWindow())
         self.assertEqual(state["slice_level"], self.cil_viewer.getSliceColorLevel())
         self.assertEqual(state["background_color"], "cil_viewer_blue")
@@ -901,18 +901,6 @@ class TrameViewer3DTest(unittest.TestCase):
         self.cil_viewer.updateSliceHistogram.assert_called_once_with()
         self.cil_viewer.histogramPlotActor.VisibilityOff.assert_called_once_with()
         self.cil_viewer.histogramPlotActor.VisibilityOn.assert_not_called()
-
-    def test_update_slice_data(self):
-        get_volume_map_range = [mock.MagicMock(), mock.MagicMock()]
-        self.cil_viewer.getVolumeMapRange = mock.MagicMock(return_value=get_volume_map_range)
-
-        self.trame_viewer.update_slice_data()
-
-        self.assertEqual(self.trame_viewer.cmin, get_volume_map_range[0])
-        self.assertEqual(self.trame_viewer.cmax, get_volume_map_range[1])
-        self.assertEqual(self.trame_viewer.slice_window_range_defaults, get_volume_map_range)
-        self.assertEqual(self.trame_viewer.slice_level_default, self.cil_viewer.getSliceColorLevel.return_value)
-        self.assertEqual(self.trame_viewer.slice_window_default, self.cil_viewer.getSliceColorWindow.return_value)
 
     def test_change_slice_number(self):
         self.trame_viewer.cil_viewer = mock.MagicMock()

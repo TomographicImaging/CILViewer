@@ -251,13 +251,21 @@ class TrameViewerTest(unittest.TestCase):
 
         self.assertIn(f'style="visibility: hidden; height: 0"', slice_window_range_slider.html)
 
-    def test_update_slice_data_raises_error(self):
-        with self.assertRaises(NotImplementedError) as cm:
-            self.trame_viewer.update_slice_data()
-        self.assertEqual(
-            str(cm.exception),
-            "This function is not implemented in the base class, but you can expect an implementation in "
-            "it's sub classes.")
+    def test_update_slice_data(self):
+        get_slice_map_range = [mock.MagicMock(), mock.MagicMock()]
+        get_image_map_range = [mock.MagicMock(), mock.MagicMock()]
+        self.cil_viewer.getSliceMapRange.return_value = get_slice_map_range
+        self.cil_viewer.getImageMapRange.return_value = get_image_map_range
+
+        self.trame_viewer.update_slice_data()
+
+        self.cil_viewer.getSliceMapRange.assert_called_once_with((5., 95.))
+        self.cil_viewer.getImageMapRange.assert_called_once_with((0., 100.), "scalar")
+        self.assertEqual(self.trame_viewer.cmin, get_image_map_range[0])
+        self.assertEqual(self.trame_viewer.cmax, get_image_map_range[1])
+        self.assertEqual(self.trame_viewer.slice_window_range_defaults, get_slice_map_range)
+        self.assertEqual(self.trame_viewer.slice_level_default, self.cil_viewer.getSliceColorLevel.return_value)
+        self.assertEqual(self.trame_viewer.slice_window_default, self.cil_viewer.getSliceColorWindow.return_value)
 
     def test_update_slice_slider_data_updates_max_slice_and_default_slice(self):
         self.trame_viewer.cil_viewer.img3D.GetExtent.return_value = [0, 97, 0, 0, 0]
