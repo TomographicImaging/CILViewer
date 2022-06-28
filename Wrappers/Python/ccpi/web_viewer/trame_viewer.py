@@ -195,8 +195,8 @@ class TrameViewer:
             max_value = 100
             step = 0.5
             # In this case the actual window will be ((cmax-cmin)/100 * the value on the slider)
-            v_model=("slice_window_as_percentage",  self.convert_value_to_percentage(self.slice_window_default))
-            
+            v_model = ("slice_window_as_percentage", self.convert_value_to_percentage(self.slice_window_default))
+
             self.window_level_sliders_are_percentages = True
 
         if self.slice_window_sliders_are_detailed:
@@ -262,7 +262,7 @@ class TrameViewer:
             step = 0.5
             min_percentile = self.convert_value_to_percentage(self.slice_window_range_defaults[0])
             max_percentile = self.convert_value_to_percentage(self.slice_window_range_defaults[1])
-            v_model=("slice_window_percentiles", [min_percentile, max_percentile])
+            v_model = ("slice_window_percentiles", [min_percentile, max_percentile])
             self.window_level_sliders_are_percentages = True
 
         if not self.slice_window_sliders_are_detailed:
