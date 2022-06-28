@@ -31,7 +31,7 @@ COPY environment.yml .
 COPY install-mambaforge-and-env.sh .
 RUN bash install-mambaforge-and-env.sh
 RUN rm install-mambaforge-and-env.sh
-RUN rm environment.yml .
+RUN rm environment.yml
 
 COPY clone-and-install.sh .
 RUN bash clone-and-install.sh
