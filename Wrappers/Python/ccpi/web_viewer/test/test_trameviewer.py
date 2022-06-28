@@ -344,8 +344,10 @@ class TrameViewerTest(unittest.TestCase):
     def test_change_slice_number_raises_error(self):
         with self.assertRaises(NotImplementedError) as cm:
             self.trame_viewer.change_slice_number(0)
-        self.assertEqual(str(cm.exception), "This function is not implemented in the base class, but you can expect an implementation in "
-                                            "it's sub classes.")
+        self.assertEqual(
+            str(cm.exception),
+            "This function is not implemented in the base class, but you can expect an implementation in "
+            "it's sub classes.")
 
     def test_reset_defaults_raises_error(self):
         with self.assertRaises(NotImplementedError) as cm:
