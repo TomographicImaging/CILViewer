@@ -172,10 +172,16 @@ class TrameViewer2D(TrameViewer):
         state["orientation"] = f"{SLICE_ORIENTATION_XY}"
 
         # resets to window-level based on 5th, 95th percentiles over volume:
-        min, max = self.cil_viewer.getVolumeMapRange((5., 95.))
-        state["slice_window_range"] = (min, max)
-        state["slice_window"] = self.cil_viewer.style.GetInitialWindow()
-        state["slice_level"] = self.cil_viewer.style.GetInitialLevel()
+        min, max = self.cil_viewer.getImageMapRange((5., 95.), "scalar")
+        window, level = self.cil_viewer.getSliceWindowLevelFromRange(min, max)
+        if not self.window_level_sliders_are_percentages:
+            state["slice_window_range"] = (min, max)
+            state["slice_window"] = window
+            state["slice_level"] = level
+        else:
+            state["slice_window_percentiles"] = (5., 95.)
+            state["slice_window_as_percentage"] = self.convert_value_to_percentage(window)
+            state["slice_level_as_percentage"] = self.convert_value_to_percentage(level)
 
         state["toggle_tracing"] = False
         state["toggle_interpolation"] = False

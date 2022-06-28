@@ -133,21 +133,35 @@ def change_coloring(**kwargs):
 
 @state.change("slice_window")
 def change_slice_window(**kwargs):
-    TRAME_VIEWER.change_slice_window(kwargs["slice_window"], kwargs["slice_level"])
+    TRAME_VIEWER.change_slice_window(kwargs["slice_window"])
+
+@state.change("slice_window_as_percentage")
+def change_slice_window_as_percentage(**kwargs):
+    TRAME_VIEWER.change_slice_window_as_percentage(kwargs["slice_window_as_percentage"])
 
 
 @state.change("slice_level")
 def change_slice_level(**kwargs):
-    TRAME_VIEWER.change_slice_level(kwargs["slice_level"], kwargs["slice_window"])
+    TRAME_VIEWER.change_slice_level(kwargs["slice_level"])
+
+
+@state.change("slice_level_as_percentage")
+def change_slice_level_as_percentage(**kwargs):
+    TRAME_VIEWER.change_slice_level_as_percentage(kwargs["slice_level_as_percentage"])
 
 
 @state.change("slice_window_range")
-def change_slice_window_level(**kwargs):
+def change_slice_window_level_range(**kwargs):
     min_window = kwargs["slice_window_range"][0]
     max_window = kwargs["slice_window_range"][1]
-    level = (max_window + min_window) / 2
-    window = (max_window - min_window)
-    TRAME_VIEWER.change_slice_window_range(window=window, level=level)
+    TRAME_VIEWER.change_slice_window_level_range(min_window, max_window)
+
+
+@state.change("slice_window_percentiles")
+def change_slice_window_level_percentiles(**kwargs):
+    min_window = kwargs["slice_window_percentiles"][0]
+    max_window = kwargs["slice_window_percentiles"][1]
+    TRAME_VIEWER.change_slice_window_level_percentiles(min_window, max_window)
 
 
 @state.change("slice_detailed_sliders")

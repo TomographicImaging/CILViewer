@@ -383,7 +383,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyle):
 
     def AutoWindowLevelOnVolumeRange(self, update_slice=True):
         '''Auto-adjusts window-level for the slice, based on the 5 and 95th percentiles of the whole image volume.'''
-        cmin, cmax = self._viewer.getVolumeMapRange((5., 95.), method="scalar")
+        cmin, cmax = self._viewer.getImageMapRange((5., 95.), method="scalar")
         print("Auto range for volume: ", cmin, cmax)
         window, level = self._viewer.getSliceWindowLevelFromRange(cmin, cmax)
 
@@ -1489,8 +1489,8 @@ class CILViewer2D(CILViewerBase):
         self.ia.SetInputData(self.voi.GetOutput())
         self.ia.Update()
         self.style.AutoWindowLevelOnVolumeRange(update_slice=False)
-        self.InitialLevel = self.getColourLevel()
-        self.InitialWindow = self.getColourWindow()
+        self.InitialLevel = self.getSliceColorLevel()
+        self.InitialWindow = self.getSliceColorWindow()
         self.log("level {0} window {1}".format(self.InitialLevel, self.InitialWindow))
 
         self.imageSliceMapper.SetInputConnection(self.voi.GetOutputPort())

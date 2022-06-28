@@ -67,7 +67,7 @@ class TrameViewer:
         # Set slice info into the current state min, max, and some defaults:
         self.update_slice_data()
         self.slice_window_sliders_are_detailed = False
-        self.slice_window_slider_is_percentage = False
+        self.window_level_sliders_are_percentages = False
 
         self.html_view = vtk.VtkRemoteView(self.cil_viewer.renWin, trame_server=server, ref="view")
         ctrl.view_update = self.html_view.update
@@ -161,8 +161,8 @@ class TrameViewer:
             solo=True,
         )
 
-    def create_auto_window_level_button(self):
-        return vuetify.VBtn("Auto Window/Level", hide_details=True, dense=True, solo=True, click=self.auto_window_level)
+    def create_auto_window_level_button(self, disabled: bool = False):
+        return vuetify.VBtn("Auto Window/Level", hide_details=True, dense=True, solo=True, disabled=disabled, click=self.auto_window_level)
 
     def create_orientation_radio_buttons(self, disabled: bool = False):
         return vuetify.VRadioGroup(
@@ -182,20 +182,23 @@ class TrameViewer:
             min_value = self.cmin
             max_value = self.cmax
             step = 1
-            self.slice_window_slider_is_percentage = False
+            v_model=("slice_window", self.slice_window_default)
+            self.window_level_sliders_are_percentages = False
         else:
             # Use percentages
             min_value = 0
             max_value = 100
             step = 0.5
-            self.slice_window_slider_is_percentage = True
+            # In this case the actual window will be ((cmax-cmin)/100 * the value on the slider)
+            v_model=("slice_window_as_percentage", self.slice_window_default * 100/(self.cmax-self.cmin))
+            self.window_level_sliders_are_percentages = True
 
         if self.slice_window_sliders_are_detailed:
             style = "max-width: 300px"
         else:
-            style = "visibility: hidden; height: 0"
-
-        return vuetify.VSlider(v_model=("slice_window", self.slice_window_default),
+            style = "visibility: hidden; height: 0"          
+        
+        return vuetify.VSlider(v_model = v_model,
                                min=min_value,
                                max=max_value,
                                step=step,
@@ -212,20 +215,22 @@ class TrameViewer:
             min_value = self.cmin
             max_value = self.cmax
             step = 1
-            self.slice_level_slider_is_percentage = False
+            v_model = ("slice_level", self.slice_level_default)
+            self.window_level_sliders_are_percentages = False
         else:
             # Use percentages
             min_value = 0
             max_value = 100
             step = 0.5
-            self.slice_level_slider_is_percentage = True
+            v_model = ("slice_level_as_percentage", self.slice_level_default * 100/(self.cmax-self.cmin))
+            self.window_level_sliders_are_percentages = True
 
         if self.slice_window_sliders_are_detailed:
             style = "max-width: 300px"
         else:
             style = "visibility: hidden; height: 0"
 
-        return vuetify.VSlider(v_model=("slice_level", self.slice_level_default),
+        return vuetify.VSlider(v_model = v_model,
                                min=min_value,
                                max=max_value,
                                step=step,
@@ -242,13 +247,17 @@ class TrameViewer:
             min_value = self.cmin
             max_value = self.cmax
             step = 1
-            self.slice_window_slider_is_percentage = False
+            v_model=("slice_window_range", self.slice_window_range_defaults)
+            self.window_level_sliders_are_percentages = False
         else:
             # Use percentages
             min_value = 0
             max_value = 100
             step = 0.5
-            self.slice_window_slider_is_percentage = True
+            min_percentile = self.slice_window_range_defaults[0]*100/(self.cmax-self.cmin)
+            max_percentile = self.slice_window_range_defaults[1]*100/(self.cmax-self.cmin)
+            v_model=("slice_window_percentiles", [min_percentile, max_percentile])
+            self.window_level_sliders_are_percentages = True
 
         if not self.slice_window_sliders_are_detailed:
             style = "max-width: 300px"
@@ -256,7 +265,7 @@ class TrameViewer:
             style = "visibility: hidden; height: 0"
 
         return vuetify.VRangeSlider(
-            v_model=("slice_window_range", self.slice_window_range_defaults),
+            v_model = v_model,
             min=min_value,
             max=max_value,
             step=step,
@@ -316,7 +325,7 @@ class TrameViewer:
         current_level = self.cil_viewer.getSliceColorLevel()
         current_window = self.cil_viewer.getSliceColorWindow()
         range_min = (current_window - 2 *
-                     current_level) / -2  # The reverse of the window calculation in web_app.change_slice_window_level
+                     current_level) / -2  # The reverse of the window calculation in web_app.change_slice_window_level_range
         range_max = current_window + range_min
 
         # Setup the defaults pre-flip
@@ -327,43 +336,66 @@ class TrameViewer:
         # Toggle the detailed sliders
         self.slice_window_sliders_are_detailed = show_detailed
 
-    def change_slice_window_range(self, window: float, level: float):
-        if hasattr(self, 'slice_window_slider_is_percentage') and self.slice_window_slider_is_percentage:
-            min_percentage = level - window / 2
-            max_percentage = window + level - window / 2
-            self.cil_viewer.setSliceColorPercentiles(min_percentage, max_percentage)
-        else:
-            self.cil_viewer.setSliceColorWindowLevel(window, level)
+    def change_slice_window_level(self, window: float, level: float):
+        self.cil_viewer.setSliceColorWindowLevel(window, level)
         self.cil_viewer.updatePipeline()
         self.html_view.update()
 
-    def change_slice_window(self, new_window: float, current_level: float = None):
-        if hasattr(self, "slice_window_slider_is_percentage"
-                   ) and self.slice_window_slider_is_percentage and current_level is None:
-            current_level = new_window
-            self.cil_viewer.setSliceColorPercentiles(new_window, current_level)
-        else:
-            self.cil_viewer.setSliceColorWindow(window=new_window)
+    def change_slice_window_level_range(self, min: float, max: float):
+        self.cil_viewer.setSliceMapRange(min, max)
         self.cil_viewer.updatePipeline()
         self.html_view.update()
 
-    def change_slice_level(self, new_level: float, current_window: float = None):
-        if hasattr(self, "slice_window_slider_is_percentage") and self.slice_window_slider_is_percentage:
-            if current_window is None:
-                current_window = new_level
-            self.cil_viewer.setSliceColorPercentiles(current_window, new_level)
-        else:
-            self.cil_viewer.setSliceColorLevel(level=new_level)
+    def change_slice_window_level_percentiles(self, min: float, max: float):
+        self.cil_viewer.setSliceColorPercentiles(min, max)
         self.cil_viewer.updatePipeline()
         self.html_view.update()
+
+    def change_slice_window(self, new_window: float):
+        self.cil_viewer.setSliceColorWindow(new_window)
+        self.cil_viewer.updatePipeline()
+        self.html_view.update()
+
+    def change_slice_window_as_percentage(self, new_window_as_percentage: float):
+        print("incoming level to convert: ", new_window_as_percentage)
+        window = self.convert_percentage_to_value(new_window_as_percentage)
+        print("window as val: ", window)
+        self.change_slice_window(window)
+
+    def change_slice_level(self, new_level: float):
+        self.cil_viewer.setSliceColorLevel(new_level)
+        self.cil_viewer.updatePipeline()
+        self.html_view.update()
+
+    def change_slice_level_as_percentage(self, new_level_as_percentage: float):  
+        print("incoming level to convert: ", new_level_as_percentage)
+        level = self.convert_percentage_to_value(new_level_as_percentage)
+        print("level as val: ", level)
+        self.change_slice_level(level)
 
     def auto_window_level(self):
         cmin, cmax = self.cil_viewer.ia.GetAutoRange()
         window, level = self.cil_viewer.getSliceWindowLevelFromRange(cmin, cmax)
-        state["slice_window_range"] = window, level
-        state["slice_window"] = window
-        state["slice_level"] = level
+        if self.window_level_sliders_are_percentages:
+            state["slice_window_percentiles"] = self.cil_viewer.ia.GetAutoRangePercentiles()
+            state["slice_window_as_percentage"] = self.convert_value_to_percentage(window)
+            state["slice_level_as_percentage"] = self.convert_value_to_percentage(level)
+        
+        else:
+            state["slice_window_range"] = cmin, cmax
+            state["slice_window"] = window
+            state["slice_level"] = level
         self.cil_viewer.updatePipeline()
+
+    def convert_value_to_percentage(self, value):
+        # Takes into account that self.cmin may not be 0:
+        percentage = 100*(value - self.cmin)/(self.cmax + self.cmin)
+        return percentage
+
+    def convert_percentage_to_value(self, percentage):
+        # Takes into account that self.cmin may not be 0:
+        value = percentage * (self.cmax + self.cmin) / 100 + self.cmin
+        return value
 
     def change_slice_number(self, slice_number):
         if hasattr(self.cil_viewer, "updateSliceHistogram"):

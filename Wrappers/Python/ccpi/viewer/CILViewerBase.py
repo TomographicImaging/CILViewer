@@ -146,31 +146,38 @@ class CILViewerBase():
         '''returns the active camera'''
         return self.ren.GetActiveCamera()
 
-    def getSliceOrientation(self):
-        return self.sliceOrientation
-
-    def setActiveSlice(self, sliceno):
-        self.slicenos[self.getSliceOrientation()] = sliceno
-
-    def getActiveSlice(self):
-        return self.slicenos[self.getSliceOrientation()]
-
-    def getSliceColorWindow(self):
-        return self.imageSlice.GetProperty().GetColorWindow()
-
-    def getSliceColorLevel(self):
-        return self.imageSlice.GetProperty().GetColorLevel()
-
-    def getSliceWindowLevelFromRange(self, cmin, cmax):
-        # set the level to the average between the percentiles
-        level = (cmin + cmax) / 2
-        # accommodates all values between the level an the percentiles
-        window = cmax - cmin
-
-        return window, level
-
     def startRenderLoop(self):
         self.iren.Start()
+
+    def saveRender(self, filename, renWin=None):
+        '''Save the render window to PNG file'''
+        if renWin is None:
+            renWin = self.renWin
+        SaveRenderToPNG(self.renWin, filename)
+
+    def validateValue(self, value, axis):
+        dims = self.img3D.GetDimensions()
+        max_slice = [x - 1 for x in dims]
+
+        axis_int = {'x': 0, 'y': 1, 'z': 2}
+
+        if axis in axis_int.keys():
+            i = axis_int[axis]
+        else:
+            raise KeyError
+
+        if value < 0:
+            return 0
+        if value > max_slice[i]:
+            return max_slice[i]
+        else:
+            return value
+
+
+    # METHODS ON THE FULL 3D IMAGE DATA: ------------------------------------------------
+
+    def setInput3DData(self, imageData):
+        raise NotImplementedError("Implemented in the subclasses.")
 
     def getImageHistogramStatistics(self, method, slice=False):
         '''
@@ -222,6 +229,18 @@ class CILViewerBase():
 
         return ia.GetMinimum(), ia.GetMaximum()
 
+
+    # METHODS ON THE SLICE: --------------------------------------------------------
+
+    def getSliceOrientation(self):
+        return self.sliceOrientation
+
+    def setActiveSlice(self, sliceno):
+        self.slicenos[self.getSliceOrientation()] = sliceno
+
+    def getActiveSlice(self):
+        return self.slicenos[self.getSliceOrientation()]
+    
     # Set interpolation on
     def setInterpolateOn(self):
         self.imageSlice.GetProperty().SetInterpolationTypeToLinear()
@@ -245,9 +264,8 @@ class CILViewerBase():
         self.renWin.Render()
 
     def setSliceColorPercentiles(self, min_percentage, max_percentage):
-        #TODO: LATER: FIX THIS METHOD - IT DOESN'T WORK CORRECTLY
-        min_val, max_val = self.getImageMapRange((min_percentage, max_percentage), 'scalar')
-        self.setSliceColorWindowLevel(min_val, max_val)
+        min_val, max_val = self.getSliceMapRange((min_percentage, max_percentage), 'scalar')
+        self.setSliceMapRange(min_val, max_val)
 
     def setSliceColorWindow(self, window):
         '''
@@ -267,18 +285,19 @@ class CILViewerBase():
         self.ren.Render()
         self.renWin.Render()
 
-    def getSliceMapRange(self, percentiles):
-        '''
-        uses percentiles to generate min and max values in
-        the 2D slice of the 3D image, for which
-        the colormap is displayed.
-        '''
-        ia = vtk.vtkImageHistogramStatistics()
-        ia.SetInputData(self.img3D)
-        ia.SetAutoRangePercentiles(*percentiles)
-        ia.Update()
-        min, max = ia.GetAutoRange()
-        return min, max
+    def getSliceColorWindow(self):
+        return self.imageSlice.GetProperty().GetColorWindow()
+
+    def getSliceColorLevel(self):
+        return self.imageSlice.GetProperty().GetColorLevel()
+
+    def getSliceWindowLevelFromRange(self, cmin, cmax):
+        # set the level to the average between the percentiles
+        level = (cmin + cmax) / 2
+        # accommodates all values between the level an the percentiles
+        window = cmax - cmin
+
+        return window, level
 
     def getFullSliceRange(self, method):
         '''
@@ -291,29 +310,32 @@ class CILViewerBase():
 
         return self.getSliceMapRange((0, 100), method)
 
-    def saveRender(self, filename, renWin=None):
-        '''Save the render window to PNG file'''
-        if renWin is None:
-            renWin = self.renWin
-        SaveRenderToPNG(self.renWin, filename)
+    def getSliceMapRange(self, percentiles, method='scalar'):
+        '''
+        uses percentiles to generate min and max values in
+        the 2D slice of the 3D image, for which
+        the colormap is displayed.
+        '''
 
-    def validateValue(self, value, axis):
-        dims = self.img3D.GetDimensions()
-        max_slice = [x - 1 for x in dims]
+        ia = self.getImageHistogramStatistics(method, slice=True)
+        ia.SetAutoRangePercentiles(*percentiles)
+        ia.Update()
+        min, max = ia.GetAutoRange()
+        return min, max
 
-        axis_int = {'x': 0, 'y': 1, 'z': 2}
+    def setSliceMapRange(self, min, max):
+        '''
+        Parameters
+        -----------
+        min, max: float, default: the raw value of the 80. percentile for min, and the raw value of the 99. percentile for max.
+            the upper and lower image values that the 
+            color will be mapped to.
+        update_pipeline: bool
+            whether to immediately update the pipeline with this new
+            setting
+        '''
+        window, level = self.getSliceWindowLevelFromRange(min, max)
+        self.setSliceColorLevel(level)
+        self.setSliceColorWindow(window)
 
-        if axis in axis_int.keys():
-            i = axis_int[axis]
-        else:
-            raise KeyError
 
-        if value < 0:
-            return 0
-        if value > max_slice[i]:
-            return max_slice[i]
-        else:
-            return value
-
-    def setInput3DData(self, imageData):
-        raise NotImplementedError("Implemented in the subclasses.")

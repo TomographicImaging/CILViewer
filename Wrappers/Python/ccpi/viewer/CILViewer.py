@@ -237,7 +237,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
 
     def AutoWindowLevelOnVolumeRange(self, update_slice=True):
         '''Auto-adjusts window-level for the slice, based on the 5 and 95th percentiles of the whole image volume.'''
-        cmin, cmax = self._viewer.getVolumeMapRange((5., 95.), method="scalar")
+        cmin, cmax = self._viewer.getImageMapRange((5., 95.), method="scalar")
         window, level = self._viewer.getSliceWindowLevelFromRange(cmin, cmax)
 
         self._viewer.imageSlice.GetProperty().SetColorLevel(level)
@@ -931,8 +931,8 @@ class CILViewer(CILViewerBase):
         self.ia.Update()
 
         self.style.AutoWindowLevelOnVolumeRange(update_slice=False)
-        self.InitialLevel = self.getColourLevel()
-        self.InitialWindow = self.getColourWindow()
+        self.InitialLevel = self.getSliceColorLevel()
+        self.InitialWindow = self.getSliceColorWindow()
 
         self.imageSliceMapper.SetInputConnection(self.voi.GetOutputPort())
         self.imageSlice.Update()
