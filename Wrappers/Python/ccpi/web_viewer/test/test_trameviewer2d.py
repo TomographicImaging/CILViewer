@@ -356,3 +356,13 @@ class TrameViewer2DTest(unittest.TestCase):
         self.assertEqual(self.trame_viewer.slice_window_range_defaults, slice_return)
         self.assertEqual(self.trame_viewer.slice_level_default, self.cil_viewer.getSliceColorLevel.return_value)
         self.assertEqual(self.trame_viewer.slice_window_default, self.cil_viewer.getSliceColorWindow.return_value)
+
+    def test_change_slice_number(self):
+        self.trame_viewer.html_view = mock.MagicMock()
+        slice_number = mock.MagicMock()
+
+        self.trame_viewer.change_slice_number(slice_number)
+
+        self.trame_viewer.cil_viewer.setActiveSlice.assert_called_once_with(slice_number)
+        self.assertEqual(self.trame_viewer.cil_viewer.updatePipeline.call_count, 2)
+        self.trame_viewer.html_view.update.assert_called_once_with()

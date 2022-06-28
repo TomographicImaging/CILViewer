@@ -372,11 +372,9 @@ class TrameViewer:
         self.html_view.update()
 
     def change_slice_number(self, slice_number):
-        if hasattr(self.cil_viewer, "updateSliceHistogram"):
-            self.cil_viewer.updateSliceHistogram()
-        self.cil_viewer.setActiveSlice(slice_number)
-        self.cil_viewer.updatePipeline()
-        self.html_view.update()
+        raise NotImplementedError(
+            "This function is not implemented in the base class, but you can expect an implementation in it's sub"
+            " classes.")
 
     def construct_drawer_layout(self):
         raise NotImplementedError(
