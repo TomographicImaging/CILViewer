@@ -189,7 +189,7 @@ class CILViewerBase():
         ia.Update()
         return ia
 
-    def getImageMapRange(self, percentiles, method):
+    def getImageMapRange(self, percentiles, method="scalar"):
         '''
         uses percentiles to generate min and max values in either
         the image or image gradient (depending on method) for which
@@ -201,7 +201,7 @@ class CILViewerBase():
         min, max = ia.GetAutoRange()
         return min, max
 
-    def getFullImageRange(self, method):
+    def getImageMapFullRange(self, method="scalar"):
         '''
         Parameters
         -----------
@@ -259,14 +259,13 @@ class CILViewerBase():
         self.ren.Render()
         self.renWin.Render()
 
-    def getSliceMapRange(self, percentiles):
+    def getSliceMapRange(self, percentiles, method="scalar"):
         '''
         uses percentiles to generate min and max values in
         the 2D slice of the 3D image, for which
         the colormap is displayed.
         '''
-        ia = vtk.vtkImageHistogramStatistics()
-        ia.SetInputData(self.img3D)
+        ia = self.getImageHistogramStatistics(method)
         ia.SetAutoRangePercentiles(*percentiles)
         ia.Update()
         min, max = ia.GetAutoRange()
