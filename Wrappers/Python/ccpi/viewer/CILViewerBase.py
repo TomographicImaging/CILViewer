@@ -216,7 +216,7 @@ class CILViewerBase():
         min, max = ia.GetAutoRange()
         return min, max
 
-    def getFullImageRange(self, method):
+    def getImageMapWholeRange(self, method):
         '''
         Parameters
         -----------
@@ -299,7 +299,7 @@ class CILViewerBase():
 
         return window, level
 
-    def getFullSliceRange(self, method):
+    def getSliceMapWholeRange(self, method):
         '''
         Parameters
         -----------

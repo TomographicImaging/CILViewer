@@ -369,8 +369,6 @@ class CILInteractorStyle(vtk.vtkInteractorStyle):
     def AutoWindowLevelOnSliceRange(self, update_slice=True):
         '''Auto-adjusts window-level for the slice, based on the 5 and 95th percentiles of the current slice.'''
         cmin, cmax = self._viewer.ia.GetAutoRange()
-        print("Auto range for slice: ", cmin, cmax)
-        print("Percentiles: ", self._viewer.ia.GetAutoRangePercentiles())
         window, level = self._viewer.getSliceWindowLevelFromRange(cmin, cmax)
 
         self._viewer.imageSlice.GetProperty().SetColorLevel(level)

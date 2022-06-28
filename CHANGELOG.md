@@ -2,7 +2,7 @@
 
 ## v22.x.x
 - Renamed all classes bearing name baseReader to ReaderInterface as they provide the interface not a abstract reader class.
-- Added TIFF resample reader
+- Added TIFF resample and cropped readers
 - web_viewer:
   - added web viewer using trame for viewer3D and viewer2D
   - add entry point for running the web viewers

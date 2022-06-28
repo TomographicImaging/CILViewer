@@ -400,7 +400,6 @@ class TrameViewer3D(TrameViewer):
         state["slice_visibility"] = True
         state["volume_visibility"] = True
         state["slice_detailed_sliders"] = False
-
         state["background_color"] = "cil_viewer_blue"
         state["toggle_clipping"] = False
         state["show_slice_histogram"] = False
