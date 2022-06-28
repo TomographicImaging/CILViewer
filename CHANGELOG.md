@@ -14,7 +14,7 @@
   - Backward incompatible rename of a few methods: 
     - Get/SetActiveSlice -> get/setActiveSlice, 
     - GetSliceOrientation -> getSliceOrientation, 
-    - setColourWindowLevel -> setColorWindowLevel, 
+    - setColourWindowLevel -> setSliceColorWindowLevel, 
     - getColourLevel -> getSliceColourLevel, 
     - getColourWindow -> getSliceColorWindow, 
     - setColourWindowLevel -> setSliceColorWindowLevel
@@ -27,6 +27,7 @@
   - fix definition of window range to be = max - min
 - colormaps: added get_color_transfer_function
 - added examples of running the 2D and 3D viewers without Qt
+- Added CILViewer base class
 
 ## v22.1.2
 * Changes released in 22.0.2, but also requires vtk version >= 9.0.3
