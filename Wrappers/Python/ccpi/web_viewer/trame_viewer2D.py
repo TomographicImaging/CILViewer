@@ -117,7 +117,6 @@ class TrameViewer2D(TrameViewer):
     def create_remove_roi_button(self):
         return vuetify.VBtn("Remove ROI", hide_details=True, dense=True, solo=True, click=self.remove_roi)
 
-
     def create_tracing_switch(self):
         return vuetify.VSwitch(label="Toggle Tracing",
                                v_model=("toggle_tracing", False),
@@ -149,7 +148,6 @@ class TrameViewer2D(TrameViewer):
         else:
             self.cil_viewer.imageSlice.GetProperty().SetInterpolationTypeToLinear()
         self.cil_viewer.updatePipeline()
-
 
     def change_window_level_detail_sliders(self, show_detailed: bool):
         super().change_window_level_detail_sliders(show_detailed)

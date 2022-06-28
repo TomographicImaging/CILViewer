@@ -111,9 +111,9 @@ class TrameViewer3D(TrameViewer):
     def construct_drawer_layout(self):
         # The difference is that we use range slider instead of detailed sliders
         self.slice_interaction_col = vuetify.VCol([
-            self.toggle_slice_visibility, self.slice_slider, self.orientation_radio_buttons, self.auto_window_level_button,
-            self.show_slice_histogram_switch, self.toggle_window_details_button, self.slice_window_range_slider,
-            self.slice_window_slider, self.slice_level_slider
+            self.toggle_slice_visibility, self.slice_slider, self.orientation_radio_buttons,
+            self.auto_window_level_button, self.show_slice_histogram_switch, self.toggle_window_details_button,
+            self.slice_window_range_slider, self.slice_window_slider, self.slice_level_slider
         ])
         self.slice_interaction_row = vuetify.VRow(self.slice_interaction_col)
         self.slice_interaction_section = vuetify.VContainer(self.slice_interaction_row)
@@ -268,14 +268,14 @@ class TrameViewer3D(TrameViewer):
             max_value = self.cmax
             step = 1
             self.window_level_sliders_are_percentages = False
-            v_model=("windowing", self.windowing_defaults)
+            v_model = ("windowing", self.windowing_defaults)
         else:
             # Use percentages
             min_value = 0
             max_value = 100
             step = 0.5
             self.window_level_sliders_are_percentages = True
-            v_model=("windowing", self.windowing_percentage_defaults)
+            v_model = ("windowing", self.windowing_percentage_defaults)
 
         return vuetify.VRangeSlider(label="Windowing",
                                     hide_details=True,

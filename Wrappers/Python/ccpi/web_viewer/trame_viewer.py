@@ -162,7 +162,12 @@ class TrameViewer:
         )
 
     def create_auto_window_level_button(self, disabled: bool = False):
-        return vuetify.VBtn("Auto Window/Level", hide_details=True, dense=True, solo=True, disabled=disabled, click=self.auto_window_level)
+        return vuetify.VBtn("Auto Window/Level",
+                            hide_details=True,
+                            dense=True,
+                            solo=True,
+                            disabled=disabled,
+                            click=self.auto_window_level)
 
     def create_orientation_radio_buttons(self, disabled: bool = False):
         return vuetify.VRadioGroup(
@@ -182,7 +187,7 @@ class TrameViewer:
             min_value = self.cmin
             max_value = self.cmax
             step = 1
-            v_model=("slice_window", self.slice_window_default)
+            v_model = ("slice_window", self.slice_window_default)
             self.window_level_sliders_are_percentages = False
         else:
             # Use percentages
@@ -197,9 +202,9 @@ class TrameViewer:
         if self.slice_window_sliders_are_detailed:
             style = "max-width: 300px"
         else:
-            style = "visibility: hidden; height: 0"          
-        
-        return vuetify.VSlider(v_model = v_model,
+            style = "visibility: hidden; height: 0"
+
+        return vuetify.VSlider(v_model=v_model,
                                min=min_value,
                                max=max_value,
                                step=step,
@@ -231,7 +236,7 @@ class TrameViewer:
         else:
             style = "visibility: hidden; height: 0"
 
-        return vuetify.VSlider(v_model = v_model,
+        return vuetify.VSlider(v_model=v_model,
                                min=min_value,
                                max=max_value,
                                step=step,
@@ -248,7 +253,7 @@ class TrameViewer:
             min_value = self.cmin
             max_value = self.cmax
             step = 1
-            v_model=("slice_window_range", self.slice_window_range_defaults)
+            v_model = ("slice_window_range", self.slice_window_range_defaults)
             self.window_level_sliders_are_percentages = False
         else:
             # Use percentages
@@ -266,7 +271,7 @@ class TrameViewer:
             style = "visibility: hidden; height: 0"
 
         return vuetify.VRangeSlider(
-            v_model = v_model,
+            v_model=v_model,
             min=min_value,
             max=max_value,
             step=step,
@@ -325,8 +330,8 @@ class TrameViewer:
         # Translate current color level and color window to range_min and range_max
         current_level = self.cil_viewer.getSliceColorLevel()
         current_window = self.cil_viewer.getSliceColorWindow()
-        range_min = (current_window - 2 *
-                     current_level) / -2  # The reverse of the window calculation in web_app.change_slice_window_level_range
+        range_min = (current_window - 2 * current_level
+                     ) / -2  # The reverse of the window calculation in web_app.change_slice_window_level_range
         range_max = current_window + range_min
 
         # Setup the defaults pre-flip
@@ -366,7 +371,7 @@ class TrameViewer:
         self.cil_viewer.updatePipeline()
         self.html_view.update()
 
-    def change_slice_level_as_percentage(self, new_level_as_percentage: float):  
+    def change_slice_level_as_percentage(self, new_level_as_percentage: float):
         level = self.convert_percentage_to_value(new_level_as_percentage)
         self.change_slice_level(level)
 
@@ -377,7 +382,7 @@ class TrameViewer:
             state["slice_window_percentiles"] = self.cil_viewer.ia.GetAutoRangePercentiles()
             state["slice_window_as_percentage"] = self.convert_value_to_percentage(window)
             state["slice_level_as_percentage"] = self.convert_value_to_percentage(level)
-        
+
         else:
             state["slice_window_range"] = cmin, cmax
             state["slice_window"] = window
@@ -386,7 +391,7 @@ class TrameViewer:
 
     def convert_value_to_percentage(self, value):
         # Takes into account that self.cmin may not be 0:
-        percentage = 100*(value - self.cmin)/(self.cmax + self.cmin)
+        percentage = 100 * (value - self.cmin) / (self.cmax + self.cmin)
         return percentage
 
     def convert_percentage_to_value(self, percentage):

@@ -116,7 +116,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
 
     def ShowActor(self, actorno):
         self._viewer.showActor(actorno)
-    
+
     def UpdateImageSlice(self):
         self._viewer.imageSlice.Update()
 
@@ -221,7 +221,6 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
         self.SetVolumeVisibility(not self._viewer.volume.GetVisibility())
 
         self._viewer.updatePipeline()
-
 
     def AutoWindowLevelOnSliceRange(self, update_slice=True):
         '''Auto-adjusts window-level for the slice, based on the 5 and 95th percentiles of the current slice.'''
