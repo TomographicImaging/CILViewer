@@ -16,9 +16,10 @@
 
 import numpy
 import vtk
-from ccpi.viewer.CILViewerBase import (ALT_KEY, CONTROL_KEY, CROSSHAIR_ACTOR, CURSOR_ACTOR, HELP_ACTOR, HISTOGRAM_ACTOR,
-                                       LINEPLOT_ACTOR, OVERLAY_ACTOR, SHIFT_KEY, SLICE_ACTOR, SLICE_ORIENTATION_XY,
-                                       SLICE_ORIENTATION_XZ, SLICE_ORIENTATION_YZ)
+from ccpi.viewer import (ALT_KEY, CONTROL_KEY, CROSSHAIR_ACTOR, CURSOR_ACTOR, HELP_ACTOR, HISTOGRAM_ACTOR,
+                         LINEPLOT_ACTOR, OVERLAY_ACTOR, SHIFT_KEY, SLICE_ACTOR, SLICE_ORIENTATION_XY,
+                         SLICE_ORIENTATION_XZ, SLICE_ORIENTATION_YZ)
+from ccpi.viewer.CILViewerBase import CILViewerBase
 from ccpi.viewer.utils import colormaps
 
 from ccpi.viewer.CILViewerBase import CILViewerBase
@@ -430,10 +431,7 @@ class CILViewer(CILViewerBase):
         CILViewerBase.__init__(self, dimx=600, dimy=600, ren=None, renWin=None, iren=None, debug=True)
         '''creates the rendering pipeline'''
 
-        # create a renderwindowinteractor
-        self.style = CILInteractorStyle(self)
-        self.iren.SetInteractorStyle(self.style)
-        self.iren.SetRenderWindow(self.renWin)
+        self.setInteractorStyle(CILInteractorStyle(self))
 
         self.sliceActorNo = 0
         # Render decimation
@@ -469,12 +467,6 @@ class CILViewer(CILViewerBase):
         self.volume_colormap_name = 'viridis'
         self.volume_render_initialised = False
         self.clipping_plane_initialised = False
-
-        self.iren.Initialize()
-
-    def getCamera(self):
-        '''returns the active camera'''
-        return self.ren.GetActiveCamera()
 
     def createPolyDataActor(self, polydata):
         '''returns an actor for a given polydata'''
@@ -751,7 +743,7 @@ class CILViewer(CILViewerBase):
             whether to immediately update the pipeline with this new
             setting
         '''
-        go_min, go_max = self.getVolumeMapRange((min, max), 'gradient')
+        go_min, go_max = self.getImageMapRange((min, max), 'gradient')
         self.setGradientOpacityRange(go_min, go_max, update_pipeline)
 
     def setScalarOpacityPercentiles(self, min, max, update_pipeline=True):
@@ -761,7 +753,7 @@ class CILViewer(CILViewerBase):
             opacity will be mapped to if setVolumeRenderOpacityMethod
             has been set to 'scalar'.
         '''
-        so_min, so_max = self.getVolumeMapRange((min, max), 'scalar')
+        so_min, so_max = self.getImageMapRange((min, max), 'scalar')
         self.setScalarOpacityRange(so_min, so_max, update_pipeline)
 
     def setVolumeColorPercentiles(self, min, max, update_pipeline=True):
@@ -769,7 +761,7 @@ class CILViewer(CILViewerBase):
         min, max: int, default: (85., 95.)
             the percentiles on the image values upon which the colours will be mapped to
         '''
-        cmin, cmax = self.getVolumeMapRange((min, max), 'scalar')
+        cmin, cmax = self.getImageMapRange((min, max), 'scalar')
         self.setVolumeColorRange(cmin, cmax, update_pipeline)
 
     def setGradientOpacityRange(self, min, max, update_pipeline=True):

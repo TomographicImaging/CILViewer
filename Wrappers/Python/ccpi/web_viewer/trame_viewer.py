@@ -281,9 +281,10 @@ class TrameViewer:
         )
 
     def update_slice_data(self):
-        raise NotImplementedError(
-            "This function is not implemented in the base class, but you can expect an implementation in it's sub"
-            " classes.")
+        self.slice_window_range_defaults = self.cil_viewer.getSliceMapRange((5., 95.))
+        self.cmin, self.cmax = self.cil_viewer.getImageMapRange((0., 100.), "scalar")
+        self.slice_level_default = self.cil_viewer.getSliceColorLevel()
+        self.slice_window_default = self.cil_viewer.getSliceColorWindow()
 
     def update_slice_slider_data(self):
         self.max_slice = self.cil_viewer.img3D.GetExtent()[self.cil_viewer.sliceOrientation * 2 + 1]
@@ -349,15 +350,12 @@ class TrameViewer:
         self.html_view.update()
 
     def change_slice_window(self, new_window: float, current_level: float = None):
-        if hasattr(self.cil_viewer, "setSliceColorWindow"):
-            if self.slice_window_slider_is_percentage:
-                if current_level is None:
-                    current_level = new_window
-                self.cil_viewer.setSliceColorPercentiles(new_window, current_level)
-            else:
-                self.cil_viewer.setSliceColorWindow(window=new_window)
+        if hasattr(self, "slice_window_slider_is_percentage"
+                   ) and self.slice_window_slider_is_percentage and current_level is None:
+            current_level = new_window
+            self.cil_viewer.setSliceColorPercentiles(new_window, current_level)
         else:
-            self.cil_viewer.setColorWindow(window=new_window)
+            self.cil_viewer.setSliceColorWindow(window=new_window)
         self.cil_viewer.updatePipeline()
         self.html_view.update()
 
