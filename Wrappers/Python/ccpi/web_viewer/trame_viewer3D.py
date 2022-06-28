@@ -241,17 +241,19 @@ class TrameViewer3D(TrameViewer):
             max_value = self.cmax
             step = 1
             self.window_level_sliders_are_percentages = False
+            v_model = ("coloring", self.coloring_defaults)
         else:
             # Use percentages
             min_value = 0
             max_value = 100
             step = 0.5
             self.window_level_sliders_are_percentages = True
+            v_model = ("coloring", self.coloring_percentage_defaults)
 
         return vuetify.VRangeSlider(label="Color range",
                                     hide_details=True,
                                     solo=True,
-                                    v_model=("coloring", self.windowing_defaults),
+                                    v_model=v_model,
                                     min=min_value,
                                     max=max_value,
                                     step=step,
@@ -266,17 +268,19 @@ class TrameViewer3D(TrameViewer):
             max_value = self.cmax
             step = 1
             self.window_level_sliders_are_percentages = False
+            v_model=("windowing", self.windowing_defaults)
         else:
             # Use percentages
             min_value = 0
             max_value = 100
             step = 0.5
             self.window_level_sliders_are_percentages = True
+            v_model=("windowing", self.windowing_percentage_defaults)
 
         return vuetify.VRangeSlider(label="Windowing",
                                     hide_details=True,
                                     solo=True,
-                                    v_model=("windowing", self.windowing_defaults),
+                                    v_model=v_model,
                                     min=min_value,
                                     max=max_value,
                                     step=step,
@@ -289,6 +293,10 @@ class TrameViewer3D(TrameViewer):
         # Set cmin and cmax after set_slice_defaults because set_slice only uses scalar whereas we need to support gradient in 3D
         self.cmin, self.cmax = self.cil_viewer.getImageMapRange((0., 100.), method)
         self.windowing_defaults = self.cil_viewer.getImageMapRange((80., 99.), method)
+        # colors always set based on scalar mapping:
+        self.coloring_defaults = self.cil_viewer.getImageMapRange((80., 99.), "scalar")
+        self.coloring_percentage_defaults = 80., 99.
+        self.windowing_percentage_defaults = 80., 99.
         if hasattr(self, "windowing_range_slider") and self.windowing_range_slider is not None \
                 and hasattr(self, "color_slider") and self.color_slider is not None:
             self.windowing_range_slider = self.construct_windowing_slider()
@@ -300,10 +308,11 @@ class TrameViewer3D(TrameViewer):
             self.layout.flush_content()
 
         if hasattr(self, 'window_level_sliders_are_percentages') and self.window_level_sliders_are_percentages:
-            state["windowing"] = (80., 99.)
+            state["windowing"] = self.windowing_percentage_defaults, method
+            state["coloring"] = self.coloring_percentage_defaults
         else:
             state["windowing"] = self.windowing_defaults
-        state["coloring"] = self.windowing_defaults
+            state["coloring"] = self.coloring_defaults
 
     def load_file(self, file_name, windowing_method="scalar"):
         # Perform the load before updating the UI
@@ -374,19 +383,20 @@ class TrameViewer3D(TrameViewer):
         min, max = self.cil_viewer.getImageMapRange((5., 95.), "scalar")
         window, level = self.cil_viewer.getSliceWindowLevelFromRange(min, max)
         if hasattr(self, 'window_level_sliders_are_percentages') and self.window_level_sliders_are_percentages:
-            state["windowing"] = (80., 99.)
+            state["windowing"] = self.windowing_percentage_defaults, "scalar"
+            state["coloring"] = self.coloring_percentage_defaults
             # window level of slice:
             state["slice_window_percentiles"] = (5., 95.)
             state["slice_window_as_percentage"] = self.convert_value_to_percentage(window)
             state["slice_level_as_percentage"] = self.convert_value_to_percentage(level)
         else:
             state["windowing"] = self.windowing_defaults
+            state["coloring"] = self.coloring_defaults
             # window level of slice:
             state["slice_window_range"] = (min, max)
             state["slice_window"] = window
             state["slice_level"] = level
 
-        state["coloring"] = self.windowing_defaults
         state["slice_visibility"] = True
         state["volume_visibility"] = True
         state["slice_detailed_sliders"] = False
