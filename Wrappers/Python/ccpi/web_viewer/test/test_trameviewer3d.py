@@ -447,6 +447,8 @@ class TrameViewer3DTest(unittest.TestCase):
         self.assertNotEqual(self.trame_viewer.original_cam_data, cam_data)
 
     def test_switch_render_calls_toggle_volume_visibility(self):
+        self.cil_viewer.style.ToggleVolumeVisibility = mock.MagicMock()
+
         self.trame_viewer.switch_render()
 
         self.cil_viewer.style.ToggleVolumeVisibility.assert_called_once_with()
@@ -473,6 +475,7 @@ class TrameViewer3DTest(unittest.TestCase):
 
     def test_set_opacity_mapping_sets_volume_render_opacity_method(self):
         opacity = mock.MagicMock()
+        self.cil_viewer.setVolumeRenderOpacityMethod = mock.MagicMock()
 
         self.trame_viewer.set_opacity_mapping(opacity)
 
@@ -705,41 +708,188 @@ class TrameViewer3DTest(unittest.TestCase):
         self.cil_viewer.setVolumeColorPercentiles.assert_not_called()
         self.cil_viewer.setVolumeColorRange.assert_called_once_with(min_value, max_value)
 
-    def test_change_window_level_detail_sliders_calls_super(self):
-        pass
+    @mock.patch("ccpi.web_viewer.trame_viewer.TrameViewer.change_window_level_detail_sliders")
+    def test_change_window_level_detail_sliders_calls_super(self, change_window_level_detail_sliders):
+        show_detailed = mock.MagicMock()
 
-    def test_change_window_level_detail_sliders_recreates_sliders_and_pushes(self):
-        pass
+        self.trame_viewer.change_window_level_detail_sliders(show_detailed)
+
+        change_window_level_detail_sliders.assert_called_once_with(show_detailed)
+
+    @mock.patch("ccpi.web_viewer.trame_viewer.TrameViewer.change_window_level_detail_sliders")
+    def test_change_window_level_detail_sliders_recreates_sliders_and_pushes(self, _):
+        show_detailed = mock.MagicMock()
+        disable_2d = mock.MagicMock()
+        self.trame_viewer.disable_2d = disable_2d
+        self.trame_viewer.construct_slice_window_range_slider = mock.MagicMock()
+        self.trame_viewer.construct_slice_window_slider = mock.MagicMock()
+        self.trame_viewer.construct_slice_level_slider = mock.MagicMock()
+        self.trame_viewer.construct_drawer_layout = mock.MagicMock()
+
+        self.trame_viewer.change_window_level_detail_sliders(show_detailed)
+
+        self.trame_viewer.construct_slice_window_range_slider.assert_called_once_with(disable_2d)
+        self.trame_viewer.construct_slice_window_slider.assert_called_once_with(disable_2d)
+        self.trame_viewer.construct_slice_level_slider.assert_called_once_with(disable_2d)
+        self.trame_viewer.construct_drawer_layout.assert_called_once_with()
 
     def test_change_slice_visibility_if_visibility_true(self):
-        pass
+        visibility = True
+
+        self.trame_viewer.change_slice_visibility(visibility)
+
+        self.assertEqual(False, self.trame_viewer.disable_2d)
+        self.cil_viewer.imageSlice.VisibilityOn.assert_called_once_with()
+        self.cil_viewer.imageSlice.VisibilityOff.assert_not_called()
 
     def test_change_slice_visibility_if_visibility_false(self):
-        pass
+        visibility = False
+
+        self.trame_viewer.change_slice_visibility(visibility)
+
+        self.assertEqual(True, self.trame_viewer.disable_2d)
+        self.assertEqual(state["show_slice_histogram"], False)
+        self.cil_viewer.imageSlice.VisibilityOff.assert_called_once_with()
+        self.cil_viewer.imageSlice.VisibilityOn.assert_not_called()
+
+    def test_change_slice_visibility_redraws_ui_and_pushes(self):
+        self.trame_viewer.create_drawer_ui_elements = mock.MagicMock()
+        self.trame_viewer.layout.flush_content = mock.MagicMock()
+        self.trame_viewer.cil_viewer.updatePipeline = mock.MagicMock()
+
+        self.trame_viewer.change_slice_visibility(False)
+
+        self.trame_viewer.create_drawer_ui_elements.assert_called_once_with()
+        self.trame_viewer.layout.flush_content.assert_called_once_with()
+        self.trame_viewer.cil_viewer.updatePipeline.assert_called_once_with()
+
+    def test_change_volume_visibility_volume_render_toggle(self):
+        self.cil_viewer.installVolumeRenderActorPipeline = mock.MagicMock()
+        self.cil_viewer.volume_render_initialised = True
+
+        self.trame_viewer.change_volume_visibility(True)
+
+        self.cil_viewer.installVolumeRenderActorPipeline.assert_not_called()
+
+        self.cil_viewer.volume_render_initialised = False
+
+        self.trame_viewer.change_volume_visibility(True)
+
+        self.cil_viewer.installVolumeRenderActorPipeline.assert_called_once_with()
 
     def test_change_volume_visibility_if_visibility_true(self):
-        pass
+        visibility = True
+
+        self.trame_viewer.change_volume_visibility(visibility)
+
+        self.assertEqual(False, self.trame_viewer.disable_3d)
+        self.cil_viewer.style.SetVolumeVisibility.assert_called_once_with(visibility)
 
     def test_change_volume_visibility_if_visibility_false(self):
-        pass
+        visibility = False
+
+        self.trame_viewer.change_volume_visibility(visibility)
+
+        self.assertEqual(True, self.trame_viewer.disable_3d)
+        self.cil_viewer.style.SetVolumeVisibility.assert_called_once_with(visibility)
+
+    def test_change_volume_visibility_sets_volume_visible_to_passed_value(self):
+        visibility = mock.MagicMock()
+
+        self.trame_viewer.change_volume_visibility(visibility)
+
+        self.cil_viewer.style.SetVolumeVisibility.assert_called_once_with(visibility)
+
+    def test_change_volume_visibility_redraws_ui_and_flush_to_client(self):
+        self.trame_viewer.create_drawer_ui_elements = mock.MagicMock()
+        self.trame_viewer.layout.flush_content = mock.MagicMock()
+        self.trame_viewer.cil_viewer.updatePipeline = mock.MagicMock()
+
+        self.trame_viewer.change_volume_visibility(False)
+
+        self.trame_viewer.create_drawer_ui_elements.assert_called_once_with()
+        self.trame_viewer.layout.flush_content.assert_called_once_with()
+        self.trame_viewer.cil_viewer.updatePipeline.assert_called_once_with()
 
     def test_change_clipping_false(self):
-        pass
+        slice_visibility_val = mock.MagicMock()
+        state["slice_visibility"] = slice_visibility_val
+        self.cil_viewer.style.SetVolumeClipping = mock.MagicMock()
+
+        self.trame_viewer.change_clipping(False)
+
+        self.assertEqual(slice_visibility_val, state["slice_visibility"])
+        self.cil_viewer.style.SetVolumeClipping.assert_called_once_with(False)
 
     def test_change_clipping_true(self):
-        pass
+        slice_visibility_val = mock.MagicMock()
+        state["slice_visibility"] = slice_visibility_val
+        self.cil_viewer.style.SetVolumeClipping = mock.MagicMock()
+
+        self.trame_viewer.change_clipping(True)
+
+        self.assertEqual(False, state["slice_visibility"])
+        self.cil_viewer.style.SetVolumeClipping.assert_called_once_with(True)
 
     def test_remove_clipping_plane_where_planew_is_not_set_does_nothing(self):
-        pass
+        self.cil_viewer.remove_clipping_plane = mock.MagicMock()
+        self.cil_viewer.getRenderer = mock.MagicMock()
+        self.cil_viewer.updatePipeline = mock.MagicMock()
+        clipping = mock.MagicMock()
+        state["toggle_clipping"] = clipping
+        delattr(self.trame_viewer.cil_viewer, "planew")
+
+        self.trame_viewer.remove_clipping_plane()
+
+        self.assertEqual(state["toggle_clipping"], clipping)
+        self.cil_viewer.remove_clipping_plane.assert_not_called()
+        self.cil_viewer.getRenderer.assert_not_called()
+        self.cil_viewer.updatePipeline.assert_not_called()
 
     def test_remove_clipping_plane_where_planew_is_set(self):
-        pass
+        self.cil_viewer.remove_clipping_plane = mock.MagicMock()
+        self.cil_viewer.getRenderer = mock.MagicMock()
+        self.cil_viewer.updatePipeline = mock.MagicMock()
+        clipping = mock.MagicMock()
+        state["toggle_clipping"] = clipping
+        self.trame_viewer.cil_viewer.planew = mock.MagicMock()
+
+        self.trame_viewer.remove_clipping_plane()
+
+        self.assertEqual(state["toggle_clipping"], False)
+        self.cil_viewer.remove_clipping_plane.assert_called_once_with()
+        self.cil_viewer.getRenderer.assert_called_once_with()
+        self.cil_viewer.getRenderer.return_value.Render.assert_called_once_with()
+        self.cil_viewer.updatePipeline.assert_called_once_with()
 
     def test_show_slice_histogram_where_show_histogram_is_true(self):
-        pass
+        self.cil_viewer.updateSliceHistogram = mock.MagicMock()
+        show_histogram = True
+
+        self.trame_viewer.show_slice_histogram(show_histogram)
+
+        self.cil_viewer.updateSliceHistogram.assert_called_once_with()
+        self.cil_viewer.histogramPlotActor.VisibilityOn.assert_called_once_with()
+        self.cil_viewer.histogramPlotActor.VisibilityOff.assert_not_called()
 
     def test_show_slice_histogram_where_show_histogram_is_false(self):
-        pass
+        self.cil_viewer.updateSliceHistogram = mock.MagicMock()
+        show_histogram = False
+
+        self.trame_viewer.show_slice_histogram(show_histogram)
+
+        self.cil_viewer.updateSliceHistogram.assert_called_once_with()
+        self.cil_viewer.histogramPlotActor.VisibilityOff.assert_called_once_with()
+        self.cil_viewer.histogramPlotActor.VisibilityOn.assert_not_called()
 
     def test_update_slice_data(self):
-        pass
+        get_volume_map_range = [mock.MagicMock(), mock.MagicMock()]
+        self.cil_viewer.getVolumeMapRange = mock.MagicMock(return_value=get_volume_map_range)
+
+        self.trame_viewer.update_slice_data()
+
+        self.assertEqual(self.trame_viewer.cmin, get_volume_map_range[0])
+        self.assertEqual(self.trame_viewer.cmax, get_volume_map_range[1])
+        self.assertEqual(self.trame_viewer.slice_window_range_defaults, get_volume_map_range)
+        self.assertEqual(self.trame_viewer.slice_level_default, self.cil_viewer.getSliceColorLevel.return_value)
+        self.assertEqual(self.trame_viewer.slice_window_default, self.cil_viewer.getSliceColorWindow.return_value)
