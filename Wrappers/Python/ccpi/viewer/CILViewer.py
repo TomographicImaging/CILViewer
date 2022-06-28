@@ -22,8 +22,6 @@ from ccpi.viewer import (ALT_KEY, CONTROL_KEY, CROSSHAIR_ACTOR, CURSOR_ACTOR, HE
 from ccpi.viewer.CILViewerBase import CILViewerBase
 from ccpi.viewer.utils import colormaps
 
-from ccpi.viewer.CILViewerBase import CILViewerBase
-
 
 class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
 
