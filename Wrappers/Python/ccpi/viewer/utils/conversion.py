@@ -1016,13 +1016,13 @@ class cilMetaImageReaderInterface(cilReaderInterface):
         self.ReadMetaImageHeader()
 
 
-class vortexTIFFImageReaderInterface(cilReaderInterface):
+class cilTIFFImageReaderInterface(cilReaderInterface):
     ''' Baseclass with methods for setting and 
     getting information about tiff'''
 
     def __init__(self):
         VTKPythonAlgorithmBase.__init__(self, nInputPorts=0, nOutputPorts=1)
-        super(vortexTIFFImageReaderInterface, self).__init__()
+        super(cilTIFFImageReaderInterface, self).__init__()
         self._CompressedData = False
 
     def SetFileName(self, value):
@@ -1525,7 +1525,21 @@ class cilMetaImageResampleReader(cilBaseBinaryBlobResampleReader, cilMetaImageRe
                 chunk_file_object.write(chunk)
 
 
-class vortexTIFFResampleReader(cilBaseResampleReader, vortexTIFFImageReaderInterface):
+class cilTIFFResampleReader(cilBaseResampleReader, cilTIFFImageReaderInterface):
+    '''vtkAlgorithm to load and resample a list of TIFF files to an approximate memory footprint
+    
+    Example
+    --------
+    This example reads a metaimage dataset from the file: data.mha and downsamples
+    it to an approx. size of 1GB:
+
+    reader = cilTIFFResampleReader()
+    reader.SetFileName(filenames)
+    reader.SetTargetSize(1024*1024*1024)
+    reader.Update()
+    image = reader.GetOutput()
+    
+    '''
 
     def _GetInternalChunkReader(self):
         '''returns a reader which will only read a specific chunk of the data.
@@ -1826,6 +1840,88 @@ class cilHDF5CroppedReader(cilBaseCroppedReader, cilHDF5ReaderInterface):
         reader.Update()
         read_data = reader.GetOutput()
         outData.ShallowCopy(read_data)
+
+        return 1
+
+
+class cilTIFFCroppedReader(cilBaseCroppedReader, cilTIFFImageReaderInterface):
+    '''vtkAlgorithm to load and crop a TIFF files
+
+    Example
+    -------
+    This example reads from a list of tiff filenames = tiff_fnames
+    and crops it on the z axis to extent (1, 3):
+
+
+    reader = cilTIFFCroppedReader()
+    reader.SetFileName(tiff_fnames)
+    reader.SetTargetZExtent([1,3])
+    reader.Update()
+    image = reader.GetOutput()
+    
+    '''
+
+    def __init__(self):
+        VTKPythonAlgorithmBase.__init__(self, nInputPorts=0, nOutputPorts=1)
+        super(cilTIFFCroppedReader, self).__init__()
+        self._TargetExtent = None
+
+    def RequestData(self, request, inInfo, outInfo):
+        outData = vtk.vtkImageData.GetData(outInfo)
+
+        self.ReadDataSetInfo()
+
+        # get basic info
+        readshape = self.GetStoredArrayShape()
+        is_fortran = self.GetIsFortran()
+
+        if is_fortran:
+            shape = list(readshape)
+        else:
+            shape = list(readshape)[::-1]
+
+        reader = vtk.vtkTIFFReader()
+        sa = vtk.vtkStringArray()
+
+        extent = [0, -1, 0, -1, self.GetTargetZExtent()[0], self.GetTargetZExtent()[1]]
+
+        # crop on Z
+        if extent[5] >= shape[2] and extent[4] <= 0:
+            # in this case we don't need to crop, so we read the whole dataset
+            # print("Don't crop")
+            for el in self.GetFileName():
+                sa.InsertNextValue(el)
+            reader.SetFileNames(sa)
+            reader.Update()
+            outData.ShallowCopy(reader.GetOutput())
+
+            return 1
+
+        # In the case we do need to crop: ---------------------------------------------
+
+        shape[2] = self.GetTargetZExtent()[1] - self.GetTargetZExtent()[0] + 1
+
+        image_file = self.GetFileName()[extent[4]:extent[5] + 1]
+        for el in image_file:
+            sa.InsertNextValue(el)
+        reader.SetFileNames(sa)
+        reader.Update()
+
+        # Once we have read the data, update the extent to reflect where
+        # we have cut the cropped dataset out of the original image
+
+        Data = vtk.vtkImageData()
+        extent = (0, shape[0] - 1, 0, shape[1] - 1, self.GetTargetZExtent()[0], self.GetTargetZExtent()[1])
+        Data.SetExtent(extent)
+        Data.SetSpacing(self.GetElementSpacing())
+        Data.SetOrigin(self.GetOrigin())
+        Data.AllocateScalars(self.GetOutputVTKType(), 1)
+
+        read_data = reader.GetOutput()
+        read_data.SetExtent(extent)
+
+        Data.CopyAndCastFrom(read_data, extent)
+        outData.ShallowCopy(Data)
 
         return 1
 
