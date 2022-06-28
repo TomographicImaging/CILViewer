@@ -135,6 +135,7 @@ def change_coloring(**kwargs):
 def change_slice_window(**kwargs):
     TRAME_VIEWER.change_slice_window(kwargs["slice_window"])
 
+
 @state.change("slice_window_as_percentage")
 def change_slice_window_as_percentage(**kwargs):
     TRAME_VIEWER.change_slice_window_as_percentage(kwargs["slice_window_as_percentage"])

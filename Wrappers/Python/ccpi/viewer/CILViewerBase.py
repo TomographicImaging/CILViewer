@@ -173,7 +173,6 @@ class CILViewerBase():
         else:
             return value
 
-
     # METHODS ON THE FULL 3D IMAGE DATA: ------------------------------------------------
 
     def setInput3DData(self, imageData):
@@ -229,7 +228,6 @@ class CILViewerBase():
 
         return ia.GetMinimum(), ia.GetMaximum()
 
-
     # METHODS ON THE SLICE: --------------------------------------------------------
 
     def getSliceOrientation(self):
@@ -240,7 +238,7 @@ class CILViewerBase():
 
     def getActiveSlice(self):
         return self.slicenos[self.getSliceOrientation()]
-    
+
     # Set interpolation on
     def setInterpolateOn(self):
         self.imageSlice.GetProperty().SetInterpolationTypeToLinear()
@@ -337,5 +335,3 @@ class CILViewerBase():
         window, level = self.getSliceWindowLevelFromRange(min, max)
         self.setSliceColorLevel(level)
         self.setSliceColorWindow(window)
-
-
