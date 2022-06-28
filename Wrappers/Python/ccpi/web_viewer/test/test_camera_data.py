@@ -23,6 +23,7 @@ from ccpi.web_viewer.camera_data import CameraData
 
 
 class CameraDataTest(unittest.TestCase):
+
     def setUp(self):
         self.camera = vtkCamera()
         self.cam_pos = (1., 1., 1.)

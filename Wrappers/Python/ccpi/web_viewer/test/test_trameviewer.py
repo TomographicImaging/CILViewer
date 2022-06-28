@@ -94,14 +94,8 @@ class TrameViewerTest(unittest.TestCase):
     def test_model_selector_list_is_generated_from_list_of_files_with_base_names_as_text_and_path_as_value(self):
         model_list = self.trame_viewer._create_model_selector_list()
         self.assertEqual(len(model_list), 2)
-        self.assertEqual(model_list[0], {
-            'text': 'head.mha',
-            'value': self.head_path
-        })
-        self.assertEqual(model_list[1], {
-            'text': 'other_file',
-            'value': "other_file_path_dir/other_file"
-        })
+        self.assertEqual(model_list[0], {'text': 'head.mha', 'value': self.head_path})
+        self.assertEqual(model_list[1], {'text': 'other_file', 'value': "other_file_path_dir/other_file"})
 
     def test_model_create_model_selector_starts_with_default_file(self):
         model_selector = self.trame_viewer.create_model_selector()
@@ -260,8 +254,10 @@ class TrameViewerTest(unittest.TestCase):
     def test_update_slice_data_raises_error(self):
         with self.assertRaises(NotImplementedError) as cm:
             self.trame_viewer.update_slice_data()
-        self.assertEqual(str(cm.exception), "This function is not implemented in the base class, but you can expect an implementation in "
-                                            "it's sub classes.")
+        self.assertEqual(
+            str(cm.exception),
+            "This function is not implemented in the base class, but you can expect an implementation in "
+            "it's sub classes.")
 
     def test_update_slice_slider_data_updates_max_slice_and_default_slice(self):
         self.trame_viewer.cil_viewer.img3D.GetExtent.return_value = [0, 97, 0, 0, 0]
@@ -316,7 +312,8 @@ class TrameViewerTest(unittest.TestCase):
         self.trame_viewer.construct_drawer_layout.assert_called_once()
         self.trame_viewer.layout.flush_content.assert_called_once()
 
-    def test_change_window_level_detail_sliders_does_nothing_if_slice_window_sliders_are_detailed_is_false_and_passed_false(self):
+    def test_change_window_level_detail_sliders_does_nothing_if_slice_window_sliders_are_detailed_is_false_and_passed_false(
+            self):
         self.trame_viewer.slice_window_sliders_are_detailed = False
 
         self.cil_viewer.getSliceColorLevel.assert_not_called()
@@ -350,20 +347,26 @@ class TrameViewerTest(unittest.TestCase):
     def test_reset_defaults_raises_error(self):
         with self.assertRaises(NotImplementedError) as cm:
             self.trame_viewer.reset_defaults()
-        self.assertEqual(str(cm.exception), "This function is not implemented in the base class, but you can expect an implementation in "
-                                            "it's sub classes.")
+        self.assertEqual(
+            str(cm.exception),
+            "This function is not implemented in the base class, but you can expect an implementation in "
+            "it's sub classes.")
 
     def test_construct_drawer_layout_raises_error(self):
         with self.assertRaises(NotImplementedError) as cm:
             self.trame_viewer.construct_drawer_layout()
-        self.assertEqual(str(cm.exception), "This function is not implemented in the base class, but you can expect an implementation in "
-                                            "it's sub classes.")
+        self.assertEqual(
+            str(cm.exception),
+            "This function is not implemented in the base class, but you can expect an implementation in "
+            "it's sub classes.")
 
     def test_create_drawer_ui_elements_raises_error(self):
         with self.assertRaises(NotImplementedError) as cm:
             self.trame_viewer.create_drawer_ui_elements()
-        self.assertEqual(str(cm.exception), "This function is not implemented in the base class, but you can expect an implementation in "
-                                            "it's sub classes.")
+        self.assertEqual(
+            str(cm.exception),
+            "This function is not implemented in the base class, but you can expect an implementation in "
+            "it's sub classes.")
 
     def test_show_slice_histogram_will_set_the_state_of_histogramPlotActor(self):
         self.trame_viewer.show_slice_histogram(True)

@@ -75,12 +75,16 @@ class TrameViewer3DTest(unittest.TestCase):
         self.trame_viewer.create_background_selector.assert_called_once_with()
         self.trame_viewer.create_toggle_slice_visibility.assert_called_once_with()
         self.trame_viewer.create_slice_slider.assert_called_once_with(disabled=self.trame_viewer.disable_2d)
-        self.trame_viewer.create_toggle_window_details_button.assert_called_once_with(disabled=self.trame_viewer.disable_2d)
-        self.trame_viewer.create_orientation_radio_buttons.assert_called_once_with(disabled=self.trame_viewer.disable_2d)
-        self.trame_viewer.construct_slice_window_range_slider.assert_called_once_with(disabled=self.trame_viewer.disable_2d)
+        self.trame_viewer.create_toggle_window_details_button.assert_called_once_with(
+            disabled=self.trame_viewer.disable_2d)
+        self.trame_viewer.create_orientation_radio_buttons.assert_called_once_with(
+            disabled=self.trame_viewer.disable_2d)
+        self.trame_viewer.construct_slice_window_range_slider.assert_called_once_with(
+            disabled=self.trame_viewer.disable_2d)
         self.trame_viewer.construct_slice_window_slider.assert_called_once_with(disabled=self.trame_viewer.disable_2d)
         self.trame_viewer.construct_slice_level_slider.assert_called_once_with(disabled=self.trame_viewer.disable_2d)
-        self.trame_viewer.construct_show_slice_histogram_switch.assert_called_once_with(disabled=self.trame_viewer.disable_2d)
+        self.trame_viewer.construct_show_slice_histogram_switch.assert_called_once_with(
+            disabled=self.trame_viewer.disable_2d)
         self.trame_viewer.create_toggle_volume_visibility.assert_called_once_with()
         self.trame_viewer.create_opacity_radio_buttons.assert_called_once_with()
         self.trame_viewer.create_color_choice_selector.assert_called_once_with()
@@ -92,23 +96,35 @@ class TrameViewer3DTest(unittest.TestCase):
         self.trame_viewer.create_reset_camera_button.assert_called_once_with()
         self.trame_viewer.create_reset_defaults_button.assert_called_once_with()
         self.assertEqual(self.trame_viewer.background_choice, self.trame_viewer.create_background_selector.return_value)
-        self.assertEqual(self.trame_viewer.toggle_slice_visibility, self.trame_viewer.create_toggle_slice_visibility.return_value)
+        self.assertEqual(self.trame_viewer.toggle_slice_visibility,
+                         self.trame_viewer.create_toggle_slice_visibility.return_value)
         self.assertEqual(self.trame_viewer.slice_slider, self.trame_viewer.create_slice_slider.return_value)
-        self.assertEqual(self.trame_viewer.toggle_window_details_button, self.trame_viewer.create_toggle_window_details_button.return_value)
-        self.assertEqual(self.trame_viewer.orientation_radio_buttons, self.trame_viewer.create_orientation_radio_buttons.return_value)
-        self.assertEqual(self.trame_viewer.slice_window_range_slider, self.trame_viewer.construct_slice_window_range_slider.return_value)
-        self.assertEqual(self.trame_viewer.slice_window_slider, self.trame_viewer.construct_slice_window_slider.return_value)
-        self.assertEqual(self.trame_viewer.slice_level_slider, self.trame_viewer.construct_slice_level_slider.return_value)
-        self.assertEqual(self.trame_viewer.show_slice_histogram_switch, self.trame_viewer.construct_show_slice_histogram_switch.return_value)
-        self.assertEqual(self.trame_viewer.toggle_volume_visibility, self.trame_viewer.create_toggle_volume_visibility.return_value)
-        self.assertEqual(self.trame_viewer.opacity_radio_buttons, self.trame_viewer.create_opacity_radio_buttons.return_value)
+        self.assertEqual(self.trame_viewer.toggle_window_details_button,
+                         self.trame_viewer.create_toggle_window_details_button.return_value)
+        self.assertEqual(self.trame_viewer.orientation_radio_buttons,
+                         self.trame_viewer.create_orientation_radio_buttons.return_value)
+        self.assertEqual(self.trame_viewer.slice_window_range_slider,
+                         self.trame_viewer.construct_slice_window_range_slider.return_value)
+        self.assertEqual(self.trame_viewer.slice_window_slider,
+                         self.trame_viewer.construct_slice_window_slider.return_value)
+        self.assertEqual(self.trame_viewer.slice_level_slider,
+                         self.trame_viewer.construct_slice_level_slider.return_value)
+        self.assertEqual(self.trame_viewer.show_slice_histogram_switch,
+                         self.trame_viewer.construct_show_slice_histogram_switch.return_value)
+        self.assertEqual(self.trame_viewer.toggle_volume_visibility,
+                         self.trame_viewer.create_toggle_volume_visibility.return_value)
+        self.assertEqual(self.trame_viewer.opacity_radio_buttons,
+                         self.trame_viewer.create_opacity_radio_buttons.return_value)
         self.assertEqual(self.trame_viewer.color_choice, self.trame_viewer.create_color_choice_selector.return_value)
         self.assertEqual(self.trame_viewer.clipping_switch, self.trame_viewer.create_clipping_toggle.return_value)
-        self.assertEqual(self.trame_viewer.clipping_removal_button, self.trame_viewer.create_clipping_removal_button.return_value)
+        self.assertEqual(self.trame_viewer.clipping_removal_button,
+                         self.trame_viewer.create_clipping_removal_button.return_value)
         self.assertEqual(self.trame_viewer.color_slider, self.trame_viewer.construct_color_slider.return_value)
-        self.assertEqual(self.trame_viewer.windowing_range_slider, self.trame_viewer.construct_windowing_slider.return_value)
+        self.assertEqual(self.trame_viewer.windowing_range_slider,
+                         self.trame_viewer.construct_windowing_slider.return_value)
         self.assertEqual(self.trame_viewer.reset_cam_button, self.trame_viewer.create_reset_camera_button.return_value)
-        self.assertEqual(self.trame_viewer.reset_defaults_button, self.trame_viewer.create_reset_defaults_button.return_value)
+        self.assertEqual(self.trame_viewer.reset_defaults_button,
+                         self.trame_viewer.create_reset_defaults_button.return_value)
 
     @mock.patch("ccpi.web_viewer.trame_viewer3D.vuetify.VCol")
     @mock.patch("ccpi.web_viewer.trame_viewer3D.vuetify.VRow")
@@ -140,27 +156,31 @@ class TrameViewer3DTest(unittest.TestCase):
         self.trame_viewer.construct_drawer_layout()
 
         self.assertEqual(v_col.call_count, 2)
-        self.assertIn(call([
-            self.trame_viewer.toggle_slice_visibility, self.trame_viewer.slice_slider, self.trame_viewer.orientation_radio_buttons,
-            self.trame_viewer.show_slice_histogram_switch, self.trame_viewer.toggle_window_details_button,
-            self.trame_viewer.slice_window_range_slider, self.trame_viewer.slice_window_slider, self.trame_viewer.slice_level_slider
-        ]), v_col.call_args_list)
+        self.assertIn(
+            call([
+                self.trame_viewer.toggle_slice_visibility, self.trame_viewer.slice_slider,
+                self.trame_viewer.orientation_radio_buttons, self.trame_viewer.show_slice_histogram_switch,
+                self.trame_viewer.toggle_window_details_button, self.trame_viewer.slice_window_range_slider,
+                self.trame_viewer.slice_window_slider, self.trame_viewer.slice_level_slider
+            ]), v_col.call_args_list)
         self.assertEqual(self.trame_viewer.slice_interaction_col, v_col.return_value)
         self.assertEqual(self.trame_viewer.slice_interaction_row, v_row.return_value)
         self.assertEqual(self.trame_viewer.slice_interaction_section, v_container.return_value)
-        self.assertIn(call([
-            self.trame_viewer.toggle_volume_visibility, self.trame_viewer.opacity_radio_buttons, self.trame_viewer.color_choice,
-            self.trame_viewer.color_slider, self.trame_viewer.clipping_switch, self.trame_viewer.clipping_removal_button,
-            self.trame_viewer.windowing_range_slider
-        ]), v_col.call_args_list)
+        self.assertIn(
+            call([
+                self.trame_viewer.toggle_volume_visibility, self.trame_viewer.opacity_radio_buttons,
+                self.trame_viewer.color_choice, self.trame_viewer.color_slider, self.trame_viewer.clipping_switch,
+                self.trame_viewer.clipping_removal_button, self.trame_viewer.windowing_range_slider
+            ]), v_col.call_args_list)
         self.assertEqual(self.trame_viewer.volume_interaction_col, v_col.return_value)
         self.assertEqual(self.trame_viewer.volume_interaction_row, v_row.return_value)
         self.assertEqual(self.trame_viewer.volume_interaction_section, v_container.return_value)
-        self.assertEqual(self.trame_viewer.layout.drawer.children,
-                         ["Choose model to load", self.trame_viewer.model_choice, v_divider.return_value, "Choose background color",
-                          self.trame_viewer.background_choice, v_divider.return_value, self.trame_viewer.slice_interaction_section,
-                          v_divider.return_value, self.trame_viewer.volume_interaction_section, v_divider.return_value,
-                          self.trame_viewer.reset_cam_button, v_divider.return_value, self.trame_viewer.reset_defaults_button])
+        self.assertEqual(self.trame_viewer.layout.drawer.children, [
+            "Choose model to load", self.trame_viewer.model_choice, v_divider.return_value, "Choose background color",
+            self.trame_viewer.background_choice, v_divider.return_value, self.trame_viewer.slice_interaction_section,
+            v_divider.return_value, self.trame_viewer.volume_interaction_section, v_divider.return_value,
+            self.trame_viewer.reset_cam_button, v_divider.return_value, self.trame_viewer.reset_defaults_button
+        ])
 
     def test_create_reset_defaults_button(self):
         reset_defaults_button = self.trame_viewer.create_reset_defaults_button()

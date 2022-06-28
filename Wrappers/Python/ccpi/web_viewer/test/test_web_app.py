@@ -23,6 +23,7 @@ from ccpi.web_viewer.web_app import arg_parser, reset_viewer2d, data_finder, set
 
 
 class WebAppTest(unittest.TestCase):
+
     def setUp(self):
         reset_viewer2d()
 
@@ -68,7 +69,8 @@ class WebAppTest(unittest.TestCase):
         sys.argv = ["python_file.py", "file/path/to/path"]
         arg_parser()
 
-        print_output.assert_called_once_with("This arg: file/path/to/path is not a valid file or directory. Assuming it is for trame.")
+        print_output.assert_called_once_with(
+            "This arg: file/path/to/path is not a valid file or directory. Assuming it is for trame.")
 
     @mock.patch("ccpi.web_viewer.web_app.os")
     @mock.patch("ccpi.web_viewer.web_app.print")

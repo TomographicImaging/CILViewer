@@ -27,6 +27,7 @@ from ccpi.web_viewer.trame_viewer2D import TrameViewer2D, state
 
 
 class TrameViewer2DTest(unittest.TestCase):
+
     @mock.patch("ccpi.web_viewer.trame_viewer2D.CILViewer2D")
     @mock.patch("ccpi.web_viewer.trame_viewer.vtk")
     @mock.patch("ccpi.web_viewer.trame_viewer.TrameViewer.update_slice_data")
@@ -96,20 +97,23 @@ class TrameViewer2DTest(unittest.TestCase):
         self.trame_viewer.construct_drawer_layout()
 
         v_col.assert_called_once_with([
-            self.trame_viewer.slice_slider, self.trame_viewer.orientation_radio_buttons, self.trame_viewer.auto_window_level_button,
-            self.trame_viewer.toggle_window_details_button, self.trame_viewer.slice_window_range_slider, self.trame_viewer.slice_window_slider,
-            self.trame_viewer.slice_level_slider, self.trame_viewer.tracing_switch, self.trame_viewer.interpolation_of_slice_switch
+            self.trame_viewer.slice_slider, self.trame_viewer.orientation_radio_buttons,
+            self.trame_viewer.auto_window_level_button, self.trame_viewer.toggle_window_details_button,
+            self.trame_viewer.slice_window_range_slider, self.trame_viewer.slice_window_slider,
+            self.trame_viewer.slice_level_slider, self.trame_viewer.tracing_switch,
+            self.trame_viewer.interpolation_of_slice_switch
         ])
         self.assertEqual(self.trame_viewer.slice_interaction_col, v_col.return_value)
         self.assertEqual(self.trame_viewer.slice_interaction_row, v_row.return_value)
         self.assertEqual(self.trame_viewer.slice_interaction_section, v_container.return_value)
-        self.assertEqual(self.trame_viewer.layout.drawer.children,
-                         ["Choose model to load", self.trame_viewer.model_choice, v_divider.return_value,
-                          "Choose background color", self.trame_viewer.background_choice, v_divider.return_value,
-                          self.trame_viewer.slice_interaction_section, v_divider.return_value,
-                          "Use Ctrl + Click on the slice, to show the ROI of the current slice, Click and drag to resize and reposition.\n"
-                          "Move the ROI by using the middle mouse button.", v_divider.return_value,
-                          self.trame_viewer.remove_roi_button, v_divider.return_value, self.trame_viewer.reset_defaults_button])
+        self.assertEqual(self.trame_viewer.layout.drawer.children, [
+            "Choose model to load", self.trame_viewer.model_choice, v_divider.return_value, "Choose background color",
+            self.trame_viewer.background_choice, v_divider.return_value, self.trame_viewer.slice_interaction_section,
+            v_divider.return_value,
+            "Use Ctrl + Click on the slice, to show the ROI of the current slice, Click and drag to resize and reposition.\n"
+            "Move the ROI by using the middle mouse button.", v_divider.return_value,
+            self.trame_viewer.remove_roi_button, v_divider.return_value, self.trame_viewer.reset_defaults_button
+        ])
 
     @mock.patch("ccpi.web_viewer.trame_viewer.TrameViewer.load_file")
     def test_load_file_calls_super_class(self, super_load_file):
@@ -174,7 +178,8 @@ class TrameViewer2DTest(unittest.TestCase):
         self.trame_viewer.construct_slice_level_slider.assert_not_called()
         self.trame_viewer.construct_slice_window_slider.assert_not_called()
 
-    def test_update_slice_windowing_defaults_does_not_update_slice_data_if_slide_window_present_but_slice_window_range_slider_is_false(self):
+    def test_update_slice_windowing_defaults_does_not_update_slice_data_if_slide_window_present_but_slice_window_range_slider_is_false(
+            self):
         self.trame_viewer.update_slice_data = mock.MagicMock()
         self.trame_viewer.slice_window_range_slider = mock.MagicMock()
         self.trame_viewer.construct_slice_window_range_slider = mock.MagicMock()
@@ -258,16 +263,20 @@ class TrameViewer2DTest(unittest.TestCase):
 
         self.trame_viewer.change_interpolation(True)
 
-        self.trame_viewer.cil_viewer.imageSlice.GetProperty.return_value.SetInterpolationTypeToNearest.assert_not_called()
-        self.trame_viewer.cil_viewer.imageSlice.GetProperty.return_value.SetInterpolationTypeToLinear.assert_called_once_with()
+        self.trame_viewer.cil_viewer.imageSlice.GetProperty.return_value.SetInterpolationTypeToNearest.assert_not_called(
+        )
+        self.trame_viewer.cil_viewer.imageSlice.GetProperty.return_value.SetInterpolationTypeToLinear.assert_called_once_with(
+        )
 
     def test_change_interpolation_sets_nearest_when_interpolation_false(self):
         self.trame_viewer.cil_viewer.imageSlice.GetProperty = mock.MagicMock()
 
         self.trame_viewer.change_interpolation(False)
 
-        self.trame_viewer.cil_viewer.imageSlice.GetProperty.return_value.SetInterpolationTypeToLinear.assert_not_called()
-        self.trame_viewer.cil_viewer.imageSlice.GetProperty.return_value.SetInterpolationTypeToNearest.assert_called_once_with()
+        self.trame_viewer.cil_viewer.imageSlice.GetProperty.return_value.SetInterpolationTypeToLinear.assert_not_called(
+        )
+        self.trame_viewer.cil_viewer.imageSlice.GetProperty.return_value.SetInterpolationTypeToNearest.assert_called_once_with(
+        )
 
     def test_auto_window_level_calculates_window_level_correctly(self):
         self.trame_viewer.cil_viewer.ia.GetAutoRange.return_value = [0, 3700]
@@ -281,9 +290,9 @@ class TrameViewer2DTest(unittest.TestCase):
     @mock.patch("ccpi.web_viewer.trame_viewer.TrameViewer.change_window_level_detail_sliders")
     def test_change_window_level_detail_sliders_calls_super_with_what_is_passed(self, super_method):
         show_detailed_passed = mock.MagicMock()
-        
+
         self.trame_viewer.change_window_level_detail_sliders(show_detailed_passed)
-        
+
         super_method.assert_called_once_with(show_detailed_passed)
 
     def test_change_window_level_detail_sliders_constructs_slice_window_level_and_updates_the_drawer(self):
@@ -291,12 +300,15 @@ class TrameViewer2DTest(unittest.TestCase):
         self.trame_viewer.construct_slice_window_slider = mock.MagicMock()
         self.trame_viewer.construct_slice_level_slider = mock.MagicMock()
         self.trame_viewer.construct_drawer_layout = mock.MagicMock()
-        
+
         self.trame_viewer.change_window_level_detail_sliders(False)
-        
-        self.assertEqual(self.trame_viewer.slice_window_range_slider,  self.trame_viewer.construct_slice_window_range_slider.return_value)
-        self.assertEqual(self.trame_viewer.slice_window_slider, self.trame_viewer.construct_slice_window_slider.return_value)
-        self.assertEqual(self.trame_viewer.slice_level_slider, self.trame_viewer.construct_slice_level_slider.return_value)
+
+        self.assertEqual(self.trame_viewer.slice_window_range_slider,
+                         self.trame_viewer.construct_slice_window_range_slider.return_value)
+        self.assertEqual(self.trame_viewer.slice_window_slider,
+                         self.trame_viewer.construct_slice_window_slider.return_value)
+        self.assertEqual(self.trame_viewer.slice_level_slider,
+                         self.trame_viewer.construct_slice_level_slider.return_value)
         self.trame_viewer.construct_drawer_layout.assert_called_once_with()
 
     def test_remove_roi_calls_RemoveROIWidget(self):
