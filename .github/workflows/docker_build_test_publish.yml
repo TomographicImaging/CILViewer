@@ -1,0 +1,27 @@
+name: Docker build test publish
+
+on:
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install docker and pre-reqs
+        shell: bash -l {0}
+        run: |
+          apt-get install docker
+
+      - name: Build docker container
+        shell: bash -l {0}
+        run: |
+          docker build -t cil-viewer docker/web-app
+
+      - name: Run docker container with tests
+        shell: bash -l {0}
+        run: |
+          docker run -dp 8080:8080 python -m unittest discover
+    # TODO: publish to come later
