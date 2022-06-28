@@ -357,9 +357,7 @@ class TrameViewer:
         self.html_view.update()
 
     def change_slice_window_as_percentage(self, new_window_as_percentage: float):
-        print("incoming level to convert: ", new_window_as_percentage)
         window = self.convert_percentage_to_value(new_window_as_percentage)
-        print("window as val: ", window)
         self.change_slice_window(window)
 
     def change_slice_level(self, new_level: float):
@@ -368,9 +366,7 @@ class TrameViewer:
         self.html_view.update()
 
     def change_slice_level_as_percentage(self, new_level_as_percentage: float):  
-        print("incoming level to convert: ", new_level_as_percentage)
         level = self.convert_percentage_to_value(new_level_as_percentage)
-        print("level as val: ", level)
         self.change_slice_level(level)
 
     def auto_window_level(self):

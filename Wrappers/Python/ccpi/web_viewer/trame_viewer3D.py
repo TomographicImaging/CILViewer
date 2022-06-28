@@ -64,11 +64,6 @@ class TrameViewer3D(TrameViewer):
         self.volume_interaction_col = None
         self.volume_interaction_row = None
         self.volume_interaction_section = None
-        self.windowing_slider_is_percentage = False  # Defaults to not percentage with the head.mha file
-        self.color_slider_is_percentage = False  # Defaults to not percentage with the head.mha file
-        self.slice_level_slider_is_percentage = False  # Defaults to not percentage with the head.mha file
-        self.slice_window_slider_is_percentage = False  # Defaults to not percentage with the head.mha file
-        self.slice_window_sliders_are_detailed = False  # Defaults to none-detailed sliders
         self.disable_2d = False
         self.disable_3d = False
 
@@ -245,13 +240,13 @@ class TrameViewer3D(TrameViewer):
             min_value = self.cmin
             max_value = self.cmax
             step = 1
-            self.color_slider_is_percentage = False
+            self.window_level_sliders_are_percentages = False
         else:
             # Use percentages
             min_value = 0
             max_value = 100
             step = 0.5
-            self.color_slider_is_percentage = True
+            self.window_level_sliders_are_percentages = True
 
         return vuetify.VRangeSlider(label="Color range",
                                     hide_details=True,
@@ -270,13 +265,13 @@ class TrameViewer3D(TrameViewer):
             min_value = self.cmin
             max_value = self.cmax
             step = 1
-            self.windowing_slider_is_percentage = False
+            self.window_level_sliders_are_percentages = False
         else:
             # Use percentages
             min_value = 0
             max_value = 100
             step = 0.5
-            self.windowing_slider_is_percentage = True
+            self.window_level_sliders_are_percentages = True
 
         return vuetify.VRangeSlider(label="Windowing",
                                     hide_details=True,
@@ -303,7 +298,11 @@ class TrameViewer3D(TrameViewer):
             self.slice_window_slider = self.construct_slice_window_slider(self.disable_2d)
             self.construct_drawer_layout()
             self.layout.flush_content()
-        state["windowing"] = self.windowing_defaults
+
+        if hasattr(self, 'window_level_sliders_are_percentages') and self.window_level_sliders_are_percentages:
+            state["windowing"] = (80., 99.)
+        else:
+            state["windowing"] = self.windowing_defaults
         state["coloring"] = self.windowing_defaults
 
     def load_file(self, file_name, windowing_method="scalar"):
@@ -341,7 +340,7 @@ class TrameViewer3D(TrameViewer):
         self.html_view.update()
 
     def change_windowing(self, min_value, max_value, windowing_method="scalar"):
-        if self.windowing_slider_is_percentage:
+        if self.window_level_sliders_are_percentages:
             if windowing_method == "scalar":
                 self.cil_viewer.setScalarOpacityPercentiles(min_value, max_value)
             else:
@@ -371,14 +370,27 @@ class TrameViewer3D(TrameViewer):
         state["orientation"] = f"{SLICE_ORIENTATION_XY}"
         state["opacity"] = "scalar"
         state["color_map"] = "viridis"
-        state["windowing"] = self.windowing_defaults
+        # resets to window-level for slice based on 5th, 95th percentiles over volume:
+        min, max = self.cil_viewer.getImageMapRange((5., 95.), "scalar")
+        window, level = self.cil_viewer.getSliceWindowLevelFromRange(min, max)
+        if hasattr(self, 'window_level_sliders_are_percentages') and self.window_level_sliders_are_percentages:
+            state["windowing"] = (80., 99.)
+            # window level of slice:
+            state["slice_window_percentiles"] = (5., 95.)
+            state["slice_window_as_percentage"] = self.convert_value_to_percentage(window)
+            state["slice_level_as_percentage"] = self.convert_value_to_percentage(level)
+        else:
+            state["windowing"] = self.windowing_defaults
+            # window level of slice:
+            state["slice_window_range"] = (min, max)
+            state["slice_window"] = window
+            state["slice_level"] = level
+
         state["coloring"] = self.windowing_defaults
         state["slice_visibility"] = True
         state["volume_visibility"] = True
         state["slice_detailed_sliders"] = False
-        state["slice_window_range"] = self.cil_viewer.getImageMapRange((5., 95.), "scalar")
-        state["slice_window"] = self.cil_viewer.style.GetInitialWindow()
-        state["slice_level"] = self.cil_viewer.style.GetInitialLevel()
+
         state["background_color"] = "cil_viewer_blue"
         state["toggle_clipping"] = False
         state["show_slice_histogram"] = False
@@ -396,7 +408,7 @@ class TrameViewer3D(TrameViewer):
             self.remove_clipping_plane()
 
     def change_coloring(self, min_value, max_value):
-        if self.color_slider_is_percentage:
+        if self.window_level_sliders_are_percentages:
             self.cil_viewer.setVolumeColorPercentiles(min_value, max_value)
         else:
             self.cil_viewer.setVolumeColorRange(min_value, max_value)
