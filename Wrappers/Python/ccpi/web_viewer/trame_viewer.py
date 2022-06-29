@@ -193,7 +193,7 @@ class TrameViewer:
             min_value = 0
             max_value = 100
             step = 0.5
-            v_model=("slice_window_as_percentage",  self.slice_window_default)
+            v_model = ("slice_window_as_percentage", self.slice_window_default)
 
         if self.slice_window_sliders_are_detailed:
             style = "max-width: 300px"
@@ -253,7 +253,7 @@ class TrameViewer:
             min_value = 0
             max_value = 100
             step = 0.5
-            v_model=("slice_window_percentiles", self.slice_window_range_defaults)
+            v_model = ("slice_window_percentiles", self.slice_window_range_defaults)
 
         if not self.slice_window_sliders_are_detailed:
             style = "max-width: 300px"
@@ -338,7 +338,10 @@ class TrameViewer:
             self.slice_level_default = current_level
             self.slice_window_default = current_window
         else:
-            self.slice_window_range_defaults = [self.convert_value_to_percentage(range_min), self.convert_value_to_percentage(range_max)]
+            self.slice_window_range_defaults = [
+                self.convert_value_to_percentage(range_min),
+                self.convert_value_to_percentage(range_max)
+            ]
             self.slice_level_default = self.convert_value_to_percentage(current_level)
             self.slice_window_default = self.convert_value_to_percentage(current_window)
 

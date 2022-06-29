@@ -246,7 +246,7 @@ class TrameViewer3D(TrameViewer):
             min_value = 0
             max_value = 100
             step = 0.5
-        
+
         v_model = ("coloring", self.coloring_defaults)
 
         return vuetify.VRangeSlider(label="Color range",
@@ -271,7 +271,7 @@ class TrameViewer3D(TrameViewer):
             min_value = 0
             max_value = 100
             step = 0.5
-        
+
         v_model = ("windowing", self.windowing_defaults)
 
         return vuetify.VRangeSlider(label="Windowing",

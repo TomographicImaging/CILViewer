@@ -717,7 +717,6 @@ class CILViewer(CILViewerBase):
                 self.volume.Modified()
         # if the method is not supported it does nothing???
 
-
     def setMaximumOpacity(self, max, update_pipeline=True):
         '''
         Parameters
