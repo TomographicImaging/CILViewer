@@ -33,5 +33,5 @@ jobs:
       - name: Run docker container with tests
         shell: bash -l {0}
         run: |
-          docker run -dp 8080:8080 cil-viewer python -m unittest discover
+          docker run -it cil-viewer conda activate trame2 && python3 -m unittest discover ./Wrappers/Python
     # TODO: publish to come later
