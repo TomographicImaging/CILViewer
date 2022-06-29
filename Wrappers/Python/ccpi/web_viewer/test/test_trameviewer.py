@@ -340,14 +340,74 @@ class TrameViewerTest(unittest.TestCase):
         self.assertEqual(self.trame_viewer.slice_window_default, 100)
         self.assertEqual(self.trame_viewer.slice_window_sliders_are_detailed, value_of_show_detailed)
 
-    def test_change_slice_window_range_raises_error(self):
-        pass
+    def test_change_slice_window_range_percentage(self):
+        self.trame_viewer.slice_window_slider_is_percentage = True
+        self.cil_viewer.setSliceColorPercentiles = mock.MagicMock()
+        self.cil_viewer.setSliceColorWindowLevel = mock.MagicMock()
+        window, level = [100, 200]
+        expected_min_percentage = 150.
+        expected_max_percentage = 250.
 
-    def test_change_slice_window_raises_error(self):
-        pass
+        self.trame_viewer.change_slice_window_range(window, level)
 
-    def test_change_slice_level_raises_error(self):
-        pass
+        self.cil_viewer.setSliceColorWindowLevel.assert_not_called()
+        self.cil_viewer.setSliceColorPercentiles.assert_called_once_with(expected_min_percentage, expected_max_percentage)
+
+    def test_change_slice_window_range_not_percentage(self):
+        self.cil_viewer.setSliceColorPercentiles = mock.MagicMock()
+        self.cil_viewer.setSliceColorWindowLevel = mock.MagicMock()
+        window, level = [100, 200]
+
+        self.trame_viewer.change_slice_window_range(window, level)
+
+        self.cil_viewer.setSliceColorPercentiles.assert_not_called()
+        self.cil_viewer.setSliceColorWindowLevel.assert_called_once_with(window, level)
+
+    def test_change_slice_window_percentage(self):
+        self.trame_viewer.slice_window_slider_is_percentage = True
+        self.cil_viewer.setSliceColorPercentiles = mock.MagicMock()
+        self.cil_viewer.setSliceColorWindow = mock.MagicMock()
+        window, level = [100, 200]
+        expected_min_percentage = 100
+        expected_max_percentage = 100
+
+        self.trame_viewer.change_slice_window(window)
+
+        self.cil_viewer.setSliceColorWindow.assert_not_called()
+        self.cil_viewer.setSliceColorPercentiles.assert_called_once_with(expected_min_percentage, expected_max_percentage)
+
+    def test_change_slice_window_not_percentage(self):
+        self.cil_viewer.setSliceColorPercentiles = mock.MagicMock()
+        self.cil_viewer.setSliceColorWindow = mock.MagicMock()
+        window, level = [100, 200]
+
+        self.trame_viewer.change_slice_window(window, level)
+
+        self.cil_viewer.setSliceColorPercentiles.assert_not_called()
+        self.cil_viewer.setSliceColorWindow.assert_called_once_with(window=window)
+
+    def test_change_slice_level_percentage(self):
+        self.trame_viewer.slice_window_slider_is_percentage = True
+        self.cil_viewer.setSliceColorPercentiles = mock.MagicMock()
+        self.cil_viewer.setSliceColorLevel = mock.MagicMock()
+        window, level = [100, 200]
+        expected_min_percentage = 100
+        expected_max_percentage = 100
+
+        self.trame_viewer.change_slice_window(window)
+
+        self.cil_viewer.setSliceColorLevel.assert_not_called()
+        self.cil_viewer.setSliceColorPercentiles.assert_called_once_with(expected_min_percentage, expected_max_percentage)
+
+    def test_change_slice_level_not_percentage(self):
+        self.cil_viewer.setSliceColorPercentiles = mock.MagicMock()
+        self.cil_viewer.setSliceColorLevel = mock.MagicMock()
+        window, level = [100, 200]
+
+        self.trame_viewer.change_slice_level(level)
+
+        self.cil_viewer.setSliceColorPercentiles.assert_not_called()
+        self.cil_viewer.setSliceColorLevel.assert_called_once_with(level=level)
 
     def test_change_slice_number_raises_error(self):
         with self.assertRaises(NotImplementedError) as cm:
