@@ -1088,7 +1088,7 @@ class CILViewer2D(CILViewerBase):
     RECTILINEAR_WIPE = 1
 
     def __init__(self, dimx=600, dimy=600, ren=None, renWin=None, iren=None, debug=True):
-        CILViewerBase.__init__(self, dimx=600, dimy=600, ren=None, renWin=None, iren=None, debug=True)
+        CILViewerBase.__init__(self, dimx=dimx, dimy=dimy, ren=ren, renWin=renWin, iren=iren, debug=debug)
 
         self.setInteractorStyle(CILInteractorStyle(self))
 
