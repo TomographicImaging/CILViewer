@@ -57,10 +57,6 @@ class Linked2DInteractorStyle(CIL2DInteractorStyle):
     def LinkedEventOff(self):
         self.LinkedEvent = 0
 
-    # layman solution for missing method
-    # TODO fix correctly
-    def getSliceOrientation(self):
-        return self.GetSliceOrientation()
 
 
 class ViewerLinker():
