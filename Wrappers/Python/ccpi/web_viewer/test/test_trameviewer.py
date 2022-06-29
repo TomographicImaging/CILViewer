@@ -351,7 +351,8 @@ class TrameViewerTest(unittest.TestCase):
         self.trame_viewer.change_slice_window_range(window, level)
 
         self.cil_viewer.setSliceColorWindowLevel.assert_not_called()
-        self.cil_viewer.setSliceColorPercentiles.assert_called_once_with(expected_min_percentage, expected_max_percentage)
+        self.cil_viewer.setSliceColorPercentiles.assert_called_once_with(expected_min_percentage,
+                                                                         expected_max_percentage)
 
     def test_change_slice_window_range_not_percentage(self):
         self.cil_viewer.setSliceColorPercentiles = mock.MagicMock()
@@ -374,7 +375,8 @@ class TrameViewerTest(unittest.TestCase):
         self.trame_viewer.change_slice_window(window)
 
         self.cil_viewer.setSliceColorWindow.assert_not_called()
-        self.cil_viewer.setSliceColorPercentiles.assert_called_once_with(expected_min_percentage, expected_max_percentage)
+        self.cil_viewer.setSliceColorPercentiles.assert_called_once_with(expected_min_percentage,
+                                                                         expected_max_percentage)
 
     def test_change_slice_window_not_percentage(self):
         self.cil_viewer.setSliceColorPercentiles = mock.MagicMock()
@@ -397,7 +399,8 @@ class TrameViewerTest(unittest.TestCase):
         self.trame_viewer.change_slice_window(window)
 
         self.cil_viewer.setSliceColorLevel.assert_not_called()
-        self.cil_viewer.setSliceColorPercentiles.assert_called_once_with(expected_min_percentage, expected_max_percentage)
+        self.cil_viewer.setSliceColorPercentiles.assert_called_once_with(expected_min_percentage,
+                                                                         expected_max_percentage)
 
     def test_change_slice_level_not_percentage(self):
         self.cil_viewer.setSliceColorPercentiles = mock.MagicMock()
