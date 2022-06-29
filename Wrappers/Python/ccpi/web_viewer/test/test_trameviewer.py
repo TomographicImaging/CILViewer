@@ -396,7 +396,7 @@ class TrameViewerTest(unittest.TestCase):
         expected_min_percentage = 100
         expected_max_percentage = 100
 
-        self.trame_viewer.change_slice_window(window)
+        self.trame_viewer.change_slice_level(window)
 
         self.cil_viewer.setSliceColorLevel.assert_not_called()
         self.cil_viewer.setSliceColorPercentiles.assert_called_once_with(expected_min_percentage,
