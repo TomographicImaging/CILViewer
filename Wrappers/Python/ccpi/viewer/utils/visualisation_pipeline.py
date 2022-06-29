@@ -172,29 +172,19 @@ class cilPlaneClipper(object):
                     interactor = self.Interactor
                     interactor.UpdatePipeline()
 
-                # print("Update Clipping Planes", self.DataListToClip)
-                # print("Clipping Event: ", event)
-
-                # print("Orientation", interactor.GetSliceOrientation())
-                # print("Interactor", interactor)
-
                 normal = [0, 0, 0]
                 origin = [0, 0, 0]
                 norm = 1
 
-                orientation = interactor.getSliceOrientation()
+                orientation = interactor.GetSliceOrientation()
 
                 spac = interactor.GetInputData().GetSpacing()
                 orig = interactor.GetInputData().GetOrigin()
                 slice_thickness = spac[orientation]
 
-                #print("Current active slice in image coords:", interactor.GetActiveSlice())
-
                 current_slice = [0, 0, 0]
                 current_slice[orientation] = interactor.getActiveSlice()
                 current_slice = interactor.image2world(current_slice)
-
-                #print("Current active slice in world coords: ", current_slice)
 
                 beta_up = 0.5 - 1e-9
                 beta_down = 0.5
@@ -216,7 +206,6 @@ class cilPlaneClipper(object):
                 origin_below = slice_below
 
                 for data_to_clip in self.DataListToClip.values():
-                    #print("On data: ", list(self.DataListToClip.keys())[list(self.DataListToClip.values()).index(data_to_clip)])
                     data_to_clip.SetPlaneOriginAbove(origin_above)
                     data_to_clip.SetPlaneNormalAbove(normal)
                     data_to_clip.SetPlaneOriginBelow(origin_below)

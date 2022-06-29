@@ -1244,17 +1244,6 @@ class CILViewer2D(CILViewerBase):
         self.imageTracer.AutoCloseOn()
         self.imageTracer.AddObserver(vtk.vtkWidgetEvent.Select, self.style.OnTracerModifiedEvent, 1.0)
 
-        # axis orientation widget
-        om = vtk.vtkAxesActor()
-        ori = vtk.vtkOrientationMarkerWidget()
-        ori.SetOutlineColor(0.9300, 0.5700, 0.1300)
-        ori.SetInteractor(self.iren)
-        ori.SetOrientationMarker(om)
-        ori.SetViewport(0.0, 0.0, 0.4, 0.4)
-        ori.SetEnabled(1)
-        ori.InteractiveOff()
-        self.orientation_marker = ori
-
         self.__vis_mode = CILViewer2D.IMAGE_WITH_OVERLAY
         self.setVisualisationToImageWithOverlay()
 
