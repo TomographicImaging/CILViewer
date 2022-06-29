@@ -123,7 +123,7 @@ def change_color_map(**kwargs):
 
 @state.change("windowing")
 def change_windowing(**kwargs):
-    TRAME_VIEWER.change_windowing(kwargs["windowing"][0], kwargs["windowing"][1], windowing_method=kwargs['opacity'])
+    TRAME_VIEWER.change_windowing(kwargs["windowing"][0], kwargs["windowing"][1], windowing_method=kwargs["opacity"])
 
 
 @state.change("coloring")

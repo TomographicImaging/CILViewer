@@ -458,23 +458,9 @@ class CILViewer(CILViewerBase):
         # Help text
         self.ren.AddActor(self.helpActor)
 
-        # volume render
-        volumeMapper = vtk.vtkSmartVolumeMapper()
-        #volumeMapper = vtk.vtkFixedPointVolumeRayCastMapper()
-        self.volume_mapper = volumeMapper
-
-        volumeProperty = vtk.vtkVolumeProperty()
-        self.volume_property = volumeProperty
-
         # These may be optionally set by the user:
         self.volume_colormap_limits = None
 
-        # The volume holds the mapper and the property and
-        # can be used to position/orient the volume.
-        volume = vtk.vtkVolume()
-        volume.SetMapper(volumeMapper)
-        volume.SetProperty(volumeProperty)
-        self.volume = volume
         self.volume_colormap_name = 'viridis'
         self.volume_render_initialised = False
         self.clipping_plane_initialised = False
@@ -648,7 +634,21 @@ class CILViewer(CILViewerBase):
             self.ren.SetActiveCamera(self.default_camera)
 
     def installVolumeRenderActorPipeline(self):
+        # volume render
+        volumeMapper = vtk.vtkSmartVolumeMapper()
+        #volumeMapper = vtk.vtkFixedPointVolumeRayCastMapper()
+        self.volume_mapper = volumeMapper
+        volumeProperty = vtk.vtkVolumeProperty()
+
+        self.volume_property = volumeProperty
         self.volume_mapper.SetInputData(self.img3D)
+
+        # The volume holds the mapper and the property and
+        # can be used to position/orient the volume.
+        volume = vtk.vtkVolume()
+        volume.SetMapper(volumeMapper)
+        volume.SetProperty(volumeProperty)
+        self.volume = volume
 
         # set defaults for opacity and colour mapping:
         color_percentiles = (5., 95.)
@@ -685,15 +685,16 @@ class CILViewer(CILViewerBase):
         self.addHeadlight()
 
     def addHeadlight(self):
-        lgt = vtk.vtkLight()
-        lgt.SetLightTypeToHeadlight()
-        lgt.SwitchOff()
-        self.getRenderer().AddLight(lgt)
-        self.light = lgt
+        if not hasattr(self, 'light'):
+            lgt = vtk.vtkLight()
+            lgt.SetLightTypeToHeadlight()
+            lgt.SwitchOff()
+            self.getRenderer().AddLight(lgt)
+            self.light = lgt
 
     def getVolumeRenderOpacityMethod(self):
         if not hasattr(self, '_vol_render_opacity_method'):
-            self.setVolumeRenderOpacityMethod('gradient')
+            self._vol_render_opacity_method = "gradient"
         return self._vol_render_opacity_method
 
     def setVolumeRenderOpacityMethod(self, method='gradient'):
@@ -705,19 +706,17 @@ class CILViewer(CILViewerBase):
         '''
         if method in ['scalar', 'gradient']:
             self._vol_render_opacity_method = method
-            self.updateVolumePipeline()
+            # self.updateVolumePipeline()
+            #This is a hack #TODO: fix update pipeline in case where we change opacity method
+            self.ren.RemoveVolume(self.volume)
+            self.volume_render_initialised = False
+            self.style.ToggleVolumeVisibility()
+            # add clipping plane to new volume
+            if hasattr(self, 'planew'):
+                self.volume.GetMapper().AddClippingPlane(self.planew)
+                self.volume.Modified()
         # if the method is not supported it does nothing???
 
-    def getVolumeRenderOpacityMethod(self):
-        '''
-        Returns
-        ----------
-        method: string: 'scalar' or 'gradient'
-            method for setting opacity of the volume render            
-        '''
-        if not hasattr(self, '_vol_render_opacity_method'):
-            self.setVolumeRenderOpacityMethod('gradient')
-        return self._vol_render_opacity_method
 
     def setMaximumOpacity(self, max, update_pipeline=True):
         '''
@@ -975,7 +974,6 @@ class CILViewer(CILViewerBase):
             colors, opacity = self.getColorOpacityForVolumeRender()
 
             self.volume_property.SetColor(colors)
-            self.volume_property.SetScalarOpacity(opacity)
 
             # Update whether we use our calculated opacity as the scalar or gradient opacity
             if self.getVolumeRenderOpacityMethod() == 'gradient':
@@ -1015,11 +1013,12 @@ class CILViewer(CILViewerBase):
         self.histogramPlotActor.SetYRange(self.sliceIA.GetOutput().GetScalarRange())
 
     def remove_clipping_plane(self):
-        self.volume.GetMapper().RemoveAllClippingPlanes()
+        if self.volume_render_initialised and self.clipping_plane_initialised:
+            self.volume.GetMapper().RemoveAllClippingPlanes()
 
-        # Now remove planew from the cil_viewer
-        del self.planew
-        self.clipping_plane_initialised = False
+            # Now remove planew from the cil_viewer
+            del self.planew
+            self.clipping_plane_initialised = False
 
-        self.getRenderer().Render()
-        self.updatePipeline()
+            self.getRenderer().Render()
+            self.updatePipeline()

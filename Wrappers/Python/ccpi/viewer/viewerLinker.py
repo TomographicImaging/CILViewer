@@ -272,7 +272,7 @@ class ViewerLinkObserver():
                     pick_position = sourceInteractorStyle.last_picked_voxel
                     targetInteractorStyle.last_picked_voxel = pick_position[:]
                     sliceno = pick_position[self.targetViewer.sliceOrientation]
-                    targetInteractorStyle.setActiveSlice(sliceno)
+                    targetInteractorStyle.SetActiveSlice(sliceno)
                     targetInteractorStyle.UpdatePipeline(True)
                     # the event has not been generated in the targetInteractor so it
                     # should not passed on to any linked interactors
