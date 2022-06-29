@@ -33,5 +33,5 @@ jobs:
       - name: Run docker container with tests
         shell: bash -l {0}
         run: |
-          docker run -dp 8080:8080 python -m unittest discover
+          docker run -dp 8080:8080 cil-viewer python -m unittest discover
     # TODO: publish to come later
