@@ -42,7 +42,8 @@ class TrameViewer3DTest(unittest.TestCase):
         self.cil_viewer = cil_viewer
         self.map_range = [0, 3790]
         self.cil_viewer.getImageMapRange.return_value = self.map_range
-        self.cil_viewer.img3D.GetExtent().__getitem__ = mock.MagicMock(return_value=0)  # Fix issues with errors in the console
+        self.cil_viewer.img3D.GetExtent().__getitem__ = mock.MagicMock(
+            return_value=0)  # Fix issues with errors in the console
         self.cil_viewer.getSliceMapRange.return_value = self.map_range
 
         self.trame_viewer = TrameViewer3D(self.file_list)
