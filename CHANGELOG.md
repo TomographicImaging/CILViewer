@@ -1,8 +1,13 @@
 # Changelog
 
 ## v22.x.x
+- Qt examples use example_data 
+- Updates in all classes to take into account the backward incompatible methods name changes (see below)
+- cilPlaneClipper: 
+  - change signature of creator, and defaults to empty list of items to be clipped on init
+  - renamed Get/SetInteractor->Get/SetInteractorStyle
 - Renamed all classes bearing name baseReader to ReaderInterface as they provide the interface not a abstract reader class.
-- Added TIFF resample and cropped readers
+- Added TIFF resample and cropped readers with unit tests
 - web_viewer:
   - added web viewer using trame for viewer3D and viewer2D
   - add entry point for running the web viewers

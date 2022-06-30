@@ -8,6 +8,7 @@ from ccpi.viewer import viewer2D, viewer3D
 from ccpi.viewer.QCILViewerWidget import QCILViewerWidget, QCILDockableWidget
 # Import linking class to join 2D and 3D viewers
 import ccpi.viewer.viewerLinker as vlink
+from ccpi.viewer.utils import example_data
 
 
 class FourLinkedViewersDockableWidget(QtWidgets.QMainWindow):
@@ -42,13 +43,11 @@ class FourLinkedViewersDockableWidget(QtWidgets.QMainWindow):
 
         self.viewerLinkers = viewerLinkers
 
-        if reader is None:
-            reader = vtk.vtkMetaImageReader()
-            reader.SetFileName('head.mha')
-        reader.Update()
+        head = example_data.HEAD.get()
+
 
         for el in [self.v00, self.v01, self.v10, self.v11]:
-            el.viewer.setInputData(reader.GetOutput())
+            el.viewer.setInputData(head)
         # set slice orientation
         self.v00.viewer.setSliceOrientation('x')
         self.v01.viewer.setSliceOrientation('y')
