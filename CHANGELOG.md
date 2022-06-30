@@ -24,12 +24,14 @@
     - getColourWindow -> getSliceColorWindow, 
     - setColourWindowLevel -> setSliceColorWindowLevel
   - fix definition of window range to be = max - min
+  - use CILViewerBase as base class
 - CILViewer3D:
   - added methods in interactor style to enable interaction with web app, rather than just key event binding
   - add volume render opacity scalar and gradient
   - add slice histogram
   - fix method to change window and level for slice actor, by range or percentiles
   - fix definition of window range to be = max - min
+  - use CILViewerBase as base class
 - colormaps: added get_color_transfer_function
 - added examples of running the 2D and 3D viewers without Qt
 - Added CILViewer base class
