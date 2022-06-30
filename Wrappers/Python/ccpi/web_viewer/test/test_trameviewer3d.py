@@ -32,7 +32,7 @@ class TrameViewer3DTest(unittest.TestCase):
 
     @mock.patch("ccpi.web_viewer.trame_viewer3D.CILViewer")
     @mock.patch("ccpi.web_viewer.trame_viewer.vtk")
-    @mock.patch("ccpi.web_viewer.trame_viewer.TrameViewer.update_slice_data")
+    @mock.patch("ccpi.web_viewer.trame_viewer3D.TrameViewer3D.update_slice_data")
     def setUp(self, _, vtk_module, cil_viewer):
         # Get the head data
         self.head_path = os.path.join(sys.prefix, 'share', 'cil', 'head.mha')
@@ -42,6 +42,7 @@ class TrameViewer3DTest(unittest.TestCase):
         self.cil_viewer = cil_viewer
         self.map_range = [0, 3790]
         self.cil_viewer.getImageMapRange.return_value = self.map_range
+        self.cil_viewer.img3D.GetExtent().__getitem__ = mock.MagicMock(return_value=0)  # Fix issues with errors in the console
         self.cil_viewer.getSliceMapRange.return_value = self.map_range
 
         self.trame_viewer = TrameViewer3D(self.file_list)
