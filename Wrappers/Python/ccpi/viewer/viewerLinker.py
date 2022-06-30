@@ -58,7 +58,6 @@ class Linked2DInteractorStyle(CIL2DInteractorStyle):
         self.LinkedEvent = 0
 
 
-
 class ViewerLinker():
     """
     This class sets up a link between two viewers. It offers methods

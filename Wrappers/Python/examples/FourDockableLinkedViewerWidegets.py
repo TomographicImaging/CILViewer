@@ -45,7 +45,6 @@ class FourLinkedViewersDockableWidget(QtWidgets.QMainWindow):
 
         head = example_data.HEAD.get()
 
-
         for el in [self.v00, self.v01, self.v10, self.v11]:
             el.viewer.setInputData(head)
         # set slice orientation

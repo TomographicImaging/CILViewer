@@ -9,6 +9,7 @@ from ccpi.viewer.QCILViewerWidget import QCILViewerWidget
 import ccpi.viewer.viewerLinker as vlink
 from ccpi.viewer.utils import example_data
 
+
 class TwoLinkedViewersCenterWidget(QtWidgets.QMainWindow):
 
     def __init__(self, parent=None):

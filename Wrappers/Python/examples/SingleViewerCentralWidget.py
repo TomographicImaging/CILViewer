@@ -5,6 +5,7 @@ from ccpi.viewer import viewer2D, viewer3D
 from ccpi.viewer.QCILViewerWidget import QCILViewerWidget
 from ccpi.viewer.utils import example_data
 
+
 class SingleViewerCenterWidget(QtWidgets.QMainWindow):
 
     def __init__(self, parent=None, viewer=viewer2D):
@@ -15,7 +16,7 @@ class SingleViewerCenterWidget(QtWidgets.QMainWindow):
         head = example_data.HEAD.get()
 
         self.frame.viewer.setInputData(head)
-        
+
         self.setCentralWidget(self.frame)
 
         self.show()

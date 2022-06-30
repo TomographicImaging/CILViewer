@@ -4,7 +4,7 @@ from PySide2 import QtCore, QtWidgets
 from ccpi.viewer import viewer2D, viewer3D
 from ccpi.viewer.QCILViewerWidget import QCILViewerWidget
 import os
-from ccpi.viewer.utils import example_data 
+from ccpi.viewer.utils import example_data
 
 
 class SingleViewerCenterWidget(QtWidgets.QMainWindow):
