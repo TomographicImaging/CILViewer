@@ -708,12 +708,14 @@ class CILViewer(CILViewerBase):
             self._vol_render_opacity_method = method
             # self.updateVolumePipeline()
             #This is a hack #TODO: fix update pipeline in case where we change opacity method
+            planes = self.volume.GetMapper().GetClippingPlanes()
             self.ren.RemoveVolume(self.volume)
             self.volume_render_initialised = False
             self.style.ToggleVolumeVisibility()
-            # add clipping plane to new volume
-            if hasattr(self, 'planew'):
-                self.volume.GetMapper().AddClippingPlane(self.planew)
+            # add existing clipping plane to new volume
+            if planes is not None:
+                plane = planes.GetItem(0)
+                self.volume.GetMapper().AddClippingPlane(plane)
                 self.volume.Modified()
         # if the method is not supported it does nothing???
 
@@ -1017,6 +1019,7 @@ class CILViewer(CILViewerBase):
 
             # Now remove planew from the cil_viewer
             del self.planew
+            del self.plane
             self.clipping_plane_initialised = False
 
             self.getRenderer().Render()
