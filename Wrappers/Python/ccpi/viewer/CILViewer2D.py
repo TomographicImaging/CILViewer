@@ -368,7 +368,6 @@ class CILInteractorStyle(vtk.vtkInteractorStyle):
         if self.GetViewerEvent("SHOW_LINE_PROFILE_EVENT"):
             self.DisplayLineProfile(interactor, event, True)
 
-
     def AutoWindowLevelOnVolumeRange(self, update_slice=True):
         '''Auto-adjusts window-level for the slice, based on the 5 and 95th percentiles of the whole image volume.'''
         cmin, cmax = self._viewer.getImageMapRange((5., 95.), method="scalar")
@@ -1057,7 +1056,6 @@ class CILInteractorStyle(vtk.vtkInteractorStyle):
         self._viewer.imageSlice.GetProperty().SetColorWindow(newWindow)
         self.log("new level {0} window {1}".format(newLevel, newWindow))
         self.UpdateImageSlice()
-
 
     def HandlePickEvent(self, interactor, event):
         position = interactor.GetEventPosition()
