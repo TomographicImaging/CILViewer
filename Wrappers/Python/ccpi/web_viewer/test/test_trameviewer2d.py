@@ -20,7 +20,6 @@ import sys
 import unittest
 import random
 from unittest import mock
-from unittest.mock import call
 
 from ccpi.viewer.CILViewerBase import SLICE_ORIENTATION_XY
 from ccpi.web_viewer.trame_viewer2D import TrameViewer2D, state
@@ -94,8 +93,8 @@ class TrameViewer2DTest(unittest.TestCase):
         self.trame_viewer.create_interpolation_of_slice_switch = mock.MagicMock()
         self.trame_viewer.create_remove_roi_button = mock.MagicMock()
         self.trame_viewer.create_reset_defaults_button = mock.MagicMock()
-
         self.trame_viewer.create_drawer_ui_elements()
+
         self.trame_viewer.construct_drawer_layout()
 
         v_col.assert_called_once_with([
@@ -125,7 +124,8 @@ class TrameViewer2DTest(unittest.TestCase):
 
         super_load_file.assert_called_once_with(file_path, windowing_method="scalar")
 
-    def test_load_file_if_not_first_load(self):
+    @mock.patch("ccpi.web_viewer.trame_viewer.TrameViewer.load_file")
+    def test_load_file_if_not_first_load(self, _):
         file_path = "file/path"
         self.trame_viewer.first_load = False
         self.trame_viewer.update_slice_slider_data = mock.MagicMock()
@@ -142,7 +142,8 @@ class TrameViewer2DTest(unittest.TestCase):
         self.trame_viewer.construct_drawer_layout.assert_called_once_with()
         self.trame_viewer.reset_defaults.assert_called_once_with()
 
-    def test_load_file_if_first_load(self):
+    @mock.patch("ccpi.web_viewer.trame_viewer.TrameViewer.load_file")
+    def test_load_file_if_first_load(self, _):
         file_path = "file/path"
         self.trame_viewer.first_load = True
         self.trame_viewer.update_slice_slider_data = mock.MagicMock()
