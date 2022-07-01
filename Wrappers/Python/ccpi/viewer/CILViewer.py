@@ -119,6 +119,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
 
     def UpdateImageSlice(self):
         self._viewer.imageSlice.Update()
+        self.Render()
 
     def mouseInteraction(self, interactor, event):
         shift = interactor.GetShiftKey()
@@ -222,18 +223,6 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
 
         self._viewer.updatePipeline()
 
-    def AutoWindowLevelOnSliceRange(self, update_slice=True):
-        '''Auto-adjusts window-level for the slice, based on the 5 and 95th percentiles of the current slice.'''
-        cmin, cmax = self._viewer.ia.GetAutoRange()
-        window, level = self._viewer.getSliceWindowLevelFromRange(cmin, cmax)
-
-        self._viewer.imageSlice.GetProperty().SetColorLevel(level)
-        self._viewer.imageSlice.GetProperty().SetColorWindow(window)
-
-        if update_slice:
-            self.UpdateImageSlice()
-            self.Render()
-
     def AutoWindowLevelOnVolumeRange(self, update_slice=True):
         '''Auto-adjusts window-level for the slice, based on the 5 and 95th percentiles of the whole image volume.'''
         cmin, cmax = self._viewer.getImageMapRange((5., 95.), method="scalar")
@@ -244,8 +233,6 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
 
         if update_slice:
             self.UpdateImageSlice()
-            #self.AdjustCamera()
-            self.Render()
 
     def OnKeyPress(self, interactor, _):
         if interactor.GetKeyCode() == "x":
@@ -258,7 +245,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
             self.SetSliceOrientation(SLICE_ORIENTATION_XY)
             self.UpdatePipeline(resetcamera=True)
         elif interactor.GetKeyCode() == "a":
-            self.AutoWindowLevelOnSliceRange()
+            self._viewer.autoWindowLevelOnSliceRange()
         elif interactor.GetKeyCode() == "h":
             self.DisplayHelp()
         elif interactor.GetKeyCode() == "r":

@@ -131,6 +131,8 @@ class CILInteractorStyle(vtk.vtkInteractorStyle):
 
     def UpdateImageSlice(self):
         self._viewer.imageSlice.Update()
+        self.AdjustCamera()
+        self.Render()
 
     def AdjustCamera(self):
         self._viewer.AdjustCamera()
@@ -366,18 +368,6 @@ class CILInteractorStyle(vtk.vtkInteractorStyle):
         if self.GetViewerEvent("SHOW_LINE_PROFILE_EVENT"):
             self.DisplayLineProfile(interactor, event, True)
 
-    def AutoWindowLevelOnSliceRange(self, update_slice=True):
-        '''Auto-adjusts window-level for the slice, based on the 5 and 95th percentiles of the current slice.'''
-        cmin, cmax = self._viewer.ia.GetAutoRange()
-        window, level = self._viewer.getSliceWindowLevelFromRange(cmin, cmax)
-
-        self._viewer.imageSlice.GetProperty().SetColorLevel(level)
-        self._viewer.imageSlice.GetProperty().SetColorWindow(window)
-
-        if update_slice:
-            self.UpdateImageSlice()
-            self.AdjustCamera()
-            self.Render()
 
     def AutoWindowLevelOnVolumeRange(self, update_slice=True):
         '''Auto-adjusts window-level for the slice, based on the 5 and 95th percentiles of the whole image volume.'''
@@ -390,8 +380,6 @@ class CILInteractorStyle(vtk.vtkInteractorStyle):
 
         if update_slice:
             self.UpdateImageSlice()
-            self.AdjustCamera()
-            self.Render()
 
     def ChangeOrientation(self, new_slice_orientation):
         orientation = self.GetSliceOrientation()
@@ -442,7 +430,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyle):
         elif self.reslicing_enabled and interactor.GetKeyCode() == "z":
             self.ChangeOrientation(SLICE_ORIENTATION_XY)
         elif interactor.GetKeyCode() == "a":
-            self.AutoWindowLevelOnSliceRange()
+            self._viewer.autoWindowLevelOnSliceRange()
         elif interactor.GetKeyCode() == "s":
             filename = "current_render"
             self.SaveRender(filename)
@@ -894,8 +882,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyle):
                 self._viewer.imageSlice.GetProperty().SetColorWindow(self.GetInitialWindow())
 
                 self.UpdateImageSlice()
-                self.AdjustCamera()
-                self.Render()
+
             elif self.GetViewerEvent('RECTILINEAR_WIPE'):
                 # get event in image coordinate
                 x, y, z, pix = self.display2imageCoordinate(interactor.GetEventPosition())
@@ -1070,9 +1057,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyle):
         self._viewer.imageSlice.GetProperty().SetColorWindow(newWindow)
         self.log("new level {0} window {1}".format(newLevel, newWindow))
         self.UpdateImageSlice()
-        self.AdjustCamera()
 
-        self.Render()
 
     def HandlePickEvent(self, interactor, event):
         position = interactor.GetEventPosition()

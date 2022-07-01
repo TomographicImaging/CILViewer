@@ -159,7 +159,7 @@ class CILViewerBase():
         dims = self.img3D.GetDimensions()
         max_slice = [x - 1 for x in dims]
 
-        axis_int = {'x': 0, 'y': 1, 'z': 2}
+        axis_int = {'x': SLICE_ORIENTATION_YZ, 'y': SLICE_ORIENTATION_XZ, 'z': SLICE_ORIENTATION_XY}
 
         if axis in axis_int.keys():
             i = axis_int[axis]
@@ -284,15 +284,21 @@ class CILViewerBase():
         self.renWin.Render()
 
     def getSliceColorWindow(self):
+        '''
+        Get the window for the 2D slice of the 3D image.
+        '''
         return self.imageSlice.GetProperty().GetColorWindow()
 
     def getSliceColorLevel(self):
+        '''
+        Get the level for the 2D slice of the 3D image.
+        '''
         return self.imageSlice.GetProperty().GetColorLevel()
 
     def getSliceWindowLevelFromRange(self, cmin, cmax):
         # set the level to the average between the percentiles
         level = (cmin + cmax) / 2
-        # accommodates all values between the level an the percentiles
+        # accommodates all values between the level and the percentiles
         window = cmax - cmin
 
         return window, level
@@ -335,3 +341,15 @@ class CILViewerBase():
         window, level = self.getSliceWindowLevelFromRange(min, max)
         self.setSliceColorLevel(level)
         self.setSliceColorWindow(window)
+
+    def autoWindowLevelOnSliceRange(self, update_slice=True):
+        '''Auto-adjusts window-level for the slice, based on the 5 and 95th percentiles of the current slice.'''
+        self.ia.SetAutoRangePercentiles(5.0, 95.)
+        cmin, cmax = self.ia.GetAutoRange()
+        window, level = self.getSliceWindowLevelFromRange(cmin, cmax)
+
+        self.imageSlice.GetProperty().SetColorLevel(level)
+        self.imageSlice.GetProperty().SetColorWindow(window)
+
+        if update_slice:
+            self.style.UpdateImageSlice()

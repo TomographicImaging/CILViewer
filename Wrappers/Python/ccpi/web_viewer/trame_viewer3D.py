@@ -52,8 +52,11 @@ class TrameViewer3D(TrameViewer):
         super().__init__(list_of_files=list_of_files, viewer_class=CILViewer)
 
         # Define attributes that will be constructed in methods outside of __init__
+
+        # omin, omax = min, max for volume opacity - may be scalar or gradient range:
         self.omin = None
         self.omax = None
+        # cmin, cmax = min, max for slice and volume colors - scalar range:
         self.cmin = None
         self.cmax = None
         self.windowing_defaults = None
