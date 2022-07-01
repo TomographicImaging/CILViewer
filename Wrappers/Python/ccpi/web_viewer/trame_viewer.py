@@ -15,6 +15,7 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
+import inspect
 import os
 
 from trame.app import get_server
@@ -35,10 +36,10 @@ class TrameViewer:
     This class is intended as a base class and not to be used outside of one of the TrameViewer2D and TrameViewer3D classes.
     """
 
-    def __init__(self, viewer_class, list_of_files: list = None):
+    def __init__(self, viewer, list_of_files: list = None):
         # Load files and setup the CILViewer
         if list_of_files is None:
-            raise AttributeError("list_of_files cannot be None as we need data to load in the viewer!")
+            raise ValueError("list_of_files cannot be None as we need data to load in the viewer!")
         self.list_of_files = list_of_files
 
         self.default_file = None
@@ -50,7 +51,10 @@ class TrameViewer:
             self.default_file = list_of_files[0]
 
         # Create the relevant CILViewer
-        self.cil_viewer = viewer_class()
+        if inspect.isclass(viewer):
+            self.cil_viewer = viewer()
+        else:
+            self.cil_viewer = viewer
         self.load_file(self.default_file)
 
         # Set the defaults of the base class state
@@ -69,13 +73,18 @@ class TrameViewer:
         self.slice_window_sliders_are_detailed = False
         self.window_level_sliders_are_percentages = False
 
+        # VtkLocalView would allow the user to use their own GPU locally, but requires serialisation of various VTK actors that the
+        # framework is not capable of serialisation, hence using RemoteView and being dependent on a web server with a GPU available to it.
         self.html_view = vtk.VtkRemoteView(self.cil_viewer.renWin, trame_server=server, ref="view")
         ctrl.view_update = self.html_view.update
         ctrl.view_reset_camera = self.html_view.reset_camera
         ctrl.on_server_ready.add(self.html_view.update)
 
         # Create page title using the class name of the viewer so it changes based on whatever is passed to this class
-        page_title = f"{viewer_class.__name__} on web"
+        if inspect.isclass(viewer):
+            page_title = f"{viewer.__name__} on web"
+        else:
+            page_title = f"{viewer.__class__.__name__} on web"
         self.layout = SinglePageWithDrawerLayout(server, on_ready=self.html_view.update, width=300)
         self.layout.title.set_text(page_title)
 
@@ -85,8 +94,6 @@ class TrameViewer:
         server.start()
 
     def load_file(self, file_name: str, windowing_method: str = "scalar"):
-        if "data" not in file_name:
-            file_name = os.path.join("data", file_name)
         if ".nxs" in file_name:
             self.load_nexus_file(file_name)
         else:
@@ -106,12 +113,15 @@ class TrameViewer:
         reader.Update()
         self.cil_viewer.setInput3DData(reader.GetOutput())
 
-    def create_model_selector(self):
+    def _create_model_selector_list(self):
         useful_file_list = []
         for file_path in self.list_of_files:
             file_name = os.path.basename(file_path)
             useful_file_list.append({"text": file_name, "value": file_path})
+        return useful_file_list
 
+    def create_model_selector(self):
+        useful_file_list = self._create_model_selector_list()
         return vuetify.VSelect(
             v_model=("file_name", self.default_file),
             items=("file_name_options", useful_file_list),
@@ -119,7 +129,8 @@ class TrameViewer:
             solo=True,
         )
 
-    def create_background_selector(self):
+    @staticmethod
+    def _create_background_color_list():
         initial_list = dir(colors)
         color_list = [{
             "text": "Miles blue",
@@ -134,6 +145,10 @@ class TrameViewer:
                 filtered_color = color
             filtered_color = filtered_color.capitalize()
             color_list.append({"text": filtered_color, "value": color})
+        return color_list
+
+    def create_background_selector(self):
+        color_list = self._create_background_color_list()
         return vuetify.VSelect(v_model=("background_color", "cil_viewer_blue"),
                                items=("background_color_options", color_list),
                                hide_details=True,
@@ -405,11 +420,9 @@ class TrameViewer:
         return value
 
     def change_slice_number(self, slice_number):
-        if hasattr(self.cil_viewer, "updateSliceHistogram"):
-            self.cil_viewer.updateSliceHistogram()
-        self.cil_viewer.setActiveSlice(slice_number)
-        self.cil_viewer.updatePipeline()
-        self.html_view.update()
+        raise NotImplementedError(
+            "This function is not implemented in the base class, but you can expect an implementation in it's sub"
+            " classes.")
 
     def construct_drawer_layout(self):
         raise NotImplementedError(
@@ -417,6 +430,11 @@ class TrameViewer:
             " classes.")
 
     def create_drawer_ui_elements(self):
+        raise NotImplementedError(
+            "This function is not implemented in the base class, but you can expect an implementation in it's sub"
+            " classes.")
+
+    def reset_defaults(self):
         raise NotImplementedError(
             "This function is not implemented in the base class, but you can expect an implementation in it's sub"
             " classes.")

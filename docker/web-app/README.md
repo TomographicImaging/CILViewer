@@ -1,4 +1,4 @@
-To build the docker image run this command, with the working directory being the direcytory of this README:
+To build the docker image run this command, with the working directory being the directory of this README:
 `docker build .`
 
 To find the image id, look at the image list using:
