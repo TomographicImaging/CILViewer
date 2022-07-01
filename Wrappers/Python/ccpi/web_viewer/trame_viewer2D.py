@@ -29,7 +29,7 @@ class TrameViewer2D(TrameViewer):
 
     def __init__(self, list_of_files: list = None):
         self.first_load = True
-        super().__init__(list_of_files=list_of_files, viewer_class=CILViewer2D)
+        super().__init__(list_of_files=list_of_files, viewer=CILViewer2D)
 
         self.model_choice = None
         self.background_choice = None
@@ -94,7 +94,7 @@ class TrameViewer2D(TrameViewer):
             vuetify.VDivider(), self.reset_defaults_button
         ]
 
-    def load_file(self, file_name, windowing_method="scalar"):
+    def load_file(self, file_name, _="scalar"):
         super().load_file(file_name, windowing_method="scalar")
         if not self.first_load:
             self.update_slice_slider_data()
@@ -189,3 +189,8 @@ class TrameViewer2D(TrameViewer):
         self.cil_viewer.updatePipeline()
         self.html_view.update()
         self.layout.flush_content()
+
+    def change_slice_number(self, slice_number):
+        self.cil_viewer.setActiveSlice(slice_number)
+        self.cil_viewer.updatePipeline()
+        self.html_view.update()

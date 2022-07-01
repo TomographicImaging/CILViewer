@@ -49,7 +49,7 @@ INITIAL_IMAGE = "head.mha"
 class TrameViewer3D(TrameViewer):
 
     def __init__(self, list_of_files=None):
-        super().__init__(list_of_files=list_of_files, viewer_class=CILViewer)
+        super().__init__(list_of_files=list_of_files, viewer=CILViewer)
 
         # Define attributes that will be constructed in methods outside of __init__
         self.cmin = None
@@ -457,4 +457,10 @@ class TrameViewer3D(TrameViewer):
             self.cil_viewer.histogramPlotActor.VisibilityOn()
         else:
             self.cil_viewer.histogramPlotActor.VisibilityOff()
+        self.html_view.update()
+
+    def change_slice_number(self, slice_number):
+        self.cil_viewer.updateSliceHistogram()
+        self.cil_viewer.setActiveSlice(slice_number)
+        self.cil_viewer.updatePipeline()
         self.html_view.update()

@@ -1,4 +1,6 @@
 name: cilviewer_webapp
+channels:
+  - conda-forge
 dependencies:
 - python==3.9
 - matplotlib # Optional for more colormaps
