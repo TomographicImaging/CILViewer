@@ -1,8 +1,13 @@
 # Changelog
 
 ## v22.x.x
+- Qt examples use example_data 
+- Updates in all classes to take into account the backward incompatible methods name changes (see below)
+- cilPlaneClipper: 
+  - change signature of creator, and defaults to empty list of items to be clipped on init
+  - renamed Get/SetInteractor->Get/SetInteractorStyle
 - Renamed all classes bearing name baseReader to ReaderInterface as they provide the interface not a abstract reader class.
-- Added TIFF resample and cropped readers
+- Added TIFF resample and cropped readers with unit tests
 - web_viewer:
   - added web viewer using trame for viewer3D and viewer2D
   - add entry point for running the web viewers
@@ -19,12 +24,14 @@
     - getColourWindow -> getSliceColorWindow, 
     - setColourWindowLevel -> setSliceColorWindowLevel
   - fix definition of window range to be = max - min
+  - use CILViewerBase as base class
 - CILViewer3D:
   - added methods in interactor style to enable interaction with web app, rather than just key event binding
   - add volume render opacity scalar and gradient
   - add slice histogram
   - fix method to change window and level for slice actor, by range or percentiles
   - fix definition of window range to be = max - min
+  - use CILViewerBase as base class
 - colormaps: added get_color_transfer_function
 - added examples of running the 2D and 3D viewers without Qt
 - Added CILViewer base class

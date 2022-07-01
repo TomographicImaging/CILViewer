@@ -439,7 +439,7 @@ class CILViewer(CILViewerBase):
     '''Simple 3D Viewer based on VTK classes'''
 
     def __init__(self, dimx=600, dimy=600, renWin=None, iren=None, ren=None, debug=False):
-        CILViewerBase.__init__(self, dimx=600, dimy=600, ren=None, renWin=None, iren=None, debug=True)
+        CILViewerBase.__init__(self, dimx=dimx, dimy=dimy, ren=ren, renWin=renWin, iren=iren, debug=debug)
         '''creates the rendering pipeline'''
 
         self.setInteractorStyle(CILInteractorStyle(self))

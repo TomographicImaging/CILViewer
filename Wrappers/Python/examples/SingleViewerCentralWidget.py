@@ -3,6 +3,7 @@ import vtk
 from PySide2 import QtCore, QtWidgets
 from ccpi.viewer import viewer2D, viewer3D
 from ccpi.viewer.QCILViewerWidget import QCILViewerWidget
+from ccpi.viewer.utils import example_data
 
 
 class SingleViewerCenterWidget(QtWidgets.QMainWindow):
@@ -12,11 +13,9 @@ class SingleViewerCenterWidget(QtWidgets.QMainWindow):
 
         self.frame = QCILViewerWidget(viewer=viewer, shape=(600, 600))
 
-        reader = vtk.vtkMetaImageReader()
-        reader.SetFileName('head.mha')
-        reader.Update()
+        head = example_data.HEAD.get()
 
-        self.frame.viewer.setInputData(reader.GetOutput())
+        self.frame.viewer.setInputData(head)
 
         self.setCentralWidget(self.frame)
 

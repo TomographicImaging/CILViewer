@@ -16,8 +16,8 @@
 
 import numpy
 import vtk
-from ccpi.viewer import (ALT_KEY, CONTROL_KEY, CROSSHAIR_ACTOR, CURSOR_ACTOR, HELP_ACTOR, HISTOGRAM_ACTOR,
-                         LINEPLOT_ACTOR, OVERLAY_ACTOR, SHIFT_KEY, SLICE_ACTOR, SLICE_ORIENTATION_XY,
+from ccpi.viewer import (ALT_KEY, CONTROL_KEY, SHIFT_KEY, CROSSHAIR_ACTOR, CURSOR_ACTOR, HELP_ACTOR, HISTOGRAM_ACTOR,
+                         LINEPLOT_ACTOR, OVERLAY_ACTOR, SLICE_ACTOR, WIPE_ACTOR, SLICE_ORIENTATION_XY,
                          SLICE_ORIENTATION_XZ, SLICE_ORIENTATION_YZ)
 from ccpi.viewer.CILViewerBase import CILViewerBase
 from ccpi.viewer.utils import Converter
@@ -1100,7 +1100,7 @@ class CILViewer2D(CILViewerBase):
     RECTILINEAR_WIPE = 1
 
     def __init__(self, dimx=600, dimy=600, ren=None, renWin=None, iren=None, debug=True):
-        CILViewerBase.__init__(self, dimx=600, dimy=600, ren=None, renWin=None, iren=None, debug=True)
+        CILViewerBase.__init__(self, dimx=dimx, dimy=dimy, ren=ren, renWin=renWin, iren=iren, debug=debug)
 
         self.setInteractorStyle(CILInteractorStyle(self))
 
@@ -1255,17 +1255,6 @@ class CILViewer2D(CILViewerBase):
         # Set autoclose to on
         self.imageTracer.AutoCloseOn()
         self.imageTracer.AddObserver(vtk.vtkWidgetEvent.Select, self.style.OnTracerModifiedEvent, 1.0)
-
-        # axis orientation widget
-        om = vtk.vtkAxesActor()
-        ori = vtk.vtkOrientationMarkerWidget()
-        ori.SetOutlineColor(0.9300, 0.5700, 0.1300)
-        ori.SetInteractor(self.iren)
-        ori.SetOrientationMarker(om)
-        ori.SetViewport(0.0, 0.0, 0.4, 0.4)
-        ori.SetEnabled(1)
-        ori.InteractiveOff()
-        self.orientation_marker = ori
 
         self.__vis_mode = CILViewer2D.IMAGE_WITH_OVERLAY
         self.setVisualisationToImageWithOverlay()
