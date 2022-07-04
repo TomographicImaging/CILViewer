@@ -13,22 +13,40 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-from distutils.core import setup
+from setuptools import setup
 import os
 import sys
 import subprocess
 
 
-cil_version = subprocess.check_output('git describe', shell=True).decode("utf-8").rstrip()
+def version2pep440(version):
+    '''normalises the version from git describe to pep440
+    
+    https://www.python.org/dev/peps/pep-0440/#id29
+    '''
+    if version[0] == 'v':
+        version = version[1:]
 
+    if u'-' in version:
+        v = version.split('-')
+        v_pep440 = "{}.dev{}".format(v[0], v[1])
+    else:
+        v_pep440 = version
+
+    return v_pep440
+
+
+git_version_string = subprocess.check_output('git describe', shell=True).decode("utf-8").rstrip()[1:]
 
 if os.environ.get('CONDA_BUILD', 0) == '1':
-    cwd = os.path.join(os.environ.get('RECIPE_DIR'),'..')
+    cwd = os.path.join(os.environ.get('RECIPE_DIR'), '..')
     # requirements are processed by conda
     requires = []
+    version = git_version_string
 else:
-    requires = ['numpy','vtk']
+    requires = ['numpy', 'vtk']
     cwd = os.getcwd()
+    version = version2pep440(git_version_string)
 
 # update the version string
 fname = os.path.join(cwd, 'ccpi', 'viewer', 'version.py')
@@ -36,22 +54,21 @@ fname = os.path.join(cwd, 'ccpi', 'viewer', 'version.py')
 if os.path.exists(fname):
     os.remove(fname)
 with open(fname, 'w') as f:
-    f.write('version = \'{}\''.format(cil_version))
-    
+    f.write('version = \'{}\''.format(version))
 
 setup(
     name="ccpi-viewer",
-    version=cil_version,
-    packages=['ccpi','ccpi.viewer', 'ccpi.viewer.utils'],
-	install_requires=requires,
-    zip_safe = False,
+    version=version,
+    packages=['ccpi', 'ccpi.viewer', 'ccpi.viewer.utils', 'ccpi.web_viewer'],
+    install_requires=requires,
+    zip_safe=False,
     # metadata for upload to PyPI
     author="Edoardo Pasca",
     author_email="edoardo.pasca@stfc.ac.uk",
     description='CCPi CILViewer',
     license="Apache v2.0",
     keywords="3D data viewer",
-    url="http://www.ccpi.ac.uk",   # project home page, if any
+    url="http://www.ccpi.ac.uk",  # project home page
 
     # could also include long_description, download_url, classifiers, etc.
-)
+    entry_points={'console_scripts': ['web_cilviewer = ccpi.web_viewer.web_app:main']})

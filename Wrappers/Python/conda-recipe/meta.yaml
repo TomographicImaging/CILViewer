@@ -10,8 +10,12 @@ build:
   preserve_egg_dir: False 
   number: {{ GIT_DESCRIBE_NUMBER }}
   noarch: python
+  entry_points:
+    - web_cilviewer = ccpi.web_viewer.web_app:main
   
 test:
+  requires:
+    - pillow
   source_files:
     - ./Wrappers/Python/test
 
@@ -32,6 +36,7 @@ requirements:
     - eqt
     - importlib_metadata    # [py<38]
     - h5py
+    - cil-data >=22.0.0
 
 about:
   home: http://www.ccpi.ac.uk
