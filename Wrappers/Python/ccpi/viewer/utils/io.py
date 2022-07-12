@@ -1,4 +1,3 @@
-
 import glob
 import os
 import re
@@ -35,7 +34,7 @@ def SaveRenderToPNG(render_window, filename):
     if len(slist) == 0:
         number = 0
     else:
-        number = max(slist)+1
+        number = max(slist) + 1
 
     saveFilename = '{}_{:04d}.png'.format(os.path.join(directory, basename), number)
 
