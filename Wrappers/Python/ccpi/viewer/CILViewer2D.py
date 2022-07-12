@@ -334,7 +334,10 @@ class CILInteractorStyle(vtk.vtkInteractorStyle):
     def OnMouseWheelForward(self, interactor, event):
         if self.GetInputData() is None:
             return
-        maxSlice = self.GetInputData().GetExtent()[self.GetSliceOrientation() * 2 + 1]
+        if self._viewer._reader is None:
+            maxSlice = self.GetInputData().GetExtent()[self.GetSliceOrientation() * 2 + 1]
+        else:
+            maxSlice = self._viewer._reader.GetWholeExtent()[self.GetSliceOrientation() * 2 + 1]
         shift = interactor.GetShiftKey()
         advance = 1
         if shift:
@@ -354,6 +357,10 @@ class CILInteractorStyle(vtk.vtkInteractorStyle):
         if self.GetInputData() is None:
             return
         minSlice = self.GetInputData().GetExtent()[self.GetSliceOrientation() * 2]
+        if self._viewer._reader is None:
+            minSlice = self.GetInputData().GetExtent()[self.GetSliceOrientation() * 2]
+        else:
+            minSlice = self._viewer._reader.GetWholeExtent()[self.GetSliceOrientation() * 2]
         shift = interactor.GetShiftKey()
         advance = 1
         if shift:
@@ -1244,6 +1251,9 @@ class CILViewer2D(CILViewerBase):
         self.imageTracer.AutoCloseOn()
         self.imageTracer.AddObserver(vtk.vtkWidgetEvent.Select, self.style.OnTracerModifiedEvent, 1.0)
 
+        # input reader
+        self._reader = None
+
         self.__vis_mode = CILViewer2D.IMAGE_WITH_OVERLAY
         self.setVisualisationToImageWithOverlay()
 
@@ -1257,9 +1267,22 @@ class CILViewer2D(CILViewerBase):
 
     def setInputData(self, imageData):
         self.log("setInputData")
-        self.img3D = imageData
+        self._img3D = imageData
         self.installPipeline()
         self.axes_initialised = True
+    
+    def setInputDataReader(self, reader):
+        self._reader = reader
+        self.installPipeline()
+        self.axes_initialised = True
+
+    @property
+    def img3D(self):
+        if self._reader is None:
+            return self._img3D
+        else:
+            self._reader.Update()
+            return self._reader.GetOutput()
 
     def setInputData2(self, imageData):
         self.image2 = imageData
@@ -1300,9 +1323,9 @@ class CILViewer2D(CILViewerBase):
             shiftScaler.SetShift(-iMin)
             shiftScaler.SetOutputScalarType(dtype)
             shiftScaler.Update()
-            self.img3D = shiftScaler.GetOutput()
+            self._img3D = shiftScaler.GetOutput()
         else:
-            self.img3D = importer.GetOutput()
+            self._img3D = importer.GetOutput()
 
         self.installPipeline()
 
@@ -1332,6 +1355,9 @@ class CILViewer2D(CILViewerBase):
         extent = [i for i in self.img3D.GetExtent()]
         extent[self.sliceOrientation * 2] = self.getActiveSlice()
         extent[self.sliceOrientation * 2 + 1] = self.getActiveSlice()
+        if self._reader is not None:
+            self._reader.SetTargetZExtent((extent[4], extent[5]))
+            self._reader.Update()
         self.voi.SetVOI(extent[0], extent[1], extent[2], extent[3], extent[4], extent[5])
         self.log("extent {0}".format(extent))
         self.voi.Update()
@@ -1453,8 +1479,6 @@ class CILViewer2D(CILViewerBase):
 
         extent[self.sliceOrientation * 2] = self.getActiveSlice()
         extent[self.sliceOrientation * 2 + 1] = self.getActiveSlice()
-
-        self.voi.SetVOI(extent[0], extent[1], extent[2], extent[3], extent[4], extent[5])
 
         self.voi.SetVOI(extent[0], extent[1], extent[2], extent[3], extent[4], extent[5])
 
