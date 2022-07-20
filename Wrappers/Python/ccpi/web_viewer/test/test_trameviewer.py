@@ -162,13 +162,12 @@ class TrameViewerTest(unittest.TestCase):
         self.assertIn('step="0.5"', slice_window_slider.html)
         self.check_vuetify_default(slice_window_slider, self.trame_viewer.slice_window_default)
 
-
     def test_construct_slice_window_sliders_do_not_use_percentages(self):
         self.trame_viewer.window_level_sliders_are_percentages = False
         self.trame_viewer.cmin = 0
         self.trame_viewer.cmax = 10
         slice_window_slider = self.trame_viewer.construct_slice_window_slider()
-        
+
         self.assertIn(f'max="{self.trame_viewer.cmax}"', slice_window_slider.html)
         self.assertIn('min="0"', slice_window_slider.html)
         self.assertIn('step="1"', slice_window_slider.html)
@@ -364,7 +363,7 @@ class TrameViewerTest(unittest.TestCase):
         self.assertEqual(self.trame_viewer.slice_window_default, current_window)
         self.assertEqual(self.trame_viewer.slice_window_sliders_are_detailed, value_of_show_detailed)
 
-        self.trame_viewer.window_level_sliders_are_percentages = True # ------------------------------
+        self.trame_viewer.window_level_sliders_are_percentages = True  # ------------------------------
         value_of_show_detailed = False
 
         self.trame_viewer.cmin = 0
@@ -374,8 +373,8 @@ class TrameViewerTest(unittest.TestCase):
 
         self.trame_viewer.change_window_level_detail_sliders(value_of_show_detailed)
 
-        range_min = (current_window - 2 * current_level) / -2 
-        range_max = current_window + range_min 
+        range_min = (current_window - 2 * current_level) / -2
+        range_max = current_window + range_min
         self.trame_viewer.convert_value_to_percentage.assert_any_call(range_min)
         self.trame_viewer.convert_value_to_percentage.assert_any_call(range_max)
         self.trame_viewer.convert_value_to_percentage.assert_any_call(current_window)
@@ -394,8 +393,7 @@ class TrameViewerTest(unittest.TestCase):
         self.trame_viewer.change_slice_window_level_percentiles(min_pc, max_pc)
 
         self.cil_viewer.setSliceMapRange.assert_not_called()
-        self.cil_viewer.setSliceColorPercentiles.assert_called_once_with(min_pc,
-                                                                         max_pc)
+        self.cil_viewer.setSliceColorPercentiles.assert_called_once_with(min_pc, max_pc)
 
     def test_change_slice_window_level_range(self):
         self.cil_viewer.setSliceColorPercentiles = mock.MagicMock()
@@ -412,7 +410,7 @@ class TrameViewerTest(unittest.TestCase):
         self.trame_viewer.cmax = self.map_range[1]
         self.trame_viewer.cmin = self.map_range[0]
 
-        expected_window = (self.map_range[1] + self.map_range[0])/2 
+        expected_window = (self.map_range[1] + self.map_range[0]) / 2
 
         self.trame_viewer.change_slice_window_as_percentage(50)
 
@@ -431,7 +429,7 @@ class TrameViewerTest(unittest.TestCase):
         self.trame_viewer.cmax = self.map_range[1]
         self.trame_viewer.cmin = self.map_range[0]
         level_pc = 50
-        expected_level = (self.map_range[1] + self.map_range[0])/2
+        expected_level = (self.map_range[1] + self.map_range[0]) / 2
         self.trame_viewer.change_slice_level_as_percentage(level_pc)
         self.cil_viewer.setSliceColorLevel.assert_called_once_with(expected_level)
 
@@ -452,13 +450,13 @@ class TrameViewerTest(unittest.TestCase):
         self.assertEqual(state["slice_level"], level)
         self.cil_viewer.ia.GetAutoRange.assert_called_once()
         self.cil_viewer.getSliceWindowLevelFromRange.assert_called_once_with(cmin, cmax)
-    
+
     def test_auto_window_level_as_percentage(self):
         self.trame_viewer.window_level_sliders_are_percentages = True
         state["slice_window_range_percentiles"] = mock.MagicMock()
         state["slice_window_as_percentage"] = mock.MagicMock()
         state["slice_level_as_percentage"] = mock.MagicMock()
-        
+
         cmin, cmax = 0, 90
         window, level = 50, 40
         pmin, pmax = 0, 70
@@ -466,7 +464,7 @@ class TrameViewerTest(unittest.TestCase):
         self.cil_viewer.ia = mock.MagicMock()
         self.cil_viewer.ia.GetAutoRange = mock.MagicMock(return_value=[cmin, cmax])
         self.cil_viewer.getSliceWindowLevelFromRange = mock.MagicMock(return_value=[window, level])
-        self.cil_viewer.ia.GetAutoRangePercentiles = mock.MagicMock(return_value = [pmin, pmax])
+        self.cil_viewer.ia.GetAutoRangePercentiles = mock.MagicMock(return_value=[pmin, pmax])
         self.trame_viewer.convert_value_to_percentage = mock.MagicMock()
         # sets the return values for each call:
         self.trame_viewer.convert_value_to_percentage.side_effect = [pwindow, plevel]
@@ -485,12 +483,11 @@ class TrameViewerTest(unittest.TestCase):
     def test_convert_value_to_percentage_and_convert_percentage_to_value(self):
         self.trame_viewer.cmax = self.map_range[1]
         self.trame_viewer.cmin = self.map_range[0]
-        value =  50
+        value = 50
         expected_percentage = 100 * (value - self.map_range[0]) / (self.map_range[0] + self.map_range[1])
         returned_percentage = self.trame_viewer.convert_value_to_percentage(value)
         self.assertEqual(returned_percentage, expected_percentage)
         self.assertEqual(self.trame_viewer.convert_percentage_to_value(returned_percentage), value)
-
 
     def test_change_slice_level(self):
         self.cil_viewer.setSliceColorLevel = mock.MagicMock()
