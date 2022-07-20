@@ -18,8 +18,7 @@
 import unittest
 from unittest import mock
 
-from ccpi.web_viewer.web_app import arg_parser, reset_viewer2d, data_finder, set_viewer2d, main, change_orientation, \
-    change_slice_window_level, change_opacity_mapping
+from ccpi.web_viewer.web_app import arg_parser, reset_viewer2d, data_finder, set_viewer2d, main, change_orientation, change_opacity_mapping
 
 
 class WebAppTest(unittest.TestCase):
@@ -161,9 +160,3 @@ class WebAppTest(unittest.TestCase):
         change_opacity_mapping()
 
         trame_viewer.set_opacity_mapping.assert_not_called()
-
-    @mock.patch("ccpi.web_viewer.web_app.TRAME_VIEWER")
-    def test_change_slice_window_level_calculates_level_and_window_from_kwargs(self, trame_viewer):
-        change_slice_window_level(slice_window_range=[100, 300])
-
-        trame_viewer.change_slice_window_range.assert_called_once_with(window=200, level=200)
