@@ -45,6 +45,7 @@ class TrameViewer3DTest(unittest.TestCase):
         self.cil_viewer.img3D.GetExtent().__getitem__ = mock.MagicMock(
             return_value=0)  # Fix issues with errors in the console
         self.cil_viewer.getSliceMapRange.return_value = self.map_range
+        self.cil_viewer.getSliceWindowLevelFromRange.return_value = [20, 10]
 
         self.trame_viewer = TrameViewer3D(self.file_list)
 
@@ -139,6 +140,7 @@ class TrameViewer3DTest(unittest.TestCase):
         self.trame_viewer.create_slice_slider = mock.MagicMock()
         self.trame_viewer.create_toggle_window_details_button = mock.MagicMock()
         self.trame_viewer.create_orientation_radio_buttons = mock.MagicMock()
+        self.trame_viewer.create_auto_window_level_button = mock.MagicMock()
         self.trame_viewer.construct_slice_window_range_slider = mock.MagicMock()
         self.trame_viewer.construct_slice_window_slider = mock.MagicMock()
         self.trame_viewer.construct_slice_level_slider = mock.MagicMock()
@@ -161,7 +163,7 @@ class TrameViewer3DTest(unittest.TestCase):
         self.assertIn(
             call([
                 self.trame_viewer.toggle_slice_visibility, self.trame_viewer.slice_slider,
-                self.trame_viewer.orientation_radio_buttons, self.trame_viewer.show_slice_histogram_switch,
+                self.trame_viewer.orientation_radio_buttons, self.trame_viewer.auto_window_level_button, self.trame_viewer.show_slice_histogram_switch,
                 self.trame_viewer.toggle_window_details_button, self.trame_viewer.slice_window_range_slider,
                 self.trame_viewer.slice_window_slider, self.trame_viewer.slice_level_slider
             ]), v_col.call_args_list)
@@ -293,22 +295,21 @@ class TrameViewer3DTest(unittest.TestCase):
         self.assertEqual(slice_visibility._py_attr["v_model"][0], "slice_visibility")
         self.check_vuetify_default(slice_visibility, True)
 
-    def test_construct_color_slider_uses_percentage_when_cmax_less_than_100(self):
+    def test_construct_color_slider_when_sliders_are_percentages(self):
+        self.trame_viewer.window_level_sliders_are_percentages = True
         self.trame_viewer.cmax = 1
         color_slider = self.trame_viewer.construct_color_slider()
-
-        self.assertEqual(self.trame_viewer.color_slider_is_percentage, True)
         self.assertIn('max="100"', color_slider.html)
         self.assertIn('min="0"', color_slider.html)
         self.assertIn('step="0.5"', color_slider.html)
         self.check_vuetify_default(color_slider, self.trame_viewer.windowing_defaults)
 
-    def test_construct_color_slider_does_not_use_percentage_when_cmax_more_than_100(self):
+    def test_construct_color_slider_when_sliders_are_not_percentages(self):
+        self.trame_viewer.window_level_sliders_are_percentages = False
         self.trame_viewer.cmax = 102
         self.trame_viewer.cmin = 0
         color_slider = self.trame_viewer.construct_color_slider()
 
-        self.assertEqual(self.trame_viewer.color_slider_is_percentage, False)
         self.assertIn(f'max="{self.trame_viewer.cmax}"', color_slider.html)
         self.assertIn('min="0"', color_slider.html)
         self.assertIn('step="1"', color_slider.html)
@@ -326,22 +327,22 @@ class TrameViewer3DTest(unittest.TestCase):
 
         self.assertIn('disabled="false"', color_slider.html)
 
-    def test_construct_windowing_slider_uses_percentage_when_cmax_less_than_100(self):
+    def test_construct_windowing_slider_when_sliders_are_percentages(self):
+        self.trame_viewer.window_level_sliders_are_percentages = True
         self.trame_viewer.cmax = 1
         windowing_slider = self.trame_viewer.construct_windowing_slider()
 
-        self.assertEqual(self.trame_viewer.windowing_slider_is_percentage, True)
         self.assertIn('max="100"', windowing_slider.html)
         self.assertIn('min="0"', windowing_slider.html)
         self.assertIn('step="0.5"', windowing_slider.html)
         self.check_vuetify_default(windowing_slider, self.trame_viewer.windowing_defaults)
 
-    def test_construct_windowing_slider_does_not_use_percentage_when_cmax_more_than_100(self):
-        self.trame_viewer.cmax = 102
-        self.trame_viewer.cmin = 0
+    def test_construct_windowing_slider_when_sliders_are_not_percentages(self):
+        self.trame_viewer.window_level_sliders_are_percentages = False
+        self.trame_viewer.cmax = self.map_range[1]
+        self.trame_viewer.cmin = self.map_range[0]
         windowing_slider = self.trame_viewer.construct_windowing_slider()
 
-        self.assertEqual(self.trame_viewer.windowing_slider_is_percentage, False)
         self.assertIn(f'max="{self.trame_viewer.cmax}"', windowing_slider.html)
         self.assertIn('min="0"', windowing_slider.html)
         self.assertIn('step="1"', windowing_slider.html)
@@ -366,23 +367,61 @@ class TrameViewer3DTest(unittest.TestCase):
 
         self.trame_viewer.update_slice_data.assert_called_once_with()
 
-    def test_update_windowing_defaults_does_not_update_gui_if_no_window_range_slider(self):
-        self.cil_viewer.getImageMapRange = mock.MagicMock(return_value=(0, 100))
+    def setup_windowing_defaults_tests(self):
+        state["opacity"] = mock.MagicMock()
+        self.cil_viewer.getImageMapRange = mock.MagicMock()
+        self.trame_viewer.update_slice_data = mock.MagicMock()
+        opacity_range = (0., 70.)
+        color_range = (0., 100.)
+        windowing_defaults = (60, 68)
+        coloring_defaults = (5, 95)
+        self.cil_viewer.getImageMapRange.side_effect = [opacity_range, color_range,windowing_defaults,coloring_defaults]
         self.trame_viewer.construct_windowing_slider = mock.MagicMock()
         self.trame_viewer.construct_color_slider = mock.MagicMock()
         self.trame_viewer.construct_slice_window_range_slider = mock.MagicMock()
         self.trame_viewer.construct_slice_level_slider = mock.MagicMock()
         self.trame_viewer.construct_slice_window_slider = mock.MagicMock()
         self.trame_viewer.disable_2d = mock.MagicMock()
+        return opacity_range, color_range, windowing_defaults, coloring_defaults
+
+    def test_update_windowing_defaults_sets_color_and_opacity_ranges(self):
+        opacity_range, color_range, _, __ = self.setup_windowing_defaults_tests()
+        passed_method = mock.MagicMock()
+        self.trame_viewer.update_windowing_defaults(passed_method)
+        self.assertEqual(state["opacity"], passed_method)
+        self.assertIn(call((0., 100.), passed_method), self.cil_viewer.getImageMapRange.call_args_list)
+        self.assertIn(call((0., 100.), "scalar"), self.cil_viewer.getImageMapRange.call_args_list)
+        self.assertEqual(self.trame_viewer.cmin, color_range[0])
+        self.assertEqual(self.trame_viewer.cmax, color_range[1])
+        self.assertEqual(self.trame_viewer.omin, opacity_range[0])
+        self.assertEqual(self.trame_viewer.omax, opacity_range[1])
+
+    def test_update_windowing_defaults_sets_values(self):
+        opacity_range, color_range, windowing_defaults, coloring_defaults = self.setup_windowing_defaults_tests()
+        passed_method = mock.MagicMock()
+        self.trame_viewer.update_windowing_defaults(passed_method)
+        self.trame_viewer.window_level_sliders_are_percentages = False
+        self.assertEqual(self.trame_viewer.coloring_defaults, coloring_defaults)
+        self.assertEqual(self.trame_viewer.windowing_defaults, windowing_defaults)
+        self.assertIn(call((80., 99.), passed_method), self.cil_viewer.getImageMapRange.call_args_list)
+        self.assertIn(call((5., 95.), "scalar"), self.cil_viewer.getImageMapRange.call_args_list)
+
+
+    def test_update_windowing_defaults_sets_percentages(self):
+        self.setup_windowing_defaults_tests()
+        passed_method = mock.MagicMock()
+        self.trame_viewer.window_level_sliders_are_percentages = True
+        self.trame_viewer.update_windowing_defaults(passed_method)
+        self.assertEqual(self.trame_viewer.coloring_defaults, (5., 95.))
+        self.assertEqual(self.trame_viewer.windowing_defaults, (80., 99.))
+
+
+    def test_update_windowing_defaults_does_not_update_gui_if_no_window_range_slider(self):
+        opacity_range, color_range, windowing_defaults, coloring_defaults = self.setup_windowing_defaults_tests()
         delattr(self.trame_viewer, "windowing_range_slider")
 
         passed_method = mock.MagicMock()
         self.trame_viewer.update_windowing_defaults(passed_method)
-
-        self.assertIn(call((0., 100.), passed_method), self.cil_viewer.getImageMapRange.call_args_list)
-        self.assertIn(call((80., 99.), passed_method), self.cil_viewer.getImageMapRange.call_args_list)
-        self.assertEqual(self.trame_viewer.cmin, 0)
-        self.assertEqual(self.trame_viewer.cmax, 100)
         self.trame_viewer.construct_windowing_slider.assert_not_called()
         self.trame_viewer.construct_color_slider.assert_not_called()
         self.trame_viewer.construct_slice_window_range_slider.assert_not_called()
@@ -390,22 +429,12 @@ class TrameViewer3DTest(unittest.TestCase):
         self.trame_viewer.construct_slice_window_slider.assert_not_called()
 
     def test_update_windowing_defaults_does_not_update_gui_if_window_present_but_window_range_slider_is_None(self):
-        self.cil_viewer.getImageMapRange = mock.MagicMock(return_value=(0, 100))
-        self.trame_viewer.construct_windowing_slider = mock.MagicMock()
-        self.trame_viewer.construct_color_slider = mock.MagicMock()
-        self.trame_viewer.construct_slice_window_range_slider = mock.MagicMock()
-        self.trame_viewer.construct_slice_level_slider = mock.MagicMock()
-        self.trame_viewer.construct_slice_window_slider = mock.MagicMock()
-        self.trame_viewer.disable_2d = mock.MagicMock()
+        self.setup_windowing_defaults_tests()
         self.trame_viewer.windowing_range_slider = None
 
         passed_method = mock.MagicMock()
         self.trame_viewer.update_windowing_defaults(passed_method)
 
-        self.assertIn(call((0., 100.), passed_method), self.cil_viewer.getImageMapRange.call_args_list)
-        self.assertIn(call((80., 99.), passed_method), self.cil_viewer.getImageMapRange.call_args_list)
-        self.assertEqual(self.trame_viewer.cmin, 0)
-        self.assertEqual(self.trame_viewer.cmax, 100)
         self.trame_viewer.construct_windowing_slider.assert_not_called()
         self.trame_viewer.construct_color_slider.assert_not_called()
         self.trame_viewer.construct_slice_window_range_slider.assert_not_called()
@@ -413,13 +442,7 @@ class TrameViewer3DTest(unittest.TestCase):
         self.trame_viewer.construct_slice_window_slider.assert_not_called()
 
     def test_update_windowing_defaults_updates_level_window_sliders_if_window_range_slider_present(self):
-        self.cil_viewer.getImageMapRange = mock.MagicMock(return_value=(0, 100))
-        self.trame_viewer.construct_windowing_slider = mock.MagicMock()
-        self.trame_viewer.construct_color_slider = mock.MagicMock()
-        self.trame_viewer.construct_slice_window_range_slider = mock.MagicMock()
-        self.trame_viewer.construct_slice_level_slider = mock.MagicMock()
-        self.trame_viewer.construct_slice_window_slider = mock.MagicMock()
-        self.trame_viewer.disable_2d = mock.MagicMock()
+        self.setup_windowing_defaults_tests()
 
         passed_method = mock.MagicMock()
         self.trame_viewer.update_windowing_defaults(passed_method)
@@ -508,7 +531,7 @@ class TrameViewer3DTest(unittest.TestCase):
         self.cil_viewer.setGradientOpacityPercentiles = mock.MagicMock()
         self.cil_viewer.setScalarOpacityRange = mock.MagicMock()
         self.cil_viewer.setGradientOpacityRange = mock.MagicMock()
-        self.trame_viewer.windowing_slider_is_percentage = True
+        self.trame_viewer.window_level_sliders_are_percentages = True
         windowing_method = "scalar"
         min_value = mock.MagicMock()
         max_value = mock.MagicMock()
@@ -525,7 +548,7 @@ class TrameViewer3DTest(unittest.TestCase):
         self.cil_viewer.setGradientOpacityPercentiles = mock.MagicMock()
         self.cil_viewer.setScalarOpacityRange = mock.MagicMock()
         self.cil_viewer.setGradientOpacityRange = mock.MagicMock()
-        self.trame_viewer.windowing_slider_is_percentage = True
+        self.trame_viewer.window_level_sliders_are_percentages = True
         windowing_method = "gradient"
         min_value = mock.MagicMock()
         max_value = mock.MagicMock()
@@ -542,7 +565,7 @@ class TrameViewer3DTest(unittest.TestCase):
         self.cil_viewer.setGradientOpacityPercentiles = mock.MagicMock()
         self.cil_viewer.setScalarOpacityRange = mock.MagicMock()
         self.cil_viewer.setGradientOpacityRange = mock.MagicMock()
-        self.trame_viewer.windowing_slider_is_percentage = False
+        self.trame_viewer.window_level_sliders_are_percentages = False
         windowing_method = "scalar"
         min_value = mock.MagicMock()
         max_value = mock.MagicMock()
@@ -559,7 +582,7 @@ class TrameViewer3DTest(unittest.TestCase):
         self.cil_viewer.setGradientOpacityPercentiles = mock.MagicMock()
         self.cil_viewer.setScalarOpacityRange = mock.MagicMock()
         self.cil_viewer.setGradientOpacityRange = mock.MagicMock()
-        self.trame_viewer.windowing_slider_is_percentage = False
+        self.trame_viewer.window_level_sliders_are_percentages = False
         windowing_method = "gradient"
         min_value = mock.MagicMock()
         max_value = mock.MagicMock()
@@ -616,7 +639,8 @@ class TrameViewer3DTest(unittest.TestCase):
         self.trame_viewer.set_default_button_state.assert_called_once_with()
         self.trame_viewer.reset_cam.assert_called_once_with()
 
-    def test_set_default_button_state_sets_correct_defaults(self):
+
+    def setup_default_button_state_tests(self):
         state["slice"] = mock.MagicMock()
         state["orientation"] = mock.MagicMock()
         state["opacity"] = mock.MagicMock()
@@ -633,6 +657,17 @@ class TrameViewer3DTest(unittest.TestCase):
         state["toggle_clipping"] = mock.MagicMock()
         state["show_slice_histogram"] = mock.MagicMock()
 
+        state["slice_window_range"] = mock.MagicMock()
+        state["slice_window"] = mock.MagicMock()
+        state["slice_level"] = mock.MagicMock()
+
+        state["slice_window_percentiles"] = mock.MagicMock()
+        state["slice_window_as_percentage"] = mock.MagicMock()
+        state["slice_level_as_percentage"] = mock.MagicMock()
+
+
+    def test_set_default_button_state_sets_correct_defaults(self):
+        self.setup_default_button_state_tests()
         self.trame_viewer.set_default_button_state()
 
         self.assertEqual(state["slice"], self.trame_viewer.default_slice)
@@ -640,16 +675,42 @@ class TrameViewer3DTest(unittest.TestCase):
         self.assertEqual(state["opacity"], "scalar")
         self.assertEqual(state["color_map"], "viridis")
         self.assertEqual(state["windowing"], self.trame_viewer.windowing_defaults)
-        self.assertEqual(state["coloring"], self.trame_viewer.windowing_defaults)
+        self.assertEqual(state["coloring"], self.trame_viewer.coloring_defaults)
         self.assertEqual(state["slice_visibility"], True)
         self.assertEqual(state["volume_visibility"], True)
         self.assertEqual(state["slice_detailed_sliders"], False)
-        self.assertEqual(state["slice_window_range"], self.cil_viewer.getImageMapRange((5., 95.), "scalar"))
-        self.assertEqual(state["slice_window"], self.cil_viewer.getSliceColorWindow())
-        self.assertEqual(state["slice_level"], self.cil_viewer.getSliceColorLevel())
         self.assertEqual(state["background_color"], "cil_viewer_blue")
         self.assertEqual(state["toggle_clipping"], False)
         self.assertEqual(state["show_slice_histogram"], False)
+        
+
+    def test_set_default_button_state_sets_correct_defaults_for_slice_windowing_if_not_using_percentages(self):
+        self.setup_default_button_state_tests()
+        self.trame_viewer.window_level_sliders_are_percentages = False
+        self.trame_viewer.set_default_button_state()
+
+        window_range = self.cil_viewer.getImageMapRange((5., 95.), "scalar")
+        window = self.cil_viewer.getSliceWindowLevelFromRange(window_range)[0]
+        level = self.cil_viewer.getSliceWindowLevelFromRange(window_range)[1]
+
+        self.assertEqual(state["slice_window_range"], tuple(window_range))
+        self.assertEqual(state["slice_window"], window)
+        self.assertEqual(state["slice_level"], level)
+
+    def test_set_default_button_state_sets_correct_defaults_for_slice_windowing_if_using_percentages(self):
+
+        self.setup_default_button_state_tests()
+        self.trame_viewer.window_level_sliders_are_percentages = True
+        self.trame_viewer.set_default_button_state()
+
+        window_range = self.cil_viewer.getImageMapRange((5., 95.), "scalar")
+        window = self.cil_viewer.getSliceWindowLevelFromRange(window_range)[0]
+        level = self.cil_viewer.getSliceWindowLevelFromRange(window_range)[1]
+
+        self.assertEqual(state["slice_window_percentiles"], (5., 95.))
+        self.assertEqual(state["slice_window_as_percentage"], self.trame_viewer.convert_value_to_percentage(window))
+        self.assertEqual(state["slice_level_as_percentage"], self.trame_viewer.convert_value_to_percentage(level))
+
 
     def test_set_default_button_state_sets_visibility_of_the_slice(self):
         self.trame_viewer.switch_slice = mock.MagicMock()
@@ -711,7 +772,7 @@ class TrameViewer3DTest(unittest.TestCase):
         self.trame_viewer.remove_clipping_plane.assert_called_once_with()
 
     def test_change_coloring_percentage(self):
-        self.trame_viewer.color_slider_is_percentage = True
+        self.trame_viewer.window_level_sliders_are_percentages = True
         min_value = mock.MagicMock()
         max_value = mock.MagicMock()
 
@@ -721,7 +782,7 @@ class TrameViewer3DTest(unittest.TestCase):
         self.cil_viewer.setVolumeColorRange.assert_not_called()
 
     def test_change_coloring_not_percentage(self):
-        self.trame_viewer.color_slider_is_percentage = False
+        self.trame_viewer.window_level_sliders_are_percentages = False
         min_value = mock.MagicMock()
         max_value = mock.MagicMock()
 
