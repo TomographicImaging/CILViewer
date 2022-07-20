@@ -362,20 +362,6 @@ class TrameViewer2DTest(unittest.TestCase):
         self.trame_viewer.convert_value_to_percentage.assert_any_call(level)
         self.trame_viewer.convert_value_to_percentage.assert_any_call(window)
 
-    # def test_update_slice_data_sets_cmin_cmax_level_and_window(self):
-    #     slice_return = (random.random(), random.random())
-    #     self.trame_viewer.cil_viewer.getSliceMapRange = mock.MagicMock(return_value=slice_return)
-    #     self.trame_viewer.cil_viewer.getImageMapRange = mock.MagicMock(return_value=slice_return)
-
-    #     self.trame_viewer.update_slice_data()
-
-    #     self.trame_viewer.cil_viewer.getSliceMapRange.assert_called_once_with((5., 95.))
-    #     self.assertEqual(self.trame_viewer.cmin, slice_return[0])
-    #     self.assertEqual(self.trame_viewer.cmax, slice_return[1])
-    #     self.assertEqual(self.trame_viewer.slice_window_range_defaults, slice_return)
-    #     self.assertEqual(self.trame_viewer.slice_level_default, self.cil_viewer.getSliceColorLevel.return_value)
-    #     self.assertEqual(self.trame_viewer.slice_window_default, self.cil_viewer.getSliceColorWindow.return_value)
-
     def test_change_slice_number(self):
         self.trame_viewer.html_view = mock.MagicMock()
         slice_number = mock.MagicMock()
