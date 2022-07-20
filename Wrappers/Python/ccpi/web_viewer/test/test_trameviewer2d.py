@@ -218,7 +218,6 @@ class TrameViewer2DTest(unittest.TestCase):
         self.assertEqual(["Remove ROI"], roi_button.children)
         self.assertEqual(roi_button._py_attr["click"], self.trame_viewer.remove_roi)
 
-
     def test_create_tracing_switch(self):
         tracing_switch = self.trame_viewer.create_tracing_switch()
 
@@ -345,7 +344,7 @@ class TrameViewer2DTest(unittest.TestCase):
         self.trame_viewer.cil_viewer.getSliceMapRange = mock.MagicMock(return_value=(cmin, cmax))
 
         self.trame_viewer.convert_value_to_percentage = mock.MagicMock()
-        pwindow, plevel = 20, 30        
+        pwindow, plevel = 20, 30
         # sets the return values for each call:
         self.trame_viewer.convert_value_to_percentage.side_effect = [pwindow, plevel]
 
