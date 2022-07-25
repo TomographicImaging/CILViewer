@@ -31,7 +31,7 @@ requirements:
   run:
     - python
     - numpy
-    - vtk >=9.0.3
+    - vtk {{ vtk }}
     - pyside2
     - eqt
     - importlib_metadata    # [py<38]
