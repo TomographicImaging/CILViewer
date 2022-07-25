@@ -35,6 +35,9 @@
 - colormaps: added get_color_transfer_function
 - added examples of running the 2D and 3D viewers without Qt
 - Added CILViewer base class
+- Conda recipe:
+  - Fix windows build recipe
+  - Add build variants for VTK to prevent need for multiple viewer release numbers for different VTK versions
 
 ## v22.1.2
 * Changes released in 22.0.2, but also requires vtk version >= 9.0.3
