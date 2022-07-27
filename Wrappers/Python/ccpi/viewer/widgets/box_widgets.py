@@ -21,6 +21,7 @@ def CreateFixedBoxWidget(viewer, outline_colour=(0,1,0)):
     widget.OutlineCursorWiresOff()
     widget.SetPlaceFactor(1)
     widget.KeyPressActivationOff()
+    widget.ScalingEnabledOff()
     return widget
 
 def CreateMoveableBoxWidget(viewer, outline_colour=(0,1,0)):
