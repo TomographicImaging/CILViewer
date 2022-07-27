@@ -2,7 +2,7 @@ import vtk
 from ccpi.viewer import SLICE_ORIENTATION_XY, SLICE_ORIENTATION_XZ, SLICE_ORIENTATION_YZ
 
 
-def CreateFixedBoxWidget(viewer, outline_colour=(0,1,0)):
+def CreateFixedBoxWidget(viewer, outline_colour=(0, 1, 0)):
     '''
     Creates a vtkBoxWidget which the user can't move
     viewer
@@ -24,7 +24,8 @@ def CreateFixedBoxWidget(viewer, outline_colour=(0,1,0)):
     widget.ScalingEnabledOff()
     return widget
 
-def CreateMoveableBoxWidget(viewer, outline_colour=(0,1,0)):
+
+def CreateMoveableBoxWidget(viewer, outline_colour=(0, 1, 0)):
     '''
     Creates a vtkBoxWidget which the user can move
     viewer
@@ -45,8 +46,13 @@ def CreateMoveableBoxWidget(viewer, outline_colour=(0,1,0)):
     widget.KeyPressActivationOff()
     return widget
 
-def CreateBoxWidgetAroundSlice(viewer,  orientation='horizontal', 
-        coord=0, outline_color=(1., 0., 0.), width=1, widget_name='slice_outline_widget'):
+
+def CreateBoxWidgetAroundSlice(viewer,
+                               orientation='horizontal',
+                               coord=0,
+                               outline_color=(1., 0., 0.),
+                               width=1,
+                               widget_name='slice_outline_widget'):
     '''
     Creates a border in [viewer], around a slice with number [coord] in
     the [orientation] plane. This border is a box widget.
@@ -106,7 +112,7 @@ def get_coords_for_box_widget_around_slice(viewer, orientation='horizontal',
     render_orientation = SLICE_ORIENTATION_XY
     try:
         viewer.setSliceOrientation(render_orientation)
-    except: # method doesn't exist on 3D viewer
+    except:  # method doesn't exist on 3D viewer
         pass
 
     spacing = viewer.img3D.GetSpacing()
@@ -115,7 +121,7 @@ def get_coords_for_box_widget_around_slice(viewer, orientation='horizontal',
     world_image_max = viewer.style.GetImageWorldExtent()
 
     # Set the minimum world value
-    world_image_min = (0,0,0)
+    world_image_min = (0, 0, 0)
 
     z_coords = [world_image_min[render_orientation], world_image_max[render_orientation]]
 
@@ -185,7 +191,7 @@ def get_box_bounds_from_event_position(viewer, position, scale_factor=0.3):
     world_image_max = viewer.style.GetImageWorldExtent()
 
     # Set the minimum world value
-    world_image_min = (0,0,0)
+    world_image_min = (0, 0, 0)
 
     # Initialise the box position in format [xmin, xmax, ymin, ymax,...]
     box_pos = [0, 0, 0, 0, 0, 0]
@@ -232,7 +238,7 @@ def get_box_bounds_from_event_position(viewer, position, scale_factor=0.3):
 
         # Set top right point
         # Top right is ymax, zmax
-        box_pos[3] = truncate_box(box_pos[2], world_image_max,"y")
+        box_pos[3] = truncate_box(box_pos[2], world_image_max, "y")
         box_pos[5] = truncate_box(box_pos[4], world_image_max, "z")
 
         # Set the scroll axis to maximum extent eg. min-max
