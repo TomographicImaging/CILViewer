@@ -89,8 +89,7 @@ def CreateBoxWidgetAroundSlice(viewer,
     return widget
 
 
-def get_coords_for_box_widget_around_slice(viewer, orientation='horizontal', 
-        coord=0, width=1):
+def get_coords_for_box_widget_around_slice(viewer, orientation='horizontal', coord=0, width=1):
     '''
     Generate coordinates for positioning BoxWidget around slice
     
@@ -127,12 +126,12 @@ def get_coords_for_box_widget_around_slice(viewer, orientation='horizontal',
 
     if orientation == 'horizontal':
         # Displaying slice at fixed coord in X direction:
-        x_coords = [coord, coord+width*spacing[0]]
+        x_coords = [coord, coord + width * spacing[0]]
         y_coords = [world_image_min[1], world_image_max[1]]
 
     else:
         # Displaying slice at fixed coord in Y direction:
-        y_coords = [coord, coord+width*spacing[1]]
+        y_coords = [coord, coord + width * spacing[1]]
         x_coords = [world_image_min[0], world_image_max[0]]
 
     coords = x_coords + y_coords + z_coords
@@ -140,7 +139,7 @@ def get_coords_for_box_widget_around_slice(viewer, orientation='horizontal',
     return coords
 
 
-def CreateMoveableBoxWidgetAtEventPosition(viewer, position, widget_name, outline_colour=(0,1,0), scale_factor=0.3):
+def CreateMoveableBoxWidgetAtEventPosition(viewer, position, widget_name, outline_colour=(0, 1, 0), scale_factor=0.3):
     ''' 
     Place a moveable box widget on the viewer at the event position.
     Parameters
