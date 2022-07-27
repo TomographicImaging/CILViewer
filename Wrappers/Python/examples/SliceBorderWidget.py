@@ -1,35 +1,18 @@
 import sys
-import vtk
-from PySide2 import QtCore, QtWidgets
+from PySide2 import QtWidgets
 from ccpi.viewer import viewer2D, viewer3D
-from ccpi.viewer.QCILViewerWidget import QCILViewerWidget
-from ccpi.viewer.utils import example_data
 from SingleViewerCentralWidget import SingleViewerCenterWidget
-from ccpi.viewer.widgets import CreateViewerSliceBorder
+from ccpi.viewer.widgets.box_widgets import CreateBoxWidgetAroundSlice
 
 
-class SingleViewerCenterWidget(QtWidgets.QMainWindow):
+app = QtWidgets.QApplication(sys.argv)
+# can change the behaviour by setting which viewer you want
+# between viewer2D and viewer3D
+window = SingleViewerCenterWidget(viewer=viewer2D)
+line_widget = CreateBoxWidgetAroundSlice(window.frame.viewer, 'horizontal', 5, width=0)
+line_widget.On()
+box_widget = CreateBoxWidgetAroundSlice(window.frame.viewer, 'vertical', 10, width=1, outline_color=(0,0,1))
+box_widget.On()
+window.frame.viewer.updatePipeline()
 
-    def __init__(self, parent=None, viewer=viewer2D):
-        QtWidgets.QMainWindow.__init__(self, parent)
-
-        self.frame = QCILViewerWidget(viewer=viewer, shape=(600, 600))
-
-        head = example_data.HEAD.get()
-
-        self.frame.viewer.setInputData(head)
-
-        self.setCentralWidget(self.frame)
-
-        self.show()
-
-
-if __name__ == "__main__":
-
-    app = QtWidgets.QApplication(sys.argv)
-    # can change the behaviour by setting which viewer you want
-    # between viewer2D and viewer3D
-    window = SingleViewerCenterWidget(viewer=viewer2D)
-    CreateViewerSliceBorder(window.frame.viewer, 'horizontal', 5)
-
-    sys.exit(app.exec_())
+sys.exit(app.exec_())

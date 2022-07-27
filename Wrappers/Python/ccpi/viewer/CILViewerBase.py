@@ -107,8 +107,9 @@ class CILViewerBase():
         ori.InteractiveOff()
         self.orientation_marker = ori
 
-        # holder for list of actors
+        # holder for list of actors and widgets
         self.actors = {}
+        self.widgets = {}
 
         #initial Window/Level
         self.InitialLevel = 0
@@ -297,3 +298,10 @@ class CILViewerBase():
 
     def setInput3DData(self, imageData):
         raise NotImplementedError("Implemented in the subclasses.")
+
+    def addWidgetReference(self, widget, name):
+        '''Adds widget to dictionary of widgets'''
+        self.widgets[name] = widget
+
+    def getWidget(self, name):
+        return self.widgets.get(name)
