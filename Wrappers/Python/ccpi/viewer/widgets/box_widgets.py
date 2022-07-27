@@ -66,7 +66,7 @@ def CreateBoxWidgetAroundSlice(viewer,  orientation='horizontal',
     orientation: {'horizontal', 'vertical'}
         Which axis the slice is on
     coord: int
-        The coordinate of the slice
+        The coordinate of the slice in world coords
     outline_color: tuple
         colour of the border
     width: float
@@ -77,6 +77,30 @@ def CreateBoxWidgetAroundSlice(viewer,  orientation='horizontal',
     '''
 
     widget = CreateFixedBoxWidget(viewer, outline_color)
+    coords = get_coords_for_box_widget_around_slice(viewer, orientation, coord, width)
+    widget.PlaceWidget(coords)
+    viewer.addWidgetReference(widget, widget_name)
+    return widget
+
+
+def get_coords_for_box_widget_around_slice(viewer, orientation='horizontal', 
+        coord=0, width=1):
+    '''
+    Generate coordinates for positioning BoxWidget around slice
+    
+    Parameters
+    ----------
+    viewer: viewer2D or viewer3D
+        A viewer upon which the border will be displayed
+    orientation: {'horizontal', 'vertical'}
+        Which axis the slice is on
+    coord: int
+        The coordinate of the slice in world coords
+    width: float
+        The width of the border. The border starts from the bound of the
+        slice with number coord.
+    
+    '''
 
     # Only makes sense to do this on the Z axis:
     render_orientation = SLICE_ORIENTATION_XY
@@ -84,6 +108,8 @@ def CreateBoxWidgetAroundSlice(viewer,  orientation='horizontal',
         viewer.setSliceOrientation(render_orientation)
     except: # method doesn't exist on 3D viewer
         pass
+
+    spacing = viewer.img3D.GetSpacing()
 
     # Get maximum extents of the image in world coords
     world_image_max = viewer.style.GetImageWorldExtent()
@@ -95,23 +121,20 @@ def CreateBoxWidgetAroundSlice(viewer,  orientation='horizontal',
 
     if orientation == 'horizontal':
         # Displaying slice at fixed coord in X direction:
-        x_coords = [coord, coord+width]
+        x_coords = [coord, coord+width*spacing[0]]
         y_coords = [world_image_min[1], world_image_max[1]]
 
     else:
         # Displaying slice at fixed coord in Y direction:
-        y_coords = [coord, coord+width]
+        y_coords = [coord, coord+width*spacing[1]]
         x_coords = [world_image_min[0], world_image_max[0]]
 
     coords = x_coords + y_coords + z_coords
 
-    widget.PlaceWidget(coords)
-    viewer.addWidgetReference(widget, widget_name)
-
-    return widget
+    return coords
 
 
-def CreateMoveableBoxWidgetAtEventPosition(viewer, position, widget_name, outline_colour=(0,1,0)):
+def CreateMoveableBoxWidgetAtEventPosition(viewer, position, widget_name, outline_colour=(0,1,0), scale_factor=0.3):
     ''' 
     Place a moveable box widget on the viewer at the event position.
     Parameters
@@ -124,10 +147,12 @@ def CreateMoveableBoxWidgetAtEventPosition(viewer, position, widget_name, outlin
         The name the reference to the widget will be stored as
     outline_color
         The outline color of the box widget
+    scale_factor
+        Factor for scaling the size of the box
     '''
     # ROI Widget
     widget = CreateMoveableBoxWidget(viewer, outline_colour)
-    coords = get_box_bounds_from_event_position(viewer, widget, position)
+    coords = get_box_bounds_from_event_position(viewer, position, scale_factor)
     # Set widget placement and make visible
     widget.PlaceWidget(coords)
     widget.On()
