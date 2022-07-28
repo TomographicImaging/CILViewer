@@ -2,16 +2,6 @@ ccpi_viewer.egg-info
 *.pyc
 __pycache__
 *.log
-.vscode/*
-
-# Image files:
-current_render*.png
-*.mha
-*.mhd
-*.raw
-*.h5
-*.npy
-*.nxs
 
 Wrappers/Python/ccpi/viewer/version.py
 Wrappers/Python/ccpi/web_viewer/data/*
