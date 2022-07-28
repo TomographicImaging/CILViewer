@@ -13,10 +13,6 @@ current_render*.png
 *.npy
 *.nxs
 
-# Builds:
-Wrappers/Python/build/*
-*.egg
-
 Wrappers/Python/ccpi/viewer/version.py
 Wrappers/Python/ccpi/web_viewer/data/*
 
