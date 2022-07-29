@@ -32,7 +32,6 @@ from ccpi.viewer.utils.hdf5_io import HDF5Reader, HDF5SubsetReader
 
 import shutil
 
-
 VTK_MAJOR_VERSION = vtk.vtkVersion.GetVTKMajorVersion()
 
 
@@ -1918,7 +1917,7 @@ class cilTIFFCroppedReader(cilBaseCroppedReader, cilTIFFImageReaderInterface):
                 data = Converter.vtk2numpy(reader.GetOutput())
                 data = np.flip(data, axis=1)
                 data = Converter.numpy2vtkImage(data)
-                
+
             outData.ShallowCopy(data)
 
             return 1
