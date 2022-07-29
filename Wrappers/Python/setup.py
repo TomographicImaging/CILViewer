@@ -72,8 +72,6 @@ setup(
     entry_points={
         'console_scripts': [
         'resample = ccpi.viewer.cli.resample:main',
-        ]
-    }
-
-    # could also include long_description, download_url, classifiers, etc.
-    entry_points={'console_scripts': ['web_cilviewer = ccpi.web_viewer.web_app:main']})
+        'web_cilviewer = ccpi.web_viewer.web_app:main']
+        }
+    )
