@@ -27,11 +27,12 @@ test:
 requirements:
   build:
     - python
+    - vtk {{ vtk }}
  
   run:
     - python
     - numpy
-    - vtk {{ vtk }}
+    - {{ pin_compatible('vtk', min_pin='x.x', max_pin='x.x') }}
     - pyside2
     - eqt
     - importlib_metadata    # [py<38]
