@@ -18,6 +18,7 @@ import os
 import sys
 import subprocess
 
+
 def version2pep440(version):
     '''normalises the version from git describe to pep440
     
@@ -37,14 +38,13 @@ def version2pep440(version):
 
 git_version_string = subprocess.check_output('git describe', shell=True).decode("utf-8").rstrip()[1:]
 
-
 if os.environ.get('CONDA_BUILD', 0) == '1':
-    cwd = os.path.join(os.environ.get('RECIPE_DIR'),'..')
+    cwd = os.path.join(os.environ.get('RECIPE_DIR'), '..')
     # requirements are processed by conda
     requires = []
     version = git_version_string
 else:
-    requires = ['numpy','vtk']
+    requires = ['numpy', 'vtk']
     cwd = os.getcwd()
     version = version2pep440(git_version_string)
 
@@ -55,12 +55,11 @@ if os.path.exists(fname):
     os.remove(fname)
 with open(fname, 'w') as f:
     f.write('version = \'{}\''.format(version))
-    
 
 setup(
     name="ccpi-viewer",
     version=version,
-    packages=['ccpi','ccpi.viewer', 'ccpi.viewer.utils', 'ccpi.viewer.cli'],
+    packages=['ccpi','ccpi.viewer', 'ccpi.viewer.utils', 'ccpi.viewer.cli', 'ccpi.web_viewer'],
 	install_requires=requires,
     zip_safe = False,
     # metadata for upload to PyPI
@@ -77,4 +76,4 @@ setup(
     }
 
     # could also include long_description, download_url, classifiers, etc.
-)
+    entry_points={'console_scripts': ['web_cilviewer = ccpi.web_viewer.web_app:main']})
