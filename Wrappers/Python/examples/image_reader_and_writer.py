@@ -21,7 +21,7 @@ from ccpi.viewer.iviewer import iviewer
 import numpy as np
 import vtk
 
-DATASET_TO_READ =  None
+DATASET_TO_READ = None
 TARGET_SIZE = (100)**3
 FILE_TO_WRITE = 'resampled_dataset.hdf5'
 LOG_FILE = 'image_reader_and_writer.log'
@@ -38,10 +38,10 @@ def descend_hdf5_obj(obj, sep='\t'):
     if type(obj) in [h5py._hl.group.Group, h5py._hl.files.File]:
         for key in obj.keys():
             print(sep, '-', key, ':', obj[key])
-            descend_hdf5_obj(obj[key], sep=sep+'\t')
+            descend_hdf5_obj(obj[key], sep=sep + '\t')
     elif type(obj) == h5py._hl.dataset.Dataset:
         for key in obj.attrs.keys():
-            print(sep+'\t', '-', key, ':', obj.attrs[key])
+            print(sep + '\t', '-', key, ':', obj.attrs[key])
 
 
 def print_hdf5_metadata(path, group='/'):
@@ -110,5 +110,3 @@ print(read_resampled_image2.GetSpacing())
 
 # ---- STEP 8 --------------------------------
 iviewer(read_resampled_image, read_resampled_image2)
-
-

@@ -60,7 +60,6 @@ def customise_warnings():
     # without customising, warning message is printed twice, and is not
     # as clear
     def custom_warning_format(message, category, filename, lineno, line=None):
-        return "{1}:{2}: \033[1;33;40m {1}: {0} \033[0m \n ".format(
-            message, category.__name__, filename, lineno)
+        return "{1}:{2}: \033[1;33;40m {1}: {0} \033[0m \n ".format(message, category.__name__, filename, lineno)
 
     warnings.formatwarning = custom_warning_format
