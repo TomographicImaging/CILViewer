@@ -10,14 +10,9 @@ import h5py
 import numpy as np
 import vtk
 from ccpi.viewer.utils import Converter
-from ccpi.viewer.utils.conversion import (cilRawCroppedReader,
-                                          cilRawResampleReader,
-                                          cilHDF5CroppedReader,
-                                          cilHDF5ResampleReader,
-                                          cilMetaImageCroppedReader,
-                                          cilMetaImageResampleReader,
-                                          cilNumpyCroppedReader,
-                                          cilNumpyResampleReader)
+from ccpi.viewer.utils.conversion import (cilRawCroppedReader, cilRawResampleReader, cilHDF5CroppedReader,
+                                          cilHDF5ResampleReader, cilMetaImageCroppedReader, cilMetaImageResampleReader,
+                                          cilNumpyCroppedReader, cilNumpyResampleReader)
 from ccpi.viewer.utils.hdf5_io import HDF5Reader
 from ccpi.viewer.version import version
 from schema import Optional, Or, Schema, SchemaError
@@ -77,6 +72,7 @@ def SaveRenderToPNG(render_window, filename):
 # supporting tiffs
 # write out other filetypes
 
+
 class ImageReader(object):
     '''
     Generic reader for reading to vtkImageData
@@ -88,9 +84,16 @@ class ImageReader(object):
     If set both to true then it resamples and doesn't crop
     '''
 
-    def __init__(self,  file_name=None, resample=True, target_size=512**3, crop=False,
-        target_z_extent=None, resample_z=False, raw_image_attrs=None, hdf5_dataset_name="entry1/tomo_entry/data/data", 
-        log_file=None):
+    def __init__(self,
+                 file_name=None,
+                 resample=True,
+                 target_size=512**3,
+                 crop=False,
+                 target_z_extent=None,
+                 resample_z=False,
+                 raw_image_attrs=None,
+                 hdf5_dataset_name="entry1/tomo_entry/data/data",
+                 log_file=None):
         '''
         Constructor
 
@@ -118,7 +121,7 @@ class ImageReader(object):
             Name of the hdf5 dataset to be read, if file format is hdf5
         log_file: str, optional, default None
             log verbose output to file of this name            
-        '''      
+        '''
 
         if file_name is None:
             raise Exception('Path to file is required.')
@@ -126,7 +129,7 @@ class ImageReader(object):
         if not (os.path.isfile(file_name) or os.path.isdir(file_name)):
             raise Exception('Path\n {}\n does not exist.'.format(file_name))
 
-        self._OriginalImageAttrs = {}  
+        self._OriginalImageAttrs = {}
 
         self.SetFileName(file_name)
         self.SetResample(resample)
@@ -137,7 +140,6 @@ class ImageReader(object):
         self.SetHDF5DatasetName(hdf5_dataset_name)
         self.SetRawImageAttributes(raw_image_attrs)
         self.SetLogFileName(log_file)
-
 
     def SetFileName(self, file_name):
         '''
@@ -185,7 +187,6 @@ class ImageReader(object):
             '''
         self._TargetZExtent = target_z_extent
 
-
     def SetResampleZ(self, resample_z):
         '''
         Parameters
@@ -197,7 +198,6 @@ class ImageReader(object):
         '''
         self._ResampleZ = resample_z
 
-        
     def SetHDF5DatasetName(self, hdf5_dataset_name):
         '''
         Parameters
@@ -213,7 +213,7 @@ class ImageReader(object):
         ----------
         log_file: str, optional, default None
             log verbose output to file of this name            
-        '''    
+        '''
         self._SetUpLogger(log_file)
 
     def SetRawImageAttributes(self, raw_image_attrs):
@@ -223,7 +223,6 @@ class ImageReader(object):
                 self._OriginalImageAttrs = raw_attrs
             except SchemaError as e:
                 raise ValueError("Error: Raw image attributes were not input correctly: ", e)
-
 
     def Read(self, *args, **kwargs):
         ''' reads self._FileName
@@ -235,7 +234,9 @@ class ImageReader(object):
             if self._TargetZExtent is None:
                 raise Exception("Error: if crop is set to True, target_z_extent must be set.")
             if self._Resample:
-                warnings.warn("Both cropping and resampling is not yet implemented. Image will just be cropped and not resampled.")
+                warnings.warn(
+                    "Both cropping and resampling is not yet implemented. Image will just be cropped and not resampled."
+                )
                 self._Resample = False
 
         self._LoadedImageAttrs = {'resampled': self._Resample, 'cropped': self._Crop}
@@ -251,7 +252,7 @@ class ImageReader(object):
         self._UpdateLoadedImageAttrs(reader, data)
 
         self._UpdateOriginalImageAttrs(reader)
-        
+
         return data
 
     def GetOriginalImageAttrs(self):
@@ -264,10 +265,12 @@ class ImageReader(object):
         if raw_image_attrs is None:
             return
         raw_attrs = raw_image_attrs.copy()
-        raw_attrs_schema = Schema({'shape': Or(list, np.ndarray, tuple),
-                                   'is_fortran': bool,
-                                   'is_big_endian': bool,
-                                   'typecode': str})
+        raw_attrs_schema = Schema({
+            'shape': Or(list, np.ndarray, tuple),
+            'is_fortran': bool,
+            'is_big_endian': bool,
+            'typecode': str
+        })
         raw_attrs_schema.validate(raw_attrs)
         return raw_attrs
 
@@ -296,14 +299,15 @@ class ImageReader(object):
 
             else:
                 raise Exception('File format is not supported. Accepted formats include: .mhd, .mha, .npy, .tif, .raw')
-        else: # If we are given a folder, not a file, look for tiff files and try to read them
-            image_files = glob.glob(os.path.join(self._FileName, '*.tif')) + glob.glob(os.path.join(self._FileName, '*.tiff'))
+        else:  # If we are given a folder, not a file, look for tiff files and try to read them
+            image_files = glob.glob(os.path.join(self._FileName, '*.tif')) + glob.glob(
+                os.path.join(self._FileName, '*.tiff'))
             if len(image_files) == 0:
                 raise Exception('No tiff files were found in: {}'.format(self._FileName))
             self._data = self._GetTiffImageReader(image_files)
 
         if file_extension not in ['.tif', '.tiff']:
-        # currently the tiff reader doesn't take these inputs:
+            # currently the tiff reader doesn't take these inputs:
             reader.SetFileName(self._FileName)
             # if we have acquisition data then we would not resample on
             # the z axis:
@@ -312,15 +316,15 @@ class ImageReader(object):
             if self._Resample:
                 target_size = self._TargetSize
             else:
-                # forced use of resample reader in the case that we 
+                # forced use of resample reader in the case that we
                 # don't want to crop or resample,
                 # but the large target size means we don't resample
                 target_size = 1e12
             reader.SetTargetSize(int(target_size))
 
         # Add observers:
-        reader.AddObserver(vtk.vtkCommand.ProgressEvent, partial(
-            self._ReportProgress, progress_callback=progress_callback))
+        reader.AddObserver(vtk.vtkCommand.ProgressEvent,
+                           partial(self._ReportProgress, progress_callback=progress_callback))
 
         # Prints the error if an error occurs in the reader.
         # Otherwise this wouldn't print at all.
@@ -365,8 +369,7 @@ class ImageReader(object):
 
     def _GetRawImageReader(self):
         if self._OriginalImageAttrs is None or 'shape' not in self._OriginalImageAttrs.keys():
-            raise Exception(
-                "To read a raw image, raw_image_attrs must be set.")
+            raise Exception("To read a raw image, raw_image_attrs must be set.")
 
         isFortran = self._OriginalImageAttrs['is_fortran']
         isBigEndian = self._OriginalImageAttrs['is_big_endian']
@@ -378,14 +381,14 @@ class ImageReader(object):
             reader.SetTargetZExtent(tuple(self._TargetZExtent))
         else:
             reader = cilRawResampleReader()
-        
+
         reader.SetBigEndian(isBigEndian)
         reader.SetIsFortran(isFortran)
         reader.SetTypeCodeName(typecode)
         reader.SetStoredArrayShape(shape)
 
         return reader
-    
+
     def _GetHDF5ImageReader(self):
         if self._Crop:
             reader = cilHDF5CroppedReader()
@@ -411,7 +414,7 @@ class ImageReader(object):
         and writes to a log file.
         If a Qt progress_callback has been passed, this allows progress to be kept track
         of if the reading is run in a Worker thread.'''
-        progress_value = caller.GetProgress()*100
+        progress_value = caller.GetProgress() * 100
         progress = "{:.1f}%".format(progress_value)
         self.logger.info(progress)
 
@@ -421,8 +424,8 @@ class ImageReader(object):
     def _UpdateLoadedImageAttrs(self, reader, data):
         # Make sure whether we did resample or not:
         if self._Resample:
-            original_image_size = reader.GetStoredArrayShape(
-            )[0] * reader.GetStoredArrayShape()[1] * reader.GetStoredArrayShape()[2]
+            original_image_size = reader.GetStoredArrayShape()[0] * reader.GetStoredArrayShape(
+            )[1] * reader.GetStoredArrayShape()[2]
             resampled_image_size = reader.GetTargetSize()
             if original_image_size <= resampled_image_size:
                 self._LoadedImageAttrs['resampled'] = False
@@ -438,7 +441,7 @@ class ImageReader(object):
         self._OriginalImageAttrs['shape'] = reader.GetStoredArrayShape()
         self._OriginalImageAttrs['spacing'] = reader.GetElementSpacing()
         self._OriginalImageAttrs['origin'] = reader.GetOrigin()
-        self._OriginalImageAttrs['bit_depth'] = str(reader.GetBytesPerElement()*8)
+        self._OriginalImageAttrs['bit_depth'] = str(reader.GetBytesPerElement() * 8)
         self._OriginalImageAttrs['is_big_endian'] = reader.GetBigEndian()
         self._OriginalImageAttrs['header_length'] = reader.GetFileHeaderLength()
         self._OriginalImageAttrs['file_name'] = self._FileName
@@ -482,6 +485,7 @@ class ImageWriter(object):
     With mha this means we lose the information about the original dataset before it was downsampled/cropped
 
     '''
+
     def __init__(self):
         self._FileName = None
         self._FileFormat = None
@@ -531,7 +535,7 @@ class ImageWriter(object):
         '''
         if not isinstance(original_dataset, vtk.vtkImageData) and not (original_dataset is None):
             raise Exception("'original_dataset' must be vtk.vtkImageData or None")
-        
+
         self._validate_original_dataset_attributes(original_dataset, attributes)
         self._OriginalDataset = original_dataset
         self._OriginalDatasetAttributes = attributes
@@ -542,14 +546,15 @@ class ImageWriter(object):
         if original_dataset is None:
             # must have shape and filename set
             if attributes.get("file_name") is None or attributes.get("shape") is None:
-                raise Exception("If no name is given for a dataset, the attributes must include the 'file_name' and the 'shape'.")
+                raise Exception(
+                    "If no name is given for a dataset, the attributes must include the 'file_name' and the 'shape'.")
 
         original_attributes_schema = Schema({
             Optional('file_name'): str,
             Optional('shape'): Or(list, tuple),
             'resampled': False,
             'cropped': False,
-            Optional(str): object # allow any other keys and values
+            Optional(str): object  # allow any other keys and values
         })
 
         original_attributes_schema.validate(attributes)
@@ -603,7 +608,7 @@ class ImageWriter(object):
                 a chunk, which may improve the compression ratio
         '''
         self._HDF5Compression = compression
-   
+
     def Write(self):
         # check file ext
         writer = self._GetWriter()
@@ -633,13 +638,14 @@ class ImageWriter(object):
         writer.SetChunkShape(self._ChunkShape)
         writer.SetHDF5Compression(self._HDF5Compression)
         for i in range(0, len(self._ChildDatasets)):
-            writer.AddChildDataset(self._ChildDatasets[i],  self._ChildDatasetsAttributes[i])
+            writer.AddChildDataset(self._ChildDatasets[i], self._ChildDatasetsAttributes[i])
         return writer
 
     def _GetMetaImageWriter(self):
         writer = vtk.vtkMetaImageWriter()
         writer.SetInputData(self._ChildDatasets[0])
         return writer
+
 
 class vortexHDF5ImageWriter(ImageWriter):
     '''
@@ -649,7 +655,6 @@ class vortexHDF5ImageWriter(ImageWriter):
 
     def __init__(self):
         super(vortexHDF5ImageWriter, self).__init__()
-
 
     def _ValidateChildDatasetAttributes(self, child_dataset, attributes):
         if not isinstance(attributes, dict):
@@ -662,7 +667,7 @@ class vortexHDF5ImageWriter(ImageWriter):
             'spacing': Or(list, tuple),
             'origin': Or(list, tuple),
             Optional('resample_z'): bool,
-            Optional(str): object # allow any other keys and values
+            Optional(str): object  # allow any other keys and values
         })
         child_attributes_schema.validate(attributes)
 
@@ -673,9 +678,9 @@ class vortexHDF5ImageWriter(ImageWriter):
         for var in [self._ChildDatasets, self._ChildDatasetsAttributes]:
             if var is []:
                 raise Exception("child dataset(/s) and attribute(/s), are required.")
-        
+
         with h5py.File(self._FileName, 'w') as f:
-            
+
             # give the file some important attributes
             f.attrs['file_name'] = self._FileName
             f.attrs['viewer_version'] = version
@@ -683,7 +688,7 @@ class vortexHDF5ImageWriter(ImageWriter):
             f.attrs['creator'] = np.string_('io.py')
             f.attrs['HDF5_Version'] = h5py.version.hdf5_version
             f.attrs['h5py_version'] = h5py.version.version
-            
+
             # create the NXentry group
             nxentry = f.create_group('entry1/tomo_entry')
             nxentry.attrs['NX_class'] = 'NXentry'
@@ -692,19 +697,18 @@ class vortexHDF5ImageWriter(ImageWriter):
             datasets += self._ChildDatasets
 
             attributes = [self._OriginalDatasetAttributes]
-            attributes+= self._ChildDatasetsAttributes
+            attributes += self._ChildDatasetsAttributes
 
             for i, dataset in enumerate(datasets):
                 data = dataset
                 dataset_info = attributes[i]
-                entry_num = i+1
+                entry_num = i + 1
                 dataset_name = 'entry{}/tomo_entry/data/data'.format(entry_num)
 
                 if data is not None:
                     # The function imgdata.GetPointData().GetScalars() returns a pointer to a
                     # vtk<TYPE>Array where the data is stored as X-Y-Z.
-                    array = numpy_support.vtk_to_numpy(
-                        data.GetPointData().GetScalars())
+                    array = numpy_support.vtk_to_numpy(data.GetPointData().GetScalars())
 
                     # Note that we flip the shape here because
                     # VTK's order is Fortran whereas h5py writes in
@@ -726,28 +730,26 @@ class vortexHDF5ImageWriter(ImageWriter):
                                 slice_shape[0] = 1
                                 self._ChunkShape = tuple(slice_shape)
                             if self._HDF5Compression is None or self._HDF5Compression[0] is None:
-                                dset = f.create_dataset(dataset_name, data=array,
-                                                chunks=self._ChunkShape)                  
+                                dset = f.create_dataset(dataset_name, data=array, chunks=self._ChunkShape)
                             elif self._HDF5Compression[0] == 'gzip':
-                                dset = f.create_dataset(dataset_name, data=array, 
-                                                    chunks=self._ChunkShape, 
-                                                    compression=self._HDF5Compression[0], 
-                                                    compression_opts=self._HDF5Compression[1], 
-                                                    shuffle=self._HDF5Compression[2]
-                                                    )                  
+                                dset = f.create_dataset(dataset_name,
+                                                        data=array,
+                                                        chunks=self._ChunkShape,
+                                                        compression=self._HDF5Compression[0],
+                                                        compression_opts=self._HDF5Compression[1],
+                                                        shuffle=self._HDF5Compression[2])
                             elif self._HDF5Compression[0] == 'lzf':
-                                dset = f.create_dataset(dataset_name, data=array, 
-                                                    chunks=self._ChunkShape, 
-                                                    compression=self._HDF5Compression[0], 
-                                                    shuffle=self._HDF5Compression[2]
-                                                    )
+                                dset = f.create_dataset(dataset_name,
+                                                        data=array,
+                                                        chunks=self._ChunkShape,
+                                                        compression=self._HDF5Compression[0],
+                                                        shuffle=self._HDF5Compression[2])
                         else:
                             dset = f.create_dataset(dataset_name, data=array)
 
                 except RuntimeError:
-                        print("Unable to save image data to {0}."
-                            "Dataset with name {1} already exists in this file.".format(
-                                self._FileName, dataset_name))
+                    print("Unable to save image data to {0}."
+                          "Dataset with name {1} already exists in this file.".format(self._FileName, dataset_name))
 
                 if entry_num != 1:
                     dset.attrs['original_dataset'] = 'entry1/tomo_entry/data/data'
@@ -765,16 +767,13 @@ class vortexHDF5ImageReader(HDF5Reader):
     It is one of these 'child' versions that we are interested in reading for displaying in the viewer.
     The user must specify which they would like if there is more than one. By default entry2 is read.
     '''
+
     def __init__(self):
-        VTKPythonAlgorithmBase.__init__(self,
-                                        nInputPorts=0,
-                                        nOutputPorts=1,
-                                        outputType='vtkImageData')
+        VTKPythonAlgorithmBase.__init__(self, nInputPorts=0, nOutputPorts=1, outputType='vtkImageData')
 
         super(vortexHDF5ImageReader, self).__init__()
         self._DatasetEntryNumber = 2
         self._DatasetName = 'entry{}/tomo_entry/data/data'.format(self._DatasetEntryNumber)
- 
 
     def SetDatasetEntryNumber(self, num):
         '''
@@ -788,9 +787,9 @@ class vortexHDF5ImageReader(HDF5Reader):
         '''
         dataset_name = 'entry{}/tomo_entry/data/data'.format(num)
         if self._FileName is not None:
-                with h5py.File(self._FileName, 'r') as f:
-                    if not (dataset_name in f):
-                        raise Exception("No dataset named {} exists in {}.".format(dataset_name, self._FileName))
+            with h5py.File(self._FileName, 'r') as f:
+                if not (dataset_name in f):
+                    raise Exception("No dataset named {} exists in {}.".format(dataset_name, self._FileName))
         self._DatasetEntryNumber = num
         self._DatasetName = dataset_name
 
@@ -813,7 +812,7 @@ class vortexHDF5ImageReader(HDF5Reader):
         wish.
         '''
         super(vortexHDF5ImageReader, self).SetDatasetName(lname)
-        re_str='^entry([0-9]*)'
+        re_str = '^entry([0-9]*)'
         try:
             self._DatasetEntryNumber = re.search(re_str, str).group(1)
         except AttributeError:
@@ -823,7 +822,7 @@ class vortexHDF5ImageReader(HDF5Reader):
 
     def RequestData(self, request, inInfo, outInfo):
         output = super(vortexHDF5ImageReader, self)._update_output_data(outInfo)
-        with h5py.File(self._FileName, 'r') as f:      
+        with h5py.File(self._FileName, 'r') as f:
             attrs = f[self._DatasetName].attrs
             # TODO check on the errors if these attributes haven't been found:
             output.SetOrigin(attrs['origin'])

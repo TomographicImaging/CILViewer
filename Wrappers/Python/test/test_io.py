@@ -7,18 +7,17 @@ import vtk
 from ccpi.viewer.utils.conversion import Converter
 from ccpi.viewer.utils.io import ImageReader, vortexHDF5ImageWriter, vortexHDF5ImageReader
 
+
 def calculate_target_downsample_shape(max_size, total_size, shape, acq=False):
     if not acq:
-        xy_axes_magnification = np.power(max_size/total_size, 1/3)
-        slice_per_chunk = int(1/xy_axes_magnification)
+        xy_axes_magnification = np.power(max_size / total_size, 1 / 3)
+        slice_per_chunk = int(1 / xy_axes_magnification)
     else:
         slice_per_chunk = 1
-        xy_axes_magnification = np.power(max_size/total_size, 1/2)
-    num_chunks = 1 + len([i for i in
-                          range(slice_per_chunk, shape[2], slice_per_chunk)])
+        xy_axes_magnification = np.power(max_size / total_size, 1 / 2)
+    num_chunks = 1 + len([i for i in range(slice_per_chunk, shape[2], slice_per_chunk)])
 
-    target_image_shape = (int(xy_axes_magnification * shape[0]),
-                          int(xy_axes_magnification * shape[1]), num_chunks)
+    target_image_shape = (int(xy_axes_magnification * shape[0]), int(xy_axes_magnification * shape[1]), num_chunks)
     return target_image_shape
 
 
@@ -34,7 +33,7 @@ class TestImageReaderAndWriter(unittest.TestCase):
     def setUp(self):
         # Generate random 3D array:
         bits = 16
-        self.bytes_per_element = int(bits/8)
+        self.bytes_per_element = int(bits / 8)
         self.input_3D_array = np.random.randint(10, size=(5, 10, 6), dtype=eval(f"np.uint{bits}"))
         # write to HDF5: -----------
         self.hdf5_filename_3D = 'test_3D_data.h5'
@@ -56,10 +55,12 @@ class TestImageReaderAndWriter(unittest.TestCase):
         self.raw_filename_3D = 'test_3D_data.raw'
         with open(self.raw_filename_3D, 'wb') as f:
             f.write(bytes_3D_array)
-        self.raw_image_attrs = {'shape': np.shape(self.input_3D_array), 
-            'is_fortran': False, 'is_big_endian': False, 
-            'typecode': str(self.input_3D_array.dtype)}
-
+        self.raw_image_attrs = {
+            'shape': np.shape(self.input_3D_array),
+            'is_fortran': False,
+            'is_big_endian': False,
+            'typecode': str(self.input_3D_array.dtype)
+        }
 
     def _test_read_full_size_data(self, reader):
         array_image_data = reader.Read()
@@ -69,12 +70,11 @@ class TestImageReaderAndWriter(unittest.TestCase):
     def _test_resampling_not_acq_data(self, reader, target_size):
         image = reader.Read()
         extent = image.GetExtent()
-        resulting_shape = (extent[1]+1, (extent[3]+1), (extent[5]+1))
+        resulting_shape = (extent[1] + 1, (extent[3] + 1), (extent[5] + 1))
         og_shape = np.shape(self.input_3D_array)
         og_shape = (og_shape[2], og_shape[1], og_shape[0])
-        og_size = og_shape[0]*og_shape[1]*og_shape[2]*self.bytes_per_element
-        expected_shape = calculate_target_downsample_shape(
-            target_size, og_size, og_shape)
+        og_size = og_shape[0] * og_shape[1] * og_shape[2] * self.bytes_per_element
+        expected_shape = calculate_target_downsample_shape(target_size, og_size, og_shape)
         self.assertEqual(resulting_shape, expected_shape)
 
     def _test_resample_size_bigger_than_image_size(self, reader):
@@ -83,33 +83,29 @@ class TestImageReaderAndWriter(unittest.TestCase):
         og_shape = np.shape(self.input_3D_array)
         og_shape = (og_shape[2], og_shape[1], og_shape[0])
         expected_shape = og_shape
-        resulting_shape = (extent[1]+1, (extent[3]+1), (extent[5]+1))
+        resulting_shape = (extent[1] + 1, (extent[3] + 1), (extent[5] + 1))
         self.assertEqual(resulting_shape, expected_shape)
         resulting_array = Converter.vtk2numpy(image)
         np.testing.assert_array_equal(self.input_3D_array, resulting_array)
 
-
     def _test_resampling_acq_data(self, reader, target_size):
         og_shape = np.shape(self.input_3D_array)
         og_shape = (og_shape[2], og_shape[1], og_shape[0])
-        og_size = og_shape[0]*og_shape[1]*og_shape[2]*self.bytes_per_element
+        og_size = og_shape[0] * og_shape[1] * og_shape[2] * self.bytes_per_element
         image = reader.Read()
         extent = image.GetExtent()
-        shape_not_acquisition = calculate_target_downsample_shape(
-            target_size, og_size, og_shape, acq=True)
+        shape_not_acquisition = calculate_target_downsample_shape(target_size, og_size, og_shape, acq=True)
         expected_size = shape_not_acquisition[0] * \
             shape_not_acquisition[1]*shape_not_acquisition[2]
-        resulting_shape = (extent[1]+1, (extent[3]+1), (extent[5]+1))
+        resulting_shape = (extent[1] + 1, (extent[3] + 1), (extent[5] + 1))
         resulting_size = resulting_shape[0] * \
             resulting_shape[1]*resulting_shape[2]
         # angle (z direction) is first index in numpy array, and in cil
         # but it is the last in vtk.
-        resulting_z_shape = extent[5]+1
+        resulting_z_shape = extent[5] + 1
         og_z_shape = np.shape(self.input_3D_array)[0]
         self.assertEqual(resulting_size, expected_size)
         self.assertEqual(resulting_z_shape, og_z_shape)
-        
-
 
     def test_read(self):
         '''Test reading each format without resampling or cropping'''
@@ -130,63 +126,78 @@ class TestImageReaderAndWriter(unittest.TestCase):
         reader = ImageReader(file_name=self.raw_filename_3D, resample=False, raw_image_attrs=self.raw_image_attrs)
         self._test_read_full_size_data(reader)
 
-
     def test_read_resample(self):
-        
+
         og_shape = np.shape(self.input_3D_array)
         og_shape = (og_shape[2], og_shape[1], og_shape[0])
-        og_size = og_shape[0]*og_shape[1]*og_shape[2]
-
+        og_size = og_shape[0] * og_shape[1] * og_shape[2]
 
         # Tests image with correct target size is generated by resample reader:
-        target_size=100
-        readerhdf5 = ImageReader(file_name=self.hdf5_filename_3D, target_size=target_size, resample_z=True, hdf5_dataset_name="ImageData")
+        target_size = 100
+        readerhdf5 = ImageReader(file_name=self.hdf5_filename_3D,
+                                 target_size=target_size,
+                                 resample_z=True,
+                                 hdf5_dataset_name="ImageData")
         self._test_resampling_not_acq_data(readerhdf5, target_size)
         readernpy = ImageReader(file_name=self.numpy_filename_3D, target_size=target_size, resample_z=True)
         self._test_resampling_not_acq_data(readernpy, target_size)
         readermhd = ImageReader(file_name=self.mha_filename_3D, target_size=target_size, resample_z=True)
         self._test_resampling_not_acq_data(readermhd, target_size)
-        readerraw = ImageReader(file_name=self.raw_filename_3D, target_size=target_size, resample_z=True, raw_image_attrs=self.raw_image_attrs)
+        readerraw = ImageReader(file_name=self.raw_filename_3D,
+                                target_size=target_size,
+                                resample_z=True,
+                                raw_image_attrs=self.raw_image_attrs)
         self._test_resampling_not_acq_data(readerraw, target_size)
 
         # Now test if we get the correct z extent if we set that we
         # have acquisition data
-        readerhdf5 = ImageReader(file_name=self.hdf5_filename_3D, target_size=target_size, resample_z=False, hdf5_dataset_name="ImageData")
+        readerhdf5 = ImageReader(file_name=self.hdf5_filename_3D,
+                                 target_size=target_size,
+                                 resample_z=False,
+                                 hdf5_dataset_name="ImageData")
         self._test_resampling_acq_data(readerhdf5, target_size)
         readernpy = ImageReader(file_name=self.numpy_filename_3D, target_size=target_size, resample_z=False)
         self._test_resampling_acq_data(readernpy, target_size)
         readermhd = ImageReader(file_name=self.mha_filename_3D, target_size=target_size, resample_z=False)
         self._test_resampling_acq_data(readermhd, target_size)
-        readerraw = ImageReader(file_name=self.raw_filename_3D, target_size=target_size, resample_z=False, raw_image_attrs=self.raw_image_attrs)
+        readerraw = ImageReader(file_name=self.raw_filename_3D,
+                                target_size=target_size,
+                                resample_z=False,
+                                raw_image_attrs=self.raw_image_attrs)
         self._test_resampling_acq_data(readerraw, target_size)
-
 
         # # Now test if we get the full image extent if our
         # # target size is larger than the size of the image:
-        target_size = og_size*2
-        readerhdf5 = ImageReader(file_name=self.hdf5_filename_3D, target_size=target_size, hdf5_dataset_name="ImageData")
+        target_size = og_size * 2
+        readerhdf5 = ImageReader(file_name=self.hdf5_filename_3D,
+                                 target_size=target_size,
+                                 hdf5_dataset_name="ImageData")
         self._test_resample_size_bigger_than_image_size(readerhdf5)
         readernpy = ImageReader(file_name=self.numpy_filename_3D, target_size=target_size)
         self._test_resample_size_bigger_than_image_size(readernpy)
         readermhd = ImageReader(file_name=self.mha_filename_3D, target_size=target_size)
         self._test_resample_size_bigger_than_image_size(readermhd)
-        readerraw = ImageReader(file_name=self.raw_filename_3D, target_size=target_size, raw_image_attrs=self.raw_image_attrs)
+        readerraw = ImageReader(file_name=self.raw_filename_3D,
+                                target_size=target_size,
+                                raw_image_attrs=self.raw_image_attrs)
         self._test_resample_size_bigger_than_image_size(readerraw)
-
 
     def test_read_cropped(self):
         # Test cropping the extent of a dataset
         cropped_array = self.input_3D_array[1:2, :, :]
 
         # HDF5: ------------------------------------------------------------------------------------------
-        reader = ImageReader(file_name=self.hdf5_filename_3D, crop=True, resample=False, target_z_extent=[1, 1],  hdf5_dataset_name = "ImageData")
+        reader = ImageReader(file_name=self.hdf5_filename_3D,
+                             crop=True,
+                             resample=False,
+                             target_z_extent=[1, 1],
+                             hdf5_dataset_name="ImageData")
 
         # NOTE: the extent is in vtk so is in fortran order, whereas
         # above we had the np array in C-order so x and y cropping swapped
         array_image_data = reader.Read()
         read_cropped_array_hdf5 = Converter.vtk2numpy(array_image_data)
         np.testing.assert_array_equal(cropped_array, read_cropped_array_hdf5)
-
 
         # NUMPY: --------------------------------------------------------------
         reader = ImageReader(file_name=self.numpy_filename_3D, crop=True, resample=False, target_z_extent=[1, 1])
@@ -201,12 +212,14 @@ class TestImageReaderAndWriter(unittest.TestCase):
         np.testing.assert_array_equal(cropped_array, read_cropped_array)
 
         # RAW: ----------------------------------------------------------------------
-        reader = ImageReader(file_name=self.raw_filename_3D, crop=True, resample=False, target_z_extent=[1, 1], raw_image_attrs=self.raw_image_attrs)
+        reader = ImageReader(file_name=self.raw_filename_3D,
+                             crop=True,
+                             resample=False,
+                             target_z_extent=[1, 1],
+                             raw_image_attrs=self.raw_image_attrs)
         array_image_data = reader.Read()
         read_cropped_array = Converter.vtk2numpy(array_image_data)
         np.testing.assert_array_equal(cropped_array, read_cropped_array)
-
-
 
     def test_write_read_hdf5(self):
         ''''
@@ -216,10 +229,13 @@ class TestImageReaderAndWriter(unittest.TestCase):
         Reads the resampled_dataset
         Checks we read back in the same array, spacing and origin
         '''
-        target_size=100
-        reader = ImageReader(file_name=self.hdf5_filename_3D, target_size=target_size, resample_z=True, hdf5_dataset_name="ImageData")
-        
-        file_to_write='downsampled_image.hdf5'
+        target_size = 100
+        reader = ImageReader(file_name=self.hdf5_filename_3D,
+                             target_size=target_size,
+                             resample_z=True,
+                             hdf5_dataset_name="ImageData")
+
+        file_to_write = 'downsampled_image.hdf5'
         resampled_image = reader.Read()
         resampled_image_array = Converter.vtk2numpy(resampled_image)
 
@@ -232,7 +248,7 @@ class TestImageReaderAndWriter(unittest.TestCase):
         writer = vortexHDF5ImageWriter()
         writer.SetFileName(file_to_write)
         writer.SetOriginalDataset(None, original_image_attrs)
-        writer.AddChildDataset(resampled_image,  resampled_image_attrs)
+        writer.AddChildDataset(resampled_image, resampled_image_attrs)
         writer.Write()
 
         reader = vortexHDF5ImageReader()
@@ -244,7 +260,6 @@ class TestImageReaderAndWriter(unittest.TestCase):
         np.testing.assert_array_equal(resampled_image_array, read_resampled_image_array)
         np.testing.assert_array_equal(resampled_image.GetOrigin(), read_resampled_image.GetOrigin())
         np.testing.assert_array_equal(resampled_image.GetSpacing(), read_resampled_image.GetSpacing())
-
 
     def tearDown(self):
         files = [self.hdf5_filename_3D]
