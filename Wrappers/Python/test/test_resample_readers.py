@@ -29,6 +29,8 @@ class TestResampleReaders(unittest.TestCase):
         bits = 16
         self.bytes_per_element = int(bits / 8)
         shape = (5, 10, 6)
+        self.size_to_resample_to = 100
+        self.size_greater_than_input_size = 10000
         self.input_3D_array = np.random.randint(10, size=shape, dtype=eval(f"np.uint{bits}"))
         self.input_3D_array = np.reshape(np.arange(self.input_3D_array.size),
                                          newshape=shape).astype(dtype=eval(f"np.uint{bits}"))
@@ -142,32 +144,60 @@ class TestResampleReaders(unittest.TestCase):
         raw_type_code = str(self.input_3D_array.dtype)
         reader.SetTypeCodeName(raw_type_code)
         reader.SetStoredArrayShape(og_shape)
-        self.resample_reader_test1(reader, 100)
-        self.resample_reader_test1(reader, 100 * 8 * 2)
+        self.resample_reader_test1(reader, self.size_to_resample_to)
+
+    def test_raw_resample_reader_when_resampling_not_needed(self):
+        og_shape = np.shape(self.input_3D_array)
+        reader = cilRawResampleReader()
+        reader.SetFileName(self.raw_filename_3D)
+        reader.SetBigEndian(False)
+        reader.SetIsFortran(False)
+        raw_type_code = str(self.input_3D_array.dtype)
+        reader.SetTypeCodeName(raw_type_code)
+        reader.SetStoredArrayShape(og_shape)
+        self.resample_reader_test1(reader, self.size_greater_than_input_size)
 
     def test_tiff_resample_reader(self):
         reader = cilTIFFResampleReader()
         reader.SetFileName(self.tiff_fnames)
-        self.resample_reader_test1(reader, 100)
-        self.resample_reader_test1(reader, 100 * 8 * 2)
+        self.resample_reader_test1(reader, self.size_to_resample_to)
+
+    def test_tiff_resample_reader_when_resampling_not_needed(self):
+        reader = cilTIFFResampleReader()
+        reader.SetFileName(self.tiff_fnames)
+        self.resample_reader_test1(reader, self.size_greater_than_input_size)
 
     def test_meta_resample_reader_mha(self):
         reader = cilMetaImageResampleReader()
         reader.SetFileName(self.meta_filename_3D)
-        self.resample_reader_test1(reader, 100)
-        self.resample_reader_test1(reader, 100 * 8 * 2)
+        self.resample_reader_test1(reader, self.size_to_resample_to)
+
+    def test_meta_resample_reader_mha_when_resampling_not_needed(self):
+        reader = cilMetaImageResampleReader()
+        reader.SetFileName(self.meta_filename_3D)
+        self.resample_reader_test1(reader, self.size_greater_than_input_size)
 
     def test_meta_resample_reader_mhd(self):
         reader = cilMetaImageResampleReader()
         reader.SetFileName(self.mhd_filename_3D)
-        self.resample_reader_test1(reader, 100)
-        self.resample_reader_test1(reader, 100 * 8 * 2)
+        self.resample_reader_test1(reader, self.size_to_resample_to)
+
+    def test_meta_resample_reader_mhd_when_resampling_not_needed(self):
+        reader = cilMetaImageResampleReader()
+        reader.SetFileName(self.mhd_filename_3D)
+        self.resample_reader_test1(reader, self.size_greater_than_input_size)
 
     def test_npy_resample_reader(self):
         reader = cilNumpyResampleReader()
         reader.SetFileName(self.numpy_filename_3D)
-        self.resample_reader_test1(reader, 100)
-        self.resample_reader_test1(reader, 100 * 8 * 2)
+        self.resample_reader_test1(reader, self.size_to_resample_to)
+        self.resample_reader_test1(reader, self.size_greater_than_input_size)
+
+    def test_npy_resample_reader_when_resampling_not_needed(self):
+        reader = cilNumpyResampleReader()
+        reader.SetFileName(self.numpy_filename_3D)
+        self.resample_reader_test1(reader, self.size_to_resample_to)
+        self.resample_reader_test1(reader, self.size_greater_than_input_size)
 
     def tearDown(self):
         files = [self.raw_filename_3D, self.numpy_filename_3D, self.meta_filename_3D

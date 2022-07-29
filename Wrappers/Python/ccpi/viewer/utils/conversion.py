@@ -33,6 +33,9 @@ from ccpi.viewer.utils.hdf5_io import HDF5Reader, HDF5SubsetReader
 import shutil
 
 
+VTK_MAJOR_VERSION = vtk.vtkVersion.GetVTKMajorVersion()
+
+
 # Converter class
 class Converter(object):
     # inspired by
@@ -1189,7 +1192,13 @@ class cilBaseResampleReader(cilReaderInterface):
                 reader.Modified()
                 reader.Update()
                 # print(reader.GetOutput().GetScalarComponentAsDouble(0, 0, 0, 0))
-                outData.ShallowCopy(reader.GetOutput())
+                data = reader.GetOutput()
+                if self.__class__.__name__ == "cilTIFFResampleReader" and VTK_MAJOR_VERSION == 8:
+                    # In this case we have to flip along the y axis
+                    data = Converter.vtk2numpy(data)
+                    data = np.flip(data, axis=1)
+                    data = Converter.numpy2vtkImage(data)
+                outData.ShallowCopy(data)
 
             else:
 
@@ -1232,7 +1241,7 @@ class cilBaseResampleReader(cilReaderInterface):
                                            element_spacing[1] / xy_axes_magnification,
                                            element_spacing[2] / z_axis_magnification)
                 # resampled data
-                resampled_image = outData
+                resampled_image = vtk.vtkImageData()
 
                 resampled_image.SetExtent(0, target_image_shape[0] - 1, 0, target_image_shape[1] - 1, 0,
                                           target_image_shape[2] - 1)
@@ -1283,8 +1292,18 @@ class cilBaseResampleReader(cilReaderInterface):
                     # print(i, resampler.GetOutput().GetScalarComponentAsDouble(0,0,i,0))
 
                     ################# vtk way ####################
-                    resampled_image.CopyAndCastFrom(resampler.GetOutput(), extent)
+
+                    data = resampler.GetOutput()
+                    resampled_image.CopyAndCastFrom(data, extent)
                     self.UpdateProgress(i / num_chunks)
+                if self.__class__.__name__ == "cilTIFFResampleReader" and VTK_MAJOR_VERSION == 8:
+                    # In this case we have to flip along the y axis
+                    resampled_image = Converter.vtk2numpy(resampled_image)
+                    resampled_image = np.flip(resampled_image, axis=1)
+                    resampled_image = Converter.numpy2vtkImage(resampled_image)
+
+                outData.ShallowCopy(resampled_image)
+
         except Exception as e:
             raise Exception(e)
 
@@ -1893,7 +1912,14 @@ class cilTIFFCroppedReader(cilBaseCroppedReader, cilTIFFImageReaderInterface):
                 sa.InsertNextValue(el)
             reader.SetFileNames(sa)
             reader.Update()
-            outData.ShallowCopy(reader.GetOutput())
+            data = reader.GetOutput()
+            if VTK_MAJOR_VERSION == 8:
+                # In this case we have to flip along the y axis
+                data = Converter.vtk2numpy(reader.GetOutput())
+                data = np.flip(data, axis=1)
+                data = Converter.numpy2vtkImage(data)
+                
+            outData.ShallowCopy(data)
 
             return 1
 
@@ -1918,6 +1944,11 @@ class cilTIFFCroppedReader(cilBaseCroppedReader, cilTIFFImageReaderInterface):
         Data.AllocateScalars(self.GetOutputVTKType(), 1)
 
         read_data = reader.GetOutput()
+        if VTK_MAJOR_VERSION == 8:
+            # In this case we have to flip along the y axis
+            read_data = Converter.vtk2numpy(reader.GetOutput())
+            read_data = np.flip(read_data, axis=1)
+            read_data = Converter.numpy2vtkImage(read_data)
         read_data.SetExtent(extent)
 
         Data.CopyAndCastFrom(read_data, extent)
