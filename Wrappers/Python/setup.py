@@ -59,19 +59,16 @@ with open(fname, 'w') as f:
 setup(
     name="ccpi-viewer",
     version=version,
-    packages=['ccpi','ccpi.viewer', 'ccpi.viewer.utils', 'ccpi.viewer.cli', 'ccpi.web_viewer'],
-	install_requires=requires,
-    zip_safe = False,
+    packages=['ccpi', 'ccpi.viewer', 'ccpi.viewer.utils', 'ccpi.viewer.cli', 'ccpi.web_viewer'],
+    install_requires=requires,
+    zip_safe=False,
     # metadata for upload to PyPI
     author="Edoardo Pasca",
     author_email="edoardo.pasca@stfc.ac.uk",
     description='CCPi CILViewer',
     license="Apache v2.0",
     keywords="3D data viewer",
-    url="http://www.ccpi.ac.uk",   # project home page, if any
+    url="http://www.ccpi.ac.uk",  # project home page, if any
     entry_points={
-        'console_scripts': [
-        'resample = ccpi.viewer.cli.resample:main',
-        'web_cilviewer = ccpi.web_viewer.web_app:main']
-        }
-    )
+        'console_scripts': ['resample = ccpi.viewer.cli.resample:main', 'web_cilviewer = ccpi.web_viewer.web_app:main']
+    })
