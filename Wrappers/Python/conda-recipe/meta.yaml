@@ -32,7 +32,7 @@ requirements:
   run:
     - python
     - numpy
-    - {{ pin_compatible('vtk', min_pin='x.x', max_pin='x.x') }}
+    - vtk {{ vtk }}
     - pyside2
     - eqt
     - importlib_metadata    # [py<38]
