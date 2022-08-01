@@ -7,7 +7,8 @@
   - change signature of creator, and defaults to empty list of items to be clipped on init
   - renamed Get/SetInteractor->Get/SetInteractorStyle
 - Renamed all classes bearing name baseReader to ReaderInterface as they provide the interface not a abstract reader class.
-- Added TIFF resample and cropped readers with unit tests
+- Added TIFF resample and cropped readers with unit tests.
+- Add Set/GetOrientationType methods to TIFF resample and cropped readers, with default value 1: ORIENTATION_TOPLEFT (row 0 top, col 0 lhs)
 - web_viewer:
   - added web viewer using trame for viewer3D and viewer2D
   - add entry point for running the web viewers
@@ -35,6 +36,9 @@
 - colormaps: added get_color_transfer_function
 - added examples of running the 2D and 3D viewers without Qt
 - Added CILViewer base class
+- Conda recipe:
+  - Fix windows build recipe
+  - Add build variants for VTK to prevent need for multiple viewer release numbers for different VTK versions
 
 ## v22.1.2
 * Changes released in 22.0.2, but also requires vtk version >= 9.0.3
