@@ -1,6 +1,5 @@
 import os
 import unittest
-from matplotlib import projections
 
 import numpy as np
 import vtk
