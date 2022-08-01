@@ -1,6 +1,6 @@
 # Changelog
 
-## v22.x.x
+## v22.2.0
 - Qt examples use example_data 
 - Updates in all classes to take into account the backward incompatible methods name changes (see below)
 - cilPlaneClipper: 
