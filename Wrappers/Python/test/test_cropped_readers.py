@@ -114,7 +114,7 @@ class TestCroppedReaders(unittest.TestCase):
     def test_tiff_cropped_reader_when_orientation_set(self):
         target_z_extent = [1, 3]
         reader = self._setup_tiff_cropped_reader(tuple(target_z_extent))
-        reader.SetOrientationType(4) # this flips the y axis
+        reader.SetOrientationType(4)  # this flips the y axis
         expected_array = np.flip(np.copy(self.input_3D_array), axis=1)
         self.check_extent(reader, target_z_extent)
         # Check raw type code was set correctly:
