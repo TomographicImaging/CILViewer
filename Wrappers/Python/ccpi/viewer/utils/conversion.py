@@ -1950,14 +1950,7 @@ class cilTIFFCroppedReader(cilBaseCroppedReader, cilTIFFImageReaderInterface):
                 sa.InsertNextValue(el)
             reader.SetFileNames(sa)
             reader.Update()
-            data = reader.GetOutput()
-            if VTK_MAJOR_VERSION == 8:
-                # In this case we have to flip along the y axis
-                data = Converter.vtk2numpy(reader.GetOutput())
-                data = np.flip(data, axis=1)
-                data = Converter.numpy2vtkImage(data)
-
-            outData.ShallowCopy(data)
+            outData.ShallowCopy(reader.GetOutput())
 
             return 1
 

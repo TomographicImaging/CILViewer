@@ -1,11 +1,15 @@
 import os
 import unittest
+import warnings
 
 import numpy as np
 import vtk
-from ccpi.viewer.utils.conversion import (Converter, cilRawResampleReader, cilMetaImageResampleReader,
-                                          cilNumpyResampleReader, cilNumpyMETAImageWriter, cilTIFFResampleReader)
-import warnings
+from ccpi.viewer.utils.conversion import (Converter,
+                                          cilMetaImageResampleReader,
+                                          cilNumpyMETAImageWriter,
+                                          cilNumpyResampleReader,
+                                          cilRawResampleReader,
+                                          cilTIFFResampleReader)
 
 
 def calculate_target_downsample_shape(max_size, total_size, shape, acq=False):
@@ -172,7 +176,7 @@ class TestResampleReaders(unittest.TestCase):
 
     def test_tiff_resample_reader_with_orientation_type_set(self):
         reader = self._setup_tiff_resample_reader()
-        reader.SetOrientationType(4)  # this flips the y axis
+        reader.SetOrientationType(4) # this flips the y axis
         expected_array = np.flip(np.copy(self.input_3D_array), axis=1)
         self.resample_reader_test1(reader, self.size_to_resample_to, expected_array)
 
@@ -182,7 +186,7 @@ class TestResampleReaders(unittest.TestCase):
 
     def test_tiff_resample_reader_with_orientation_type_set_when_resampling_not_needed(self):
         reader = self._setup_tiff_resample_reader()
-        reader.SetOrientationType(4)  # this flips the y axis
+        reader.SetOrientationType(4) # this flips the y axis
         expected_array = np.flip(np.copy(self.input_3D_array), axis=1)
         self.resample_reader_test1(reader, self.size_greater_than_input_size, expected_array)
 
