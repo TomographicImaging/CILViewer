@@ -7,7 +7,8 @@
   - change signature of creator, and defaults to empty list of items to be clipped on init
   - renamed Get/SetInteractor->Get/SetInteractorStyle
 - Renamed all classes bearing name baseReader to ReaderInterface as they provide the interface not a abstract reader class.
-- Added TIFF resample and cropped readers with unit tests
+- Added TIFF resample and cropped readers with unit tests.
+- Add Set/GetOrientationType methods to TIFF resample and cropped readers, with default value 1: ORIENTATION_TOPLEFT (row 0 top, col 0 lhs)
 - web_viewer:
   - added web viewer using trame for viewer3D and viewer2D
   - add entry point for running the web viewers
