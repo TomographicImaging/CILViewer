@@ -1088,7 +1088,6 @@ class cilTIFFImageReaderInterface(cilReaderInterface):
 
         self._OrientationType = value
 
-
     def GetOrientationType(self):
         ''' Gets the orientation type.
         Returns
