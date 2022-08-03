@@ -5,6 +5,11 @@ dependencies:
 - python==3.9
 - matplotlib # Optional for more colormaps
 - h5py
+- numpy
+- pyside2
+- eqt
+- importlib_metadata    # [py<38]
+- cil-data >=22.0.0
 - pip
 - pip:
   # Have to install Trame via pip due to unavailability on conda
