@@ -65,11 +65,11 @@ class cilviewerBoxWidget():
 
     @staticmethod
     def AroundSliceOnXYPlane(viewer,
-                                axis='x',
-                                coord=0,
-                                outline_color=(1., 0., 0.),
-                                width=1,
-                                widget_name='slice_outline_widget'):
+                             axis='x',
+                             coord=0,
+                             outline_color=(1., 0., 0.),
+                             width=1,
+                             widget_name='slice_outline_widget'):
         '''
         Creates a border in [viewer], around a slice with number [coord] on
         the [axis] axis. This border is a vtkBoxWidget.
@@ -105,7 +105,6 @@ class cilviewerBoxWidget():
         viewer.addWidgetReference(widget, widget_name)
         return widget
 
-    
     @staticmethod
     def GetCoordsForBoxWidgetAroundSlice(viewer, axis='x', coord=0, width=1):
         '''
@@ -298,13 +297,10 @@ class cilviewerBoxWidget():
 
 
 class cilviewerLineWidget():
+
     @staticmethod
-    def AtCoordOnXYPlane(viewer,
-                                    axis='x',
-                                    coord=0,
-                                    outline_color=(1., 0., 0.),
-                                    widget_name='slice_line_widget'):
-            '''
+    def AtCoordOnXYPlane(viewer, axis='x', coord=0, outline_color=(1., 0., 0.), widget_name='slice_line_widget'):
+        '''
             Creates a line in [viewer], at [coord] on the
             the [axis] axis. This line is made using a vtkBoxWidget.
             When created, the direction of view is forced to be SLICE_ORIENTATION_XY,
@@ -327,9 +323,10 @@ class cilviewerLineWidget():
                 The name to associate the border widget with in the viewer.
             '''
 
-            widget = cilviewerBoxWidget.AroundSliceOnXYPlane(viewer,
-                                                                    axis,
-                                                                    coord,
-                                                                    outline_color,
-                                                                    width=0, widget_name=widget_name)
-            return widget
+        widget = cilviewerBoxWidget.AroundSliceOnXYPlane(viewer,
+                                                         axis,
+                                                         coord,
+                                                         outline_color,
+                                                         width=0,
+                                                         widget_name=widget_name)
+        return widget
