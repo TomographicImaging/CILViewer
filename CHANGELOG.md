@@ -1,5 +1,11 @@
 # Changelog
 
+## v22.x.x
+- Add a dictionary of widgets to the CILViewerBaseClass, and ability to add and retrieve widgets to/from the dict with methods `.addWidgetReference` and `.getWidget`
+- Add a new file widgets/box_widgets.py which contains classes cilviewerBoxWidget and cilviewerLineWidget for creating Box and Line widgets on the viewer.
+- Add example: BoxWidgetAroundSlice.py - which demonstrates using the above classes.
+- Use the cilviewerBoxWidget class for creating and positioning the ROIWidget on the CILViewer2D, which involved removing the `CILViewer2D._truncateBox` method.
+
 ## v22.2.0
 - Qt examples use example_data 
 - Updates in all classes to take into account the backward incompatible methods name changes (see below)
