@@ -210,6 +210,8 @@ class cilviewerBoxWidget():
         # Set the minimum world value
         world_image_min = (0, 0, 0)
 
+        world_extent = [0, world_image_max[0], 0, world_image_max[1], 0, world_image_max[2]]
+
         # Initialise the box position in format [xmin, xmax, ymin, ymax,...]
         box_pos = [0, 0, 0, 0, 0, 0]
 
@@ -222,13 +224,13 @@ class cilviewerBoxWidget():
 
             # Set top right point
             # Top right is xmax, ymax
-            box_pos[1] = cilviewerBoxWidget.GetTruncatedBoxCoord(box_pos[0], world_image_max, "x", scale_factor)
-            box_pos[3] = cilviewerBoxWidget.GetTruncatedBoxCoord(box_pos[2], world_image_max, "y", scale_factor)
+            box_pos[1] = cilviewerBoxWidget.GetTruncatedBoxCoord(box_pos[0], world_extent, "x", scale_factor)
+            box_pos[3] = cilviewerBoxWidget.GetTruncatedBoxCoord(box_pos[2], world_extent, "y", scale_factor)
 
             # Set the scroll axis to maximum extent eg. min-max
             # zmin, zmax
             box_pos[4] = world_image_min[orientation]
-            box_pos[5] = world_image_max[orientation]
+            box_pos[5] = world_extent[orientation]
 
         elif orientation == SLICE_ORIENTATION_XZ:
             # Looking along y
@@ -238,13 +240,13 @@ class cilviewerBoxWidget():
 
             # Set top right point.
             # Top right is xmax, zmax
-            box_pos[1] = cilviewerBoxWidget.GetTruncatedBoxCoord(box_pos[0], world_image_max, "x")
-            box_pos[5] = cilviewerBoxWidget.GetTruncatedBoxCoord(box_pos[4], world_image_max, "z")
+            box_pos[1] = cilviewerBoxWidget.GetTruncatedBoxCoord(box_pos[0], world_extent, "x")
+            box_pos[5] = cilviewerBoxWidget.GetTruncatedBoxCoord(box_pos[4], world_extent, "z")
 
             # Set the scroll axis to maximum extent eg. min-max
             # ymin, ymax
             box_pos[2] = world_image_min[orientation]
-            box_pos[3] = world_image_max[orientation]
+            box_pos[3] = world_extent[orientation]
 
         else:
             # orientation == 0
@@ -255,43 +257,51 @@ class cilviewerBoxWidget():
 
             # Set top right point
             # Top right is ymax, zmax
-            box_pos[3] = cilviewerBoxWidget.GetTruncatedBoxCoord(box_pos[2], world_image_max, "y")
-            box_pos[5] = cilviewerBoxWidget.GetTruncatedBoxCoord(box_pos[4], world_image_max, "z")
+            box_pos[3] = cilviewerBoxWidget.GetTruncatedBoxCoord(box_pos[2], world_extent, "y")
+            box_pos[5] = cilviewerBoxWidget.GetTruncatedBoxCoord(box_pos[4], world_extent, "z")
 
             # Set the scroll axis to maximum extent eg. min-max
             # xmin, xmax
             box_pos[0] = world_image_min[orientation]
-            box_pos[1] = world_image_max[orientation]
+            box_pos[1] = world_extent[orientation]
 
         return box_pos
 
     @staticmethod
-    def GetTruncatedBoxCoord(start_pos, world_max_array, axis, scale_factor=0.3):
+    def GetTruncatedBoxCoord(start_pos, world_extent, axis, scale_factor=0.3):
         """
-        Make sure that the value for the upper corner of the box is within the world extent.
+        Returns a coordinate for the edge of the box on axis [axis], scaled
+        by factor [scale_factor], and truncated to make sure the box does not
+        extent over the edge of the image shown.
 
         Parameters
         ----------
-        start_pos: 
+        start_pos: float
             Lower left corner value on specified axis
-        world_max_array:
-            Array containing (x,y,z) of the maximum extent of the world
-        axis: str, {'x', 'y', 'z'}
+        world_extent:
+            Array containing the extent of the world
+        slice_orientation: str, {'x', 'y', 'z'}
             The axis to truncate on.
-        scale_factor:
-            The start position + a percentage of the world truncated to the edges of the world
+        scale_factor: float
+            The factor used to scale the length of the box, compared to the extent
+            of the world on the given axis. 
+            A scale factor of 1 would mean the length of the box on the given axis is 
+            the same as the length of the image on that axis, unless the start position
+            is greater than the minimum value on that axis, in which case, the box would
+            be suitably truncated.
         """
 
         # get index for axis
         axis_dict = {"x": SLICE_ORIENTATION_YZ, "y": SLICE_ORIENTATION_XZ, "z": SLICE_ORIENTATION_XY}
         axis_int = axis_dict[axis]
 
-        # Create the upper right coordinate point with scale offset
-        value = start_pos + world_max_array[axis_int] * scale_factor
+        world_length = world_extent[2*axis_int+1] - world_extent[2*axis_int]
+        dist = world_length*scale_factor
+        value = start_pos + dist
 
         # Check to make sure that it is within the image world.
-        if value > world_max_array[axis_int]:
-            return world_max_array[axis_int]
+        if value > world_extent[2*axis_int+1]:
+            return world_extent[2*axis_int+1]
         else:
             return value
 
