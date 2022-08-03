@@ -27,6 +27,6 @@ if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)
     # can change the behaviour by setting which viewer you want
     # between viewer2D and viewer3D
-    window = SingleViewerCenterWidget(viewer=viewer3D)
+    window = SingleViewerCenterWidget(viewer=viewer2D)
 
     sys.exit(app.exec_())

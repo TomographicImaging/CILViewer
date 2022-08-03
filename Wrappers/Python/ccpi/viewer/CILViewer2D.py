@@ -22,7 +22,7 @@ from ccpi.viewer import (ALT_KEY, CONTROL_KEY, SHIFT_KEY, CROSSHAIR_ACTOR, CURSO
 from ccpi.viewer.CILViewerBase import CILViewerBase
 from ccpi.viewer.utils import Converter
 
-from ccpi.viewer.widgets.box_widgets import CreateMoveableBoxWidget, get_box_bounds_from_event_position
+from ccpi.viewer.widgets.box_widgets import cilviewerBoxWidget 
 
 
 class CILInteractorStyle(vtk.vtkInteractorStyle):
@@ -234,7 +234,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyle):
         :param clickPosition: Display coordinates for the mouse event
         """
 
-        box_pos = get_box_bounds_from_event_position(self._viewer, clickPosition)
+        box_pos = cilviewerBoxWidget.GetBoxBoundsFromEventPosition(self._viewer, clickPosition)
 
         # Set widget placement and make visible
         self._viewer.ROIWidget.PlaceWidget(box_pos)
@@ -1022,7 +1022,7 @@ class CILViewer2D(CILViewerBase):
         self.AddActor(self.helpActor, HELP_ACTOR)
 
         # ROI Widget
-        self.ROIWidget = CreateMoveableBoxWidget(self)
+        self.ROIWidget = cilviewerBoxWidget.Moveable(self)
 
         self.ROIWidget.AddObserver(vtk.vtkWidgetEvent.Select, self.style.OnROIModifiedEvent, 1.0)
 
