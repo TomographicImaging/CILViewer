@@ -295,13 +295,13 @@ class cilviewerBoxWidget():
         axis_dict = {"x": SLICE_ORIENTATION_YZ, "y": SLICE_ORIENTATION_XZ, "z": SLICE_ORIENTATION_XY}
         axis_int = axis_dict[axis]
 
-        world_length = world_extent[2*axis_int+1] - world_extent[2*axis_int]
-        dist = world_length*scale_factor
+        world_length = world_extent[2 * axis_int + 1] - world_extent[2 * axis_int]
+        dist = world_length * scale_factor
         value = start_pos + dist
 
         # Check to make sure that it is within the image world.
-        if value > world_extent[2*axis_int+1]:
-            return world_extent[2*axis_int+1]
+        if value > world_extent[2 * axis_int + 1]:
+            return world_extent[2 * axis_int + 1]
         else:
             return value
 
