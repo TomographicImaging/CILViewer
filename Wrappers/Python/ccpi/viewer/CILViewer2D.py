@@ -22,7 +22,7 @@ from ccpi.viewer import (ALT_KEY, CONTROL_KEY, SHIFT_KEY, CROSSHAIR_ACTOR, CURSO
 from ccpi.viewer.CILViewerBase import CILViewerBase
 from ccpi.viewer.utils import Converter
 
-from ccpi.viewer.widgets.box_widgets import cilviewerBoxWidget
+from ccpi.viewer.widgets import cilviewerBoxWidget
 
 
 class CILInteractorStyle(vtk.vtkInteractorStyle):

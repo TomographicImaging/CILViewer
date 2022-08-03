@@ -2,7 +2,7 @@ import sys
 from PySide2 import QtWidgets
 from ccpi.viewer import viewer2D, viewer3D
 from SingleViewerCentralWidget import SingleViewerCenterWidget
-from ccpi.viewer.widgets.box_widgets import cilviewerBoxWidget, cilviewerLineWidget
+from ccpi.viewer.widgets import cilviewerBoxWidget, cilviewerLineWidget
 
 app = QtWidgets.QApplication(sys.argv)
 # can change the behaviour by setting which viewer you want
