@@ -5,7 +5,7 @@ from ccpi.viewer import SLICE_ORIENTATION_XY, SLICE_ORIENTATION_XZ, SLICE_ORIENT
 class cilviewerBoxWidget():
 
     @staticmethod
-    def Fixed(viewer, outline_colour=(0, 1, 0)):
+    def CreateFixed(viewer, outline_colour=(0, 1, 0)):
         '''
         Creates a vtkBoxWidget which the user can't move
         
@@ -35,7 +35,7 @@ class cilviewerBoxWidget():
         return widget
 
     @staticmethod
-    def Moveable(viewer, outline_colour=(0, 1, 0)):
+    def CreateMoveable(viewer, outline_colour=(0, 1, 0)):
         '''
         Creates a vtkBoxWidget which the user can move
 
@@ -64,12 +64,12 @@ class cilviewerBoxWidget():
         return widget
 
     @staticmethod
-    def AroundSliceOnXYPlane(viewer,
-                             axis='x',
-                             coord=0,
-                             outline_color=(1., 0., 0.),
-                             width=1,
-                             widget_name='slice_outline_widget'):
+    def CreateAroundSliceOnXYPlane(viewer,
+                                axis='x',
+                                coord=0,
+                                outline_color=(1., 0., 0.),
+                                width=1,
+                                widget_name='slice_outline_widget'):
         '''
         Creates a border in [viewer], around a slice with number [coord] on
         the [axis] axis. This border is a vtkBoxWidget.
@@ -99,7 +99,7 @@ class cilviewerBoxWidget():
             The name to associate the border widget with in the viewer.
         '''
 
-        widget = cilviewerBoxWidget.Fixed(viewer, outline_color)
+        widget = cilviewerBoxWidget.CreateFixed(viewer, outline_color)
         coords = cilviewerBoxWidget.GetCoordsForBoxWidgetAroundSlice(viewer, axis, coord, width)
         widget.PlaceWidget(coords)
         viewer.addWidgetReference(widget, widget_name)
@@ -156,7 +156,7 @@ class cilviewerBoxWidget():
         return coords
 
     @staticmethod
-    def MoveableAtEventPosition(viewer, position, widget_name, outline_colour=(0, 1, 0), scale_factor=0.3):
+    def CreateMoveableAtEventPosition(viewer, position, widget_name, outline_colour=(0, 1, 0), scale_factor=0.3):
         ''' 
         Place a moveable box widget on the viewer at the event position.
         Parameters
@@ -173,7 +173,7 @@ class cilviewerBoxWidget():
             Factor for scaling the size of the box
         '''
         # ROI Widget
-        widget = cilviewerBoxWidget.Moveable(viewer, outline_colour)
+        widget = cilviewerBoxWidget.CreateMoveable(viewer, outline_colour)
         coords = cilviewerBoxWidget.GetBoxBoundsFromEventPosition(viewer, position, scale_factor)
         # Set widget placement and make visible
         widget.PlaceWidget(coords)
@@ -299,8 +299,12 @@ class cilviewerBoxWidget():
 class cilviewerLineWidget():
 
     @staticmethod
-    def AtCoordOnXYPlane(viewer, axis='x', coord=0, outline_color=(1., 0., 0.), widget_name='slice_line_widget'):
-        '''
+    def CreateAtCoordOnXYPlane(viewer,
+                                    axis='x',
+                                    coord=0,
+                                    outline_color=(1., 0., 0.),
+                                    widget_name='slice_line_widget'):
+            '''
             Creates a line in [viewer], at [coord] on the
             the [axis] axis. This line is made using a vtkBoxWidget.
             When created, the direction of view is forced to be SLICE_ORIENTATION_XY,
@@ -323,10 +327,9 @@ class cilviewerLineWidget():
                 The name to associate the border widget with in the viewer.
             '''
 
-        widget = cilviewerBoxWidget.AroundSliceOnXYPlane(viewer,
-                                                         axis,
-                                                         coord,
-                                                         outline_color,
-                                                         width=0,
-                                                         widget_name=widget_name)
-        return widget
+            widget = cilviewerBoxWidget.CreateAroundSliceOnXYPlane(viewer,
+                                                                    axis,
+                                                                    coord,
+                                                                    outline_color,
+                                                                    width=0, widget_name=widget_name)
+            return widget

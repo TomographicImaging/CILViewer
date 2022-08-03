@@ -1022,7 +1022,7 @@ class CILViewer2D(CILViewerBase):
         self.AddActor(self.helpActor, HELP_ACTOR)
 
         # ROI Widget
-        self.ROIWidget = cilviewerBoxWidget.Moveable(self)
+        self.ROIWidget = cilviewerBoxWidget.CreateMoveable(self)
 
         self.ROIWidget.AddObserver(vtk.vtkWidgetEvent.Select, self.style.OnROIModifiedEvent, 1.0)
 
