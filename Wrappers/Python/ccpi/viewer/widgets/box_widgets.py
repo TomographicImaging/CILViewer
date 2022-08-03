@@ -276,7 +276,7 @@ class cilviewerBoxWidget():
             Lower left corner value on specified axis
         world_max_array:
             Array containing (x,y,z) of the maximum extent of the world
-        slice_orientation: str, {'x', 'y', 'z'}
+        axis: str, {'x', 'y', 'z'}
             The axis to truncate on.
         scale_factor:
             The start position + a percentage of the world truncated to the edges of the world
