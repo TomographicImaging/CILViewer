@@ -12,6 +12,7 @@ dependencies:
 - paskino::eqt
 - importlib_metadata    # [py<38]
 - ccpi::cil-data >=22.0.0
+- pytest
 - pip
 - pip:
   # Have to install Trame via pip due to unavailability on conda
