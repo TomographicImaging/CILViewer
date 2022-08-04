@@ -1,6 +1,6 @@
 # Changelog
 
-## v22.x.x
+## v22.3.0
 - Add a dictionary of widgets to the CILViewerBaseClass, and ability to add and retrieve widgets to/from the dict with methods `.addWidgetReference` and `.getWidget`
 - Add a new file widgets/box_widgets.py which contains classes cilviewerBoxWidget and cilviewerLineWidget for creating Box and Line widgets on the viewer.
 - Add example: BoxWidgetAroundSlice.py - which demonstrates using the above classes.
