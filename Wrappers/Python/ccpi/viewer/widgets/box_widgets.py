@@ -272,7 +272,7 @@ class cilviewerBoxWidget():
         """
         Returns a coordinate for the edge of the box on axis [axis], scaled
         by factor [scale_factor], and truncated to make sure the box does not
-        extent over the edge of the image shown.
+        extend over the edge of the image shown.
         extend over the edge of the image shown.
 
 
