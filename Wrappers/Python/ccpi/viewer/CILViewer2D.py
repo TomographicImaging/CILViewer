@@ -22,6 +22,8 @@ from ccpi.viewer import (ALT_KEY, CONTROL_KEY, SHIFT_KEY, CROSSHAIR_ACTOR, CURSO
 from ccpi.viewer.CILViewerBase import CILViewerBase
 from ccpi.viewer.utils import Converter
 
+from ccpi.viewer.widgets import cilviewerBoxWidget
+
 
 class CILInteractorStyle(vtk.vtkInteractorStyle):
 
@@ -226,106 +228,13 @@ class CILInteractorStyle(vtk.vtkInteractorStyle):
     def validateValue(self, value, axis):
         return self._viewer.validateValue(value, axis)
 
-    def _truncateBox(self, start_pos, world_max_array, axis):
-        """
-        Make sure that the value for the upper corner of the box is within the world extent.
-
-        :param start_pos: Lower left corner value on specified axis
-        :param world_max_array: Array containing (x,y,z) of the maximum extent of the world
-        :param axis: The axis of interest eg. "x"
-        :return: The start position + a percentage of the world truncated to the edges of the world
-        """
-
-        # Set up scale factor and get index for axis
-        scale_factor = 0.3
-        axis_dict = {"x": 0, "y": 1, "z": 2}
-        axis_int = axis_dict[axis]
-
-        # Create the upper right coordinate point with scale offset
-        value = start_pos + world_max_array[axis_int] * scale_factor
-
-        # Check to make sure that it is within the image world.
-        if value > world_max_array[axis_int]:
-            return world_max_array[axis_int]
-        else:
-            return value
-
     def InitialiseBox(self, clickPosition):
         """
         Set the initial values for the box borders
         :param clickPosition: Display coordinates for the mouse event
         """
 
-        # Current render orientation
-        orientation = self.GetSliceOrientation()
-
-        # Scale factor for initial box
-        scale_factor = 0.3
-
-        # Translate the mouse click display coordinates into world coordinates
-        coord = vtk.vtkCoordinate()
-        coord.SetCoordinateSystemToDisplay()
-        coord.SetValue(clickPosition[0], clickPosition[1])
-        world_mouse_pos = coord.GetComputedWorldValue(self.GetRenderer())
-
-        # Get maximum extents of the image in world coords
-        world_image_max = self.GetImageWorldExtent()
-
-        # Set the minimum world value
-        world_image_min = (0, 0, 0)
-
-        # Initialise the box position in format [xmin, xmax, ymin, ymax,...]
-        box_pos = [0, 0, 0, 0, 0, 0]
-
-        # place the mouse click as bottom left in current orientation
-        if orientation == 2:
-            # Looking along z
-            # Lower left is xmin, ymin
-            box_pos[0] = world_mouse_pos[0]
-            box_pos[2] = world_mouse_pos[1]
-
-            # Set top right point
-            # Top right is xmax, ymax
-            box_pos[1] = self._truncateBox(box_pos[0], world_image_max, "x")
-            box_pos[3] = self._truncateBox(box_pos[2], world_image_max, "y")
-
-            # Set the scroll axis to maximum extent eg. min-max
-            # zmin, zmax
-            box_pos[4] = world_image_min[2]
-            box_pos[5] = world_image_max[2]
-
-        elif orientation == 1:
-            # Looking along y
-            # Lower left is xmin, zmin
-            box_pos[0] = world_mouse_pos[0]
-            box_pos[4] = world_mouse_pos[2]
-
-            # Set top right point.
-            # Top right is xmax, zmax
-            box_pos[1] = self._truncateBox(box_pos[0], world_image_max, "x")
-            box_pos[5] = self._truncateBox(box_pos[4], world_image_max, "z")
-
-            # Set the scroll axis to maximum extent eg. min-max
-            # ymin, ymax
-            box_pos[2] = world_image_min[1]
-            box_pos[3] = world_image_max[1]
-
-        else:
-            # orientation == 0
-            # Looking along x
-            # Lower left is ymin, zmin
-            box_pos[2] = world_mouse_pos[1]
-            box_pos[4] = world_mouse_pos[2]
-
-            # Set top right point
-            # Top right is ymax, zmax
-            box_pos[3] = self._truncateBox(box_pos[2], world_image_max, "y")
-            box_pos[5] = self._truncateBox(box_pos[4], world_image_max, "z")
-
-            # Set the scroll axis to maximum extent eg. min-max
-            # xmin, xmax
-            box_pos[0] = world_image_min[0]
-            box_pos[1] = world_image_max[0]
+        box_pos = cilviewerBoxWidget.GetBoxBoundsFromEventPosition(self._viewer, clickPosition)
 
         # Set widget placement and make visible
         self._viewer.ROIWidget.PlaceWidget(box_pos)
@@ -1113,15 +1022,7 @@ class CILViewer2D(CILViewerBase):
         self.AddActor(self.helpActor, HELP_ACTOR)
 
         # ROI Widget
-        self.ROIWidget = vtk.vtkBoxWidget()
-        self.ROIWidget.SetInteractor(self.iren)
-        self.ROIWidget.HandlesOn()
-        self.ROIWidget.TranslationEnabledOn()
-        self.ROIWidget.RotationEnabledOff()
-        self.ROIWidget.GetOutlineProperty().SetColor(0, 1, 0)
-        self.ROIWidget.OutlineCursorWiresOff()
-        self.ROIWidget.SetPlaceFactor(1)
-        self.ROIWidget.KeyPressActivationOff()
+        self.ROIWidget = cilviewerBoxWidget.CreateMoveable(self)
 
         self.ROIWidget.AddObserver(vtk.vtkWidgetEvent.Select, self.style.OnROIModifiedEvent, 1.0)
 

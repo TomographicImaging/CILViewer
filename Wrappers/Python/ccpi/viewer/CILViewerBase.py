@@ -107,8 +107,9 @@ class CILViewerBase():
         ori.InteractiveOff()
         self.orientation_marker = ori
 
-        # holder for list of actors
+        # holder for list of actors and widgets
         self.actors = {}
+        self.widgets = {}
 
         #initial Window/Level
         self.InitialLevel = 0
@@ -353,3 +354,10 @@ class CILViewerBase():
 
         if update_slice:
             self.style.UpdateImageSlice()
+
+    def addWidgetReference(self, widget, name):
+        '''Adds widget to dictionary of widgets'''
+        self.widgets[name] = widget
+
+    def getWidget(self, name):
+        return self.widgets.get(name)
