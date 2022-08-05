@@ -154,6 +154,7 @@ class Converter(object):
 
         return img_data
 
+
 class cilNumpyMETAImageWriter(object):
     '''A Writer to write a Numpy Array in npy format and a METAImage Header
 
