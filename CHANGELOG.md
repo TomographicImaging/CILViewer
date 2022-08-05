@@ -1,5 +1,8 @@
 # Changelog
 
+## v2x.x.x
+- Removed obsolete TIFF code from conversion.py
+
 ## v22.3.0
 - Add a dictionary of widgets to the CILViewerBaseClass, and ability to add and retrieve widgets to/from the dict with methods `.addWidgetReference` and `.getWidget`
 - Add a new file widgets/box_widgets.py which contains classes cilviewerBoxWidget and cilviewerLineWidget for creating Box and Line widgets on the viewer.
