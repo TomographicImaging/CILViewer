@@ -9,7 +9,7 @@ build:
   skip: True # [py==38 and np==115]
   preserve_egg_dir: False 
   number: {{ GIT_DESCRIBE_NUMBER }}
-  noarch: python
+  # noarch: generic
   entry_points:
     - web_cilviewer = ccpi.web_viewer.web_app:main
   
@@ -26,13 +26,13 @@ test:
   
 requirements:
   build:
-    - python {{ python }}
+    - python
     - vtk {{ vtk }}
  
   run:
-    - python {{ python }}
+    - python
     - numpy
-    - vtk {{ vtk }}
+    - {{ pin_compatible('vtk', min_pin='x.x', max_pin='x.x') }}
     - pyside2
     - eqt
     - importlib_metadata    # [py<38]
