@@ -9,7 +9,6 @@ build:
   skip: True # [py==38 and np==115]
   preserve_egg_dir: False 
   number: {{ GIT_DESCRIBE_NUMBER }}
-  # noarch: generic
   entry_points:
     - web_cilviewer = ccpi.web_viewer.web_app:main
   
