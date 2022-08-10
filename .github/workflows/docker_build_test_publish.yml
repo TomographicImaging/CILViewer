@@ -29,9 +29,23 @@ jobs:
         shell: bash -l {0}
         run: |
           docker build -t cil-viewer docker/web-app
+          
+      - name : docker save container
+        # https://docs.docker.com/engine/reference/commandline/save/
+        shell: bash -l {0}
+        run: |
+          docker image ls
+          docker save cil-viewer | gzip > cil-viewer.tar.gz
+          ls -l
+          
+      - name: Upload artifact of the image.
+        uses: actions/upload-artifact@v2
+        with:
+          name: cil-viewer
+          path: cil-viewer.tar.gz
 
       - name: Run docker container with tests
         shell: bash -l {0}
         run: |
-          docker run --rm --entrypoint /bin/bash -v /home/runner/work/CILViewer/CILViewer:/root/source_code  cil-viewer -c "source ./mambaforge/etc/profile.d/conda.sh && conda activate cilviewer_webapp && conda install cil-data pytest -c ccpi && python -m pytest /root/source_code/Wrappers/Python -k 'not test_version'"
+          docker run --rm --entrypoint /bin/bash -v /home/runner/work/CILViewer/CILViewer:/root/source_code  cil-viewer -c "source ./mambaforge/etc/profile.d/conda.sh && conda activate cilviewer_webapp && pip show ccpi-viewer && ls -l /home/abc/mambaforge/envs/cilviewer_webapp/lib/python3.9/site-packages/ccpi/viewer && python -m pytest /root/source_code/Wrappers/Python/"
     # TODO: publish to come later
