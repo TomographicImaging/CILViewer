@@ -29,6 +29,20 @@ jobs:
         shell: bash -l {0}
         run: |
           docker build -t cil-viewer docker/web-app
+          
+      - name : docker save container
+        # https://docs.docker.com/engine/reference/commandline/save/
+        shell: bash -l {0}
+        run: |
+          docker image ls
+          docker save cil-viewer | gzip > cil-viewer.tar.gz
+          ls -l
+          
+      - name: Upload artifact of the image.
+        uses: actions/upload-artifact@v2
+        with:
+          name: cil-viewer
+          path: cil-viewer.tar.gz
 
       - name: Run docker container with tests
         shell: bash -l {0}
