@@ -758,7 +758,7 @@ class cilviewerHDF5Writer(ImageWriter):
                     dset.attrs[key] = value
 
 
-class cilviewerHDF5ImageReader(HDF5Reader):
+class cilviewerHDF5Reader(HDF5Reader):
     '''
     Expects to be reading a file where:
     entry1 contains an original dataset or attributes of the original dataset
@@ -771,7 +771,7 @@ class cilviewerHDF5ImageReader(HDF5Reader):
     def __init__(self):
         VTKPythonAlgorithmBase.__init__(self, nInputPorts=0, nOutputPorts=1, outputType='vtkImageData')
 
-        super(cilviewerHDF5ImageReader, self).__init__()
+        super(cilviewerHDF5Reader, self).__init__()
         self._DatasetEntryNumber = 2
         self._DatasetName = 'entry{}/tomo_entry/data/data'.format(self._DatasetEntryNumber)
 
@@ -811,7 +811,7 @@ class cilviewerHDF5ImageReader(HDF5Reader):
         but you may still set the name instead if you
         wish.
         '''
-        super(cilviewerHDF5ImageReader, self).SetDatasetName(lname)
+        super(cilviewerHDF5Reader, self).SetDatasetName(lname)
         re_str = '^entry([0-9]*)'
         try:
             self._DatasetEntryNumber = re.search(re_str, str).group(1)
@@ -821,7 +821,7 @@ class cilviewerHDF5ImageReader(HDF5Reader):
             self._DatasetEntryNumber = None
 
     def RequestData(self, request, inInfo, outInfo):
-        output = super(cilviewerHDF5ImageReader, self)._update_output_data(outInfo)
+        output = super(cilviewerHDF5Reader, self)._update_output_data(outInfo)
         with h5py.File(self._FileName, 'r') as f:
             attrs = f[self._DatasetName].attrs
             # TODO check on the errors if these attributes haven't been found:

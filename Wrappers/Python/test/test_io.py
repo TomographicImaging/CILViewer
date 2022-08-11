@@ -5,7 +5,7 @@ import h5py
 import numpy as np
 import vtk
 from ccpi.viewer.utils.conversion import Converter
-from ccpi.viewer.utils.io import ImageReader, cilviewerHDF5Writer, cilviewerHDF5ImageReader
+from ccpi.viewer.utils.io import ImageReader, cilviewerHDF5Writer, cilviewerHDF5Reader
 
 
 def calculate_target_downsample_shape(max_size, total_size, shape, acq=False):
@@ -251,7 +251,7 @@ class TestImageReaderAndWriter(unittest.TestCase):
         writer.AddChildDataset(resampled_image, resampled_image_attrs)
         writer.Write()
 
-        reader = cilviewerHDF5ImageReader()
+        reader = cilviewerHDF5Reader()
         reader.SetFileName(file_to_write)
         reader.Update()
         read_resampled_image = reader.GetOutputDataObject(0)

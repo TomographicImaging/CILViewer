@@ -15,7 +15,7 @@ a dataset, this will skip step 1 and read in your dataset instead.
 '''
 
 from ccpi.viewer.utils.io import ImageReader
-from ccpi.viewer.utils.io import cilviewerHDF5ImageReader, cilviewerHDF5Writer, ImageWriter
+from ccpi.viewer.utils.io import cilviewerHDF5Reader, cilviewerHDF5Writer, ImageWriter
 import h5py
 from ccpi.viewer.iviewer import iviewer
 import numpy as np
@@ -84,7 +84,7 @@ writer.Write()
 print_hdf5_metadata(FILE_TO_WRITE)
 
 # ---- STEP 5 --------------------------------
-reader = cilviewerHDF5ImageReader()
+reader = cilviewerHDF5Reader()
 reader.SetFileName(FILE_TO_WRITE)
 reader.Update()
 read_resampled_image = reader.GetOutputDataObject(0)
