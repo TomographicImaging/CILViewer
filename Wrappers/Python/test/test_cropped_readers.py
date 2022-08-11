@@ -17,6 +17,7 @@ class TestCroppedReaders(unittest.TestCase):
         self.input_3D_array = np.random.randint(10, size=shape, dtype=eval(f"np.uint{bits}"))
         self.input_3D_array = np.reshape(np.arange(self.input_3D_array.size),
                                          newshape=shape).astype(dtype=eval(f"np.uint{bits}"))
+        self.raw_type_code = str(self.input_3D_array.dtype)
         bytes_3D_array = bytes(self.input_3D_array)
         self.raw_filename_3D = 'test_3D_data.raw'
         with open(self.raw_filename_3D, 'wb') as f:
@@ -60,9 +61,11 @@ class TestCroppedReaders(unittest.TestCase):
         expected_extent[5] = target_z_extent[1]
         self.assertEqual(extent, expected_extent)
 
-    def check_values(self, target_z_extent, read_cropped_image):
+    def check_values(self, target_z_extent, read_cropped_image, expected_array=None):
+        if expected_array is None:
+            expected_array = self.input_3D_array
         read_cropped_array = Converter.vtk2numpy(read_cropped_image)
-        cropped_array = self.input_3D_array[target_z_extent[0]:target_z_extent[1] + 1, :, :]
+        cropped_array = expected_array[target_z_extent[0]:target_z_extent[1] + 1, :, :]
         np.testing.assert_array_equal(cropped_array, read_cropped_array)
 
     def test_raw_cropped_reader(self):
@@ -94,17 +97,29 @@ class TestCroppedReaders(unittest.TestCase):
                 self.check_extent(reader, target_z_extent)
                 self.check_values(target_z_extent, reader.GetOutput())
 
+    def _setup_tiff_cropped_reader(self, target_z_extent):
+        reader = cilTIFFCroppedReader()
+        reader.SetFileName(self.tiff_fnames)
+        reader.SetTargetZExtent(target_z_extent)
+        return reader
+
     def test_tiff_cropped_reader(self):
         target_z_extent = [1, 3]
-        reader = cilTIFFCroppedReader()
-        # og_shape = np.shape(self.input_3D_array)
-        reader.SetFileName(self.tiff_fnames)
-        reader.SetTargetZExtent(tuple(target_z_extent))
-        raw_type_code = str(self.input_3D_array.dtype)
+        reader = self._setup_tiff_cropped_reader(tuple(target_z_extent))
         self.check_extent(reader, target_z_extent)
         # Check raw type code was set correctly:
-        self.assertEqual(raw_type_code, reader.GetTypeCodeName())
+        self.assertEqual(self.raw_type_code, reader.GetTypeCodeName())
         self.check_values(target_z_extent, reader.GetOutput())
+
+    def test_tiff_cropped_reader_when_orientation_set(self):
+        target_z_extent = [1, 3]
+        reader = self._setup_tiff_cropped_reader(tuple(target_z_extent))
+        reader.SetOrientationType(4)  # this flips the y axis
+        expected_array = np.flip(np.copy(self.input_3D_array), axis=1)
+        self.check_extent(reader, target_z_extent)
+        # Check raw type code was set correctly:
+        self.assertEqual(self.raw_type_code, reader.GetTypeCodeName())
+        self.check_values(target_z_extent, reader.GetOutput(), expected_array)
 
     def tearDown(self):
         files = [self.raw_filename_3D, self.numpy_filename_3D, self.meta_filename_3D] + self.tiff_fnames

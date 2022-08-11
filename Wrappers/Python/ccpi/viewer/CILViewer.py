@@ -117,6 +117,10 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
     def ShowActor(self, actorno):
         self._viewer.showActor(actorno)
 
+    def UpdateImageSlice(self):
+        self._viewer.imageSlice.Update()
+        self.Render()
+
     def mouseInteraction(self, interactor, event):
         shift = interactor.GetShiftKey()
         advance = 1
@@ -219,20 +223,16 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
 
         self._viewer.updatePipeline()
 
-    def ResetSliceWindowLevel(self):
-        # reset color/window
-        cmin, cmax = self._viewer.ia.GetAutoRange()
-
+    def AutoWindowLevelOnVolumeRange(self, update_slice=True):
+        '''Auto-adjusts window-level for the slice, based on the 5 and 95th percentiles of the whole image volume.'''
+        cmin, cmax = self._viewer.getImageMapRange((5., 95.), method="scalar")
         window, level = self._viewer.getSliceWindowLevelFromRange(cmin, cmax)
 
-        self.SetInitialLevel(level)
-        self.SetInitialWindow(window)
+        self._viewer.imageSlice.GetProperty().SetColorLevel(level)
+        self._viewer.imageSlice.GetProperty().SetColorWindow(window)
 
-        self._viewer.imageSlice.GetProperty().SetColorLevel(self.GetInitialLevel())
-        self._viewer.imageSlice.GetProperty().SetColorWindow(self.GetInitialWindow())
-
-        self._viewer.imageSlice.Update()
-        self.Render()
+        if update_slice:
+            self.UpdateImageSlice()
 
     def OnKeyPress(self, interactor, _):
         if interactor.GetKeyCode() == "x":
@@ -245,7 +245,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
             self.SetSliceOrientation(SLICE_ORIENTATION_XY)
             self.UpdatePipeline(resetcamera=True)
         elif interactor.GetKeyCode() == "a":
-            self.ResetSliceWindowLevel()
+            self._viewer.autoWindowLevelOnSliceRange()
         elif interactor.GetKeyCode() == "h":
             self.DisplayHelp()
         elif interactor.GetKeyCode() == "r":
@@ -445,23 +445,9 @@ class CILViewer(CILViewerBase):
         # Help text
         self.ren.AddActor(self.helpActor)
 
-        # volume render
-        volumeMapper = vtk.vtkSmartVolumeMapper()
-        #volumeMapper = vtk.vtkFixedPointVolumeRayCastMapper()
-        self.volume_mapper = volumeMapper
-
-        volumeProperty = vtk.vtkVolumeProperty()
-        self.volume_property = volumeProperty
-
         # These may be optionally set by the user:
         self.volume_colormap_limits = None
 
-        # The volume holds the mapper and the property and
-        # can be used to position/orient the volume.
-        volume = vtk.vtkVolume()
-        volume.SetMapper(volumeMapper)
-        volume.SetProperty(volumeProperty)
-        self.volume = volume
         self.volume_colormap_name = 'viridis'
         self.volume_render_initialised = False
         self.clipping_plane_initialised = False
@@ -635,7 +621,21 @@ class CILViewer(CILViewerBase):
             self.ren.SetActiveCamera(self.default_camera)
 
     def installVolumeRenderActorPipeline(self):
+        # volume render
+        volumeMapper = vtk.vtkSmartVolumeMapper()
+        #volumeMapper = vtk.vtkFixedPointVolumeRayCastMapper()
+        self.volume_mapper = volumeMapper
+        volumeProperty = vtk.vtkVolumeProperty()
+
+        self.volume_property = volumeProperty
         self.volume_mapper.SetInputData(self.img3D)
+
+        # The volume holds the mapper and the property and
+        # can be used to position/orient the volume.
+        volume = vtk.vtkVolume()
+        volume.SetMapper(volumeMapper)
+        volume.SetProperty(volumeProperty)
+        self.volume = volume
 
         # set defaults for opacity and colour mapping:
         color_percentiles = (5., 95.)
@@ -672,15 +672,16 @@ class CILViewer(CILViewerBase):
         self.addHeadlight()
 
     def addHeadlight(self):
-        lgt = vtk.vtkLight()
-        lgt.SetLightTypeToHeadlight()
-        lgt.SwitchOff()
-        self.getRenderer().AddLight(lgt)
-        self.light = lgt
+        if not hasattr(self, 'light'):
+            lgt = vtk.vtkLight()
+            lgt.SetLightTypeToHeadlight()
+            lgt.SwitchOff()
+            self.getRenderer().AddLight(lgt)
+            self.light = lgt
 
     def getVolumeRenderOpacityMethod(self):
         if not hasattr(self, '_vol_render_opacity_method'):
-            self.setVolumeRenderOpacityMethod('gradient')
+            self._vol_render_opacity_method = "gradient"
         return self._vol_render_opacity_method
 
     def setVolumeRenderOpacityMethod(self, method='gradient'):
@@ -692,19 +693,17 @@ class CILViewer(CILViewerBase):
         '''
         if method in ['scalar', 'gradient']:
             self._vol_render_opacity_method = method
-            self.updateVolumePipeline()
-        # if the method is not supported it does nothing???
-
-    def getVolumeRenderOpacityMethod(self):
-        '''
-        Returns
-        ----------
-        method: string: 'scalar' or 'gradient'
-            method for setting opacity of the volume render            
-        '''
-        if not hasattr(self, '_vol_render_opacity_method'):
-            self.setVolumeRenderOpacityMethod('gradient')
-        return self._vol_render_opacity_method
+            # self.updateVolumePipeline()
+            #This is a hack #TODO: fix update pipeline in case where we change opacity method
+            planes = self.volume.GetMapper().GetClippingPlanes()
+            self.ren.RemoveVolume(self.volume)
+            self.volume_render_initialised = False
+            self.style.ToggleVolumeVisibility()
+            # add existing clipping plane to new volume
+            if planes is not None:
+                plane = planes.GetItem(0)
+                self.volume.GetMapper().AddClippingPlane(plane)
+                self.volume.Modified()
 
     def setMaximumOpacity(self, max, update_pipeline=True):
         '''
@@ -914,14 +913,11 @@ class CILViewer(CILViewerBase):
         self.voi.Update()
 
         self.ia.SetInputData(self.voi.GetOutput())
-        self.ia.SetAutoRangePercentiles(5.0, 95.)
         self.ia.Update()
 
-        cmin, cmax = self.ia.GetAutoRange()
-        window, level = self.getSliceWindowLevelFromRange(cmin, cmax)
-
-        self.InitialLevel = level
-        self.InitialWindow = window
+        self.style.AutoWindowLevelOnVolumeRange(update_slice=False)
+        self.InitialLevel = self.getSliceColorLevel()
+        self.InitialWindow = self.getSliceColorWindow()
 
         self.imageSliceMapper.SetInputConnection(self.voi.GetOutputPort())
         self.imageSlice.Update()
@@ -965,7 +961,6 @@ class CILViewer(CILViewerBase):
             colors, opacity = self.getColorOpacityForVolumeRender()
 
             self.volume_property.SetColor(colors)
-            self.volume_property.SetScalarOpacity(opacity)
 
             # Update whether we use our calculated opacity as the scalar or gradient opacity
             if self.getVolumeRenderOpacityMethod() == 'gradient':
@@ -1005,11 +1000,13 @@ class CILViewer(CILViewerBase):
         self.histogramPlotActor.SetYRange(self.sliceIA.GetOutput().GetScalarRange())
 
     def remove_clipping_plane(self):
-        self.volume.GetMapper().RemoveAllClippingPlanes()
+        if self.volume_render_initialised and self.clipping_plane_initialised:
+            self.volume.GetMapper().RemoveAllClippingPlanes()
 
-        # Now remove planew from the cil_viewer
-        del self.planew
-        self.clipping_plane_initialised = False
+            # Now remove planew from the cil_viewer
+            del self.planew
+            del self.plane
+            self.clipping_plane_initialised = False
 
-        self.getRenderer().Render()
-        self.updatePipeline()
+            self.getRenderer().Render()
+            self.updatePipeline()

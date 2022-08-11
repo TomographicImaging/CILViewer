@@ -15,7 +15,6 @@
 
 from setuptools import setup
 import os
-import sys
 import subprocess
 
 
@@ -59,7 +58,7 @@ with open(fname, 'w') as f:
 setup(
     name="ccpi-viewer",
     version=version,
-    packages=['ccpi', 'ccpi.viewer', 'ccpi.viewer.utils', 'ccpi.viewer.cli', 'ccpi.web_viewer'],
+    packages=['ccpi', 'ccpi.viewer', 'ccpi.viewer.utils', 'ccpi.web_viewer', 'ccpi.viewer.widgets', 'ccpi.viewer.cli', ],
     install_requires=requires,
     zip_safe=False,
     # metadata for upload to PyPI

@@ -1024,6 +1024,10 @@ class cilTIFFImageReaderInterface(cilReaderInterface):
         VTKPythonAlgorithmBase.__init__(self, nInputPorts=0, nOutputPorts=1)
         super(cilTIFFImageReaderInterface, self).__init__()
         self._CompressedData = False
+        # Set orientation type due to issue:
+        # https://github.com/vais-ral/CILViewer/issues/296
+        # https://gitlab.kitware.com/vtk/vtk/-/merge_requests/6155
+        self._OrientationType = 1
 
     def SetFileName(self, value):
         ''' Set the file name or path from which to read the image data
@@ -1061,6 +1065,45 @@ class cilTIFFImageReaderInterface(cilReaderInterface):
             whether the file is compressed'''
         self._CompressedData = value
 
+    def SetOrientationType(self, value):
+        '''
+        Parameters
+        ----------
+        value: int {1, 2, 3, 4, 5, 6, 7, 8}, default: 1
+            ORIENTATION_TOPLEFT 1 (row 0 top, col 0 lhs)
+            ORIENTATION_TOPRIGHT 2 (row 0 top, col 0 rhs)
+            ORIENTATION_BOTRIGHT 3 (row 0 bottom, col 0 rhs)
+            ORIENTATION_BOTLEFT 4 (row 0 bottom, col 0 lhs)
+            ORIENTATION_LEFTTOP 5 (row 0 lhs, col 0 top)
+            ORIENTATION_RIGHTTOP 6 (row 0 rhs, col 0 top)
+            ORIENTATION_RIGHTBOT 7 (row 0 rhs, col 0 bottom)
+            ORIENTATION_LEFTBOT 8 (row 0 lhs, col 0 bottom)
+
+        Notes
+        -----
+        Relevant issues:
+        https://github.com/vais-ral/CILViewer/issues/296
+        https://gitlab.kitware.com/vtk/vtk/-/merge_requests/6155
+        '''
+
+        self._OrientationType = value
+
+    def GetOrientationType(self):
+        ''' Gets the orientation type.
+        Returns
+        ----------
+        value: int {1, 2, 3, 4, 5, 6, 7, 8}, default: 1
+            ORIENTATION_TOPLEFT 1 (row 0 top, col 0 lhs)
+            ORIENTATION_TOPRIGHT 2 (row 0 top, col 0 rhs)
+            ORIENTATION_BOTRIGHT 3 (row 0 bottom, col 0 rhs)
+            ORIENTATION_BOTLEFT 4 (row 0 bottom, col 0 lhs)
+            ORIENTATION_LEFTTOP 5 (row 0 lhs, col 0 top)
+            ORIENTATION_RIGHTTOP 6 (row 0 rhs, col 0 top)
+            ORIENTATION_RIGHTBOT 7 (row 0 rhs, col 0 bottom)
+            ORIENTATION_LEFTBOT 8 (row 0 lhs, col 0 bottom)
+        '''
+        return self._OrientationType
+
     def ReadDataSetInfo(self):
         # this should set or do nothing
         self.SetIsFortran(True)
@@ -1068,6 +1111,10 @@ class cilTIFFImageReaderInterface(cilReaderInterface):
         # get one slice size
         reader = vtk.vtkTIFFReader()
         reader.SetFileName(self.GetFileName()[0])
+        # Set orientation type due to issue:
+        # https://github.com/vais-ral/CILViewer/issues/296
+        # https://gitlab.kitware.com/vtk/vtk/-/merge_requests/6155
+        reader.SetOrientationType(self.GetOrientationType())
         reader.Update()
         dimensions = reader.GetOutput().GetDimensions()
         zdim = len(self.GetFileName())
@@ -1232,7 +1279,7 @@ class cilBaseResampleReader(cilReaderInterface):
                                            element_spacing[1] / xy_axes_magnification,
                                            element_spacing[2] / z_axis_magnification)
                 # resampled data
-                resampled_image = outData
+                resampled_image = vtk.vtkImageData()
 
                 resampled_image.SetExtent(0, target_image_shape[0] - 1, 0, target_image_shape[1] - 1, 0,
                                           target_image_shape[2] - 1)
@@ -1283,8 +1330,13 @@ class cilBaseResampleReader(cilReaderInterface):
                     # print(i, resampler.GetOutput().GetScalarComponentAsDouble(0,0,i,0))
 
                     ################# vtk way ####################
-                    resampled_image.CopyAndCastFrom(resampler.GetOutput(), extent)
+
+                    data = resampler.GetOutput()
+                    resampled_image.CopyAndCastFrom(data, extent)
                     self.UpdateProgress(i / num_chunks)
+
+                outData.ShallowCopy(resampled_image)
+
         except Exception as e:
             raise Exception(e)
 
@@ -1545,6 +1597,7 @@ class cilTIFFResampleReader(cilBaseResampleReader, cilTIFFImageReaderInterface):
         '''returns a reader which will only read a specific chunk of the data.
         This is a chunk which will get resampled into a single slice.'''
         reader = vtk.vtkTIFFReader()
+        reader.SetOrientationType(self.GetOrientationType())
         self._ChunkReader = reader
         return reader
 
@@ -1881,6 +1934,10 @@ class cilTIFFCroppedReader(cilBaseCroppedReader, cilTIFFImageReaderInterface):
             shape = list(readshape)[::-1]
 
         reader = vtk.vtkTIFFReader()
+        # Set orientation type due to issue:
+        # https://github.com/vais-ral/CILViewer/issues/296
+        # https://gitlab.kitware.com/vtk/vtk/-/merge_requests/6155
+        reader.SetOrientationType(self.GetOrientationType())
         sa = vtk.vtkStringArray()
 
         extent = [0, -1, 0, -1, self.GetTargetZExtent()[0], self.GetTargetZExtent()[1]]

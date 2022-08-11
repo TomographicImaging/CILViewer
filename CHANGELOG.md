@@ -1,13 +1,20 @@
 # Changelog
 
-## v22.x.x
+## v22.3.0
+- Add a dictionary of widgets to the CILViewerBaseClass, and ability to add and retrieve widgets to/from the dict with methods `.addWidgetReference` and `.getWidget`
+- Add a new file widgets/box_widgets.py which contains classes cilviewerBoxWidget and cilviewerLineWidget for creating Box and Line widgets on the viewer.
+- Add example: BoxWidgetAroundSlice.py - which demonstrates using the above classes.
+- Use the cilviewerBoxWidget class for creating and positioning the ROIWidget on the CILViewer2D, which involved removing the `CILViewer2D._truncateBox` method.
+
+## v22.2.0
 - Qt examples use example_data 
 - Updates in all classes to take into account the backward incompatible methods name changes (see below)
 - cilPlaneClipper: 
   - change signature of creator, and defaults to empty list of items to be clipped on init
   - renamed Get/SetInteractor->Get/SetInteractorStyle
 - Renamed all classes bearing name baseReader to ReaderInterface as they provide the interface not a abstract reader class.
-- Added TIFF resample and cropped readers with unit tests
+- Added TIFF resample and cropped readers with unit tests.
+- Add Set/GetOrientationType methods to TIFF resample and cropped readers, with default value 1: ORIENTATION_TOPLEFT (row 0 top, col 0 lhs)
 - web_viewer:
   - added web viewer using trame for viewer3D and viewer2D
   - add entry point for running the web viewers
@@ -35,6 +42,9 @@
 - colormaps: added get_color_transfer_function
 - added examples of running the 2D and 3D viewers without Qt
 - Added CILViewer base class
+- Conda recipe:
+  - Fix windows build recipe
+  - Add build variants for VTK to prevent need for multiple viewer release numbers for different VTK versions
 
 ## v22.1.2
 * Changes released in 22.0.2, but also requires vtk version >= 9.0.3
