@@ -632,7 +632,7 @@ class ImageWriter(object):
         return writer
 
     def _GetHDF5Writer(self):
-        writer = vortexHDF5ImageWriter()
+        writer = cilviewerHDF5Writer()
         writer.SetOriginalDataset(None, self._OriginalDatasetAttributes)
         writer.SetChunking(self._Chunking)
         writer.SetChunkShape(self._ChunkShape)
@@ -647,14 +647,14 @@ class ImageWriter(object):
         return writer
 
 
-class vortexHDF5ImageWriter(ImageWriter):
+class cilviewerHDF5Writer(ImageWriter):
     '''
     Expects to be writing an original dataset or attributes of the original dataset,
     plus one or more 'child' versions of the dataset which have been resampled and/or cropped.
     '''
 
     def __init__(self):
-        super(vortexHDF5ImageWriter, self).__init__()
+        super(cilviewerHDF5Writer, self).__init__()
 
     def _ValidateChildDatasetAttributes(self, child_dataset, attributes):
         if not isinstance(attributes, dict):
@@ -758,7 +758,7 @@ class vortexHDF5ImageWriter(ImageWriter):
                     dset.attrs[key] = value
 
 
-class vortexHDF5ImageReader(HDF5Reader):
+class cilviewerHDF5ImageReader(HDF5Reader):
     '''
     Expects to be reading a file where:
     entry1 contains an original dataset or attributes of the original dataset
@@ -771,7 +771,7 @@ class vortexHDF5ImageReader(HDF5Reader):
     def __init__(self):
         VTKPythonAlgorithmBase.__init__(self, nInputPorts=0, nOutputPorts=1, outputType='vtkImageData')
 
-        super(vortexHDF5ImageReader, self).__init__()
+        super(cilviewerHDF5ImageReader, self).__init__()
         self._DatasetEntryNumber = 2
         self._DatasetName = 'entry{}/tomo_entry/data/data'.format(self._DatasetEntryNumber)
 
@@ -811,7 +811,7 @@ class vortexHDF5ImageReader(HDF5Reader):
         but you may still set the name instead if you
         wish.
         '''
-        super(vortexHDF5ImageReader, self).SetDatasetName(lname)
+        super(cilviewerHDF5ImageReader, self).SetDatasetName(lname)
         re_str = '^entry([0-9]*)'
         try:
             self._DatasetEntryNumber = re.search(re_str, str).group(1)
@@ -821,7 +821,7 @@ class vortexHDF5ImageReader(HDF5Reader):
             self._DatasetEntryNumber = None
 
     def RequestData(self, request, inInfo, outInfo):
-        output = super(vortexHDF5ImageReader, self)._update_output_data(outInfo)
+        output = super(cilviewerHDF5ImageReader, self)._update_output_data(outInfo)
         with h5py.File(self._FileName, 'r') as f:
             attrs = f[self._DatasetName].attrs
             # TODO check on the errors if these attributes haven't been found:
