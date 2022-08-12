@@ -452,7 +452,6 @@ class ImageWriter(object):
     '''
     Writer for writing out a modified i.e. resampled or cropped dataset.
     Currently supports writing to HDF5 and metaimage.
-    Will later support other formats e.g zarr
     
     In the case of HDF5:
     Expects to be writing an original dataset or attributes of the original dataset,
