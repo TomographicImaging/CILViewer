@@ -578,7 +578,6 @@ class ImageWriterInterface(object):
         self._HDF5Compression = compression
 
 
-
 class ImageWriter(ImageWriterInterface):
     '''
     Writer for writing out a modified i.e. resampled or cropped dataset.
@@ -614,6 +613,7 @@ class ImageWriter(ImageWriterInterface):
     With mha this means we lose the information about the original dataset before it was downsampled/cropped
 
     '''
+
     def __init__(self):
         super(ImageWriter, self).__init__()
 
