@@ -154,7 +154,6 @@ class TestImageReaderAndWriter(unittest.TestCase):
         reader = ImageReader(file_name=self.tiff_dirname, resample=False)
         self._test_read_full_size_data(reader)
 
-
     def test_read_resample(self):
 
         og_shape = np.shape(self.input_3D_array)
@@ -177,11 +176,8 @@ class TestImageReaderAndWriter(unittest.TestCase):
                                 resample_z=True,
                                 raw_image_attrs=self.raw_image_attrs)
         self._test_resampling_not_acq_data(readerraw, target_size)
-        readertiff = ImageReader(file_name=self.tiff_dirname,
-                                target_size=target_size,
-                                resample_z=True)
+        readertiff = ImageReader(file_name=self.tiff_dirname, target_size=target_size, resample_z=True)
         self._test_resampling_not_acq_data(readertiff, target_size)
-
 
         # Now test if we get the correct z extent if we set that we
         # have acquisition data
@@ -199,9 +195,7 @@ class TestImageReaderAndWriter(unittest.TestCase):
                                 resample_z=False,
                                 raw_image_attrs=self.raw_image_attrs)
         self._test_resampling_acq_data(readerraw, target_size)
-        readertiff = ImageReader(file_name=self.tiff_fnames[0],
-                                target_size=target_size,
-                                resample_z=False)
+        readertiff = ImageReader(file_name=self.tiff_fnames[0], target_size=target_size, resample_z=False)
         self._test_resampling_acq_data(readertiff, target_size)
 
         # # Now test if we get the full image extent if our
@@ -219,8 +213,7 @@ class TestImageReaderAndWriter(unittest.TestCase):
                                 target_size=target_size,
                                 raw_image_attrs=self.raw_image_attrs)
         self._test_resample_size_bigger_than_image_size(readerraw)
-        readertiff = ImageReader(file_name=self.tiff_dirname,
-                                target_size=target_size)
+        readertiff = ImageReader(file_name=self.tiff_dirname, target_size=target_size)
         self._test_resample_size_bigger_than_image_size(readertiff)
 
     def test_read_cropped(self):
@@ -263,14 +256,10 @@ class TestImageReaderAndWriter(unittest.TestCase):
         np.testing.assert_array_equal(cropped_array, read_cropped_array)
 
         # TIFF: ------------------------------------------------------------------------
-        reader = ImageReader(file_name=self.tiff_fnames[0],
-                             crop=True,
-                             resample=False,
-                             target_z_extent=[1, 1])
+        reader = ImageReader(file_name=self.tiff_fnames[0], crop=True, resample=False, target_z_extent=[1, 1])
         array_image_data = reader.Read()
         read_cropped_array = Converter.vtk2numpy(array_image_data)
         np.testing.assert_array_equal(cropped_array, read_cropped_array)
-
 
     def test_write_read_hdf5(self):
         ''''

@@ -9,15 +9,9 @@ import h5py
 import numpy as np
 import vtk
 from ccpi.viewer.utils import Converter
-from ccpi.viewer.utils.conversion import (cilHDF5CroppedReader,
-                                          cilHDF5ResampleReader,
-                                          cilMetaImageCroppedReader,
-                                          cilMetaImageResampleReader,
-                                          cilNumpyCroppedReader,
-                                          cilNumpyResampleReader,
-                                          cilRawCroppedReader,
-                                          cilRawResampleReader,
-                                          cilTIFFCroppedReader,
+from ccpi.viewer.utils.conversion import (cilHDF5CroppedReader, cilHDF5ResampleReader, cilMetaImageCroppedReader,
+                                          cilMetaImageResampleReader, cilNumpyCroppedReader, cilNumpyResampleReader,
+                                          cilRawCroppedReader, cilRawResampleReader, cilTIFFCroppedReader,
                                           cilTIFFResampleReader)
 from ccpi.viewer.utils.error_handling import EndObserver, ErrorObserver
 from ccpi.viewer.utils.hdf5_io import HDF5Reader
@@ -320,7 +314,7 @@ class ImageReader(object):
         if file_extension not in ['.tif', '.tiff']:
             # currently the tiff reader doesn't take these inputs:
             reader.SetFileName(self._FileName)
-        
+
         # setting SetIsAcquisitionData determines whether to crop on Z:
         reader.SetIsAcquisitionData(not self._ResampleZ)
 
