@@ -27,11 +27,11 @@ test:
   
 requirements:
   build:
-    - python
+    - python {{ python }}
     - vtk {{ vtk }}
  
   run:
-    - python
+    - python {{ python }}
     - numpy
     - vtk {{ vtk }}
     - pyside2
