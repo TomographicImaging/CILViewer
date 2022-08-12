@@ -2,31 +2,29 @@ import datetime
 import glob
 import logging
 import os
+import re
 from functools import partial
-
-from vtk.util.vtkAlgorithm import VTKPythonAlgorithmBase
 
 import h5py
 import numpy as np
 import vtk
 from ccpi.viewer.utils import Converter
-from ccpi.viewer.utils.conversion import (cilRawCroppedReader, cilRawResampleReader, cilHDF5CroppedReader,
-                                          cilHDF5ResampleReader, cilMetaImageCroppedReader, cilMetaImageResampleReader,
-                                          cilNumpyCroppedReader, cilNumpyResampleReader)
+from ccpi.viewer.utils.conversion import (cilHDF5CroppedReader,
+                                          cilHDF5ResampleReader,
+                                          cilMetaImageCroppedReader,
+                                          cilMetaImageResampleReader,
+                                          cilNumpyCroppedReader,
+                                          cilNumpyResampleReader,
+                                          cilRawCroppedReader,
+                                          cilRawResampleReader,
+                                          cilTIFFCroppedReader,
+                                          cilTIFFResampleReader)
+from ccpi.viewer.utils.error_handling import EndObserver, ErrorObserver
 from ccpi.viewer.utils.hdf5_io import HDF5Reader
 from ccpi.viewer.version import version
 from schema import Optional, Or, Schema, SchemaError
-from ccpi.viewer.utils.error_handling import customise_warnings
-from ccpi.viewer.utils.hdf5_io import HDF5Reader
 from vtk.util import numpy_support
-
-import warnings
-import os
-import re
-import vtk
-
-from ccpi.viewer.utils.error_handling import EndObserver, ErrorObserver
-from schema import Schema, Optional
+from vtk.util.vtkAlgorithm import VTKPythonAlgorithmBase
 
 
 def SaveRenderToPNG(render_window, filename):
@@ -76,8 +74,7 @@ def SaveRenderToPNG(render_window, filename):
 class ImageReader(object):
     '''
     Generic reader for reading to vtkImageData
-    Currently reads: HDF5, MetaImage, Numpy, Raw
-    Later will support TIFFs
+    Currently reads: HDF5, MetaImage, Numpy, Raw, TIFF stacks
     Supports resampling OR cropping the dataset whilst
     reading.
     Currently doesn't support both cropping and resampling
@@ -101,6 +98,7 @@ class ImageReader(object):
         ----------
         file_name: os.path or string, default None
             file name to read
+            In case of TIFF files, either the directory to the TIFF files, or the path to one such file is needed.
         resample: bool, default True
             whether to resample
         crop: bool, default False
@@ -232,9 +230,9 @@ class ImageReader(object):
 
         if self._Crop:
             if self._TargetZExtent is None:
-                raise Exception("Error: if crop is set to True, target_z_extent must be set.")
+                raise TypeError("If crop is set to True, target_z_extent must be set.")
             if self._Resample:
-                warnings.warn(
+                self.logger.warning(
                     "Both cropping and resampling is not yet implemented. Image will just be cropped and not resampled."
                 )
                 self._Resample = False
@@ -275,6 +273,16 @@ class ImageReader(object):
         return raw_attrs
 
     def _GetReader(self, progress_callback=None):
+        '''
+        Returns an appropriate reader for the image file provided.
+        The appropriate reader is decided by matching the extension of the file to be read, which can be:
+        - mha, mhd for METAIO files
+        - npy for numpy file format
+        - raw for binary blobs
+        - nxs, h5, or hdf5 for HDF5 files
+        - tiff or tif for TIFF stacks.
+        No actual check of the file format is performed.
+        '''
         if os.path.isfile(self._FileName):
             file_extension = os.path.splitext(self._FileName)[1]
 
@@ -292,10 +300,11 @@ class ImageReader(object):
                 self._OriginalImageAttrs['dataset_name'] = self._HDF5DatasetName
 
             elif file_extension in ['.tif', '.tiff']:
-                image_files = glob.glob(os.path.join(os.path.dirname(self._FileName), '*.{}'.format(file_extension)))
+                image_files = glob.glob(os.path.join(os.path.dirname(self._FileName), '*{}'.format(file_extension)))
                 if len(image_files) == 0:
-                    raise Exception('No tiff files were found in: {}'.format(self._FileName))
-                self._data = self._GetTiffImageReader(image_files)
+                    raise Exception('No tiff files were found in: {}'.format(os.path.dirname(self._FileName)))
+                reader = self._GetTiffImageReader()
+                reader.SetFileName(image_files)
 
             else:
                 raise Exception('File format is not supported. Accepted formats include: .mhd, .mha, .npy, .tif, .raw')
@@ -304,14 +313,17 @@ class ImageReader(object):
                 os.path.join(self._FileName, '*.tiff'))
             if len(image_files) == 0:
                 raise Exception('No tiff files were found in: {}'.format(self._FileName))
-            self._data = self._GetTiffImageReader(image_files)
+            reader = self._GetTiffImageReader()
+            reader.SetFileName(image_files)
+            file_extension = '.tiff'
 
         if file_extension not in ['.tif', '.tiff']:
             # currently the tiff reader doesn't take these inputs:
             reader.SetFileName(self._FileName)
-            # if we have acquisition data then we would not resample on
-            # the z axis:
-            reader.SetIsAcquisitionData(not self._ResampleZ)
+        
+        # setting SetIsAcquisitionData determines whether to crop on Z:
+        reader.SetIsAcquisitionData(not self._ResampleZ)
+
         if not self._Crop:
             if self._Resample:
                 target_size = self._TargetSize
@@ -353,18 +365,11 @@ class ImageReader(object):
         return reader
 
     def _GetTiffImageReader(self, progress_callback=None):
-        # TODO!!!!!!!!!!!
-        reader = vtk.vtkTIFFReader()
-        filenames = glob.glob(os.path.join(self._FileName, '*'))
-
-        if self._Resample or self._Crop:
-            raise NotImplementedError("Tiff resampling and cropping is not yet implemented in this class")
-
-        sa = vtk.vtkStringArray()
-        for fname in filenames:
-            i = sa.InsertNextValue(fname)
-        self.logger.info("will read {} files".format(i))
-        reader.SetFileNames(sa)
+        if self._Crop:
+            reader = cilTIFFCroppedReader()
+            reader.SetTargetZExtent(tuple(self._TargetZExtent))
+        else:
+            reader = cilTIFFResampleReader()
         return reader
 
     def _GetRawImageReader(self):

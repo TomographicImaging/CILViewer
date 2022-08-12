@@ -19,8 +19,6 @@ hdf5, nxs, mha
 '''
 
 EXAMPLE_YAML_FILE = '''
-EXAMPLE INPUT YAML FILE:
-
 input:
     file_name: '24737_fd_normalised.nxs'
     shape: (1024,1024,1024)

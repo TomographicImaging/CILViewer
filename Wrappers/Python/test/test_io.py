@@ -62,6 +62,26 @@ class TestImageReaderAndWriter(unittest.TestCase):
             'typecode': str(self.input_3D_array.dtype)
         }
 
+        # Create TIFF Files
+        fnames = []
+        arr = self.input_3D_array
+        self.tiff_dirname = 'tiff_files'
+        if not os.path.exists('tiff_files'):
+            os.mkdir(self.tiff_dirname)
+        from PIL import Image
+        for i in range(arr.shape[0]):
+            fname = 'tiff_files/tiff_test_file_{:03d}.tiff'.format(i)
+            fnames.append(os.path.abspath(fname))
+            # Using vtk the Y axis gets reversed
+            # vtk_image = Converter.numpy2vtkImage(np.expand_dims(arr[i,:,:], axis=0))
+            # twriter.SetFileName(fnames[-1])
+            # twriter.SetInputData(vtk_image)
+            # twriter.Write()
+            im = Image.fromarray(arr[i])
+            im.save(fnames[-1])
+
+        self.tiff_fnames = fnames
+
     def _test_read_full_size_data(self, reader):
         array_image_data = reader.Read()
         read_array = Converter.vtk2numpy(array_image_data)
@@ -126,6 +146,15 @@ class TestImageReaderAndWriter(unittest.TestCase):
         reader = ImageReader(file_name=self.raw_filename_3D, resample=False, raw_image_attrs=self.raw_image_attrs)
         self._test_read_full_size_data(reader)
 
+        # TIFF from filename: ----------
+        reader = ImageReader(file_name=self.tiff_fnames[0], resample=False)
+        self._test_read_full_size_data(reader)
+
+        # # TIFF from foldername: ----------
+        reader = ImageReader(file_name=self.tiff_dirname, resample=False)
+        self._test_read_full_size_data(reader)
+
+
     def test_read_resample(self):
 
         og_shape = np.shape(self.input_3D_array)
@@ -148,6 +177,11 @@ class TestImageReaderAndWriter(unittest.TestCase):
                                 resample_z=True,
                                 raw_image_attrs=self.raw_image_attrs)
         self._test_resampling_not_acq_data(readerraw, target_size)
+        readertiff = ImageReader(file_name=self.tiff_dirname,
+                                target_size=target_size,
+                                resample_z=True)
+        self._test_resampling_not_acq_data(readertiff, target_size)
+
 
         # Now test if we get the correct z extent if we set that we
         # have acquisition data
@@ -165,6 +199,10 @@ class TestImageReaderAndWriter(unittest.TestCase):
                                 resample_z=False,
                                 raw_image_attrs=self.raw_image_attrs)
         self._test_resampling_acq_data(readerraw, target_size)
+        readertiff = ImageReader(file_name=self.tiff_fnames[0],
+                                target_size=target_size,
+                                resample_z=False)
+        self._test_resampling_acq_data(readertiff, target_size)
 
         # # Now test if we get the full image extent if our
         # # target size is larger than the size of the image:
@@ -181,6 +219,9 @@ class TestImageReaderAndWriter(unittest.TestCase):
                                 target_size=target_size,
                                 raw_image_attrs=self.raw_image_attrs)
         self._test_resample_size_bigger_than_image_size(readerraw)
+        readertiff = ImageReader(file_name=self.tiff_dirname,
+                                target_size=target_size)
+        self._test_resample_size_bigger_than_image_size(readertiff)
 
     def test_read_cropped(self):
         # Test cropping the extent of a dataset
@@ -220,6 +261,16 @@ class TestImageReaderAndWriter(unittest.TestCase):
         array_image_data = reader.Read()
         read_cropped_array = Converter.vtk2numpy(array_image_data)
         np.testing.assert_array_equal(cropped_array, read_cropped_array)
+
+        # TIFF: ------------------------------------------------------------------------
+        reader = ImageReader(file_name=self.tiff_fnames[0],
+                             crop=True,
+                             resample=False,
+                             target_z_extent=[1, 1])
+        array_image_data = reader.Read()
+        read_cropped_array = Converter.vtk2numpy(array_image_data)
+        np.testing.assert_array_equal(cropped_array, read_cropped_array)
+
 
     def test_write_read_hdf5(self):
         ''''
@@ -262,9 +313,10 @@ class TestImageReaderAndWriter(unittest.TestCase):
         np.testing.assert_array_equal(resampled_image.GetSpacing(), read_resampled_image.GetSpacing())
 
     def tearDown(self):
-        files = [self.hdf5_filename_3D]
+        files = [self.hdf5_filename_3D] + self.tiff_fnames
         for f in files:
             os.remove(f)
+        os.rmdir('tiff_files')
 
 
 if __name__ == '__main__':
