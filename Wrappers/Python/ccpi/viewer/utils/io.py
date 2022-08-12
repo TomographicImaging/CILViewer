@@ -448,40 +448,10 @@ class ImageReader(object):
         self._OriginalImageAttrs['cropped'] = False
 
 
-class ImageWriter(object):
+class ImageWriterInterface(object):
     '''
-    Writer for writing out a modified i.e. resampled or cropped dataset.
-    Currently supports writing to HDF5 and metaimage.
-    
-    In the case of HDF5:
-    Expects to be writing an original dataset or attributes of the original dataset,
-    plus one or more 'child' versions of the dataset which have been resampled and/or cropped.
-    This can be done if the file format is set to hdf5 or nxs.
-    If an image has been downsampled/cropped using the ImageReader class, then the attributes 
-    obtained with: reader.get_original_image_attributes() and reader.get_loaded_image_attributes()
-    will be in the correct format for this writer.
-    
-    Example of writing to HDF5:
-    writer = ImageWriter()
-    writer.SetFileName('resampled_image')
-    writer.SetFileFormat('hdf5')
-    writer.SetOriginalDataset(None, 
-        {'file_name': 'image.nxs', 'shape': [500, 600, 600], 'resampled': False, 'cropped': False})
-    writer.AddChildDataset(downsampled_image,  
-        {'origin': [0.5, 0.5, 0.5], 'spacing': [2, 2, 2], 'resampled': True, 'resampled_z': False, 'cropped': False})
-    writer.Write()
-
-    Alternatively, to just write a downsampled/cropped dataset to a metaimage file with no extra attributes.
-    Remember the metaimage writer already automatically will save the spacing and origin of the vtkImageData
-    so there is no need to set this as extra attributes.
-    Example of writing to MHA:
-    writer = ImageWriter()
-    writer.SetFileName('resampled_image')
-    writer.SetFileFormat('mha')
-    writer.AddChildDataset(downsampled_image)
-    writer.Write()
-    With mha this means we lose the information about the original dataset before it was downsampled/cropped
-
+    Base class with methods for setting and getting information about modified
+    (i.e. resampled or cropped) image data to write to a file.
     '''
 
     def __init__(self):
@@ -607,6 +577,46 @@ class ImageWriter(object):
         '''
         self._HDF5Compression = compression
 
+
+
+class ImageWriter(ImageWriterInterface):
+    '''
+    Writer for writing out a modified i.e. resampled or cropped dataset.
+    Currently supports writing to HDF5 and metaimage.
+    
+    In the case of HDF5:
+    Expects to be writing an original dataset or attributes of the original dataset,
+    plus one or more 'child' versions of the dataset which have been resampled and/or cropped.
+    This can be done if the file format is set to hdf5 or nxs.
+    If an image has been downsampled/cropped using the ImageReader class, then the attributes 
+    obtained with: reader.get_original_image_attributes() and reader.get_loaded_image_attributes()
+    will be in the correct format for this writer.
+    
+    Example of writing to HDF5:
+    writer = ImageWriter()
+    writer.SetFileName('resampled_image')
+    writer.SetFileFormat('hdf5')
+    writer.SetOriginalDataset(None, 
+        {'file_name': 'image.nxs', 'shape': [500, 600, 600], 'resampled': False, 'cropped': False})
+    writer.AddChildDataset(downsampled_image,  
+        {'origin': [0.5, 0.5, 0.5], 'spacing': [2, 2, 2], 'resampled': True, 'resampled_z': False, 'cropped': False})
+    writer.Write()
+
+    Alternatively, to just write a downsampled/cropped dataset to a metaimage file with no extra attributes.
+    Remember the metaimage writer already automatically will save the spacing and origin of the vtkImageData
+    so there is no need to set this as extra attributes.
+    Example of writing to MHA:
+    writer = ImageWriter()
+    writer.SetFileName('resampled_image')
+    writer.SetFileFormat('mha')
+    writer.AddChildDataset(downsampled_image)
+    writer.Write()
+    With mha this means we lose the information about the original dataset before it was downsampled/cropped
+
+    '''
+    def __init__(self):
+        super(ImageWriter, self).__init__()
+
     def Write(self):
         # check file ext
         writer = self._GetWriter()
@@ -645,7 +655,7 @@ class ImageWriter(object):
         return writer
 
 
-class cilviewerHDF5Writer(ImageWriter):
+class cilviewerHDF5Writer(ImageWriterInterface):
     '''
     Expects to be writing an original dataset or attributes of the original dataset,
     plus one or more 'child' versions of the dataset which have been resampled and/or cropped.
