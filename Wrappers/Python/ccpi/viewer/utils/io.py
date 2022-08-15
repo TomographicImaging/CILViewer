@@ -314,6 +314,8 @@ class ImageReader(object):
         if file_extension not in ['.tif', '.tiff']:
             # currently the tiff reader doesn't take these inputs:
             reader.SetFileName(self._FileName)
+        else:
+            print(image_files)
 
         # setting SetIsAcquisitionData determines whether to crop on Z:
         reader.SetIsAcquisitionData(not self._ResampleZ)
