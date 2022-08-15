@@ -82,8 +82,6 @@ class TestImageReaderAndWriter(unittest.TestCase):
 
         self.tiff_fnames = fnames
 
-        print(self.tiff_fnames)
-
     def _test_read_full_size_data(self, reader):
         array_image_data = reader.Read()
         read_array = Converter.vtk2numpy(array_image_data)

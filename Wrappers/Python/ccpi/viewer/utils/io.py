@@ -303,8 +303,7 @@ class ImageReader(object):
             else:
                 raise Exception('File format is not supported. Accepted formats include: .mhd, .mha, .npy, .tif, .raw')
         else:  # If we are given a folder, not a file, look for tiff files and try to read them
-            image_files = glob.glob(os.path.join(self._FileName, '*.tif')) + glob.glob(
-                os.path.join(self._FileName, '*.tiff'))
+            image_files = list(glob.glob(os.path.join(self._FileName, '*.tif')) + list(glob.glob(os.path.join(self._FileName, '*.tiff'))))
             if len(image_files) == 0:
                 raise Exception('No tiff files were found in: {}'.format(self._FileName))
             reader = self._GetTiffImageReader()
@@ -315,7 +314,7 @@ class ImageReader(object):
             # currently the tiff reader doesn't take these inputs:
             reader.SetFileName(self._FileName)
         else:
-            print(image_files)
+            image_files.sort(key=self.__natural_keys)
 
         # setting SetIsAcquisitionData determines whether to crop on Z:
         reader.SetIsAcquisitionData(not self._ResampleZ)
@@ -342,6 +341,20 @@ class ImageReader(object):
         # else if an error does occur in reader?
 
         return reader
+
+    def __natural_keys(self, text):
+        '''
+        Used in the sorting of tiff files retrieved with glob
+        https://stackoverflow.com/questions/5967500/how-to-correctly-sort-a-string-with-a-number-inside
+        alist.sort(key=natural_keys) sorts in human order
+        http://nedbatchelder.com/blog/200712/human_sorting.html
+        (See Toothy's implementation in the comments)
+        '''
+        return [self.__atoi(c) for c in re.split(r'(\d+)', text) ]
+
+    def __atoi(self, text):
+        '''Used in the sorting of tiff files retrieved with glob'''
+        return int(text) if text.isdigit() else text
 
     def _GetMetaImageReader(self, progress_callback=None):
         if self._Crop:
