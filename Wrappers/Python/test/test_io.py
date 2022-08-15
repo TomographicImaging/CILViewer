@@ -129,30 +129,17 @@ class TestImageReaderAndWriter(unittest.TestCase):
 
     def test_read(self):
         '''Test reading each format without resampling or cropping'''
+        readers = {}
+        readers['hdf5'] = ImageReader(file_name=self.hdf5_filename_3D, resample=False, hdf5_dataset_name="ImageData")
+        readers['numpy'] = ImageReader(file_name=self.numpy_filename_3D, resample=False)
+        readers['mha'] = ImageReader(file_name=self.mha_filename_3D, resample=False)
+        readers['raw']= ImageReader(file_name=self.raw_filename_3D, resample=False, raw_image_attrs=self.raw_image_attrs)
+        readers['tiff_file'] = ImageReader(file_name=self.tiff_fnames[0], resample=False)
+        readers['tiff_dir'] = ImageReader(file_name=self.tiff_dirname, resample=False)
 
-        # HDF5: ------------------------------------------------------------------
-        reader = ImageReader(file_name=self.hdf5_filename_3D, resample=False, hdf5_dataset_name="ImageData")
-        self._test_read_full_size_data(reader)
-
-        # NUMPY: ----------------------------------------------------------------
-        reader = ImageReader(file_name=self.numpy_filename_3D, resample=False)
-        self._test_read_full_size_data(reader)
-
-        # METAIMAGE: ----------------------------------------------------------
-        reader = ImageReader(file_name=self.mha_filename_3D, resample=False)
-        self._test_read_full_size_data(reader)
-
-        # RAW:----------
-        reader = ImageReader(file_name=self.raw_filename_3D, resample=False, raw_image_attrs=self.raw_image_attrs)
-        self._test_read_full_size_data(reader)
-
-        # TIFF from filename: ----------
-        reader = ImageReader(file_name=self.tiff_fnames[0], resample=False)
-        self._test_read_full_size_data(reader)
-
-        # # TIFF from foldername: ----------
-        reader = ImageReader(file_name=self.tiff_dirname, resample=False)
-        self._test_read_full_size_data(reader)
+        for i, reader in enumerate(readers.values()):
+            with self.subTest(reader_name=list(readers.keys())[i]):
+                self._test_read_full_size_data(reader)
 
     def test_read_resample(self):
 
