@@ -82,6 +82,8 @@ class TestImageReaderAndWriter(unittest.TestCase):
 
         self.tiff_fnames = fnames
 
+        print(self.tiff_fnames)
+
     def _test_read_full_size_data(self, reader):
         array_image_data = reader.Read()
         read_array = Converter.vtk2numpy(array_image_data)
@@ -133,9 +135,8 @@ class TestImageReaderAndWriter(unittest.TestCase):
         readers['hdf5'] = ImageReader(file_name=self.hdf5_filename_3D, resample=False, hdf5_dataset_name="ImageData")
         readers['numpy'] = ImageReader(file_name=self.numpy_filename_3D, resample=False)
         readers['mha'] = ImageReader(file_name=self.mha_filename_3D, resample=False)
-        readers['raw'] = ImageReader(file_name=self.raw_filename_3D,
-                                     resample=False,
-                                     raw_image_attrs=self.raw_image_attrs)
+        readers['raw']= ImageReader(file_name=self.raw_filename_3D,
+                                    resample=False, raw_image_attrs=self.raw_image_attrs)
         readers['tiff_file'] = ImageReader(file_name=self.tiff_fnames[0], resample=False)
         readers['tiff_dir'] = ImageReader(file_name=self.tiff_dirname, resample=False)
 
