@@ -303,7 +303,9 @@ class ImageReader(object):
             else:
                 raise Exception('File format is not supported. Accepted formats include: .mhd, .mha, .npy, .tif, .raw')
         else:  # If we are given a folder, not a file, look for tiff files and try to read them
-            image_files = list(glob.glob(os.path.join(self._FileName, '*.tif')) + list(glob.glob(os.path.join(self._FileName, '*.tiff'))))
+            image_files = list(
+                glob.glob(os.path.join(self._FileName, '*.tif')) +
+                list(glob.glob(os.path.join(self._FileName, '*.tiff'))))
             if len(image_files) == 0:
                 raise Exception('No tiff files were found in: {}'.format(self._FileName))
             reader = self._GetTiffImageReader()
@@ -350,7 +352,7 @@ class ImageReader(object):
         http://nedbatchelder.com/blog/200712/human_sorting.html
         (See Toothy's implementation in the comments)
         '''
-        return [self.__atoi(c) for c in re.split(r'(\d+)', text) ]
+        return [self.__atoi(c) for c in re.split(r'(\d+)', text)]
 
     def __atoi(self, text):
         '''Used in the sorting of tiff files retrieved with glob'''
