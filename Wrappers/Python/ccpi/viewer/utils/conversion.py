@@ -1126,6 +1126,9 @@ class cilTIFFImageReaderInterface(cilReaderInterface):
 
         self.SetOutputVTKType(reader.GetOutput().GetScalarType())
 
+        self.SetElementSpacing(reader.GetOutput().GetSpacing())
+        self.SetOrigin(reader.GetOutput().GetOrigin())
+
         self.Modified()
 
 
