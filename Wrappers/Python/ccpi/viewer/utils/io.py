@@ -60,8 +60,6 @@ def SaveRenderToPNG(render_window, filename):
     writer.Write()
 
 
-
-
 class ImageReader(object):
     '''
     Generic reader for reading to vtkImageData

@@ -21,8 +21,6 @@ def calculate_target_downsample_shape(max_size, total_size, shape, acq=False):
     return target_image_shape
 
 
-
-
 class TestImageReaderAndWriter(unittest.TestCase):
 
     def setUp(self):
