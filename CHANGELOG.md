@@ -1,7 +1,14 @@
 # Changelog
 
-## v2x.x.x
-- Removed obsolete TIFF code from conversion.py
+## v22.4.0
+- Removed obsolete TIFF code from conversion.py. The following have been removed:
+  - `vtkTiffStack2numpy`
+  - `tiffStack2numpy`
+  - `tiffStack2numpyEnforceBounds`
+  - `_tiffStack2numpy`
+  - `normalize`
+  - `highest_tuple_element`
+- Fixed cilTIFFResampler so that if original TIFF file has a set spacing and origin, this is taken into account when resampling.
 
 ## v22.3.0
 - Add a dictionary of widgets to the CILViewerBaseClass, and ability to add and retrieve widgets to/from the dict with methods `.addWidgetReference` and `.getWidget`
