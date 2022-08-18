@@ -21,11 +21,6 @@ def calculate_target_downsample_shape(max_size, total_size, shape, acq=False):
     return target_image_shape
 
 
-# TODO:
-# First, focus on resampling and writing out to HDF5
-# for this we need:
-# test image attributes given by reader
-# test writing out a file
 
 
 class TestImageReaderAndWriter(unittest.TestCase):
