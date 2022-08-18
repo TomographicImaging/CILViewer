@@ -24,6 +24,7 @@
 - Examples:
   - `examples/image_reader_and_writer.py` is an example of using the `ImageReader` and `ImageWriter`
 - Unit tests for all of the new readers and writers.
+- Removed obsolete TIFF code from conversion.py
 
 ## v22.3.0
 - Add a dictionary of widgets to the CILViewerBaseClass, and ability to add and retrieve widgets to/from the dict with methods `.addWidgetReference` and `.getWidget`
