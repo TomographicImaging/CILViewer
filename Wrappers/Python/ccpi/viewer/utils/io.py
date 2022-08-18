@@ -15,7 +15,7 @@ from ccpi.viewer.utils.conversion import (cilHDF5CroppedReader, cilHDF5ResampleR
                                           cilTIFFResampleReader)
 from ccpi.viewer.utils.error_handling import EndObserver, ErrorObserver
 from ccpi.viewer.utils.hdf5_io import HDF5Reader
-from ccpi.viewer.version import version
+#from ccpi.viewer.version import version
 from schema import Optional, Or, Schema, SchemaError
 from vtk.util import numpy_support
 from vtk.util.vtkAlgorithm import VTKPythonAlgorithmBase
@@ -708,7 +708,7 @@ class cilviewerHDF5Writer(ImageWriterInterface):
 
             # give the file some important attributes
             f.attrs['file_name'] = self._FileName
-            f.attrs['viewer_version'] = version
+            #f.attrs['viewer_version'] = version
             f.attrs['file_time'] = str(datetime.datetime.utcnow())
             f.attrs['creator'] = np.string_('io.py')
             f.attrs['HDF5_Version'] = h5py.version.hdf5_version
