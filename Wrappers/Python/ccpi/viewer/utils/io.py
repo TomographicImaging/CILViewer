@@ -467,8 +467,15 @@ class ImageReader(object):
 
 class ImageWriterInterface(object):
     '''
-    Base class with methods for setting and getting information about modified
+    Interface for writers, with methods for setting and getting information about modified
     (i.e. resampled or cropped) image data to write to a file.
+    
+    The interface allows to set if the writer should use chunking for writing the file to disk.
+    This is done by calling `SetChunking(True)` and by setting the chunk shape by using
+    `SetChunkShape((10,10))`. By default no chunking is used.
+    
+    For the subclass `cilviewerHDF5Writer` the default chunking shape is set to one slice on the
+    Z direction. 
     '''
 
     def __init__(self):
