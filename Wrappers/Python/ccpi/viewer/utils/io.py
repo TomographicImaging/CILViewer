@@ -60,9 +60,6 @@ def SaveRenderToPNG(render_window, filename):
     writer.Write()
 
 
-# TODO:
-# supporting tiffs
-# write out other filetypes
 
 
 class ImageReader(object):
