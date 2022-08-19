@@ -58,7 +58,14 @@ with open(fname, 'w') as f:
 setup(
     name="ccpi-viewer",
     version=version,
-    packages=['ccpi', 'ccpi.viewer', 'ccpi.viewer.utils', 'ccpi.web_viewer', 'ccpi.viewer.widgets'],
+    packages=[
+        'ccpi',
+        'ccpi.viewer',
+        'ccpi.viewer.utils',
+        'ccpi.web_viewer',
+        'ccpi.viewer.widgets',
+        'ccpi.viewer.cli',
+    ],
     install_requires=requires,
     zip_safe=False,
     # metadata for upload to PyPI
@@ -67,7 +74,7 @@ setup(
     description='CCPi CILViewer',
     license="Apache v2.0",
     keywords="3D data viewer",
-    url="http://www.ccpi.ac.uk",  # project home page
-
-    # could also include long_description, download_url, classifiers, etc.
-    entry_points={'console_scripts': ['web_cilviewer = ccpi.web_viewer.web_app:main']})
+    url="http://www.ccpi.ac.uk",  # project home page, if any
+    entry_points={
+        'console_scripts': ['resample = ccpi.viewer.cli.resample:main', 'web_cilviewer = ccpi.web_viewer.web_app:main']
+    })
