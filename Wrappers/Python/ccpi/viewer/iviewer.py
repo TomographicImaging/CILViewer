@@ -6,6 +6,7 @@ from ccpi.viewer.QCILViewerWidget import QCILViewerWidget
 import ccpi.viewer.viewerLinker as vlink
 from ccpi.viewer.utils.conversion import Converter
 import numpy as np
+from ccpi.viewer.utils import example_data
 
 
 class SingleViewerCenterWidget(QtWidgets.QMainWindow):
@@ -42,12 +43,6 @@ class TwoLinkedViewersCenterWidget(QtWidgets.QMainWindow):
             viewers.append(eval('viewer' + viewer))
         self.frame1 = QCILViewerWidget(viewer=viewers[0], shape=(600, 600), interactorStyle=styles[0])
         self.frame2 = QCILViewerWidget(viewer=viewers[1], shape=(600, 600), interactorStyle=styles[1])
-
-        # For the head example we have to set the method to scalar so that
-        # the volume render can be seen
-        # may need to comment this out for other datasets
-        if viewers[1] == viewer3D:
-            self.frame2.viewer.setVolumeRenderOpacityMethod('scalar')
 
         # Initially link viewers
         self.linkedViewersSetup()
@@ -159,8 +154,11 @@ if __name__ == "__main__":
     err.SetFileName("viewer.log")
     vtk.vtkOutputWindow.SetInstance(err)
 
-    reader = vtk.vtkMetaImageReader()
-    reader.SetFileName('head.mha')
-    reader.Update()
+    data = example_data.HEAD.get()
+    iviewer(data, data, viewer1='2D', viewer2='3D')
 
-    iviewer(reader.GetOutput(), reader.GetOutput(), viewer1='2D', viewer2='3D')
+    # To use your own metaimage file, uncomment:
+    # reader = vtk.vtkMetaImageReader()
+    # reader.SetFileName('head.mha')
+    # reader.Update()
+    #iviewer(reader.GetOutput(), reader.GetOutput(), viewer1='2D', viewer2='3D')

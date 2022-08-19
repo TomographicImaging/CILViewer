@@ -695,15 +695,16 @@ class CILViewer(CILViewerBase):
             self._vol_render_opacity_method = method
             # self.updateVolumePipeline()
             #This is a hack #TODO: fix update pipeline in case where we change opacity method
-            planes = self.volume.GetMapper().GetClippingPlanes()
-            self.ren.RemoveVolume(self.volume)
-            self.volume_render_initialised = False
-            self.style.ToggleVolumeVisibility()
-            # add existing clipping plane to new volume
-            if planes is not None:
-                plane = planes.GetItem(0)
-                self.volume.GetMapper().AddClippingPlane(plane)
-                self.volume.Modified()
+            if self.volume_render_initialised:
+                planes = self.volume.GetMapper().GetClippingPlanes()
+                self.ren.RemoveVolume(self.volume)
+                self.volume_render_initialised = False
+                self.style.ToggleVolumeVisibility()
+                # add existing clipping plane to new volume
+                if planes is not None:
+                    plane = planes.GetItem(0)
+                    self.volume.GetMapper().AddClippingPlane(plane)
+                    self.volume.Modified()
 
     def setMaximumOpacity(self, max, update_pipeline=True):
         '''
