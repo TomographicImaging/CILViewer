@@ -96,5 +96,3 @@ if __name__ == "__main__":
 
     data = example_data.HEAD.get()
     viewer_window(data)
-
-    

@@ -154,11 +154,8 @@ if __name__ == "__main__":
     err.SetFileName("viewer.log")
     vtk.vtkOutputWindow.SetInstance(err)
 
-
     data = example_data.HEAD.get()
     iviewer(data, data, viewer1='2D', viewer2='3D')
-
-
 
     # To use your own metaimage file, uncomment:
     # reader = vtk.vtkMetaImageReader()
