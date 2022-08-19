@@ -23,6 +23,7 @@
   - `pyyaml`
 - Examples:
   - `examples/image_reader_and_writer.py` is an example of using the `ImageReader` and `ImageWriter`
+  - `examples/opacity_in_viewer.py` updated to use head dataset from `utils/example_data.py`
 - Unit tests for all of the new readers and writers.
 - Removed obsolete TIFF code from conversion.py. The following have been removed:
   - `vtkTiffStack2numpy`
@@ -32,6 +33,9 @@
   - `normalize`
   - `highest_tuple_element`
 - Fixed cilTIFFResampler so that if original TIFF file has a set spacing and origin, this is taken into account when resampling.
+- Fixed bug in `iviewer` with display of volume render.
+- iviewer now shows gradient opacity volume render of head dataset from `utils/example_data.py` by default.
+- Fix bug in CILViewer if volume render method is adjusted before volume render turned on.
 
 ## v22.3.0
 - Add a dictionary of widgets to the CILViewerBaseClass, and ability to add and retrieve widgets to/from the dict with methods `.addWidgetReference` and `.getWidget`
