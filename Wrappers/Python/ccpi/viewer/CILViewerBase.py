@@ -107,8 +107,9 @@ class CILViewerBase():
         ori.InteractiveOff()
         self.orientation_marker = ori
 
-        # holder for list of actors
+        # holder for list of actors and widgets
         self.actors = {}
+        self.widgets = {}
 
         #initial Window/Level
         self.InitialLevel = 0
@@ -146,50 +147,64 @@ class CILViewerBase():
         '''returns the active camera'''
         return self.ren.GetActiveCamera()
 
-    def getSliceOrientation(self):
-        return self.sliceOrientation
-
-    def setActiveSlice(self, sliceno):
-        self.slicenos[self.getSliceOrientation()] = sliceno
-
-    def getActiveSlice(self):
-        return self.slicenos[self.getSliceOrientation()]
-
-    def getSliceColorWindow(self):
-        return self.imageSlice.GetProperty().GetColorWindow()
-
-    def getSliceColorLevel(self):
-        return self.imageSlice.GetProperty().GetColorLevel()
-
-    def getSliceWindowLevelFromRange(self, cmin, cmax):
-        # set the level to the average between the percentiles
-        level = (cmin + cmax) / 2
-        # accommodates all values between the level an the percentiles
-        window = cmax - cmin
-
-        return window, level
-
     def startRenderLoop(self):
         self.iren.Start()
 
-    def getImageHistogramStatistics(self, method):
+    def saveRender(self, filename, renWin=None):
+        '''Save the render window to PNG file'''
+        if renWin is None:
+            renWin = self.renWin
+        SaveRenderToPNG(self.renWin, filename)
+
+    def validateValue(self, value, axis):
+        dims = self.img3D.GetDimensions()
+        max_slice = [x - 1 for x in dims]
+
+        axis_int = {'x': SLICE_ORIENTATION_YZ, 'y': SLICE_ORIENTATION_XZ, 'z': SLICE_ORIENTATION_XY}
+
+        if axis in axis_int.keys():
+            i = axis_int[axis]
+        else:
+            raise KeyError
+
+        if value < 0:
+            return 0
+        if value > max_slice[i]:
+            return max_slice[i]
+        else:
+            return value
+
+    # METHODS ON THE FULL 3D IMAGE DATA: ------------------------------------------------
+
+    def setInput3DData(self, imageData):
+        raise NotImplementedError("Implemented in the subclasses.")
+
+    def getImageHistogramStatistics(self, method, slice=False):
         '''
         returns histogram statistics for either the image
         or gradient of the image depending on the method
+        if slice = True, calculates for the slice instead of
+        the entire image volume.
         '''
         ia = vtk.vtkImageHistogramStatistics()
+
+        if slice:
+            input_data = self.voi.GetOutput()
+        else:
+            input_data = self.img3D
+
         if method == 'scalar':
-            ia.SetInputData(self.img3D)
+            ia.SetInputData(input_data)
         else:
             grad = vtk.vtkImageGradientMagnitude()
-            grad.SetInputData(self.img3D)
+            grad.SetInputData(input_data)
             grad.SetDimensionality(3)
             grad.Update()
             ia.SetInputData(grad.GetOutput())
         ia.Update()
         return ia
 
-    def getImageMapRange(self, percentiles, method="scalar"):
+    def getImageMapRange(self, percentiles, method):
         '''
         uses percentiles to generate min and max values in either
         the image or image gradient (depending on method) for which
@@ -201,7 +216,7 @@ class CILViewerBase():
         min, max = ia.GetAutoRange()
         return min, max
 
-    def getImageMapWholeRange(self, method="scalar"):
+    def getImageMapWholeRange(self, method):
         '''
         Parameters
         -----------
@@ -213,6 +228,17 @@ class CILViewerBase():
         ia = self.getImageHistogramStatistics(method)
 
         return ia.GetMinimum(), ia.GetMaximum()
+
+    # METHODS ON THE SLICE: --------------------------------------------------------
+
+    def getSliceOrientation(self):
+        return self.sliceOrientation
+
+    def setActiveSlice(self, sliceno):
+        self.slicenos[self.getSliceOrientation()] = sliceno
+
+    def getActiveSlice(self):
+        return self.slicenos[self.getSliceOrientation()]
 
     # Set interpolation on
     def setInterpolateOn(self):
@@ -237,9 +263,8 @@ class CILViewerBase():
         self.renWin.Render()
 
     def setSliceColorPercentiles(self, min_percentage, max_percentage):
-        #TODO: LATER: FIX THIS METHOD - IT DOESN'T WORK CORRECTLY
-        min_val, max_val = self.getImageMapRange((min_percentage, max_percentage), 'scalar')
-        self.setSliceColorWindowLevel(min_val, max_val)
+        min_val, max_val = self.getSliceMapRange((min_percentage, max_percentage), 'scalar')
+        self.setSliceMapRange(min_val, max_val)
 
     def setSliceColorWindow(self, window):
         '''
@@ -259,41 +284,80 @@ class CILViewerBase():
         self.ren.Render()
         self.renWin.Render()
 
-    def getSliceMapRange(self, percentiles, method="scalar"):
+    def getSliceColorWindow(self):
+        '''
+        Get the window for the 2D slice of the 3D image.
+        '''
+        return self.imageSlice.GetProperty().GetColorWindow()
+
+    def getSliceColorLevel(self):
+        '''
+        Get the level for the 2D slice of the 3D image.
+        '''
+        return self.imageSlice.GetProperty().GetColorLevel()
+
+    def getSliceWindowLevelFromRange(self, cmin, cmax):
+        # set the level to the average between the percentiles
+        level = (cmin + cmax) / 2
+        # accommodates all values between the level and the percentiles
+        window = cmax - cmin
+
+        return window, level
+
+    def getSliceMapWholeRange(self, method):
+        '''
+        Parameters
+        -----------
+        method: string : ['scalar', 'gradient']
+            'scalar' - returns full range of values in image slice
+            'gradient' - returns full range of values in image slice's gradient
+        '''
+
+        return self.getSliceMapRange((0, 100), method)
+
+    def getSliceMapRange(self, percentiles, method='scalar'):
         '''
         uses percentiles to generate min and max values in
         the 2D slice of the 3D image, for which
         the colormap is displayed.
         '''
-        ia = self.getImageHistogramStatistics(method)
+
+        ia = self.getImageHistogramStatistics(method, slice=True)
         ia.SetAutoRangePercentiles(*percentiles)
         ia.Update()
         min, max = ia.GetAutoRange()
         return min, max
 
-    def saveRender(self, filename, renWin=None):
-        '''Save the render window to PNG file'''
-        if renWin is None:
-            renWin = self.renWin
-        SaveRenderToPNG(self.renWin, filename)
+    def setSliceMapRange(self, min, max):
+        '''
+        Parameters
+        -----------
+        min, max: float, default: the raw value of the 80. percentile for min, and the raw value of the 99. percentile for max.
+            the upper and lower image values that the 
+            color will be mapped to.
+        update_pipeline: bool
+            whether to immediately update the pipeline with this new
+            setting
+        '''
+        window, level = self.getSliceWindowLevelFromRange(min, max)
+        self.setSliceColorLevel(level)
+        self.setSliceColorWindow(window)
 
-    def validateValue(self, value, axis):
-        dims = self.img3D.GetDimensions()
-        max_slice = [x - 1 for x in dims]
+    def autoWindowLevelOnSliceRange(self, update_slice=True):
+        '''Auto-adjusts window-level for the slice, based on the 5 and 95th percentiles of the current slice.'''
+        self.ia.SetAutoRangePercentiles(5.0, 95.)
+        cmin, cmax = self.ia.GetAutoRange()
+        window, level = self.getSliceWindowLevelFromRange(cmin, cmax)
 
-        axis_int = {'x': 0, 'y': 1, 'z': 2}
+        self.imageSlice.GetProperty().SetColorLevel(level)
+        self.imageSlice.GetProperty().SetColorWindow(window)
 
-        if axis in axis_int.keys():
-            i = axis_int[axis]
-        else:
-            raise KeyError
+        if update_slice:
+            self.style.UpdateImageSlice()
 
-        if value < 0:
-            return 0
-        if value > max_slice[i]:
-            return max_slice[i]
-        else:
-            return value
+    def addWidgetReference(self, widget, name):
+        '''Adds widget to dictionary of widgets'''
+        self.widgets[name] = widget
 
-    def setInput3DData(self, imageData):
-        raise NotImplementedError("Implemented in the subclasses.")
+    def getWidget(self, name):
+        return self.widgets.get(name)

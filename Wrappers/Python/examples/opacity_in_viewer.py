@@ -8,6 +8,7 @@ from eqt.ui.UIFormWidget import FormDockWidget
 from PySide2 import QtWidgets
 from PySide2.QtCore import Qt
 from PySide2.QtWidgets import QComboBox
+from ccpi.viewer.utils import example_data
 
 try:
     import qdarkstyle
@@ -87,8 +88,11 @@ if __name__ == "__main__":
     err.SetFileName("viewer.log")
     vtk.vtkOutputWindow.SetInstance(err)
 
-    reader = vtk.vtkMetaImageReader()
-    reader.SetFileName(r'head.mha')
-    reader.Update()
+    # To use your own dataset:
+    # reader = vtk.vtkMetaImageReader()
+    # reader.SetFileName(r'head.mha')
+    # reader.Update()
+    # viewer_window(reader.GetOutput())
 
-    viewer_window(reader.GetOutput())
+    data = example_data.HEAD.get()
+    viewer_window(data)

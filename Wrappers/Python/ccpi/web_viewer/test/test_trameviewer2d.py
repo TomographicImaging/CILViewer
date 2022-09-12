@@ -41,6 +41,7 @@ class TrameViewer2DTest(unittest.TestCase):
         self.cil_viewer.img3D.GetExtent().__getitem__ = mock.MagicMock(
             return_value=0)  # Fix issues with errors in the console
         self.cil_viewer.getImageMapRange.return_value = self.map_range
+        self.cil_viewer.getSliceWindowLevelFromRange.return_value = [20, 10]
 
         self.trame_viewer = TrameViewer2D(self.file_list)
 
@@ -217,13 +218,6 @@ class TrameViewer2DTest(unittest.TestCase):
         self.assertEqual(["Remove ROI"], roi_button.children)
         self.assertEqual(roi_button._py_attr["click"], self.trame_viewer.remove_roi)
 
-    def test_create_auto_window_level_button(self):
-        auto_window_level_button = self.trame_viewer.create_auto_window_level_button()
-
-        self.assertIn("Auto Window/Level", auto_window_level_button.html)
-        self.assertEqual(["Auto Window/Level"], auto_window_level_button.children)
-        self.assertEqual(auto_window_level_button._py_attr["click"], self.trame_viewer.auto_window_level)
-
     def test_create_tracing_switch(self):
         tracing_switch = self.trame_viewer.create_tracing_switch()
 
@@ -281,15 +275,6 @@ class TrameViewer2DTest(unittest.TestCase):
         self.trame_viewer.cil_viewer.imageSlice.GetProperty.return_value.SetInterpolationTypeToNearest.assert_called_once_with(
         )
 
-    def test_auto_window_level_calculates_window_level_correctly(self):
-        self.trame_viewer.cil_viewer.ia.GetAutoRange.return_value = [0, 3700]
-
-        self.trame_viewer.auto_window_level()
-
-        self.assertEqual(state["slice_window_range"], (3700, 1850.))
-        self.assertEqual(state["slice_window"], 3700)
-        self.assertEqual(state["slice_level"], 1850.)
-
     @mock.patch("ccpi.web_viewer.trame_viewer.TrameViewer.change_window_level_detail_sliders")
     def test_change_window_level_detail_sliders_calls_super_with_what_is_passed(self, super_method):
         show_detailed_passed = mock.MagicMock()
@@ -328,36 +313,53 @@ class TrameViewer2DTest(unittest.TestCase):
         state["slice_level"] = mock.MagicMock()
         state["toggle_tracing"] = mock.MagicMock()
         state["toggle_interpolation"] = mock.MagicMock()
+        state["slice_window_percentiles"] = mock.MagicMock()
+        state["slice_window_as_percentage"] = mock.MagicMock()
+        state["slice_level_as_percentage"] = mock.MagicMock()
+
         default_slice = mock.MagicMock()
         self.trame_viewer.default_slice = default_slice
-        slice_return = (random.random(), random.random())
-        self.trame_viewer.cil_viewer.getSliceMapRange = mock.MagicMock(return_value=slice_return)
+        cmin, cmax = 0, 90
+        window, level = 50, 40
+        self.cil_viewer.getImageMapRange = mock.MagicMock(return_value=[cmin, cmax])
+        self.cil_viewer.getSliceWindowLevelFromRange = mock.MagicMock(return_value=[window, level])
+
+        # Test in case of values used on sliders:
+        self.trame_viewer.window_level_sliders_are_percentages = False
 
         self.trame_viewer.reset_defaults()
 
         self.assertEqual(state["background_color"], "cil_viewer_blue")
         self.assertEqual(state["slice"], default_slice)
         self.assertEqual(state["orientation"], f"{SLICE_ORIENTATION_XY}")
-        self.trame_viewer.cil_viewer.getSliceMapRange.assert_called_once_with((5., 95.))
-        self.assertEqual(state["slice_window_range"], slice_return)
-        self.assertEqual(state["slice_window"], self.cil_viewer.getSliceColorWindow.return_value)
-        self.assertEqual(state["slice_level"], self.cil_viewer.getSliceColorLevel.return_value)
+        self.trame_viewer.cil_viewer.getImageMapRange.assert_called_once_with((5., 95.), 'scalar')
+        self.assertEqual(state["slice_window_range"], (cmin, cmax))
+        self.assertEqual(state["slice_window"], window)
+        self.assertEqual(state["slice_level"], level)
         self.assertEqual(state["toggle_tracing"], False)
         self.assertEqual(state["toggle_interpolation"], False)
 
-    def test_update_slice_data_sets_cmin_cmax_level_and_window(self):
-        slice_return = (random.random(), random.random())
-        self.trame_viewer.cil_viewer.getSliceMapRange = mock.MagicMock(return_value=slice_return)
-        self.trame_viewer.cil_viewer.getImageMapRange = mock.MagicMock(return_value=slice_return)
+        # Test in case of percentages used on sliders:
+        self.trame_viewer.window_level_sliders_are_percentages = True
+        self.trame_viewer.cil_viewer.getSliceMapRange = mock.MagicMock(return_value=(cmin, cmax))
 
-        self.trame_viewer.update_slice_data()
+        self.trame_viewer.convert_value_to_percentage = mock.MagicMock()
+        pwindow, plevel = 20, 30
+        # sets the return values for each call:
+        self.trame_viewer.convert_value_to_percentage.side_effect = [pwindow, plevel]
 
-        self.trame_viewer.cil_viewer.getSliceMapRange.assert_called_once_with((5., 95.))
-        self.assertEqual(self.trame_viewer.cmin, slice_return[0])
-        self.assertEqual(self.trame_viewer.cmax, slice_return[1])
-        self.assertEqual(self.trame_viewer.slice_window_range_defaults, slice_return)
-        self.assertEqual(self.trame_viewer.slice_level_default, self.cil_viewer.getSliceColorLevel.return_value)
-        self.assertEqual(self.trame_viewer.slice_window_default, self.cil_viewer.getSliceColorWindow.return_value)
+        self.trame_viewer.reset_defaults()
+
+        self.assertEqual(state["background_color"], "cil_viewer_blue")
+        self.assertEqual(state["slice"], default_slice)
+        self.assertEqual(state["orientation"], f"{SLICE_ORIENTATION_XY}")
+        self.assertEqual(state["slice_window_percentiles"], (5., 95.))
+        self.assertEqual(state["slice_window_as_percentage"], pwindow)
+        self.assertEqual(state["slice_level_as_percentage"], plevel)
+        self.assertEqual(state["toggle_tracing"], False)
+        self.assertEqual(state["toggle_interpolation"], False)
+        self.trame_viewer.convert_value_to_percentage.assert_any_call(level)
+        self.trame_viewer.convert_value_to_percentage.assert_any_call(window)
 
     def test_change_slice_number(self):
         self.trame_viewer.html_view = mock.MagicMock()

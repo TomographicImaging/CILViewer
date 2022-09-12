@@ -22,6 +22,8 @@ from ccpi.viewer import (ALT_KEY, CONTROL_KEY, SHIFT_KEY, CROSSHAIR_ACTOR, CURSO
 from ccpi.viewer.CILViewerBase import CILViewerBase
 from ccpi.viewer.utils import Converter
 
+from ccpi.viewer.widgets import cilviewerBoxWidget
+
 
 class CILInteractorStyle(vtk.vtkInteractorStyle):
 
@@ -131,6 +133,8 @@ class CILInteractorStyle(vtk.vtkInteractorStyle):
 
     def UpdateImageSlice(self):
         self._viewer.imageSlice.Update()
+        self.AdjustCamera()
+        self.Render()
 
     def AdjustCamera(self):
         self._viewer.AdjustCamera()
@@ -224,106 +228,13 @@ class CILInteractorStyle(vtk.vtkInteractorStyle):
     def validateValue(self, value, axis):
         return self._viewer.validateValue(value, axis)
 
-    def _truncateBox(self, start_pos, world_max_array, axis):
-        """
-        Make sure that the value for the upper corner of the box is within the world extent.
-
-        :param start_pos: Lower left corner value on specified axis
-        :param world_max_array: Array containing (x,y,z) of the maximum extent of the world
-        :param axis: The axis of interest eg. "x"
-        :return: The start position + a percentage of the world truncated to the edges of the world
-        """
-
-        # Set up scale factor and get index for axis
-        scale_factor = 0.3
-        axis_dict = {"x": 0, "y": 1, "z": 2}
-        axis_int = axis_dict[axis]
-
-        # Create the upper right coordinate point with scale offset
-        value = start_pos + world_max_array[axis_int] * scale_factor
-
-        # Check to make sure that it is within the image world.
-        if value > world_max_array[axis_int]:
-            return world_max_array[axis_int]
-        else:
-            return value
-
     def InitialiseBox(self, clickPosition):
         """
         Set the initial values for the box borders
         :param clickPosition: Display coordinates for the mouse event
         """
 
-        # Current render orientation
-        orientation = self.GetSliceOrientation()
-
-        # Scale factor for initial box
-        scale_factor = 0.3
-
-        # Translate the mouse click display coordinates into world coordinates
-        coord = vtk.vtkCoordinate()
-        coord.SetCoordinateSystemToDisplay()
-        coord.SetValue(clickPosition[0], clickPosition[1])
-        world_mouse_pos = coord.GetComputedWorldValue(self.GetRenderer())
-
-        # Get maximum extents of the image in world coords
-        world_image_max = self.GetImageWorldExtent()
-
-        # Set the minimum world value
-        world_image_min = (0, 0, 0)
-
-        # Initialise the box position in format [xmin, xmax, ymin, ymax,...]
-        box_pos = [0, 0, 0, 0, 0, 0]
-
-        # place the mouse click as bottom left in current orientation
-        if orientation == 2:
-            # Looking along z
-            # Lower left is xmin, ymin
-            box_pos[0] = world_mouse_pos[0]
-            box_pos[2] = world_mouse_pos[1]
-
-            # Set top right point
-            # Top right is xmax, ymax
-            box_pos[1] = self._truncateBox(box_pos[0], world_image_max, "x")
-            box_pos[3] = self._truncateBox(box_pos[2], world_image_max, "y")
-
-            # Set the scroll axis to maximum extent eg. min-max
-            # zmin, zmax
-            box_pos[4] = world_image_min[2]
-            box_pos[5] = world_image_max[2]
-
-        elif orientation == 1:
-            # Looking along y
-            # Lower left is xmin, zmin
-            box_pos[0] = world_mouse_pos[0]
-            box_pos[4] = world_mouse_pos[2]
-
-            # Set top right point.
-            # Top right is xmax, zmax
-            box_pos[1] = self._truncateBox(box_pos[0], world_image_max, "x")
-            box_pos[5] = self._truncateBox(box_pos[4], world_image_max, "z")
-
-            # Set the scroll axis to maximum extent eg. min-max
-            # ymin, ymax
-            box_pos[2] = world_image_min[1]
-            box_pos[3] = world_image_max[1]
-
-        else:
-            # orientation == 0
-            # Looking along x
-            # Lower left is ymin, zmin
-            box_pos[2] = world_mouse_pos[1]
-            box_pos[4] = world_mouse_pos[2]
-
-            # Set top right point
-            # Top right is ymax, zmax
-            box_pos[3] = self._truncateBox(box_pos[2], world_image_max, "y")
-            box_pos[5] = self._truncateBox(box_pos[4], world_image_max, "z")
-
-            # Set the scroll axis to maximum extent eg. min-max
-            # xmin, xmax
-            box_pos[0] = world_image_min[0]
-            box_pos[1] = world_image_max[0]
+        box_pos = cilviewerBoxWidget.GetBoxBoundsFromEventPosition(self._viewer, clickPosition)
 
         # Set widget placement and make visible
         self._viewer.ROIWidget.PlaceWidget(box_pos)
@@ -373,20 +284,17 @@ class CILInteractorStyle(vtk.vtkInteractorStyle):
         if self.GetViewerEvent("SHOW_LINE_PROFILE_EVENT"):
             self.DisplayLineProfile(interactor, event, True)
 
-    def AutoWindowLevel(self):
-        # reset color/window
-        cmin, cmax = self._viewer.ia.GetAutoRange()
+    def AutoWindowLevelOnVolumeRange(self, update_slice=True):
+        '''Auto-adjusts window-level for the slice, based on the 5 and 95th percentiles of the whole image volume.'''
+        cmin, cmax = self._viewer.getImageMapRange((5., 95.), method="scalar")
+        print("Auto range for volume: ", cmin, cmax)
         window, level = self._viewer.getSliceWindowLevelFromRange(cmin, cmax)
 
-        self.SetInitialLevel(level)
-        self.SetInitialWindow(window)
+        self._viewer.imageSlice.GetProperty().SetColorLevel(level)
+        self._viewer.imageSlice.GetProperty().SetColorWindow(window)
 
-        self._viewer.imageSlice.GetProperty().SetColorLevel(self.GetInitialLevel())
-        self._viewer.imageSlice.GetProperty().SetColorWindow(self.GetInitialWindow())
-
-        self.UpdateImageSlice()
-        self.AdjustCamera()
-        self.Render()
+        if update_slice:
+            self.UpdateImageSlice()
 
     def ChangeOrientation(self, new_slice_orientation):
         orientation = self.GetSliceOrientation()
@@ -437,7 +345,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyle):
         elif self.reslicing_enabled and interactor.GetKeyCode() == "z":
             self.ChangeOrientation(SLICE_ORIENTATION_XY)
         elif interactor.GetKeyCode() == "a":
-            self.AutoWindowLevel()
+            self._viewer.autoWindowLevelOnSliceRange()
         elif interactor.GetKeyCode() == "s":
             filename = "current_render"
             self.SaveRender(filename)
@@ -889,8 +797,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyle):
                 self._viewer.imageSlice.GetProperty().SetColorWindow(self.GetInitialWindow())
 
                 self.UpdateImageSlice()
-                self.AdjustCamera()
-                self.Render()
+
             elif self.GetViewerEvent('RECTILINEAR_WIPE'):
                 # get event in image coordinate
                 x, y, z, pix = self.display2imageCoordinate(interactor.GetEventPosition())
@@ -1065,9 +972,6 @@ class CILInteractorStyle(vtk.vtkInteractorStyle):
         self._viewer.imageSlice.GetProperty().SetColorWindow(newWindow)
         self.log("new level {0} window {1}".format(newLevel, newWindow))
         self.UpdateImageSlice()
-        self.AdjustCamera()
-
-        self.Render()
 
     def HandlePickEvent(self, interactor, event):
         position = interactor.GetEventPosition()
@@ -1125,15 +1029,7 @@ class CILViewer2D(CILViewerBase):
         self.AddActor(self.helpActor, HELP_ACTOR)
 
         # ROI Widget
-        self.ROIWidget = vtk.vtkBoxWidget()
-        self.ROIWidget.SetInteractor(self.iren)
-        self.ROIWidget.HandlesOn()
-        self.ROIWidget.TranslationEnabledOn()
-        self.ROIWidget.RotationEnabledOff()
-        self.ROIWidget.GetOutlineProperty().SetColor(0, 1, 0)
-        self.ROIWidget.OutlineCursorWiresOff()
-        self.ROIWidget.SetPlaceFactor(1)
-        self.ROIWidget.KeyPressActivationOff()
+        self.ROIWidget = cilviewerBoxWidget.CreateMoveable(self)
 
         self.ROIWidget.AddObserver(vtk.vtkWidgetEvent.Select, self.style.OnROIModifiedEvent, 1.0)
 
@@ -1483,22 +1379,16 @@ class CILViewer2D(CILViewerBase):
         self.voi.SetVOI(extent[0], extent[1], extent[2], extent[3], extent[4], extent[5])
 
         self.voi.Update()
-        # set window/level for current slices
+
+        # set window/level for slice based on values in entire volume:
         self.ia.SetInputData(self.voi.GetOutput())
-        self.ia.SetAutoRangePercentiles(5.0, 95.)
         self.ia.Update()
-        cmin, cmax = self.ia.GetAutoRange()
-
-        window, level = self.getSliceWindowLevelFromRange(cmin, cmax)
-
-        self.InitialLevel = level
-        self.InitialWindow = window
+        self.style.AutoWindowLevelOnVolumeRange(update_slice=False)
+        self.InitialLevel = self.getSliceColorLevel()
+        self.InitialWindow = self.getSliceColorWindow()
         self.log("level {0} window {1}".format(self.InitialLevel, self.InitialWindow))
 
         self.imageSliceMapper.SetInputConnection(self.voi.GetOutputPort())
-
-        self.imageSlice.GetProperty().SetColorLevel(self.InitialLevel)
-        self.imageSlice.GetProperty().SetColorWindow(self.InitialWindow)
 
         if self.image_is_downsampled:
             self.imageSlice.GetProperty().SetInterpolationTypeToLinear()

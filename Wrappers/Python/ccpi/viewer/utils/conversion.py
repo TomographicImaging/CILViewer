@@ -155,241 +155,6 @@ class Converter(object):
         return img_data
 
 
-# TODO:  Get rid of the below and make a tiff to vtk method and a tiff resample reader.
-
-    @staticmethod
-    def vtkTiffStack2numpy(filenames):
-        '''Reads the TIFF stack with VTK. 
-
-        This implementation should supersede all the others
-        '''
-        reader = vtk.vtkTIFFReader()
-        sa = vtk.vtkStringArray()
-        for fname in filenames:
-            # should check if file is accessible etc
-            sa.InsertNextValue(fname)
-
-        reader.SetFileNames(sa)
-        reader.Update()
-        return Converter.vtk2numpy(reader.GetOutput())
-
-    @staticmethod
-    def tiffStack2numpy(filename=None,
-                        indices=None,
-                        extent=None,
-                        sampleRate=None,
-                        flatField=None,
-                        darkField=None,
-                        filenames=None,
-                        tiffOrientation=1):
-        '''Converts a stack of TIFF files to numpy array.
-
-        filename must contain the whole path. The filename is supposed to be named and
-        have a suffix with the ordinal file number, i.e. /path/to/projection_%03d.tif
-
-        indices are the suffix, generally an increasing number
-
-        Optionally extracts only a selection of the 2D images and (optionally)
-        normalizes.
-        '''
-
-        if filename is not None and indices is not None:
-            filenames = [filename % num for num in indices]
-        return Converter._tiffStack2numpy(filenames=filenames,
-                                          extent=extent,
-                                          sampleRate=sampleRate,
-                                          flatField=flatField,
-                                          darkField=darkField)
-
-    @staticmethod
-    def tiffStack2numpyEnforceBounds(filename=None,
-                                     indices=None,
-                                     extent=None,
-                                     sampleRate=None,
-                                     flatField=None,
-                                     darkField=None,
-                                     filenames=None,
-                                     tiffOrientation=1,
-                                     bounds=(512, 512, 512)):
-        """
-        Converts a stack of TIFF files to numpy array. This is constrained to a 512x512x512 cube
-
-        filename must contain the whole path. The filename is supposed to be named and
-        have a suffix with the ordinal file number, i.e. /path/to/projection_%03d.tif
-
-        indices are the suffix, generally an increasing number
-
-        Optionally extracts only a selection of the 2D images and (optionally)
-        normalizes.
-
-        :param (string) filename:   full path prefix
-        :param (list)   indices:    Indices to append to path for file selection
-        :param (tuple)  extent:     Allows option to select a subset
-        :param (tuple)  sampleRate: Allows downsampling to reduce data load on visualiser
-        :param          flatField:  --
-        :param          darkField:  --
-        :param (list)   filenames:  Filenames for processing
-        :param (int)    tiffOrientation: --
-        :param (tuple)  bounds:     Maximum size of display cube (x,y,z)
-
-        :return (numpy.ndarray): Image data as a numpy array
-        """
-
-        if filename is not None and indices is not None:
-            filenames = [filename % num for num in indices]
-
-        # Get number of files as an index value
-        file_index = len(filenames) - 1
-
-        # Get the xy extent of the first image in the list
-        if extent is None:
-            reader = vtk.vtkTIFFReader()
-            reader.SetFileName(filenames[0])
-            reader.SetOrientationType(tiffOrientation)
-            reader.Update()
-            img_ext = reader.GetOutput().GetExtent()
-
-            stack_extent = img_ext[0:5] + (file_index, )
-            size = stack_extent[1::2]
-        else:
-            size = extent[1::2]
-
-        # Calculate re-sample rate
-        sample_rate = tuple(map(lambda x, y: math.ceil(float(x) / y), size, bounds))
-
-        # If a user has defined resample rate, check to see which has higher factor and keep that
-        if sampleRate is not None:
-            sampleRate = Converter.highest_tuple_element(sampleRate, sample_rate)
-        else:
-            sampleRate = sample_rate
-
-        # Re-sample input filelist
-        list_sample_index = sampleRate[2]
-        filenames = filenames[::list_sample_index]
-
-        return Converter._tiffStack2numpy(filenames=filenames,
-                                          extent=extent,
-                                          sampleRate=sampleRate,
-                                          flatField=flatField,
-                                          darkField=darkField)
-
-    @staticmethod
-    def _tiffStack2numpy(filenames, extent=None, sampleRate=None, flatField=None, darkField=None, tiffOrientation=1):
-        '''Converts a stack of TIFF files to numpy array.
-
-        filename must contain the whole path. The filename is supposed to be named and
-        have a suffix with the ordinal file number, i.e. /path/to/projection_%03d.tif
-
-        indices are the suffix, generally an increasing number
-
-        Optionally extracts only a selection of the 2D images and (optionally)
-        normalizes.
-        '''
-
-        stack = vtk.vtkImageData()
-        reader = vtk.vtkTIFFReader()
-        voi = vtk.vtkExtractVOI()
-
-        stack_image = numpy.asarray([])
-        nreduced = len(filenames)
-
-        for num in range(len(filenames)):
-
-            #fn = filename % indices[num]
-            fn = filenames[num]
-            print("resampling %s" % (fn))
-            reader.SetFileName(fn)
-            reader.SetOrientationType(tiffOrientation)
-            reader.Update()
-            print(reader.GetOutput().GetScalarTypeAsString())
-            if num == 0:
-
-                # Extent
-                if extent is None:
-                    sliced = reader.GetOutput().GetExtent()
-                    stack.SetExtent(sliced[0], sliced[1], sliced[2], sliced[3], 0, nreduced - 1)
-
-                    if sampleRate is not None:
-                        voi.SetSampleRate(sampleRate)
-                        ext = numpy.asarray([(sliced[2 * i + 1] - sliced[2 * i]) / sampleRate[i] for i in range(3)],
-                                            dtype=int)
-                        stack.SetExtent(0, ext[0], 0, ext[1], 0, nreduced - 1)
-                else:
-                    sliced = extent
-                    voi.SetVOI(extent)
-
-                    # Sample Rate
-                    if sampleRate is not None:
-                        voi.SetSampleRate(sampleRate)
-                        ext = numpy.asarray([(sliced[2 * i + 1] - sliced[2 * i]) / sampleRate[i] for i in range(3)],
-                                            dtype=int)
-                        # print ("ext {0}".format(ext))
-                        stack.SetExtent(0, ext[0], 0, ext[1], 0, nreduced - 1)
-                    else:
-                        stack.SetExtent(0, sliced[1] - sliced[0], 0, sliced[3] - sliced[2], 0, nreduced - 1)
-
-                # Flatfield
-                if (flatField != None and darkField != None):
-                    stack.AllocateScalars(vtk.VTK_FLOAT, 1)
-                else:
-                    stack.AllocateScalars(reader.GetOutput().GetScalarType(), 1)
-
-                print("Image Size: %d" % ((sliced[1] + 1) * (sliced[3] + 1)))
-                stack_image = Converter.vtk2numpy(stack)
-                print("Stack shape %s" % str(numpy.shape(stack_image)))
-
-            if extent is not None or sampleRate is not None:
-                voi.SetInputData(reader.GetOutput())
-                voi.Update()
-                img = voi.GetOutput()
-            else:
-                img = reader.GetOutput()
-
-            theSlice = Converter.vtk2numpy(img)[0]
-            if darkField != None and flatField != None:
-                print("Try to normalize")
-                # if numpy.shape(darkField) == numpy.shape(flatField) and numpy.shape(flatField) == numpy.shape(theSlice):
-                theSlice = Converter.normalize(theSlice, darkField, flatField, 0.01)
-                print(theSlice.dtype)
-
-            print("Slice shape %s" % str(numpy.shape(theSlice)))
-            stack_image[num] = theSlice.copy()
-
-        return stack_image
-
-    @staticmethod
-    def normalize(projection, dark, flat, def_val=0):
-        a = (projection - dark)
-        b = (flat - dark)
-        with numpy.errstate(divide='ignore', invalid='ignore'):
-            c = numpy.true_divide(a, b)
-            c[~numpy.isfinite(c)] = def_val  # set to not zero if 0/0
-        return c
-
-    @staticmethod
-    def highest_tuple_element(user, calc):
-        """
-        Returns a tuple containing the maximum combination in elementwise comparison
-        :param (tuple)user:
-            User suppliec tuple
-
-        :param (tuple) calc:
-            Calculated tuple
-
-        :return (tuple):
-            Highest elementwise combination
-        """
-
-        output = []
-        for u, c in zip(user, calc):
-            if u > c:
-                output.append(u)
-            else:
-                output.append(c)
-
-        return tuple(output)
-
-
 class cilNumpyMETAImageWriter(object):
     '''A Writer to write a Numpy Array in npy format and a METAImage Header
 
@@ -1024,6 +789,10 @@ class cilTIFFImageReaderInterface(cilReaderInterface):
         VTKPythonAlgorithmBase.__init__(self, nInputPorts=0, nOutputPorts=1)
         super(cilTIFFImageReaderInterface, self).__init__()
         self._CompressedData = False
+        # Set orientation type due to issue:
+        # https://github.com/vais-ral/CILViewer/issues/296
+        # https://gitlab.kitware.com/vtk/vtk/-/merge_requests/6155
+        self._OrientationType = 1
 
     def SetFileName(self, value):
         ''' Set the file name or path from which to read the image data
@@ -1061,6 +830,45 @@ class cilTIFFImageReaderInterface(cilReaderInterface):
             whether the file is compressed'''
         self._CompressedData = value
 
+    def SetOrientationType(self, value):
+        '''
+        Parameters
+        ----------
+        value: int {1, 2, 3, 4, 5, 6, 7, 8}, default: 1
+            ORIENTATION_TOPLEFT 1 (row 0 top, col 0 lhs)
+            ORIENTATION_TOPRIGHT 2 (row 0 top, col 0 rhs)
+            ORIENTATION_BOTRIGHT 3 (row 0 bottom, col 0 rhs)
+            ORIENTATION_BOTLEFT 4 (row 0 bottom, col 0 lhs)
+            ORIENTATION_LEFTTOP 5 (row 0 lhs, col 0 top)
+            ORIENTATION_RIGHTTOP 6 (row 0 rhs, col 0 top)
+            ORIENTATION_RIGHTBOT 7 (row 0 rhs, col 0 bottom)
+            ORIENTATION_LEFTBOT 8 (row 0 lhs, col 0 bottom)
+
+        Notes
+        -----
+        Relevant issues:
+        https://github.com/vais-ral/CILViewer/issues/296
+        https://gitlab.kitware.com/vtk/vtk/-/merge_requests/6155
+        '''
+
+        self._OrientationType = value
+
+    def GetOrientationType(self):
+        ''' Gets the orientation type.
+        Returns
+        ----------
+        value: int {1, 2, 3, 4, 5, 6, 7, 8}, default: 1
+            ORIENTATION_TOPLEFT 1 (row 0 top, col 0 lhs)
+            ORIENTATION_TOPRIGHT 2 (row 0 top, col 0 rhs)
+            ORIENTATION_BOTRIGHT 3 (row 0 bottom, col 0 rhs)
+            ORIENTATION_BOTLEFT 4 (row 0 bottom, col 0 lhs)
+            ORIENTATION_LEFTTOP 5 (row 0 lhs, col 0 top)
+            ORIENTATION_RIGHTTOP 6 (row 0 rhs, col 0 top)
+            ORIENTATION_RIGHTBOT 7 (row 0 rhs, col 0 bottom)
+            ORIENTATION_LEFTBOT 8 (row 0 lhs, col 0 bottom)
+        '''
+        return self._OrientationType
+
     def ReadDataSetInfo(self):
         # this should set or do nothing
         self.SetIsFortran(True)
@@ -1068,6 +876,10 @@ class cilTIFFImageReaderInterface(cilReaderInterface):
         # get one slice size
         reader = vtk.vtkTIFFReader()
         reader.SetFileName(self.GetFileName()[0])
+        # Set orientation type due to issue:
+        # https://github.com/vais-ral/CILViewer/issues/296
+        # https://gitlab.kitware.com/vtk/vtk/-/merge_requests/6155
+        reader.SetOrientationType(self.GetOrientationType())
         reader.Update()
         dimensions = reader.GetOutput().GetDimensions()
         zdim = len(self.GetFileName())
@@ -1078,6 +890,9 @@ class cilTIFFImageReaderInterface(cilReaderInterface):
         self.SetStoredArrayShape(readshape)
 
         self.SetOutputVTKType(reader.GetOutput().GetScalarType())
+
+        self.SetElementSpacing(reader.GetOutput().GetSpacing())
+        self.SetOrigin(reader.GetOutput().GetOrigin())
 
         self.Modified()
 
@@ -1232,7 +1047,7 @@ class cilBaseResampleReader(cilReaderInterface):
                                            element_spacing[1] / xy_axes_magnification,
                                            element_spacing[2] / z_axis_magnification)
                 # resampled data
-                resampled_image = outData
+                resampled_image = vtk.vtkImageData()
 
                 resampled_image.SetExtent(0, target_image_shape[0] - 1, 0, target_image_shape[1] - 1, 0,
                                           target_image_shape[2] - 1)
@@ -1283,8 +1098,13 @@ class cilBaseResampleReader(cilReaderInterface):
                     # print(i, resampler.GetOutput().GetScalarComponentAsDouble(0,0,i,0))
 
                     ################# vtk way ####################
-                    resampled_image.CopyAndCastFrom(resampler.GetOutput(), extent)
+
+                    data = resampler.GetOutput()
+                    resampled_image.CopyAndCastFrom(data, extent)
                     self.UpdateProgress(i / num_chunks)
+
+                outData.ShallowCopy(resampled_image)
+
         except Exception as e:
             raise Exception(e)
 
@@ -1545,6 +1365,7 @@ class cilTIFFResampleReader(cilBaseResampleReader, cilTIFFImageReaderInterface):
         '''returns a reader which will only read a specific chunk of the data.
         This is a chunk which will get resampled into a single slice.'''
         reader = vtk.vtkTIFFReader()
+        reader.SetOrientationType(self.GetOrientationType())
         self._ChunkReader = reader
         return reader
 
@@ -1890,6 +1711,10 @@ class cilTIFFCroppedReader(cilBaseCroppedReader, cilTIFFImageReaderInterface):
             shape = list(readshape)[::-1]
 
         reader = vtk.vtkTIFFReader()
+        # Set orientation type due to issue:
+        # https://github.com/vais-ral/CILViewer/issues/296
+        # https://gitlab.kitware.com/vtk/vtk/-/merge_requests/6155
+        reader.SetOrientationType(self.GetOrientationType())
         sa = vtk.vtkStringArray()
 
         extent = [0, -1, 0, -1, self.GetTargetZExtent()[0], self.GetTargetZExtent()[1]]
