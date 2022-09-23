@@ -11,6 +11,7 @@ build:
   number: {{ GIT_DESCRIBE_NUMBER }}
   noarch: python
   entry_points:
+    - resample = ccpi.viewer.cli.resample:main
     - web_cilviewer = ccpi.web_viewer.web_app:main
   
 test:
@@ -26,16 +27,19 @@ test:
   
 requirements:
   build:
-    - python
+    - python {{ python }}
+    - vtk {{ vtk }}
  
   run:
-    - python
+    - python {{ python }}
     - numpy
-    - vtk >=9.0.3
+    - vtk {{ vtk }}
     - pyside2
     - eqt
     - importlib_metadata    # [py<38]
     - h5py
+    - schema
+    - pyyaml
     - cil-data >=22.0.0
 
 about:

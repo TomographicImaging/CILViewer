@@ -43,4 +43,7 @@ RUN rm create-data-folder.sh
 
 COPY entrypoint.sh /usr/local/bin/
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
+# set default parameter for entrypoint
+#https://docs.docker.com/engine/reference/builder/#cmd
+CMD ["/home/abc/data"]
 
