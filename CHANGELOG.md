@@ -1,6 +1,7 @@
 # Changelog
 
 ## v22.4.0
+- Add environment file for development of the viewer
 - Add command line tool for resampling a dataset, with entrypoint: resample (and unit tests)
 - Add `ImageReader`: 
   - Generic reader for reading to vtkImageData
