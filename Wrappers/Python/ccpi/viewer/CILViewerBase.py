@@ -361,3 +361,17 @@ class CILViewerBase():
 
     def getWidget(self, name):
         return self.widgets.get(name)
+
+    def deleteWidget(self, name):
+        ''' deletes a widget
+        Parameters:
+        name: string
+            reference name given to the widget in the 
+            dictionary of widgets'''
+
+        widget = self.getWidget(name)
+
+        if widget is not None:
+            widget.Off()
+            del widget
+            self.widgets.pop(name)
