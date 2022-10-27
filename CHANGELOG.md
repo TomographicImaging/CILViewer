@@ -1,7 +1,10 @@
 # Changelog
 
-## v22.4.0
+## vx.x.x
+- add `deleteWidget` method to CILViewerBase
 - Add environment file for development of the viewer
+
+## v22.4.0
 - Add command line tool for resampling a dataset, with entrypoint: resample (and unit tests)
 - Add `ImageReader`: 
   - Generic reader for reading to vtkImageData
