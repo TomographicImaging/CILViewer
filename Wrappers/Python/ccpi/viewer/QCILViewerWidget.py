@@ -1,10 +1,9 @@
-from PySide2 import QtWidgets
 import vtk
 import sys
 import vtk
 from PySide2 import QtCore, QtWidgets
 from ccpi.viewer.QCILRenderWindowInteractor import QCILRenderWindowInteractor
-from ccpi.viewer import viewer2D
+from ccpi.viewer import viewer2D, viewer3D
 
 
 class QCILViewerWidget(QtWidgets.QFrame):
@@ -32,6 +31,10 @@ class QCILViewerWidget(QtWidgets.QFrame):
         # self.resize(dimx, dimy)
 
         self.vl = QtWidgets.QVBoxLayout()
+
+        viewer = kwargs.get('viewer')
+        self.addToolbar(viewer)
+
         #self.vtkWidget = QVTKRenderWindowInteractor(self)
         self.vtkWidget = QCILRenderWindowInteractor(self)
         self.vl.addWidget(self.vtkWidget)
@@ -62,6 +65,20 @@ class QCILViewerWidget(QtWidgets.QFrame):
 
         self.setLayout(self.vl)
         self.adjustSize()
+
+    def addToolbar(self, viewer):
+        # Adds a toolbar to the QFrame if we have a 3D viewer
+        if viewer == viewer3D:
+            self.vl = QtWidgets.QVBoxLayout()
+            toolBar = QtWidgets.QToolBar("3D Viewer Toolbar", self)
+            self.vl.addWidget(toolBar)
+
+            button1 = QtWidgets.QToolButton()
+            button1.setText("1")
+            button2 = QtWidgets.QToolButton()
+            button2.setText("2")
+            toolBar.addWidget(button1)
+            toolBar.addWidget(button2)
 
 
 class QCILDockableWidget(QtWidgets.QDockWidget):
