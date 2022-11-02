@@ -18,7 +18,7 @@ jobs:
       with:
         fetch-depth: 0 # All history for use later with the meta.yaml file for conda-recipes
     - name: publish-to-conda
-      uses: paskino/conda-package-publish-action@v1.4.4
+      uses: paskino/conda-package-publish-action@v2.0.0
       with:
         subDir: 'Wrappers/Python/conda-recipe'
         channels: '-c conda-forge -c paskino -c ccpi'
