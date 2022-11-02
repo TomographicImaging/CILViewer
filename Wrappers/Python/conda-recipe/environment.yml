@@ -13,3 +13,4 @@ dependencies:
     - h5py
     - cil-data >=22.0.0
     - pillow
+    - schema
