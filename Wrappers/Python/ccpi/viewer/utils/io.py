@@ -646,7 +646,7 @@ class ImageWriter(ImageWriterInterface):
 
         if self._FileFormat in ['nxs', 'h5', 'hdf5', '']:
             if self._FileFormat == '':
-                self._FileFormat = 'h5'
+                self._FileFormat = 'hdf5'
             self._FileName = file_name + '.' + self._FileFormat
             writer = self._GetHDF5Writer()
 
