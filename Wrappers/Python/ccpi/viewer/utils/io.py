@@ -644,9 +644,11 @@ class ImageWriter(ImageWriterInterface):
     def _GetWriter(self):
         file_name = os.path.splitext(self._FileName)[0]
 
-        if self._FileFormat in ['nxs', 'h5', 'hdf5', '']:
-            self._FileName = file_name + '.hdf5'
-            writer = self._GetHDF5Writer()
+        if self._FileFormat in ['nxs', 'h5', 'hdf5', '']: 
+            if self._FileFormat == '':
+                self._FileFormat = 'h5'    
+            self._FileName = file_name + '.' + self._FileFormat
+            writer = self._GetHDF5Writer() 
 
         elif self._FileFormat in ['mha']:
             self._FileName = file_name + '.mha'
