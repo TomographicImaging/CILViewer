@@ -4,6 +4,7 @@
 - add `deleteWidget` method to CILViewerBase
 - Add environment file for development of the viewer
 - Fix bug with returning HDF5 attributes from HDF5Reader
+- Move code for resetting camera out of TrameViewer3D and into CILViewer
 
 ## v22.4.0
 - Add command line tool for resampling a dataset, with entrypoint: resample (and unit tests)
