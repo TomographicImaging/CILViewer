@@ -483,14 +483,6 @@ class TrameViewer3DTest(unittest.TestCase):
 
         self.trame_viewer.update_windowing_defaults.assert_called_once_with(windowing_method)
 
-    @mock.patch("ccpi.web_viewer.trame_viewer.TrameViewer.load_file")
-    def test_load_file_saves_a_new_camera_position(self, _):
-        cam_data = mock.MagicMock()
-        self.trame_viewer.original_cam_data = cam_data
-
-        self.trame_viewer.load_file("path")
-
-        self.assertNotEqual(self.trame_viewer.original_cam_data, cam_data)
 
     def test_switch_render_calls_toggle_volume_visibility(self):
         self.cil_viewer.style.ToggleVolumeVisibility = mock.MagicMock()
@@ -595,40 +587,24 @@ class TrameViewer3DTest(unittest.TestCase):
         self.cil_viewer.setScalarOpacityRange.assert_not_called()
         self.cil_viewer.setGradientOpacityRange.assert_called_once_with(min_value, max_value)
 
-    def test_reset_cam_only_calls_adjust_camera_without_original_cam_data_or_html_view(self):
+    def test_reset_cam_only_calls_reset_camera_to_default_without_html_view(self):
         self.trame_viewer.cil_viewer = mock.MagicMock()
-        self.trame_viewer.original_cam_data = mock.MagicMock()
         self.trame_viewer.html_view = mock.MagicMock()
-        delattr(self.trame_viewer, "original_cam_data")
         delattr(self.trame_viewer, "html_view")
 
         self.trame_viewer.reset_cam()
 
-        self.cil_viewer.adjustCamera.assert_called_once_with(resetcamera=True)
-        self.assertFalse(hasattr(self.trame_viewer, "original_cam_data"))
+        self.cil_viewer.resetCameraToDefault.assert_called_once()
         self.assertFalse(hasattr(self.trame_viewer, "html_view"))
 
-    def test_reset_cam_copies_camera_data_if_original_cam_data_is_set(self):
-        self.trame_viewer.cil_viewer = mock.MagicMock()
-        self.trame_viewer.original_cam_data = mock.MagicMock()
-        delattr(self.trame_viewer, "html_view")
-
-        self.trame_viewer.reset_cam()
-
-        self.cil_viewer.adjustCamera.assert_called_once_with(resetcamera=True)
-        self.trame_viewer.original_cam_data.copy_data_to_other_camera \
-            .assert_called_once_with(self.trame_viewer.cil_viewer.ren.GetActiveCamera.return_value)
-        self.assertFalse(hasattr(self.trame_viewer, "html_view"))
 
     def test_reset_cam_updates_html_view_if_html_view_is_set(self):
         self.trame_viewer.cil_viewer = mock.MagicMock()
         self.trame_viewer.html_view = mock.MagicMock()
-        delattr(self.trame_viewer, "original_cam_data")
 
         self.trame_viewer.reset_cam()
 
-        self.cil_viewer.adjustCamera.assert_called_once_with(resetcamera=True)
-        self.assertFalse(hasattr(self.trame_viewer, "original_cam_data"))
+        self.cil_viewer.resetCameraToDefault.assert_called_once()
         self.trame_viewer.html_view.update.assert_called_once_with()
 
     def test_reset_defaults(self):
