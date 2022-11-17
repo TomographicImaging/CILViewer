@@ -17,7 +17,8 @@
 #
 
 from dataclasses import dataclass
-from vtkmodules.vtkRenderingCore import vtkCamera
+
+import vtk
 
 
 @dataclass(init=False)
@@ -26,12 +27,12 @@ class CameraData:
     focalPoint: list
     viewUp: list
 
-    def __init__(self, camera: vtkCamera):
+    def __init__(self, camera: vtk.vtkCamera):
         self.position = camera.GetPosition()
         self.focalPoint = camera.GetFocalPoint()
         self.viewUp = camera.GetViewUp()
 
-    def copy_data_to_other_camera(self, other_cam: vtkCamera):
+    def copy_data_to_other_camera(self, other_cam: vtk.vtkCamera):
         other_cam.SetPosition(*self.position)
         other_cam.SetFocalPoint(*self.focalPoint)
         other_cam.SetViewUp(*self.viewUp)
