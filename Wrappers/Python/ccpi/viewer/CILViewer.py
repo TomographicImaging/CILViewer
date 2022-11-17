@@ -615,7 +615,7 @@ class CILViewer(CILViewerBase):
     def saveDefaultCamera(self):
         self.default_camera = CameraData(self.getCamera())
 
-    def resetCameraToDefault(self):        
+    def resetCameraToDefault(self):
         if hasattr(self, 'default_camera'):
             self.adjustCamera(resetcamera=True)
             self.default_camera.copy_data_to_other_camera(self.getCamera())
