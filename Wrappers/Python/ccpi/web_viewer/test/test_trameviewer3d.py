@@ -483,7 +483,6 @@ class TrameViewer3DTest(unittest.TestCase):
 
         self.trame_viewer.update_windowing_defaults.assert_called_once_with(windowing_method)
 
-
     def test_switch_render_calls_toggle_volume_visibility(self):
         self.cil_viewer.style.ToggleVolumeVisibility = mock.MagicMock()
 
@@ -596,7 +595,6 @@ class TrameViewer3DTest(unittest.TestCase):
 
         self.cil_viewer.resetCameraToDefault.assert_called_once()
         self.assertFalse(hasattr(self.trame_viewer, "html_view"))
-
 
     def test_reset_cam_updates_html_view_if_html_view_is_set(self):
         self.trame_viewer.cil_viewer = mock.MagicMock()
