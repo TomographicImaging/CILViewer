@@ -21,6 +21,7 @@ from ccpi.viewer import (ALT_KEY, CONTROL_KEY, CROSSHAIR_ACTOR, CURSOR_ACTOR, HE
                          SLICE_ORIENTATION_XZ, SLICE_ORIENTATION_YZ)
 from ccpi.viewer.CILViewerBase import CILViewerBase
 from ccpi.viewer.utils import colormaps
+from ccpi.viewer.utils import CameraData
 
 
 class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
@@ -612,20 +613,12 @@ class CILViewer(CILViewerBase):
         self.renWin.Render()
 
     def saveDefaultCamera(self):
-        camera = vtk.vtkCamera()
-        camera.SetFocalPoint(self.getCamera().GetFocalPoint())
-        camera.SetPosition(self.getCamera().GetPosition())
-        camera.SetViewUp(self.getCamera().GetViewUp())
-        self.default_camera = camera
+        self.default_camera = CameraData(self.getCamera())
 
     def resetCameraToDefault(self):        
         if hasattr(self, 'default_camera'):
             self.adjustCamera(resetcamera=True)
-            self.ren.GetActiveCamera().SetPosition(*self.default_camera.GetPosition())
-            self.ren.GetActiveCamera().SetFocalPoint(*self.default_camera.GetFocalPoint())
-            self.ren.GetActiveCamera().SetViewUp(*self.default_camera.GetViewUp())
-            # self.ren.Render()
-            # self.renWin.Render()
+            self.default_camera.copy_data_to_other_camera(self.getCamera())
 
     def installVolumeRenderActorPipeline(self):
         # volume render
