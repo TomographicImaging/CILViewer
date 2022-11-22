@@ -19,7 +19,7 @@ import unittest
 
 import vtk
 
-from ccpi.viewer.utils.camera_data import CameraData
+from ccpi.viewer.utils import CameraData
 
 
 class CameraDataTest(unittest.TestCase):
@@ -42,15 +42,15 @@ class CameraDataTest(unittest.TestCase):
         self.assertAlmostEqual(self.data.viewUp[1], self.view_up[1])
         self.assertAlmostEqual(self.data.viewUp[2], self.view_up[2])
 
-    def test_copy_data_to_other_camera_does_so(self):
+    def test_copy_data_to_camera_does_so(self):
         camera_to_copy_to = vtk.vtkCamera()
 
         self.assertNotEqual(self.cam_pos, camera_to_copy_to.GetPosition())
         self.assertNotEqual(self.focal_pos, camera_to_copy_to.GetFocalPoint())
         self.assertNotEqual(self.view_up, camera_to_copy_to.GetViewUp())
 
-        self.data.copy_data_to_other_camera(camera_to_copy_to)
-
+        CameraData.CopyDataToCamera(self.data, camera_to_copy_to)
+        
         self.assertEqual(self.cam_pos, camera_to_copy_to.GetPosition())
         self.assertEqual(self.focal_pos, camera_to_copy_to.GetFocalPoint())
         self.assertAlmostEqual(self.view_up[0], camera_to_copy_to.GetViewUp()[0])

@@ -5,4 +5,4 @@ from .colormaps import *
 
 from .visualisation_pipeline import cilClipPolyDataBetweenPlanes, cilPlaneClipper, cilMaskPolyData
 
-from .camera_data import CameraData
+from .CameraData import CameraData

@@ -516,7 +516,6 @@ class CILViewer(CILViewerBase):
         return self.showActor(0, actor)
 
     def setInput3DData(self, imageData):
-        first_image_loaded = self.img3D is None
         self.img3D = imageData
 
         # Have to overwrite old volume and clipping planes if they
@@ -540,18 +539,22 @@ class CILViewer(CILViewerBase):
         self.imageSlice.VisibilityOn()
         self.style.SetSliceOrientation(SLICE_ORIENTATION_XY)
 
+
+        # Discard old camera:
+        self.ren.SetActiveCamera(vtk.vtkCamera())
+        # # reset camera to initial orientation
+        # # i.e. reset any rotation of the slice and volume
+        self.resetCameraToDefault()
+
         # Install pipeline with new image:
         self.installPipeline()
+        
 
         # needs an extra nudge to turn the slice visibility on:
         self.updatePipeline()
 
-        if first_image_loaded:
-            self.saveDefaultCamera()
-
-        # reset camera to initial orientation
-        # i.e. reset any rotation of the slice and volume
-        self.resetCameraToDefault()
+        
+        self.saveDefaultCamera()
 
     def setInputData(self, imageData):
         '''alias of setInput3DData'''
@@ -613,12 +616,12 @@ class CILViewer(CILViewerBase):
         self.renWin.Render()
 
     def saveDefaultCamera(self):
-        self.default_camera = CameraData(self.getCamera())
+        self.default_camera_data = CameraData(self.getCamera())
 
     def resetCameraToDefault(self):
-        if hasattr(self, 'default_camera'):
+        if hasattr(self, 'default_camera_data'):
             self.adjustCamera(resetcamera=True)
-            self.default_camera.copy_data_to_other_camera(self.getCamera())
+            CameraData.CopyDataToCamera(self.default_camera_data, self.getCamera())
 
     def installVolumeRenderActorPipeline(self):
         # volume render
