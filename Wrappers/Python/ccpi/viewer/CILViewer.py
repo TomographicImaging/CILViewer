@@ -545,7 +545,6 @@ class CILViewer(CILViewerBase):
 
         # Install pipeline with new image:
         self.installPipeline()
-        
 
         # needs an extra nudge to turn the slice visibility on:
         self.updatePipeline()
