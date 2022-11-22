@@ -539,18 +539,20 @@ class CILViewer(CILViewerBase):
         self.imageSlice.VisibilityOn()
         self.style.SetSliceOrientation(SLICE_ORIENTATION_XY)
 
-        # Discard old camera:
-        self.ren.SetActiveCamera(vtk.vtkCamera())
-        # # reset camera to initial orientation
-        # # i.e. reset any rotation of the slice and volume
+        # Reset camera to initial orientation
+        # i.e. reset any rotation of the slice and volume
         self.resetCameraToDefault()
 
         # Install pipeline with new image:
         self.installPipeline()
+        
 
         # needs an extra nudge to turn the slice visibility on:
         self.updatePipeline()
+        # Note, this includes adjusting the camera once the new image is loaded,
+        # so the camera settings have been changed.
 
+        # Save default camera settings for this image:
         self.saveDefaultCamera()
 
     def setInputData(self, imageData):
@@ -613,9 +615,13 @@ class CILViewer(CILViewerBase):
         self.renWin.Render()
 
     def saveDefaultCamera(self):
+        ''' Saves the default camera settings for a particular
+        loaded 3D image.'''
         self.default_camera_data = CameraData(self.getCamera())
 
     def resetCameraToDefault(self):
+        ''' resets to the default camera settings for the current
+        loaded 3D image'''
         if hasattr(self, 'default_camera_data'):
             self.adjustCamera(resetcamera=True)
             CameraData.CopyDataToCamera(self.default_camera_data, self.getCamera())

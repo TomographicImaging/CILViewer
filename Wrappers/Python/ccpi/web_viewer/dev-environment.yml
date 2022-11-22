@@ -1,5 +1,5 @@
 # run: conda env create --file environment.yml
-name: cilviewer_webapp
+name: cilviewer_webapp4
 channels:
   - conda-forge
   - ccpi

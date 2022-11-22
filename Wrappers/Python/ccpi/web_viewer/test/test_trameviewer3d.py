@@ -483,15 +483,6 @@ class TrameViewer3DTest(unittest.TestCase):
 
         self.trame_viewer.update_windowing_defaults.assert_called_once_with(windowing_method)
 
-    @mock.patch("ccpi.web_viewer.trame_viewer.TrameViewer.load_file")
-    def test_load_file_saves_a_new_camera_position(self, _):
-        cam_data = mock.MagicMock()
-        self.trame_viewer.cil_viewer.default_camera_data = cam_data
-
-        self.trame_viewer.load_file("path")
-
-        self.assertNotEqual(self.trame_viewer.cil_viewer.default_camera_data, cam_data)
-
     def test_switch_render_calls_toggle_volume_visibility(self):
         self.cil_viewer.style.ToggleVolumeVisibility = mock.MagicMock()
 
@@ -956,3 +947,7 @@ class TrameViewer3DTest(unittest.TestCase):
         self.trame_viewer.cil_viewer.setActiveSlice.assert_called_once_with(slice_number)
         self.trame_viewer.cil_viewer.updatePipeline.assert_called_once_with()
         self.trame_viewer.html_view.update.assert_called_once_with()
+
+
+if __name__ == '__main__':
+    unittest.main()
