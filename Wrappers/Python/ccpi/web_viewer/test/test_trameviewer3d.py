@@ -605,7 +605,6 @@ class TrameViewer3DTest(unittest.TestCase):
         self.cil_viewer.resetCameraToDefault.assert_called_once()
         self.assertFalse(hasattr(self.trame_viewer, "html_view"))
 
-
     def test_reset_cam_updates_html_view_if_html_view_is_set(self):
         self.trame_viewer.cil_viewer = mock.MagicMock()
         self.trame_viewer.html_view = mock.MagicMock()

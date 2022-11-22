@@ -539,7 +539,6 @@ class CILViewer(CILViewerBase):
         self.imageSlice.VisibilityOn()
         self.style.SetSliceOrientation(SLICE_ORIENTATION_XY)
 
-
         # Discard old camera:
         self.ren.SetActiveCamera(vtk.vtkCamera())
         # # reset camera to initial orientation
@@ -548,12 +547,10 @@ class CILViewer(CILViewerBase):
 
         # Install pipeline with new image:
         self.installPipeline()
-        
 
         # needs an extra nudge to turn the slice visibility on:
         self.updatePipeline()
 
-        
         self.saveDefaultCamera()
 
     def setInputData(self, imageData):

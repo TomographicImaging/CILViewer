@@ -50,7 +50,7 @@ class CameraDataTest(unittest.TestCase):
         self.assertNotEqual(self.view_up, camera_to_copy_to.GetViewUp())
 
         CameraData.CopyDataToCamera(self.data, camera_to_copy_to)
-        
+
         self.assertEqual(self.cam_pos, camera_to_copy_to.GetPosition())
         self.assertEqual(self.focal_pos, camera_to_copy_to.GetFocalPoint())
         self.assertAlmostEqual(self.view_up[0], camera_to_copy_to.GetViewUp()[0])
