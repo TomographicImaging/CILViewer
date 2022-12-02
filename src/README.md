@@ -1,2 +1,3 @@
-https://discourse.vtk.org/t/how-to-wrap-vtk-derived-c-function-for-python/4862/2
-https://github.com/Kitware/VTK/blob/master/CMake/vtkModuleWrapPython.cmake
+## Wrapping a module built outside VTK in Python
+
+This should follow this [example](https://gitlab.kitware.com/vtk/vtk/-/tree/master/Examples/Modules/Wrapping)
