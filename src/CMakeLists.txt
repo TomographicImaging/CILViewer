@@ -14,3 +14,5 @@ vtk_module_autoinit(
   TARGETS Viewer3D
   MODULES ${VTK_LIBRARIES}
 )
+
+add_subdirectory(Wrapping)
