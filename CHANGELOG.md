@@ -6,6 +6,8 @@
 - ImageWriter writes out with file extension set in FileFormat variable - previously didn't necessarily
   do this for some hdf5 formats.
 - Fix bug with returning HDF5 attributes from HDF5Reader
+- setup.py:
+  - Always normalise the version from git describe to pep440
 
 
 ## v22.4.0
