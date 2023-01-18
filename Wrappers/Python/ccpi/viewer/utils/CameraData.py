@@ -23,6 +23,9 @@ import vtk
 
 @dataclass(init=False)
 class CameraData:
+    '''
+    A dataclass to store the camera position, focal point and view up
+    '''
     position: list
     focalPoint: list
     viewUp: list
@@ -34,6 +37,16 @@ class CameraData:
 
     @staticmethod
     def CopyDataToCamera(camera_data, vtkcamera):
+        '''
+        Copy the camera_data to a vtkcamera
+        
+        Parameters
+        ----------
+        camera_data : CameraData
+            The camera data to copy
+        vtkcamera : vtkCamera
+            The vtk camera to copy to.
+        '''
         vtkcamera.SetPosition(*camera_data.position)
         vtkcamera.SetFocalPoint(*camera_data.focalPoint)
         vtkcamera.SetViewUp(*camera_data.viewUp)
