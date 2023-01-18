@@ -3,8 +3,12 @@
 ## vx.x.x
 - add `deleteWidget` method to CILViewerBase
 - Add environment file for development of the viewer
+- ImageWriter writes out with file extension set in FileFormat variable - previously didn't necessarily
+  do this for some hdf5 formats.
 - Fix bug with returning HDF5 attributes from HDF5Reader
 - Move code for resetting camera out of TrameViewer3D and into CILViewer
+- setup.py:
+  - Always normalise the version from git describe to pep440
 
 ## v22.4.0
 - Add command line tool for resampling a dataset, with entrypoint: resample (and unit tests)
