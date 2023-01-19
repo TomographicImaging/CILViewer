@@ -37,7 +37,6 @@ from trame.widgets import vuetify
 
 from ccpi.viewer.CILViewer import CILViewer
 from ccpi.viewer.CILViewer2D import SLICE_ORIENTATION_XY
-from ccpi.web_viewer.camera_data import CameraData
 
 server = get_server()
 state, ctrl = server.state, server.controller
@@ -95,9 +94,6 @@ class TrameViewer3D(TrameViewer):
         self.clipping_removal_button = None
 
         self.set_opacity_mapping("scalar")
-
-        # Grab current pos and orientation for reset later.
-        self.original_cam_data = CameraData(self.cil_viewer.ren.GetActiveCamera())
 
         self.update_slice_slider_data()
 
@@ -325,7 +321,6 @@ class TrameViewer3D(TrameViewer):
         # Update default values, there is an assumption this will not be called in the __init__ of this class.
         self.update_slice_slider_data()
         self.update_windowing_defaults(windowing_method)
-        self.original_cam_data = CameraData(self.cil_viewer.ren.GetActiveCamera())
 
         # Reset all the buttons and camera
         self.reset_defaults()
@@ -370,9 +365,7 @@ class TrameViewer3D(TrameViewer):
             self.html_view.update()
 
     def reset_cam(self):
-        self.cil_viewer.adjustCamera(resetcamera=True)
-        if hasattr(self, "original_cam_data"):
-            self.original_cam_data.copy_data_to_other_camera(self.cil_viewer.ren.GetActiveCamera())
+        self.cil_viewer.resetCameraToDefault()
         if hasattr(self, "html_view"):
             self.html_view.update()
 
