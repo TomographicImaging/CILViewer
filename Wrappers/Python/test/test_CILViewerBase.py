@@ -1,4 +1,3 @@
-
 #   Copyright 2022 STFC, United Kingdom Research and Innovation
 #
 #   Author 2022 Samuel Jones
@@ -26,7 +25,6 @@ class CILViewer3DTest(unittest.TestCase):
     def setUp(self):
         self.cil_viewer = CILViewerBase()
 
-
     def test_getSliceColorPercentiles_returns_correct_percentiles_when_slice_values_start_at_zero(self):
         self.cil_viewer.getSliceMapRange = mock.MagicMock(return_value=[40, 50])
         self.cil_viewer.getSliceMapWholeRange = mock.MagicMock(return_value=[0, 50])
@@ -41,7 +39,6 @@ class CILViewer3DTest(unittest.TestCase):
         actual_percentages = self.cil_viewer.getSliceColorPercentiles()
         self.assertEqual(expected_percentages, actual_percentages)
 
+
 if __name__ == '__main__':
     unittest.main()
-
-
