@@ -1,4 +1,3 @@
-
 #   Copyright 2022 STFC, United Kingdom Research and Innovation
 #
 #   Author 2022 Samuel Jones
@@ -60,7 +59,7 @@ class CILViewer3DTest(unittest.TestCase):
         expected_percentages = (80.0, 100.0)
         actual_percentages = self.cil_viewer.getVolumeColorPercentiles()
         self.assertEqual(expected_percentages, actual_percentages)
-    
+
     def test_getVolumeColorPercentiles_returns_correct_percentiles_when_image_values_start_at_non_zero(self):
         self.cil_viewer.volume_colormap_limits = [40, 50]
         self.cil_viewer.getImageMapWholeRange = mock.MagicMock(return_value=[10, 50])
@@ -68,7 +67,6 @@ class CILViewer3DTest(unittest.TestCase):
         actual_percentages = self.cil_viewer.getVolumeColorPercentiles()
         self.assertEqual(expected_percentages, actual_percentages)
 
+
 if __name__ == '__main__':
     unittest.main()
-
-
