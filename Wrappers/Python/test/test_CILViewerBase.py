@@ -20,7 +20,6 @@ import os
 
 from ccpi.viewer.CILViewer import CILViewerBase
 
-
 # skip the tests on GitHub actions
 if os.environ.get('CONDA_BUILD', '0') == '1':
     skip_test = True
@@ -28,6 +27,7 @@ else:
     skip_test = False
 
 print("skip_test is set to ", skip_test)
+
 
 @unittest.skipIf(skip_test, "Skipping tests on GitHub Actions")
 class CILViewer3DTest(unittest.TestCase):
