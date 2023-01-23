@@ -270,7 +270,7 @@ class CILViewerBase():
         min_val, max_val = self.getSliceMapWholeRange('scalar')
         min_color, max_color = self.getSliceMapRange()
         min_percentage = (min_color - min_val) / (max_val - min_val) * 100
-        max_percentage = (max_color - max_val) / (max_val - min_val) * 100
+        max_percentage = (max_color - min_val) / (max_val - min_val) * 100
         return min_percentage, max_percentage
 
     def setSliceColorWindow(self, window):

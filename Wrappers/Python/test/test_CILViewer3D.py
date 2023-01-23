@@ -14,12 +14,22 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
+import os
 import unittest
 from unittest import mock
 
 from ccpi.viewer.CILViewer import CILViewer
 
+# skip the tests on GitHub actions
+if os.environ.get('CONDA_BUILD', '0') == '1':
+    skip_test = True
+else:
+    skip_test = False
 
+print("skip_test is set to ", skip_test)
+
+
+@unittest.skipIf(skip_test, "Skipping tests on GitHub Actions")
 class CILViewer3DTest(unittest.TestCase):
 
     def setUp(self):
