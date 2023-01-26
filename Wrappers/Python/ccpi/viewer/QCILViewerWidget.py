@@ -1,10 +1,10 @@
-from PySide2 import QtWidgets
 import vtk
 import sys
 import vtk
 from PySide2 import QtCore, QtWidgets
 from ccpi.viewer.QCILRenderWindowInteractor import QCILRenderWindowInteractor
-from ccpi.viewer import viewer2D
+from ccpi.viewer import viewer2D, viewer3D
+from ccpi.viewer.QCILViewer3DToolBar import QCILViewer3DToolBar
 
 
 class QCILViewerWidget(QtWidgets.QFrame):
@@ -31,10 +31,7 @@ class QCILViewerWidget(QtWidgets.QFrame):
         dimx, dimy = kwargs.get('shape', (600, 600))
         # self.resize(dimx, dimy)
 
-        self.vl = QtWidgets.QVBoxLayout()
-        #self.vtkWidget = QVTKRenderWindowInteractor(self)
         self.vtkWidget = QCILRenderWindowInteractor(self)
-        self.vl.addWidget(self.vtkWidget)
 
         if 'renderer' in kwargs.keys():
             self.ren = kwargs['renderer']
@@ -43,6 +40,7 @@ class QCILViewerWidget(QtWidgets.QFrame):
         self.vtkWidget.GetRenderWindow().AddRenderer(self.ren)
         # https://discourse.vtk.org/t/qvtkwidget-render-window-is-outside-main-qt-app-window/1539/8?u=edoardo_pasca
         self.iren = self.vtkWidget.GetRenderWindow().GetInteractor()
+
         try:
 
             # print ("provided viewer class ", kwargs['viewer'])
@@ -60,8 +58,22 @@ class QCILViewerWidget(QtWidgets.QFrame):
             self.viewer.style = kwargs['interactorStyle'](self.viewer)
             self.viewer.iren.SetInteractorStyle(self.viewer.style)
 
+        self.vl = QtWidgets.QVBoxLayout()
+
+        toolBar = self.getToolbar()
+        if toolBar is not None:
+            self.vl.addWidget(toolBar)
+        self.vl.addWidget(self.vtkWidget)
+
         self.setLayout(self.vl)
         self.adjustSize()
+
+    def getToolbar(self):
+        # Adds a toolbar to the QFrame if we have a 3D viewer
+        if isinstance(self.viewer, viewer3D):
+            toolBar = QCILViewer3DToolBar(viewer=self.viewer)
+            return toolBar
+ 
 
 
 class QCILDockableWidget(QtWidgets.QDockWidget):
