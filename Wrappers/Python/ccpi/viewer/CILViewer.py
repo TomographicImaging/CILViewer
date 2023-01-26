@@ -749,6 +749,21 @@ class CILViewer(CILViewerBase):
         go_min, go_max = self.getImageMapRange((min, max), 'gradient')
         self.setGradientOpacityRange(go_min, go_max, update_pipeline)
 
+    def getGradientOpacityPercentiles(self):
+        '''
+        Returns
+        -----------
+        min, max: float, default: (80., 99.)
+            the percentiles on the image gradient values that the 
+            opacity will be mapped to if setVolumeRenderOpacityMethod
+            has been set to 'gradient'.
+        '''
+        go_min, go_max = self.getGradientOpacityRange()
+        value_min, value_max = self.getImageMapWholeRange('gradient')
+        min_percentage = (go_min - value_min) / (value_max - value_min) * 100
+        max_percentage = (go_max - value_min) / (value_max - value_min) * 100
+        return min_percentage, max_percentage
+
     def setScalarOpacityPercentiles(self, min, max, update_pipeline=True):
         '''
         min, max: float, default: (80., 99.)
@@ -759,13 +774,43 @@ class CILViewer(CILViewerBase):
         so_min, so_max = self.getImageMapRange((min, max), 'scalar')
         self.setScalarOpacityRange(so_min, so_max, update_pipeline)
 
+    def getScalarOpacityPercentiles(self):
+        '''
+        Returns
+        -----------
+        min, max: float, default: (80., 99.)
+            the percentiles on the image values that the 
+            opacity will be mapped to if setVolumeRenderOpacityMethod
+            has been set to 'scalar'.
+        '''
+        so_min, so_max = self.getScalarOpacityRange()
+        value_min, value_max = self.getImageMapWholeRange('scalar')
+        min_percentage = (so_min - value_min) / (value_max - value_min) * 100
+        max_percentage = (so_max - value_min) / (value_max - value_min) * 100
+        return min_percentage, max_percentage
+
     def setVolumeColorPercentiles(self, min, max, update_pipeline=True):
         '''
+        Parameters
+        -----------
         min, max: int, default: (85., 95.)
             the percentiles on the image values upon which the colours will be mapped to
         '''
         cmin, cmax = self.getImageMapRange((min, max), 'scalar')
         self.setVolumeColorRange(cmin, cmax, update_pipeline)
+
+    def getVolumeColorPercentiles(self):
+        '''
+        Returns
+        -----------
+        min, max: int, default: (85., 95.)
+            the percentiles on the image values upon which the colours will be mapped to
+        '''
+        cmin, cmax = self.getVolumeColorRange()
+        value_min, value_max = self.getImageMapWholeRange('scalar')
+        min_percentage = (cmin - value_min) / (value_max - value_min) * 100
+        max_percentage = (cmax - value_min) / (value_max - value_min) * 100
+        return min_percentage, max_percentage
 
     def setGradientOpacityRange(self, min, max, update_pipeline=True):
         '''
