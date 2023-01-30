@@ -150,7 +150,7 @@ class HDF5Reader(VTKPythonAlgorithmBase):
         with h5py.File(self._FileName, 'r') as f:
             if self._DatasetName is None:
                 raise Exception("DataSetName must be set.")
-            return f[self._DatasetName].attrs
+            return dict(f[self._DatasetName].attrs)
 
     def GetOrigin(self):
         # There is not a standard way to set the origin in a HDF5

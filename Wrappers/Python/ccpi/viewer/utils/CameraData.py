@@ -1,7 +1,7 @@
 #
 #   Copyright 2022 STFC, United Kingdom Research and Innovation
 #
-#   Author 2022 Samuel Jones
+#   Author 2022 Samuel Jones, Laura Murgatroyd
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -17,21 +17,36 @@
 #
 
 from dataclasses import dataclass
-from vtkmodules.vtkRenderingCore import vtkCamera
+
+import vtk
 
 
 @dataclass(init=False)
 class CameraData:
+    '''
+    A dataclass to store the camera position, focal point and view up
+    '''
     position: list
     focalPoint: list
     viewUp: list
 
-    def __init__(self, camera: vtkCamera):
+    def __init__(self, camera: vtk.vtkCamera):
         self.position = camera.GetPosition()
         self.focalPoint = camera.GetFocalPoint()
         self.viewUp = camera.GetViewUp()
 
-    def copy_data_to_other_camera(self, other_cam: vtkCamera):
-        other_cam.SetPosition(*self.position)
-        other_cam.SetFocalPoint(*self.focalPoint)
-        other_cam.SetViewUp(*self.viewUp)
+    @staticmethod
+    def CopyDataToCamera(camera_data, vtkcamera):
+        '''
+        Copy the camera_data to a vtkcamera
+        
+        Parameters
+        ----------
+        camera_data : CameraData
+            The camera data to copy
+        vtkcamera : vtkCamera
+            The vtk camera to copy to.
+        '''
+        vtkcamera.SetPosition(*camera_data.position)
+        vtkcamera.SetFocalPoint(*camera_data.focalPoint)
+        vtkcamera.SetViewUp(*camera_data.viewUp)

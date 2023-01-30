@@ -645,7 +645,9 @@ class ImageWriter(ImageWriterInterface):
         file_name = os.path.splitext(self._FileName)[0]
 
         if self._FileFormat in ['nxs', 'h5', 'hdf5', '']:
-            self._FileName = file_name + '.hdf5'
+            if self._FileFormat == '':
+                self._FileFormat = 'hdf5'
+            self._FileName = file_name + '.' + self._FileFormat
             writer = self._GetHDF5Writer()
 
         elif self._FileFormat in ['mha']:
