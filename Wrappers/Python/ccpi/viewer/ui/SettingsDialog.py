@@ -12,7 +12,6 @@ class SettingsDialog(FormDialog):
 
     def __init__(self, parent=None, title=None):
         FormDialog.__init__(self, parent, title=title)
-
         self.setWindowFlag(QtCore.Qt.WindowStaysOnTopHint, True)
         self.file_location = "."
 
@@ -55,6 +54,7 @@ class SettingsDialog(FormDialog):
         self.addWidget(open_location_browser, "", "open_location_browser")
 
     def get_settings(self):
+        """Return a dictionary of settings from the dialog."""
         settings = {}
         for key, value in self.formWidget.widgets.items():
             if isinstance(value, QtWidgets.QLabel):
@@ -69,6 +69,7 @@ class SettingsDialog(FormDialog):
         return settings
 
     def apply_settings(self, settings):
+        """Apply the settings to the dialog."""
         for key, value in settings.items():
             widg = self.formWidget.widgets[key]
             if isinstance(widg, QtWidgets.QLabel):
@@ -81,6 +82,7 @@ class SettingsDialog(FormDialog):
                 widg.setValue(value)
 
     def auto_window_level(self):
+        """Set the window and level to the default values."""
         self.viewer.autoWindowLevelOnSliceRange()
 
         window_default = self.viewer.getSliceColorWindow()
@@ -126,6 +128,7 @@ class SettingsDialog(FormDialog):
         # Background color
         self.getWidget("background_color").currentIndexChanged.connect(self.change_background_color)
 
+        # Render save location
         self.getWidget("open_location_browser").clicked.connect(self.open_file_location_dialog)
 
     def open_file_location_dialog(self):
@@ -136,11 +139,13 @@ class SettingsDialog(FormDialog):
         self.getWidget("render_save_location").setText(f"'{os.path.relpath(self.file_location, os.getcwd())}'")
 
     def change_viewer_orientation(self):
+        """Change the viewer orientation."""
         index = self.getWidget("orientation").currentIndex()
         self.viewer.style.SetSliceOrientation(index)
         self.viewer.style.UpdatePipeline(resetcamera=True)
 
     def change_background_color(self):
+        """Change the background color."""
         color = self.getWidget("background_color").currentText().replace(" ", "_").lower()
         if color == "miles_blue":
             color_data = (0.1, 0.2, 0.4)
