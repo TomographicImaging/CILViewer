@@ -1,8 +1,7 @@
-from PySide2 import QtCore, QtWidgets
-from ccpi.viewer.QCILRenderWindowInteractor import QCILRenderWindowInteractor
-from ccpi.viewer import viewer2D, viewer3D, SLICE_ORIENTATION_YZ
-from eqt.ui import FormDialog
-from ccpi.viewer.ui.SettingsDialog import DialogSettings, DialogVolumeRenderSettings
+from PySide2 import QtWidgets
+
+from ccpi.viewer.ui.SettingsDialog import SettingsDialog
+from ccpi.viewer.ui.VolumeRenderSettingsDialog import VolumeRenderSettingsDialog
 
 
 class QCILViewer3DToolBar(QtWidgets.QToolBar):
@@ -19,19 +18,19 @@ class QCILViewer3DToolBar(QtWidgets.QToolBar):
         self.parent = parent
         self.viewer = viewer
         super(QCILViewer3DToolBar, self).__init__(parent=parent, **kwargs)
-        self.dialog = {"2D": None, "3D": None}
+        self.dialog = {"settings": None, "volume_render_settings": None}
 
-        # 2D settings button
+        # Settings button
         settings_2d = QtWidgets.QToolButton()
         settings_2d.setText("Settings ⚙️")
         self.addWidget(settings_2d)
-        settings_2d.clicked.connect(lambda: self.open_dialog("2D"))
+        settings_2d.clicked.connect(lambda: self.open_dialog("settings"))
 
-        # 3D settings button
+        # Volume render settings button
         settings_3d = QtWidgets.QToolButton()
         settings_3d.setText("Volume Render Settings ⚙️")
         self.addWidget(settings_3d)
-        settings_3d.clicked.connect(lambda: self.open_dialog("3D"))
+        settings_3d.clicked.connect(lambda: self.open_dialog("volume_render_settings"))
 
         # Reset camera button
         settings_reset = QtWidgets.QToolButton()
@@ -63,23 +62,22 @@ class QCILViewer3DToolBar(QtWidgets.QToolBar):
 
     def open_dialog(self, mode):
         # pylint(access-member-before-definition)
-        if mode == "2D":
-            # if not hasattr(self, "dialog"):
-            if self.dialog["2D"] is None:
-                dialog = DialogSettings(parent=self.parent, title="Settings")
+        if mode == "settings":
+            if self.dialog["settings"] is None:
+                dialog = SettingsDialog(parent=self.parent, title="Settings")
                 dialog.Ok.clicked.connect(lambda: self.accepted(mode))
                 dialog.Cancel.clicked.connect(lambda: self.rejected(mode))
                 dialog.set_viewer(self.viewer)
                 self.dialog[mode] = dialog
+                # self.default_settings = self.dialog[mode].get_settings()
 
             self.settings = self.dialog[mode].get_settings()
-            # TODO: uppdate settings call
             self.dialog[mode].open()
             return
 
-        if mode == "3D":
-            if self.dialog["3D"] is None:
-                dialog = DialogVolumeRenderSettings(parent=self.parent, title="Volume Render Settings")
+        if mode == "volume_render_settings":
+            if self.dialog["volume_render_settings"] is None:
+                dialog = VolumeRenderSettingsDialog(parent=self.parent, title="Volume Render Settings")
                 dialog.Ok.clicked.connect(lambda: self.accepted(mode))
                 dialog.Cancel.clicked.connect(lambda: self.rejected(mode))
                 dialog.set_viewer(self.viewer)
@@ -99,10 +97,10 @@ class QCILViewer3DToolBar(QtWidgets.QToolBar):
         self.dialog[mode].close()
 
     def save_render(self):
-        # TODO: open file browser for where to save
-        # file save location in settings dialog
-        # sQtWidgets.QFileDialog
-        self.viewer.saveRender("hello.png")
+        if self.dialog.get("settings") is None:
+            self.viewer.saveRender("render")
+        else:
+            self.viewer.saveRender(self.dialog.get("settings").file_location)
 
     def save_dialog_settings(self):
         pass
