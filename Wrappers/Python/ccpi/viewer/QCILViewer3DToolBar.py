@@ -50,7 +50,7 @@ class QCILViewer3DToolBar(QtWidgets.QToolBar):
         save_image.clicked.connect(self.save_render)
 
     def reset_camera(self):
-        print("Reset camera")
+        """Reset camera to default position."""
         self.viewer.resetCameraToDefault()
         self.viewer.updatePipeline()
 
@@ -61,6 +61,7 @@ class QCILViewer3DToolBar(QtWidgets.QToolBar):
         self.viewer.updatePipeline()
 
     def open_dialog(self, mode):
+        """Open a dialog box for the settings of the viewer."""
         # pylint(access-member-before-definition)
         if mode == "settings":
             if self.dialog["settings"] is None:
@@ -97,6 +98,7 @@ class QCILViewer3DToolBar(QtWidgets.QToolBar):
         self.dialog[mode].close()
 
     def save_render(self):
+        """Save the render to a file."""
         if self.dialog.get("settings") is None:
             self.viewer.saveRender("render")
         else:
