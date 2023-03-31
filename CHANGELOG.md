@@ -1,6 +1,6 @@
 # Changelog
 
-## vx.x.x
+## v23.0.0
 - add `deleteWidget` method to CILViewerBase
 - Add environment file for development of the viewer
 - ImageWriter writes out with file extension set in FileFormat variable - previously didn't necessarily
