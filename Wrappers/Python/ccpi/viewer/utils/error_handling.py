@@ -1,8 +1,5 @@
-import warnings
-
 # See examples/error_observer.py for an example of using the ErrorObserver
 # and EndObserver.
-
 
 class ErrorObserver:
 
@@ -33,10 +30,10 @@ class ErrorObserver:
         return self.__get_error_message
 
 
+
 class EndObserver:
     ''' Occurs when the observed Algorithm finishes
     '''
-
     def __init__(self, error_observer, callback_fn):
         '''
         Parameters
@@ -52,14 +49,3 @@ class EndObserver:
     def __call__(self, obj, event):
         if not self.error_observer.error_occurred():
             self.callback_fn()
-
-
-# Format warning messages:
-def customise_warnings():
-    # prints warning message in bold yellow, file name and line number
-    # without customising, warning message is printed twice, and is not
-    # as clear
-    def custom_warning_format(message, category, filename, lineno, line=None):
-        return "{1}:{2}: \033[1;33;40m {1}: {0} \033[0m \n ".format(message, category.__name__, filename, lineno)
-
-    warnings.formatwarning = custom_warning_format

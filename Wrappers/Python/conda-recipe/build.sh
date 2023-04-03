@@ -1,5 +1,5 @@
 cd $RECIPE_DIR/..
 
-pip install .
+$PYTHON setup.py install
 
 
