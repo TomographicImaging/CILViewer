@@ -1,0 +1,2 @@
+# Prevent windows from converting line endings:
+*.sh    text eol=lf 
