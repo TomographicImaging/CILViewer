@@ -158,7 +158,7 @@ class ViewerMainWindow(SessionMainWindow):
 
     def _get_hdf5_attrs_from_dialog(self, dialog):
         print("got the hdf5 attrs")
-        self.hdf5_attrs = dialog.get_hdf5_attrs()
+        self.hdf5_attrs = dialog.getHDF5Attributes()
         dialog.close()
 
     def createViewerCoordsDockWidget(self):
@@ -390,6 +390,14 @@ class RawInputDialog(FormDialog):
         return raw_attrs
 
 class HDF5InputDialog(FormDialog):
+    '''
+    This is a dialog window which allows the user to set:
+    - the dataset name
+    - whether the Z axis should be downsampled (should not be done for acquisition data)
+    
+    For selecting the dataset name, this dialog uses a table widget to display the
+    contents of the HDF5 file.
+    '''
     def __init__(self, parent, fname):
         super(HDF5InputDialog, self).__init__(parent, fname)
         title = "Config for " + os.path.basename(fname)
@@ -397,10 +405,9 @@ class HDF5InputDialog(FormDialog):
         self.setWindowTitle(title)
         fw = self.formWidget
 
-
-        # Browser for dataset name:
+        # Browser for dataset name: --------------------------------------
         # create input text for starting group
-        hl, up, line_edit, push_button= self.createLineEditForDatasetName()
+        hl, _, line_edit, push_button = self.createLineEditForDatasetName()
 
         # set the focus on the Browse button
         push_button.setDefault(True)
@@ -426,6 +433,8 @@ class HDF5InputDialog(FormDialog):
         self.push_button = push_button
         self.line_edit = line_edit
 
+        # ---------------------------------------------------------------
+
         fw.addSeparator('dataset_selector_separator')
 
         # dimensionality:
@@ -446,6 +455,11 @@ class HDF5InputDialog(FormDialog):
         self.setDefaultDatasetName()
 
     def setDefaultDatasetName(self):
+        '''
+        Set the default dataset name to the first entry, as dictated by the
+        NXTomo standard, and also CIL's NEXUSDataReader/Writer standard.
+        Or if that does not exist in the file, set the default to the root group.
+        '''
         nxtomo_dataset_name = "/entry1/tomo_entry/data/data"
         # check if the dataset exists:
         with h5py.File(self.file_name, 'r') as f:
@@ -462,7 +476,9 @@ class HDF5InputDialog(FormDialog):
 
     def onOkClicked(self):
         ''' Will need to override this to add further methods
-        when the OK button is clicked.'''
+        when the OK button is clicked.
+        
+        This checks if the dataset name is valid.'''
         dataset_name = self.widgets['dataset_name_field'].text()
         with h5py.File(self.file_name, 'r') as f:
             try:
@@ -478,7 +494,12 @@ class HDF5InputDialog(FormDialog):
                 return
         
 
-    def get_hdf5_attrs(self):
+    def getHDF5Attributes(self):
+        '''
+        Returns a dictionary of attributes required for reading the HDF5 file.
+
+        These are the attributes set by the user in this dialog.
+        '''
         hdf5_attrs = {}
         widgets = self.formWidget.widgets
 
@@ -487,19 +508,54 @@ class HDF5InputDialog(FormDialog):
 
         return hdf5_attrs
     
-    def datasetLineEditChanged(self, text):
-        self.widgets['dataset_name_field'].setText(text)
-    
     def createTableWidget(self):
+        '''
+        Create a table widget to display the contents of the HDF5 file.
+        '''
         tableWidget = QtWidgets.QTableWidget()
         tableWidget.itemDoubleClicked.connect(self.fillLineEditWithDoubleClickedTableItem)
         tableWidget.setColumnWidth(1,40)
         header = tableWidget.horizontalHeader()
         header.setSectionResizeMode(QtWidgets.QHeaderView.Stretch)
         return tableWidget
+    
+    def createLineEditForDatasetName(self):
+        '''
+        Create a line edit for the user to enter the dataset name.
+        '''        
+        pb = QtWidgets.QPushButton()
+        pb.setText("Browse for Dataset...")
+        pb.clicked.connect(lambda: self.descendHDF5AndFillTable())
+        
+        up = QtWidgets.QPushButton()
+        up.setIcon(QtWidgets.QApplication.style().standardPixmap((QtWidgets.QStyle.SP_ArrowUp)))
+        up.clicked.connect(lambda: self.goToParentGroup())
+        up.setFixedSize(QtCore.QSize(30,30))
+        
+        le = QtWidgets.QLineEdit(self)
+        le.returnPressed.connect(lambda: self.descendHDF5AndFillTable())
+        le.setClearButtonEnabled(True)
+
+        hl = QtWidgets.QHBoxLayout()
+        hl.addWidget(up)
+        hl.addWidget(le)
+        
+        return hl, up, le, pb
+    
+    def datasetLineEditChanged(self, text):
+        '''
+        This method is called when the text in the line edit is changed.
+        '''
+        self.widgets['dataset_name_field'].setText(text)
 
 
     def fillLineEditWithDoubleClickedTableItem(self, item):
+        '''
+        This method is called when a table item is double clicked.
+        It will fill the line edit with the path to the selected item.
+        It will then descend into the selected item and fill the table with
+        the contents of the selected item.
+        '''
         row = item.row()
         fsitem = self.tableWidget.item(row, 0)
         new_group = fsitem.text()
@@ -524,29 +580,11 @@ class HDF5InputDialog(FormDialog):
                                 "The selected item could not be opened.", "f{new_path} either does not exist, or is not a group or dataset, so can't be opened.")
                 error_dialog.open()
 
-    
-    def createLineEditForDatasetName(self):        
-        pb = QtWidgets.QPushButton()
-        pb.setText("Browse for Dataset...")
-        pb.clicked.connect(lambda: self.descendHDF5AndFillTable())
-        
-        up = QtWidgets.QPushButton()
-        up.setIcon(QtWidgets.QApplication.style().standardPixmap((QtWidgets.QStyle.SP_ArrowUp)))
-        up.clicked.connect(lambda: self.goToParentGroup())
-        up.setFixedSize(QtCore.QSize(30,30))
-        
-        le = QtWidgets.QLineEdit(self)
-        le.returnPressed.connect(lambda: self.descendHDF5AndFillTable())
-        le.setClearButtonEnabled(True)
-
-        hl = QtWidgets.QHBoxLayout()
-        hl.addWidget(up)
-        hl.addWidget(le)
-        
-        return hl, up, le, pb
-    
     def descendHDF5AndFillTable(self):
-        # load data into table widget
+        '''
+        This descends into the HDF5 file and fills the table with the contents
+        of the group.
+        '''
         # set OverrideCursor to WaitCursor
         QtGui.QGuiApplication.setOverrideCursor(QtCore.Qt.WaitCursor)
         group = self.line_edit.text()
@@ -570,11 +608,13 @@ class HDF5InputDialog(FormDialog):
                     list_of_items.append((key, obj.attrs[key]))
 
         self.loadIntoTableWidget(list_of_items)
-        # self.loadIntoTableWidget(ddata)
         # restore OverrideCursor
         QtGui.QGuiApplication.restoreOverrideCursor()
 
     def loadIntoTableWidget(self, data):
+        '''
+        This loads the data into the table widget.
+        '''
         if len(data) <= 0:
             return
         self.tableWidget.setRowCount(len(data))
@@ -593,6 +633,10 @@ class HDF5InputDialog(FormDialog):
         self.tableWidget.resizeColumnsToContents()
 
     def goToParentGroup(self):
+        '''
+        This method is called when the up button is clicked.
+        It will go to the parent group of the current group.
+        '''
         le = self.line_edit
         parent_group  = self.getCurrentParentGroup()
         le.setText(str(parent_group))
@@ -600,22 +644,21 @@ class HDF5InputDialog(FormDialog):
         self.descendHDF5AndFillTable()
 
     def getCurrentGroup(self):
+        '''
+        This method returns the current group.
+        '''
         return self.current_group
     
     def getCurrentParentGroup(self):
-        # how to get the directory above the current one
+        '''
+        This method returns the parent group of the current group.
+        '''
         current_group = self.getCurrentGroup()
-        print("The current group is: ", current_group)
         if current_group != "/" and current_group != "//" and current_group != "":
-            print("Removing an item")
             item_to_remove = "/" + current_group.split("/")[-1]
             parent_group = current_group[:-len(item_to_remove)]
         else:
-            print("Not removing an item")
-            print("The current group is: ", current_group)
             parent_group = current_group
-
-        print("The parent group is: ", parent_group)
         
         return parent_group
 
