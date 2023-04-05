@@ -64,8 +64,7 @@ setup(
         "ccpi.viewer.utils",
         "ccpi.web_viewer",
         "ccpi.viewer.widgets",
-        "ccpi.viewer.cli",
-        "ccpi.viewer.ui",
+        "ccpi.viewer.cli"
     ],
     install_requires=requires,
     zip_safe=False,

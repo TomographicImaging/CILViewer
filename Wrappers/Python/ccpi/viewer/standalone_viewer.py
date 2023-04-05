@@ -43,16 +43,12 @@ from PySide2.QtWidgets import (QAction, QCheckBox, QComboBox, QDockWidget,
                                QMenu, QMessageBox, QProgressDialog,
                                QPushButton, QSpinBox, QStackedWidget,
                                QTabWidget)
-from qdarkstyle.dark.palette import DarkPalette
-from qdarkstyle.light.palette import LightPalette
-
-from eqt.ui.UIMainWindow import MainWindow
 
 from ccpi.viewer.viewer_main_window import ViewerMainWindow
 
 #from ccpi.viewer.utils.io import ImageDataCreator
 
-from ccpi.viewer.utils.io_new import ImageReader
+from ccpi.viewer.utils.io import ImageReader
 
 from eqt.threading import Worker
 
@@ -65,8 +61,9 @@ from ccpi.viewer.utils.conversion import cilNumpyMETAImageWriter
 # instead look at how to get the resample rate of downsampled images
 
 class StandaloneViewerMainWindow(ViewerMainWindow):
-    def __init__(self, title = "StandaloneViewer", viewer1=viewer2D, viewer2=viewer3D):
-        ViewerMainWindow.__init__(self, title)
+    def __init__(self, title = "StandaloneViewer", app_name = "Standalone Viewer", settings_name=None,
+                 organisation_name=None, viewer1=viewer2D, viewer2=viewer3D):
+        ViewerMainWindow.__init__(self, title, app_name, settings_name, organisation_name)
 
         self.input_data1 = None
         self.input_data2 = None
@@ -102,33 +99,38 @@ class StandaloneViewerMainWindow(ViewerMainWindow):
         self.central_widget = cw
 
 
-    def create_menu(self):
-        ViewerMainWindow.create_menu(self)
-
-        # find the settings action which already exists:
-        for action in self.file_menu.actions():
-            action_name = action.text()
-            if 'Settings' in action_name:
-                settings_action = action
-
+    def addToMenu(self):
+        '''
+        Adds actions to the menu bar for selecting the images to be displayed
+        '''
+        file_menu = self.menus['File']
             
-        # insert image selection actions before the settings action:
-
-        image1_action = QAction("Select Image 1", self)
-        image1_action.triggered.connect(lambda: self.set_viewer_input(1))
-        self.file_menu.insertAction(settings_action, image1_action)
+        # insert image selection as first action in file menu:
 
         image2_action = QAction("Select Image 2", self)
         image2_action.triggered.connect(lambda: self.set_viewer_input(2))
-        self.file_menu.insertAction(settings_action, image2_action)
+        file_menu.insertAction(file_menu.actions()[0], image2_action)
+
+        image1_action = QAction("Select Image 1", self)
+        image1_action.triggered.connect(lambda: self.set_viewer_input(1))
+        file_menu.insertAction(file_menu.actions()[0], image1_action)
+
 
     def set_viewer_input(self, input_num=1):
         image_file, raw_image_attrs, hdf5_image_attrs = self.select_image()
+
+        # TODO: check if raw attrs has resample_z
+
+        dataset_name =  hdf5_image_attrs.get('dataset_name')
+        resample_z = hdf5_image_attrs.get('resample_z')
         print("The image attrs: ", raw_image_attrs)
-        target_size = self.get_target_image_size()
+        target_size = self.getTargetImageSize()
         print("The target size is: ", target_size)
-        image_reader = ImageReader(file_name=image_file, target_size=target_size, raw_image_attrs=raw_image_attrs, hdf5_image_attrs=hdf5_image_attrs)
-        image_reader_worker = Worker(image_reader.read)
+        image_reader = ImageReader(file_name=image_file, target_size=target_size,
+                                   raw_image_attrs=raw_image_attrs,
+                                   hdf5_dataset_name=dataset_name,
+                                   resample_z=resample_z)
+        image_reader_worker = Worker(image_reader.Read)
         self.threadpool.start(image_reader_worker)
         if input_num == 1:
             image_reader_worker.signals.result.connect(self.display_image)
