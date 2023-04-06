@@ -36,17 +36,14 @@ from eqt.ui.UIStackedWidget import StackedWidgetFactory
 from PySide2 import QtCore, QtGui, QtWidgets
 from PySide2.QtCore import QRegExp, QSettings, Qt, QThreadPool
 from PySide2.QtGui import QCloseEvent, QKeySequence, QRegExpValidator
-from PySide2.QtWidgets import (QAction, QApplication, QCheckBox, QComboBox,
-                               QDialog, QDialogButtonBox, QDockWidget,
-                               QDoubleSpinBox, QFileDialog, QLabel, QLineEdit,
-                               QMainWindow, QMenu, QMessageBox,
-                               QProgressDialog, QPushButton, QSpinBox,
-                               QStackedWidget, QTabWidget)
+from PySide2.QtWidgets import (QAction, QApplication, QCheckBox, QComboBox, QDialog, QDialogButtonBox, QDockWidget,
+                               QDoubleSpinBox, QFileDialog, QLabel, QLineEdit, QMainWindow, QMenu, QMessageBox,
+                               QProgressDialog, QPushButton, QSpinBox, QStackedWidget, QTabWidget)
 
 # TODO: auto plane clipping on viewers
 
-class ViewerMainWindow(SessionMainWindow):
 
+class ViewerMainWindow(SessionMainWindow):
     ''' Creates a window which is designed to house one or more viewers.
     Note: does not create a viewer as we don't know whether the user would like it to exist in a
     dockwidget or central widget
@@ -56,22 +53,30 @@ class ViewerMainWindow(SessionMainWindow):
     Assumes that at least one viewer is present, saved as self.viewer1
     '''
 
-    def __init__(self, title="ViewerMainWindow", app_name= None, settings_name=None,
-                 organisation_name=None, viewer1_type=None, viewer2_type=None, *args, **kwargs): 
-        
+    def __init__(self,
+                 title="ViewerMainWindow",
+                 app_name=None,
+                 settings_name=None,
+                 organisation_name=None,
+                 viewer1_type=None,
+                 viewer2_type=None,
+                 *args,
+                 **kwargs):
+
         # TODO: are viewer types needed?
-        super(ViewerMainWindow, self).__init__(title, app_name, settings_name=settings_name, organisation_name=organisation_name)
+        super(ViewerMainWindow, self).__init__(title,
+                                               app_name,
+                                               settings_name=settings_name,
+                                               organisation_name=organisation_name)
 
         self.default_downsampled_size = 512**3
 
         self.createViewerCoordsDockWidget()
         # could get rid of this:
-        self.addDockWidget(QtCore.Qt.BottomDockWidgetArea,
-                           self.viewer_coords_dock)
+        self.addDockWidget(QtCore.Qt.BottomDockWidgetArea, self.viewer_coords_dock)
 
         self.viewer1 = None
         self.viewers = []
-
 
     def createAppSettingsDialog(self):
         '''Create a dialog to change the application settings.
@@ -83,7 +88,6 @@ class ViewerMainWindow(SessionMainWindow):
         self.setAppSettingsDialogWidgets(dialog)
         dialog.open()
 
-
     def setAppSettingsDialogWidgets(self, dialog):
         '''Set the widgets on the app settings dialog, based on the 
         current settings of the app'''
@@ -93,16 +97,14 @@ class ViewerMainWindow(SessionMainWindow):
         if self.settings.value('copy_files') is not None:
             sw['copy_files_checkbox_field'].setChecked(int(self.settings.value('copy_files')))
         if self.settings.value("vis_size") is not None:
-            sw['vis_size_field'].setValue(
-                float(self.settings.value("vis_size")))
+            sw['vis_size_field'].setValue(float(self.settings.value("vis_size")))
         else:
-            sw['vis_size_field'].setValue(self.getDefaultDownsampledSize()/(1024**3))
+            sw['vis_size_field'].setValue(self.getDefaultDownsampledSize() / (1024**3))
 
         if self.settings.value("volume_mapper") is not None:
             sw['gpu_checkbox_field'].setChecked(self.settings.value("volume_mapper") == "gpu")
         else:
             sw['gpu_checkbox_field'].setChecked(True)
-
 
     def onAppSettingsDialogAccepted(self, settings_dialog):
         '''This is called when the user clicks the OK button on the
@@ -115,9 +117,8 @@ class ViewerMainWindow(SessionMainWindow):
         else:
             self.settings.setValue("copy_files", 0)
 
-        self.settings.setValue("vis_size", float(
-            settings_dialog.widgets['vis_size_field'].value()))
-        
+        self.settings.setValue("vis_size", float(settings_dialog.widgets['vis_size_field'].value()))
+
         if settings_dialog.widgets['gpu_checkbox_field'].isChecked():
             self.settings.setValue("volume_mapper", "gpu")
             for viewer in self.viewers:
@@ -151,7 +152,7 @@ class ViewerMainWindow(SessionMainWindow):
             raw_dialog = HDF5InputDialog(self, file)
             raw_dialog.Ok.clicked.connect(lambda: self._get_hdf5_attrs_from_dialog(raw_dialog))
             raw_dialog.exec_()
-        
+
         self.input_dataset_file = file
         if label is not None:
             label.setText(os.path.basename(file))
@@ -175,7 +176,8 @@ class ViewerMainWindow(SessionMainWindow):
         '''
         dock = ViewerCoordsDockWidget(self)
         self.viewer_coords_dock = dock
-        dock.getWidgets()['coords_combo_field'].currentIndexChanged.connect(lambda: self.updateViewerCoords(viewer=self.viewer1))
+        dock.getWidgets()['coords_combo_field'].currentIndexChanged.connect(
+            lambda: self.updateViewerCoords(viewer=self.viewer1))
 
     def setViewersInput(self, viewers, input_num=1):
         '''
@@ -191,18 +193,20 @@ class ViewerMainWindow(SessionMainWindow):
         '''
         image_file, raw_image_attrs, hdf5_image_attrs = self.selectImage()
 
-        dataset_name =  hdf5_image_attrs.get('dataset_name')
+        dataset_name = hdf5_image_attrs.get('dataset_name')
         resample_z = hdf5_image_attrs.get('resample_z')
         print("The image attrs: ", raw_image_attrs)
         target_size = self.getTargetImageSize()
-        image_reader = ImageReader(file_name=image_file, target_size=target_size,
+        image_reader = ImageReader(file_name=image_file,
+                                   target_size=target_size,
                                    raw_image_attrs=raw_image_attrs,
                                    hdf5_dataset_name=dataset_name,
                                    resample_z=resample_z)
         image_reader_worker = Worker(image_reader.Read)
         self.threadpool.start(image_reader_worker)
         self.createUnknownProgressWindow("Reading Image")
-        image_reader_worker.signals.result.connect(partial(self.displayImage, viewers, input_num, image_reader, image_file))
+        image_reader_worker.signals.result.connect(
+            partial(self.displayImage, viewers, input_num, image_reader, image_file))
         image_reader_worker.signals.finished.connect(self.finishProcess("Reading Image"))
         image_reader_worker.signals.error.connect(self.process_error_dialog)
 
@@ -210,7 +214,7 @@ class ViewerMainWindow(SessionMainWindow):
         dialog = ErrorDialog(self, "Error", str(error[1]), str(error[2]))
         dialog.open()
 
-    def displayImage(self, viewers, input_num, reader,  image_file, image):
+    def displayImage(self, viewers, input_num, reader, image_file, image):
         '''
         Displays an image on the viewer/s.
 
@@ -243,7 +247,6 @@ class ViewerMainWindow(SessionMainWindow):
                     viewer.setInputData2(image)
         self.updateGUIForNewImage(reader, viewer, image_file)
 
-
     def updateGUIForNewImage(self, reader=None, viewer=None, image_file=None):
         '''
         Updates the GUI for a new image:
@@ -272,9 +275,7 @@ class ViewerMainWindow(SessionMainWindow):
         widgets['image_field'].addItem(image_file)
         widgets['image_field'].setCurrentIndex(0)
 
-
     def updateViewerCoordsDockWidgetWithCoords(self, reader=None):
-
         '''
         Updates the viewer coordinates dock widget with the displayed image dimensions
         and the loaded image dimensions (if a reader is provided)
@@ -285,7 +286,7 @@ class ViewerMainWindow(SessionMainWindow):
             The reader used to read the image. This contains some extra info about the
             original image file.
         '''
-        
+
         viewer = self.viewer_coords_dock.viewers[0]
 
         if not isinstance(viewer, (viewer2D, viewer3D)):
@@ -295,21 +296,20 @@ class ViewerMainWindow(SessionMainWindow):
 
         if image is None:
             return
-        
 
         widgets = self.viewer_coords_dock.getWidgets()
 
         # Update the coordinates: ------------------------------
 
         displayed_image_dims = str(list(image.GetDimensions()))
-        
+
         widgets['coords_combo_field'].setCurrentIndex(0)
 
         widgets['loaded_image_dims_field'].setVisible(True)
         widgets['loaded_image_dims_label'].setVisible(True)
 
         if reader is None:
-            # If reader is None, then we have no info about the original 
+            # If reader is None, then we have no info about the original
             # image file, or whether it was resampled.
             resampled = False
         else:
@@ -333,7 +333,6 @@ class ViewerMainWindow(SessionMainWindow):
 
             widgets['loaded_image_dims_field'].setText(original_image_dims)
             widgets['displayed_image_dims_field'].setText(displayed_image_dims)
-
 
     def updateViewerCoords(self):
         '''
@@ -362,14 +361,14 @@ class ViewerMainWindow(SessionMainWindow):
     def getTargetImageSize(self):
         ''' Get the target size for an image to be displayed in bytes.'''
         if self.settings.value("vis_size") is not None:
-            target_size = float(self.settings.value("vis_size"))*(1024**3)
+            target_size = float(self.settings.value("vis_size")) * (1024**3)
         else:
             target_size = self.getDefaultDownsampledSize()
         return target_size
 
     def setDefaultDownsampledSize(self, value):
         ''' Set the default size for an image to be displayed in bytes'''
-        self.default_downsampled_size = int(value) 
+        self.default_downsampled_size = int(value)
 
     def getDefaultDownsampledSize(self):
         ''' Get the default size for an image to be displayed in bytes'''
@@ -386,7 +385,7 @@ class ViewerCoordsDockWidget(FormDockWidget):
         super(ViewerCoordsDockWidget, self).__init__(parent)
 
         form = self.widget()
-        
+
         viewer_coords_widgets = {}
 
         self.viewers = []
@@ -396,8 +395,7 @@ class ViewerCoordsDockWidget(FormDockWidget):
 
         viewer_coords_widgets['image_combobox'] = QComboBox()
         viewer_coords_widgets['image_combobox'].setEnabled(False)
-        form.addWidget(viewer_coords_widgets['image_combobox'],
-                       viewer_coords_widgets['image'], 'image')
+        form.addWidget(viewer_coords_widgets['image_combobox'], viewer_coords_widgets['image'], 'image')
 
         viewer_coords_widgets['coords_info'] = QLabel()
         viewer_coords_widgets['coords_info'].setText(
@@ -406,13 +404,10 @@ class ViewerCoordsDockWidget(FormDockWidget):
 
         form.addSpanningWidget(viewer_coords_widgets['coords_info'], 'coords_info')
 
-        form.addWidget(QLabel(""),
-                       QLabel("Loaded Image Size: "),
-                       'loaded_image_dims')
+        form.addWidget(QLabel(""), QLabel("Loaded Image Size: "), 'loaded_image_dims')
 
         viewer_coords_widgets['displayed_image_dims_label'] = QLabel()
-        viewer_coords_widgets['displayed_image_dims_label'].setText(
-            "Displayed Image Size: ")
+        viewer_coords_widgets['displayed_image_dims_label'].setText("Displayed Image Size: ")
         viewer_coords_widgets['displayed_image_dims_label'].setVisible(False)
 
         viewer_coords_widgets['displayed_image_dims_field'] = QLabel()
@@ -420,27 +415,22 @@ class ViewerCoordsDockWidget(FormDockWidget):
         viewer_coords_widgets['displayed_image_dims_field'].setVisible(False)
 
         form.addWidget(viewer_coords_widgets['displayed_image_dims_field'],
-                       viewer_coords_widgets['displayed_image_dims_label'],
-                       'displayed_image_dims')
+                       viewer_coords_widgets['displayed_image_dims_label'], 'displayed_image_dims')
 
         viewer_coords_widgets['coords'] = QLabel()
         viewer_coords_widgets['coords'].setText("Display viewer coordinates in: ")
 
         viewer_coords_widgets['coords_combo'] = QComboBox()
-        viewer_coords_widgets['coords_combo'].addItems(
-            ["Loaded Image", "Downsampled Image"])
+        viewer_coords_widgets['coords_combo'].addItems(["Loaded Image", "Downsampled Image"])
         viewer_coords_widgets['coords_combo'].setEnabled(False)
-        form.addWidget(viewer_coords_widgets['coords_combo'],
-                       viewer_coords_widgets['coords'], 'coords_combo')
+        form.addWidget(viewer_coords_widgets['coords_combo'], viewer_coords_widgets['coords'], 'coords_combo')
 
         viewer_coords_widgets['coords_warning'] = QLabel()
-        viewer_coords_widgets['coords_warning'].setText(
-            "Warning: These coordinates are approximate.")
+        viewer_coords_widgets['coords_warning'].setText("Warning: These coordinates are approximate.")
         viewer_coords_widgets['coords_warning'].setVisible(False)
 
-        form.addSpanningWidget(
-            viewer_coords_widgets['coords_warning'], 'coords_warning')
-        
+        form.addSpanningWidget(viewer_coords_widgets['coords_warning'], 'coords_warning')
+
     def setViewers(self, viewers):
         ''' Set the viewers which this dock widget will display information for.
         
@@ -449,6 +439,7 @@ class ViewerCoordsDockWidget(FormDockWidget):
         viewers : list of CILViewer2D and/or CILViewer3D
             The viewers which this dock widget will display information for.'''
         self.viewers = viewers
+
 
 class ViewerSettingsDialog(AppSettingsDialog):
     ''' This is a dialog window which allows the user to set:
@@ -460,8 +451,7 @@ class ViewerSettingsDialog(AppSettingsDialog):
     def __init__(self, parent):
         super(ViewerSettingsDialog, self).__init__(parent)
 
-        copy_files_checkbox = QCheckBox(
-            "Allow a copy of the image files to be stored. ")
+        copy_files_checkbox = QCheckBox("Allow a copy of the image files to be stored. ")
 
         self.addSpanningWidget(copy_files_checkbox, 'copy_files_checkbox')
 
@@ -478,12 +468,12 @@ class ViewerSettingsDialog(AppSettingsDialog):
         self.formWidget.addTitle(QLabel("Advanced Settings"), 'adv_settings_title')
 
         gpu_checkbox = QCheckBox("Use GPU for volume render. (Recommended) ")
-        
+
         self.addSpanningWidget(gpu_checkbox, 'gpu_checkbox')
 
 
-
 class RawInputDialog(FormDialog):
+
     def __init__(self, parent, fname):
         super(RawInputDialog, self).__init__(parent, fname)
         title = "Config for " + os.path.basename(fname)
@@ -495,8 +485,7 @@ class RawInputDialog(FormDialog):
         dimensionalityValue = QComboBox()
         dimensionalityValue.addItems(["3D", "2D"])
         dimensionalityValue.setCurrentIndex(0)
-        fw.addWidget(dimensionalityValue,
-                     dimensionalityLabel, "dimensionality")
+        fw.addWidget(dimensionalityValue, dimensionalityLabel, "dimensionality")
 
         validator = QtGui.QIntValidator()
 
@@ -510,8 +499,7 @@ class RawInputDialog(FormDialog):
 
         dimensionalityValue.currentIndexChanged.connect(
             lambda: fw.widgets['dim_Z_field'].setEnabled(True)
-            if fw.widgets['dimensionality_field'].currentIndex() == 0 else
-            fw.widgets['dim_Z_field'].setEnabled(False))
+            if fw.widgets['dimensionality_field'].currentIndex() == 0 else fw.widgets['dim_Z_field'].setEnabled(False))
 
         # Data Type
         dtypeLabel = QLabel("Data Type")
@@ -553,6 +541,7 @@ class RawInputDialog(FormDialog):
 
         return raw_attrs
 
+
 class HDF5InputDialog(FormDialog):
     '''
     This is a dialog window which allows the user to set:
@@ -562,6 +551,7 @@ class HDF5InputDialog(FormDialog):
     For selecting the dataset name, this dialog uses a table widget to display the
     contents of the HDF5 file.
     '''
+
     def __init__(self, parent, fname):
         super(HDF5InputDialog, self).__init__(parent, fname)
         title = "Config for " + os.path.basename(fname)
@@ -656,7 +646,6 @@ class HDF5InputDialog(FormDialog):
                 error_dialog = ErrorDialog(self, "Error", "Not a dataset: " + dataset_name)
                 error_dialog.open()
                 return
-        
 
     def getHDF5Attributes(self):
         '''
@@ -671,31 +660,31 @@ class HDF5InputDialog(FormDialog):
         hdf5_attrs['resample_z'] = bool(widgets['resample_z_field'].currentIndex())
 
         return hdf5_attrs
-    
+
     def createTableWidget(self):
         '''
         Create a table widget to display the contents of the HDF5 file.
         '''
         tableWidget = QtWidgets.QTableWidget()
         tableWidget.itemDoubleClicked.connect(self.fillLineEditWithDoubleClickedTableItem)
-        tableWidget.setColumnWidth(1,40)
+        tableWidget.setColumnWidth(1, 40)
         header = tableWidget.horizontalHeader()
         header.setSectionResizeMode(QtWidgets.QHeaderView.Stretch)
         return tableWidget
-    
+
     def createLineEditForDatasetName(self):
         '''
         Create a line edit for the user to enter the dataset name.
-        '''        
+        '''
         pb = QtWidgets.QPushButton()
         pb.setText("Browse for Dataset...")
         pb.clicked.connect(lambda: self.descendHDF5AndFillTable())
-        
+
         up = QtWidgets.QPushButton()
         up.setIcon(QtWidgets.QApplication.style().standardPixmap((QtWidgets.QStyle.SP_ArrowUp)))
         up.clicked.connect(lambda: self.goToParentGroup())
-        up.setFixedSize(QtCore.QSize(30,30))
-        
+        up.setFixedSize(QtCore.QSize(30, 30))
+
         le = QtWidgets.QLineEdit(self)
         le.returnPressed.connect(lambda: self.descendHDF5AndFillTable())
         le.setClearButtonEnabled(True)
@@ -703,15 +692,14 @@ class HDF5InputDialog(FormDialog):
         hl = QtWidgets.QHBoxLayout()
         hl.addWidget(up)
         hl.addWidget(le)
-        
+
         return hl, up, le, pb
-    
+
     def datasetLineEditChanged(self, text):
         '''
         This method is called when the text in the line edit is changed.
         '''
         self.widgets['dataset_name_field'].setText(text)
-
 
     def fillLineEditWithDoubleClickedTableItem(self, item):
         '''
@@ -732,7 +720,7 @@ class HDF5InputDialog(FormDialog):
                 f[current_group]
             except KeyError:
                 current_group = self.current_group
-            
+
             new_path = current_group + "/" + fsitem.text()
 
             if new_group in f[current_group]:
@@ -740,8 +728,9 @@ class HDF5InputDialog(FormDialog):
                 self.current_group = new_path
                 self.descendHDF5AndFillTable()
             else:
-                error_dialog = ErrorDialog(self, "Error", 
-                                "The selected item could not be opened.", "f{new_path} either does not exist, or is not a group or dataset, so can't be opened.")
+                error_dialog = ErrorDialog(
+                    self, "Error", "The selected item could not be opened.",
+                    "f{new_path} either does not exist, or is not a group or dataset, so can't be opened.")
                 error_dialog.open()
 
     def descendHDF5AndFillTable(self):
@@ -761,7 +750,7 @@ class HDF5InputDialog(FormDialog):
                 error_dialog.open()
                 QtGui.QGuiApplication.restoreOverrideCursor()
                 return
-                
+
             list_of_items = []
 
             if type(obj) in [h5py._hl.group.Group, h5py._hl.files.File]:
@@ -786,13 +775,13 @@ class HDF5InputDialog(FormDialog):
         for i, v in enumerate(data):
             for j, w in enumerate(v):
                 item = QtWidgets.QTableWidgetItem(str(w))
-                item.setFlags(QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled);
+                item.setFlags(QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
                 if j == 1:
                     item.setToolTip(str(w))
                 self.tableWidget.setItem(i, j, item)
-                
+
         self.tableWidget.setHorizontalHeaderLabels(['Name', 'Contents'])
-        
+
         self.tableWidget.sortItems(1, order=QtCore.Qt.AscendingOrder)
         self.tableWidget.resizeColumnsToContents()
 
@@ -802,7 +791,7 @@ class HDF5InputDialog(FormDialog):
         It will go to the parent group of the current group.
         '''
         le = self.line_edit
-        parent_group  = self.getCurrentParentGroup()
+        parent_group = self.getCurrentParentGroup()
         le.setText(str(parent_group))
         self.current_group = parent_group
         self.descendHDF5AndFillTable()
@@ -812,7 +801,7 @@ class HDF5InputDialog(FormDialog):
         This method returns the current group.
         '''
         return self.current_group
-    
+
     def getCurrentParentGroup(self):
         '''
         This method returns the parent group of the current group.
@@ -823,8 +812,9 @@ class HDF5InputDialog(FormDialog):
             parent_group = current_group[:-len(item_to_remove)]
         else:
             parent_group = current_group
-        
+
         return parent_group
+
 
 # For running example window -----------------------------------------------------------
 

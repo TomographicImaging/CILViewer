@@ -35,16 +35,10 @@ from eqt.ui.UIStackedWidget import StackedWidgetFactory
 from PySide2 import QtCore, QtWidgets
 from PySide2.QtCore import QRegExp, QSettings, Qt, QThreadPool
 from PySide2.QtGui import QCloseEvent, QKeySequence, QRegExpValidator
-from PySide2.QtWidgets import (QAction, QCheckBox, QComboBox, QDockWidget,
-                               QFileDialog, QLabel, QLineEdit, QMainWindow,
-                               QMenu, QMessageBox, QProgressDialog,
-                               QPushButton, QSpinBox, QStackedWidget,
-                               QTabWidget)
+from PySide2.QtWidgets import (QAction, QCheckBox, QComboBox, QDockWidget, QFileDialog, QLabel, QLineEdit, QMainWindow,
+                               QMenu, QMessageBox, QProgressDialog, QPushButton, QSpinBox, QStackedWidget, QTabWidget)
 
 #from ccpi.viewer.utils.io import ImageDataCreator
-
-
-
 
 # TODO next - get progress from Worker
 
@@ -52,9 +46,16 @@ from PySide2.QtWidgets import (QAction, QCheckBox, QComboBox, QDockWidget,
 # but we will scrap io!
 # instead look at how to get the resample rate of downsampled images
 
+
 class TwoViewersMainWindow(ViewerMainWindow):
-    def __init__(self, title = "StandaloneViewer", app_name = "Standalone Viewer", settings_name=None,
-                 organisation_name=None, viewer1=viewer2D, viewer2=viewer3D):
+
+    def __init__(self,
+                 title="StandaloneViewer",
+                 app_name="Standalone Viewer",
+                 settings_name=None,
+                 organisation_name=None,
+                 viewer1=viewer2D,
+                 viewer2=viewer3D):
         ViewerMainWindow.__init__(self, title, app_name, settings_name, organisation_name)
 
         if viewer1 == viewer2D:
@@ -71,11 +72,15 @@ class TwoViewersMainWindow(ViewerMainWindow):
             interactor_style2 = vlink.Linked3DInteractorStyle
             dock2_title = "3D View"
 
-        dock1 = QCILDockableWidget(viewer=viewer1, shape=(600,600),
-              interactorStyle=interactor_style1, title=dock1_title)
-        
-        dock2 = QCILDockableWidget(viewer=viewer2, shape=(600,600),
-              interactorStyle=interactor_style2, title=dock2_title)
+        dock1 = QCILDockableWidget(viewer=viewer1,
+                                   shape=(600, 600),
+                                   interactorStyle=interactor_style1,
+                                   title=dock1_title)
+
+        dock2 = QCILDockableWidget(viewer=viewer2,
+                                   shape=(600, 600),
+                                   interactorStyle=interactor_style2,
+                                   title=dock2_title)
 
         self.frame1 = dock1.frame
         self.frame2 = dock2.frame
@@ -85,18 +90,17 @@ class TwoViewersMainWindow(ViewerMainWindow):
         self.viewers = [self.viewer1, self.viewer2]
 
         self.viewer_coords_dock.setViewers(self.viewers)
-                
+
         # Initially link viewers
         self.linkedViewersSetUp()
         self.linker.enable()
-        
+
         cw = QMainWindow()
         cw.addDockWidget(Qt.LeftDockWidgetArea, dock1)
         cw.addDockWidget(Qt.RightDockWidgetArea, dock2)
         self.setCentralWidget(cw)
         self.central_widget = cw
 
-    
     def linkedViewersSetUp(self):
         v1 = self.frame1.viewer
         v2 = self.frame2.viewer
@@ -104,7 +108,7 @@ class TwoViewersMainWindow(ViewerMainWindow):
         self.linker.setLinkPan(True)
         self.linker.setLinkZoom(True)
         self.linker.setLinkWindowLevel(True)
-        self.linker.setLinkSlice(True)    
+        self.linker.setLinkSlice(True)
 
     def setAppSettingsDialogWidgets(self, dialog):
         '''Override the method to remove Copy Files checkbox from the dialog'''
@@ -130,14 +134,18 @@ class TwoViewersMainWindow(ViewerMainWindow):
         overlay_checkbox.setVisible(False)
 
 
-
 class StandaloneViewerMainWindow(TwoViewersMainWindow):
-    def __init__(self, title = "StandaloneViewer", app_name = "Standalone Viewer", settings_name=None,
-                 organisation_name=None, viewer1=viewer2D, viewer2=viewer3D):
+
+    def __init__(self,
+                 title="StandaloneViewer",
+                 app_name="Standalone Viewer",
+                 settings_name=None,
+                 organisation_name=None,
+                 viewer1=viewer2D,
+                 viewer2=viewer3D):
         TwoViewersMainWindow.__init__(self, title, app_name, settings_name, organisation_name)
 
         self.image_overlay = vtk.vtkImageData()
-
 
     def addToMenu(self):
         '''
@@ -145,12 +153,12 @@ class StandaloneViewerMainWindow(TwoViewersMainWindow):
         '''
         file_menu = self.menus['File']
 
-        # Find the Save session actions and remove them from the menu      
+        # Find the Save session actions and remove them from the menu
         for action in file_menu.actions():
             action_name = action.text()
             if action_name == 'Save' or action_name == 'Save + Exit':
                 file_menu.removeAction(action)
-            
+
         # insert image selection as first action in file menu:
 
         image2_action = QAction("Select Image Overlay", self)
@@ -196,18 +204,19 @@ class StandaloneViewerMainWindow(TwoViewersMainWindow):
                     self.image_overlay = viewer.image2
                     viewer.setInputData2(vtk.vtkImageData())
 
-        
+
 class standalone_viewer(object):
     '''a Qt interactive viewer where the user can set 1 or 2 input datasets'''
-    def __init__(self, title= "", viewer1_type='2D', viewer2_type = '3D', *args, **kwargs):
+
+    def __init__(self, title="", viewer1_type='2D', viewer2_type='3D', *args, **kwargs):
         '''Creator'''
         app = QtWidgets.QApplication(sys.argv)
         self.app = app
-        
+
         self.set_up(title, viewer1_type, viewer2_type, *args, **kwargs)
         self.show()
 
-    def set_up(self, title, viewer1_type, viewer2_type = None, *args, **kwargs):
+    def set_up(self, title, viewer1_type, viewer2_type=None, *args, **kwargs):
         '''
         viewer1_type: '2D' or '3D'
         viewer2_type: '2D', '3D' or None - if None, only one viewer is displayed
@@ -235,19 +244,18 @@ class standalone_viewer(object):
         if self.has_run is None:
             self.has_run = self.app.exec_()
         else:
-            print ('No instance can be run interactively again. Delete and re-instantiate.')
+            print('No instance can be run interactively again. Delete and re-instantiate.')
 
     def __del__(self):
         '''destructor'''
         self.app.exit()
+
 
 if __name__ == "__main__":
 
     err = vtk.vtkFileOutputWindow()
     err.SetFileName("../viewer.log")
     vtk.vtkOutputWindow.SetInstance(err)
-    
+
     #iviewer(reader.GetOutput(), viewer='3D')
     standalone_viewer("Test Standalone Viewer", viewer1_type='2D', viewer2_type='3D')
-
-
