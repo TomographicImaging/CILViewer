@@ -382,3 +382,13 @@ class CILViewerBase():
             widget.Off()
             del widget
             self.widgets.pop(name)
+
+    def setVisualisationDownsampling(self, value):
+        self.visualisation_downsampling = value
+        if value != [1, 1, 1]:
+            self.image_is_downsampled = True
+        else:
+            self.image_is_downsampled = False
+
+    def getVisualisationDownsampling(self):
+        return self.visualisation_downsampling

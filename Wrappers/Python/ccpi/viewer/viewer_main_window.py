@@ -16,13 +16,23 @@ import numpy as np
 import qdarkstyle
 import vtk
 from ccpi.viewer import viewer2D, viewer3D
+from ccpi.viewer.CILViewer import CILViewer
+from ccpi.viewer.CILViewer2D import CILViewer2D
 from ccpi.viewer.iviewer import SingleViewerCenterWidget
 from ccpi.viewer.QCILViewerWidget import QCILDockableWidget, QCILViewerWidget
+# from gui.settings_window import create_settings_window
 from ccpi.viewer.utils import Converter, cilPlaneClipper
-from ccpi.viewer.utils.conversion import Converter
+from ccpi.viewer.utils.conversion import Converter, cilNumpyMETAImageWriter
+# , QCILViewerWidget
 from ccpi.viewer.utils.hdf5_io import HDF5Reader
+from ccpi.viewer.utils.io import ImageReader
+from eqt.threading import Worker
 from eqt.ui import FormDialog
-from eqt.ui.UIFormWidget import FormDockWidget
+from eqt.ui.SessionDialogs import AppSettingsDialog, ErrorDialog
+from eqt.ui.SessionMainWindow import SessionMainWindow
+from eqt.ui.UIFormWidget import FormDockWidget, UIFormFactory
+from eqt.ui.UIStackedWidget import StackedWidgetFactory
+# from eqt.ui.UIFormWidget import UIFormFactory
 from PySide2 import QtCore, QtGui, QtWidgets
 from PySide2.QtCore import QRegExp, QSettings, Qt, QThreadPool
 from PySide2.QtGui import QCloseEvent, QKeySequence, QRegExpValidator
@@ -33,17 +43,6 @@ from PySide2.QtWidgets import (QAction, QApplication, QCheckBox, QComboBox,
                                QProgressDialog, QPushButton, QSpinBox,
                                QStackedWidget, QTabWidget)
 
-from eqt.ui.SessionMainWindow import SessionMainWindow
-from eqt.ui.SessionDialogs import AppSettingsDialog, ErrorDialog
-
-from ccpi.viewer.utils.hdf5_utils import HDF5_utilities
-
-
-
-#from ccpi.viewer.standalone_viewer import TwoLinkedViewersCenterWidget, SingleViewerCenterWidget
-
-
-# TODO: methods to create the viewers but not place them
 # TODO: auto plane clipping on viewers
 
 class ViewerMainWindow(SessionMainWindow):
@@ -52,7 +51,10 @@ class ViewerMainWindow(SessionMainWindow):
     Note: does not create a viewer as we don't know whether the user would like it to exist in a
     dockwidget or central widget
     Instead it creates a main window with many of the tools needed for a window
-    that will house a viewer. '''
+    that will house a viewer. 
+    
+    Assumes that at least one viewer is present, saved as self.viewer1
+    '''
 
     def __init__(self, title="ViewerMainWindow", app_name= None, settings_name=None,
                  organisation_name=None, viewer1_type=None, viewer2_type=None, *args, **kwargs): 
@@ -67,9 +69,8 @@ class ViewerMainWindow(SessionMainWindow):
         self.addDockWidget(QtCore.Qt.BottomDockWidgetArea,
                            self.viewer_coords_dock)
 
-        self.viewer_2D = None
-
-        print("The settings: ", self.settings, self.settings.allKeys())
+        self.viewer1 = None
+        self.viewers = []
 
 
     def createAppSettingsDialog(self):
@@ -119,20 +120,26 @@ class ViewerMainWindow(SessionMainWindow):
         
         if settings_dialog.widgets['gpu_checkbox_field'].isChecked():
             self.settings.setValue("volume_mapper", "gpu")
-            # TODO: check if this is the right way to do it:
-            self.vis_widget_3D.volume_mapper = vtk.vtkSmartVolumeMapper()
+            for viewer in self.viewers:
+                if isinstance(viewer, viewer3D):
+                    viewer.volume_mapper = vtk.vtkSmartVolumeMapper()
         else:
             self.settings.setValue("volume_mapper", "cpu")
 
-    def select_image(self, label=None):
-        ''' This selects the images and gets the user to enter
-        relevant data, but does not load them on a viewer yet.'''
+    def selectImage(self, label=None):
+        ''' This selects opens a file dialog for the user to select the image
+        and gets the user to enter relevant data, but does not load them on a viewer yet.
+        
+        Parameters
+        ----------
+        label : QLabel, optional
+            The label to display the basename of the file name on.
+        '''
         dialog = QFileDialog()
         file = dialog.getOpenFileName(self, "Select Images")[0]
         file_extension = Path(file).suffix.lower()
         self.raw_attrs = {}
         self.hdf5_attrs = {}
-        print("The file ext: ", file_extension)
         if 'tif' in file_extension:
             print('tif ', file)
             file = os.path.dirname(file)
@@ -168,33 +175,182 @@ class ViewerMainWindow(SessionMainWindow):
         '''
         dock = ViewerCoordsDockWidget(self)
         self.viewer_coords_dock = dock
-        dock.getWidgets()['coords_combo_field'].currentIndexChanged.connect(self.update_coordinates)
+        dock.getWidgets()['coords_combo_field'].currentIndexChanged.connect(lambda: self.updateViewerCoords(viewer=self.viewer1))
 
-
-    def update_coordinates(self):
+    def setViewersInput(self, viewers, input_num=1):
         '''
-        Updates the coordinate system of the viewer, and the displayed image
-        dimensions.'''
-        viewer_coords_widgets = self.viewer_coords_dock.widgets()
-        viewer = self.viewer_2D
-        if viewer.img3D is not None:
-            viewer.setVisualisationDownsampling(self.getTargetImageSize())
-            shown_resample_rate = self.getTargetImageSize()
-            viewer_coords_widgets['loaded_image_dims_label'].setVisible(True)
-            viewer_coords_widgets['loaded_image_dims_value'].setVisible(True)
+        Opens a file dialog to select an image file and then displays it in the viewer.
 
-            if viewer_coords_widgets['coords_combobox'].currentIndex() == 0:
-                viewer.setDisplayUnsampledCoordinates(True)
-                if shown_resample_rate != [1, 1, 1]:
-                    viewer_coords_widgets['coords_warning_label'].setVisible(True)
+        Parameters
+        ----------
+        viewer: CILViewer2D or CILViewer, or list of CILViewer2D or CILViewer
+            The viewer(s) to display the image in.
+        input_num : int
+            The input number to the viewer. 1 or 2. Only used if the viewer is
+            a 2D viewer. 1 is the default image and 2 is the overlay image.
+        '''
+        image_file, raw_image_attrs, hdf5_image_attrs = self.selectImage()
+
+        dataset_name =  hdf5_image_attrs.get('dataset_name')
+        resample_z = hdf5_image_attrs.get('resample_z')
+        print("The image attrs: ", raw_image_attrs)
+        target_size = self.getTargetImageSize()
+        image_reader = ImageReader(file_name=image_file, target_size=target_size,
+                                   raw_image_attrs=raw_image_attrs,
+                                   hdf5_dataset_name=dataset_name,
+                                   resample_z=resample_z)
+        image_reader_worker = Worker(image_reader.Read)
+        self.threadpool.start(image_reader_worker)
+        image_reader_worker.signals.result.connect(partial(self.displayImage, viewers, input_num, image_reader, image_file))
+
+    def displayImage(self, viewers, input_num, reader,  image_file, image):
+        '''
+        Displays an image on the viewer/s.
+
+        Parameters
+        ----------
+        viewer: CILViewer2D or CILViewer, or list of CILViewer2D or CILViewer
+            The viewer(s) to display the image on.
+        input_num : int
+            The input number to the viewer. 1 or 2. Only used if the viewer is
+            a 2D viewer. 1 is the default image and 2 is the overlay image.
+        reader: ImageReader
+            The reader used to read the image. This contains some extra info about the
+            original image file.
+        image: vtkImageData
+            The image to display.
+        image_file: str
+            The image file name.
+        '''
+        if image is None:
+            return
+        if not isinstance(viewers, list):
+            viewers = [viewers]
+        for viewer in viewers:
+            if input_num == 1:
+                viewer.setInputData(image)
+                if viewer == self.viewer1:
+                    self.updateViewerCoordsDockWidgetWithCoords(reader)
+            elif input_num == 2:
+                if isinstance(viewer, CILViewer2D):
+                    viewer.setInputData2(image)
+        self.updateGUIForNewImage(reader, viewer, image_file)
+
+
+    def updateGUIForNewImage(self, reader=None, viewer=None, image_file=None):
+        '''
+        Updates the GUI for a new image:
+        - Updates the viewer coordinates dock widget with the displayed image dimensions
+            and the loaded image dimensions (if a reader is provided)
+        - Updates the viewer coordinates dock widget with the image file name
+        In subclass, may want to add more functionality.
+        '''
+        self.updateViewerCoordsDockWidgetWithCoords(reader)
+        self.updateViewerCoordsDockWidgetWithImageFileName(image_file)
+
+    def updateViewerCoordsDockWidgetWithImageFileName(self, image_file=None):
+        '''
+        Updates the viewer coordinates dock widget with the image file name.
+
+        Parameters
+        ----------
+        image_file: str
+            The image file name.
+        '''
+        if image_file is None:
+            return
+
+        widgets = self.viewer_coords_dock.getWidgets()
+        widgets['image_field'].clear()
+        widgets['image_field'].addItem(image_file)
+        widgets['image_field'].setCurrentIndex(0)
+
+
+    def updateViewerCoordsDockWidgetWithCoords(self, reader=None):
+
+        '''
+        Updates the viewer coordinates dock widget with the displayed image dimensions
+        and the loaded image dimensions (if a reader is provided)
+        
+        Parameters
+        ----------
+        reader: ImageReader
+            The reader used to read the image. This contains some extra info about the
+            original image file.
+        '''
+        
+        viewer = self.viewer_coords_dock.viewers[0]
+
+        if not isinstance(viewer, (viewer2D, viewer3D)):
+            return
+
+        image = viewer.img3D
+
+        if image is None:
+            return
+        
+
+        widgets = self.viewer_coords_dock.getWidgets()
+
+        # Update the coordinates: ------------------------------
+
+        displayed_image_dims = str(list(image.GetDimensions()))
+        
+        widgets['coords_combo_field'].setCurrentIndex(0)
+
+        widgets['loaded_image_dims_field'].setVisible(True)
+        widgets['loaded_image_dims_label'].setVisible(True)
+
+        if reader is None:
+            # If reader is None, then we have no info about the original 
+            # image file, or whether it was resampled.
+            resampled = False
+        else:
+            loaded_image_attrs = reader.GetLoadedImageAttrs()
+            resampled = loaded_image_attrs.get('resampled')
+
+        widgets['coords_warning_field'].setVisible(resampled)
+        widgets['coords_info_field'].setVisible(resampled)
+        widgets['coords_combo_field'].setEnabled(resampled)
+        widgets['displayed_image_dims_field'].setVisible(resampled)
+        widgets['displayed_image_dims_label'].setVisible(resampled)
+
+        if not resampled:
+            widgets['loaded_image_dims_field'].setText(displayed_image_dims)
+        else:
+            original_image_attrs = reader.GetOriginalImageAttrs()
+            original_image_dims = str(list(original_image_attrs.get('shape')))
+            spacing = image.GetSpacing()
+            for _viewer in self.viewer_coords_dock.viewers:
+                _viewer.setVisualisationDownsampling(spacing)
+
+            widgets['loaded_image_dims_field'].setText(original_image_dims)
+            widgets['displayed_image_dims_field'].setText(displayed_image_dims)
+
+
+    def updateViewerCoords(self):
+        '''
+        Updates the coordinate system of the viewer/s associated with the 
+        ViewerCoordinatesDockWidget and the displayed image
+        dimensions, for the image on that viewer.
+
+        '''
+        viewer_coords_widgets = self.viewer_coords_dock.getWidgets()
+        viewer = viewer_coords_widgets.viewers[0]
+        shown_resample_rate = viewer.getVisualisationDownsampling()
+        for viewer in viewer_coords_widgets.viewers:
+            if viewer.img3D is not None:
+                if viewer_coords_widgets['coords_combo_field'].currentIndex() == 0:
+                    viewer.setDisplayUnsampledCoordinates(True)
+                    if shown_resample_rate != [1, 1, 1]:
+                        viewer_coords_widgets['coords_warning_field'].setVisible(True)
+                    else:
+                        viewer_coords_widgets['coords_warning_field'].setVisible(False)
                 else:
-                    viewer_coords_widgets['coords_warning_label'].setVisible(False)
+                    viewer.setDisplayUnsampledCoordinates(False)
+                    viewer_coords_widgets['coords_warning_field'].setVisible(False)
 
-            else:
-                viewer.setDisplayUnsampledCoordinates(False)
-                viewer_coords_widgets['coords_warning_label'].setVisible(False)
-
-            viewer.updatePipeline()
+                viewer.updatePipeline()
 
     def getTargetImageSize(self):
         ''' Get the target size for an image to be displayed in bytes.'''
@@ -219,8 +375,6 @@ class ViewerCoordsDockWidget(FormDockWidget):
     size and the user can select whether coordinates
     are displayed in system of original or downsampled image'''
 
-    # TODO: adding dropdown for file name displayed
-
     def __init__(self, parent):
         super(ViewerCoordsDockWidget, self).__init__(parent)
 
@@ -228,31 +382,25 @@ class ViewerCoordsDockWidget(FormDockWidget):
         
         viewer_coords_widgets = {}
 
-        viewer_coords_widgets['image_label'] = QLabel()
-        viewer_coords_widgets['image_label'].setText("Display image: ")
+        self.viewers = []
+
+        viewer_coords_widgets['image'] = QLabel()
+        viewer_coords_widgets['image'].setText("Display image: ")
 
         viewer_coords_widgets['image_combobox'] = QComboBox()
         viewer_coords_widgets['image_combobox'].setEnabled(False)
         form.addWidget(viewer_coords_widgets['image_combobox'],
-                       viewer_coords_widgets['image_label'], 'image')
+                       viewer_coords_widgets['image'], 'image')
 
-        viewer_coords_widgets['coords_info_label'] = QLabel()
-        viewer_coords_widgets['coords_info_label'].setText(
+        viewer_coords_widgets['coords_info'] = QLabel()
+        viewer_coords_widgets['coords_info'].setText(
             "The viewer displays a downsampled image for visualisation purposes: ")
-        viewer_coords_widgets['coords_info_label'].setVisible(False)
+        viewer_coords_widgets['coords_info'].setVisible(False)
 
-        form.addSpanningWidget(viewer_coords_widgets['coords_info_label'], 'coords_info')
+        form.addSpanningWidget(viewer_coords_widgets['coords_info'], 'coords_info')
 
-        viewer_coords_widgets['loaded_image_dims_label'] = QLabel()
-        viewer_coords_widgets['loaded_image_dims_label'].setText("Loaded Image Size: ")
-        viewer_coords_widgets['loaded_image_dims_label'].setVisible(True)
-
-        viewer_coords_widgets['loaded_image_dims_value'] = QLabel()
-        viewer_coords_widgets['loaded_image_dims_value'].setText("")
-        viewer_coords_widgets['loaded_image_dims_value'].setVisible(False)
-
-        form.addWidget(viewer_coords_widgets['loaded_image_dims_value'],
-                       viewer_coords_widgets['loaded_image_dims_label'],
+        form.addWidget(QLabel(""),
+                       QLabel("Loaded Image Size: "),
                        'loaded_image_dims')
 
         viewer_coords_widgets['displayed_image_dims_label'] = QLabel()
@@ -260,31 +408,40 @@ class ViewerCoordsDockWidget(FormDockWidget):
             "Displayed Image Size: ")
         viewer_coords_widgets['displayed_image_dims_label'].setVisible(False)
 
-        viewer_coords_widgets['displayed_image_dims_value'] = QLabel()
-        viewer_coords_widgets['displayed_image_dims_value'].setText("")
-        viewer_coords_widgets['displayed_image_dims_value'].setVisible(False)
+        viewer_coords_widgets['displayed_image_dims_field'] = QLabel()
+        viewer_coords_widgets['displayed_image_dims_field'].setText("")
+        viewer_coords_widgets['displayed_image_dims_field'].setVisible(False)
 
-        form.addWidget(viewer_coords_widgets['displayed_image_dims_value'],
+        form.addWidget(viewer_coords_widgets['displayed_image_dims_field'],
                        viewer_coords_widgets['displayed_image_dims_label'],
                        'displayed_image_dims')
 
-        viewer_coords_widgets['coords_label'] = QLabel()
-        viewer_coords_widgets['coords_label'].setText("Display viewer coordinates in: ")
+        viewer_coords_widgets['coords'] = QLabel()
+        viewer_coords_widgets['coords'].setText("Display viewer coordinates in: ")
 
-        viewer_coords_widgets['coords_combobox'] = QComboBox()
-        viewer_coords_widgets['coords_combobox'].addItems(
+        viewer_coords_widgets['coords_combo'] = QComboBox()
+        viewer_coords_widgets['coords_combo'].addItems(
             ["Loaded Image", "Downsampled Image"])
-        viewer_coords_widgets['coords_combobox'].setEnabled(False)
-        form.addWidget(viewer_coords_widgets['coords_combobox'],
-                       viewer_coords_widgets['coords_label'], 'coords_combo')
+        viewer_coords_widgets['coords_combo'].setEnabled(False)
+        form.addWidget(viewer_coords_widgets['coords_combo'],
+                       viewer_coords_widgets['coords'], 'coords_combo')
 
-        viewer_coords_widgets['coords_warning_label'] = QLabel()
-        viewer_coords_widgets['coords_warning_label'].setText(
+        viewer_coords_widgets['coords_warning'] = QLabel()
+        viewer_coords_widgets['coords_warning'].setText(
             "Warning: These coordinates are approximate.")
-        viewer_coords_widgets['coords_warning_label'].setVisible(False)
+        viewer_coords_widgets['coords_warning'].setVisible(False)
 
         form.addSpanningWidget(
-            viewer_coords_widgets['coords_warning_label'], 'coords_warning')
+            viewer_coords_widgets['coords_warning'], 'coords_warning')
+        
+    def setViewers(self, viewers):
+        ''' Set the viewers which this dock widget will display information for.
+        
+        Parameters
+        ----------
+        viewers : list of CILViewer2D and/or CILViewer3D
+            The viewers which this dock widget will display information for.'''
+        self.viewers = viewers
 
 class ViewerSettingsDialog(AppSettingsDialog):
     ''' This is a dialog window which allows the user to set:
@@ -301,13 +458,13 @@ class ViewerSettingsDialog(AppSettingsDialog):
 
         self.addSpanningWidget(copy_files_checkbox, 'copy_files_checkbox')
 
-        vis_size_label = QLabel("Maximum downsampled image size (GB): ")
+        vis_size = QLabel("Maximum downsampled image size (GB): ")
         vis_size_entry = QDoubleSpinBox()
         vis_size_entry.setMaximum(64.0)
         vis_size_entry.setMinimum(0.01)
         vis_size_entry.setSingleStep(0.01)
 
-        self.addWidget(vis_size_entry, vis_size_label, 'vis_size')
+        self.addWidget(vis_size_entry, vis_size, 'vis_size')
 
         self.formWidget.addSeparator('adv_separator')
 
@@ -382,7 +539,7 @@ class RawInputDialog(FormDialog):
         if dimensionality == 3:
             dims.append(int(widgets['dim_Z_field'].text()))
 
-        raw_attrs['dimensions'] = dims
+        raw_attrs['shape'] = dims
         raw_attrs['is_fortran'] = not bool(widgets['is_fortran_field'].currentIndex())
         raw_attrs['is_big_endian'] = not bool(widgets['endianness_field'].currentIndex())
         raw_attrs['typecode'] = widgets['dtype_field'].currentText()

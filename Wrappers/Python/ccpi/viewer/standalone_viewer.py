@@ -1,15 +1,7 @@
-import sys
-import vtk
-from PySide2 import QtCore, QtWidgets
-from ccpi.viewer import viewer2D, viewer3D
-from ccpi.viewer.QCILViewerWidget import QCILViewerWidget
-import ccpi.viewer.viewerLinker as vlink
-from ccpi.viewer.utils.conversion import Converter
-import numpy as np
-
 import json
 import os
 import shutil
+import sys
 import tempfile
 import time
 import zipfile
@@ -20,22 +12,27 @@ from pathlib import Path
 # Import linking class to join 2D and 3D viewers
 import ccpi.viewer.viewerLinker as vlink
 import h5py
+import numpy as np
 import qdarkstyle
 import vtk
 from ccpi.viewer import viewer2D, viewer3D
 from ccpi.viewer.CILViewer2D import CILViewer2D
+from ccpi.viewer.CILViewer import CILViewer
 from ccpi.viewer.iviewer import SingleViewerCenterWidget
-from ccpi.viewer.QCILViewerWidget import QCILDockableWidget
+from ccpi.viewer.QCILViewerWidget import QCILDockableWidget, QCILViewerWidget
 # from gui.settings_window import create_settings_window
 from ccpi.viewer.utils import Converter, cilPlaneClipper
+from ccpi.viewer.utils.conversion import Converter, cilNumpyMETAImageWriter
 # , QCILViewerWidget
 from ccpi.viewer.utils.hdf5_io import HDF5Reader
+from ccpi.viewer.utils.io import ImageReader
+from ccpi.viewer.viewer_main_window import ViewerMainWindow
 from eqt.threading import Worker
 from eqt.ui import FormDialog
 from eqt.ui.UIFormWidget import UIFormFactory
 from eqt.ui.UIStackedWidget import StackedWidgetFactory
 # from eqt.ui.UIFormWidget import UIFormFactory
-from PySide2 import QtCore
+from PySide2 import QtCore, QtWidgets
 from PySide2.QtCore import QRegExp, QSettings, Qt, QThreadPool
 from PySide2.QtGui import QCloseEvent, QKeySequence, QRegExpValidator
 from PySide2.QtWidgets import (QAction, QCheckBox, QComboBox, QDockWidget,
@@ -44,15 +41,10 @@ from PySide2.QtWidgets import (QAction, QCheckBox, QComboBox, QDockWidget,
                                QPushButton, QSpinBox, QStackedWidget,
                                QTabWidget)
 
-from ccpi.viewer.viewer_main_window import ViewerMainWindow
-
 #from ccpi.viewer.utils.io import ImageDataCreator
 
-from ccpi.viewer.utils.io import ImageReader
 
-from eqt.threading import Worker
 
-from ccpi.viewer.utils.conversion import cilNumpyMETAImageWriter
 
 # TODO next - get progress from Worker
 
@@ -60,84 +52,50 @@ from ccpi.viewer.utils.conversion import cilNumpyMETAImageWriter
 # but we will scrap io!
 # instead look at how to get the resample rate of downsampled images
 
-class StandaloneViewerMainWindow(ViewerMainWindow):
+class TwoViewersMainWindow(ViewerMainWindow):
     def __init__(self, title = "StandaloneViewer", app_name = "Standalone Viewer", settings_name=None,
                  organisation_name=None, viewer1=viewer2D, viewer2=viewer3D):
         ViewerMainWindow.__init__(self, title, app_name, settings_name, organisation_name)
 
-        self.input_data1 = None
-        self.input_data2 = None
-
         if viewer1 == viewer2D:
             interactor_style1 = vlink.Linked2DInteractorStyle
+            dock1_title = "2D View"
         elif viewer1 == viewer3D:
             interactor_style1 = vlink.Linked3DInteractorStyle
+            dock1_title = "3D View"
 
         if viewer2 == viewer2D:
             interactor_style2 = vlink.Linked2DInteractorStyle
+            dock2_title = "2D View"
         elif viewer2 == viewer3D:
             interactor_style2 = vlink.Linked3DInteractorStyle
+            dock2_title = "3D View"
 
-        self.frame1 = QCILViewerWidget(viewer=viewer1, shape=(600,600),
-              interactorStyle=interactor_style1)
-        self.frame2 = QCILViewerWidget(viewer=viewer2, shape=(600,600),
-              interactorStyle=interactor_style2)
+        dock1 = QCILDockableWidget(viewer=viewer1, shape=(600,600),
+              interactorStyle=interactor_style1, title=dock1_title)
+        
+        dock2 = QCILDockableWidget(viewer=viewer2, shape=(600,600),
+              interactorStyle=interactor_style2, title=dock2_title)
 
-        self.viewer_2D = self.frame1.viewer
+        self.frame1 = dock1.frame
+        self.frame2 = dock2.frame
+        self.viewer1 = self.frame1.viewer
+        self.viewer2 = self.frame2.viewer
+
+        self.viewers = [self.viewer1, self.viewer2]
+
+        self.viewer_coords_dock.setViewers(self.viewers)
                 
         # Initially link viewers
         self.linkedViewersSetUp()
         self.linker.enable()
-
-        layout = QtWidgets.QBoxLayout(QtWidgets.QBoxLayout.LeftToRight)
-        layout.addWidget(self.frame1)
-        layout.addWidget(self.frame2)
         
-        cw = QtWidgets.QWidget()
-        cw.setLayout(layout)
+        cw = QMainWindow()
+        cw.addDockWidget(Qt.LeftDockWidgetArea, dock1)
+        cw.addDockWidget(Qt.RightDockWidgetArea, dock2)
         self.setCentralWidget(cw)
         self.central_widget = cw
 
-
-    def addToMenu(self):
-        '''
-        Adds actions to the menu bar for selecting the images to be displayed
-        '''
-        file_menu = self.menus['File']
-            
-        # insert image selection as first action in file menu:
-
-        image2_action = QAction("Select Image 2", self)
-        image2_action.triggered.connect(lambda: self.set_viewer_input(2))
-        file_menu.insertAction(file_menu.actions()[0], image2_action)
-
-        image1_action = QAction("Select Image 1", self)
-        image1_action.triggered.connect(lambda: self.set_viewer_input(1))
-        file_menu.insertAction(file_menu.actions()[0], image1_action)
-
-
-    def set_viewer_input(self, input_num=1):
-        image_file, raw_image_attrs, hdf5_image_attrs = self.select_image()
-
-        # TODO: check if raw attrs has resample_z
-
-        dataset_name =  hdf5_image_attrs.get('dataset_name')
-        resample_z = hdf5_image_attrs.get('resample_z')
-        print("The image attrs: ", raw_image_attrs)
-        target_size = self.getTargetImageSize()
-        print("The target size is: ", target_size)
-        image_reader = ImageReader(file_name=image_file, target_size=target_size,
-                                   raw_image_attrs=raw_image_attrs,
-                                   hdf5_dataset_name=dataset_name,
-                                   resample_z=resample_z)
-        image_reader_worker = Worker(image_reader.Read)
-        self.threadpool.start(image_reader_worker)
-        if input_num == 1:
-            image_reader_worker.signals.result.connect(self.display_image)
-        elif input_num == 2:
-            # This makes sure the result ends up as image2 not image1 when we call display_image
-            image_reader_worker.signals.result.connect(partial(self.display_image, None))
-        
     
     def linkedViewersSetUp(self):
         v1 = self.frame1.viewer
@@ -146,29 +104,95 @@ class StandaloneViewerMainWindow(ViewerMainWindow):
         self.linker.setLinkPan(True)
         self.linker.setLinkZoom(True)
         self.linker.setLinkWindowLevel(True)
-        self.linker.setLinkSlice(True)
+        self.linker.setLinkSlice(True)    
 
-    def get_downsampled_size(self):
-        # original_image_attrs
-        # TODO: here we need to get the size the image was downsampled to
-        # and original image size
-        # and feed in necessary data to viewer so that our dropdown works
-        # see what happens in idvc
+    def setAppSettingsDialogWidgets(self, dialog):
+        '''Override the method to remove Copy Files checkbox from the dialog'''
+        super().setAppSettingsDialogWidgets(dialog)
+
+        widget_to_remove = dialog.getWidget('copy_files_checkbox_field')
+        layout = dialog.formWidget.getLayout()
+        layout.removeWidget(widget_to_remove)
+        dialog.formWidget.widgets.pop('copy_files_checkbox_field')
+
+    def createViewerCoordsDockWidget(self):
+        '''
+        Creates a dock widget which contains widgets for displaying the 
+        image shown on the viewer, and the coordinate system of the viewer.
+
+        Override to add checkbox for showing and hiding the image overlay
+        '''
+        super().createViewerCoordsDockWidget()
+        overlay_checkbox = QCheckBox("Show Image Overlay")
+        overlay_checkbox.setChecked(True)
+        overlay_checkbox.setVisible(False)
+
+
+
+class StandaloneViewerMainWindow(TwoViewersMainWindow):
+    def __init__(self, title = "StandaloneViewer", app_name = "Standalone Viewer", settings_name=None,
+                 organisation_name=None, viewer1=viewer2D, viewer2=viewer3D):
+        TwoViewersMainWindow.__init__(self, title, app_name, settings_name, organisation_name)
+
+        self.image_overlay = vtk.vtkImageData()
+
+
+    def addToMenu(self):
+        '''
+        Adds actions to the menu bar for selecting the images to be displayed
+        '''
+        file_menu = self.menus['File']
+
+        # Find the Save session actions and remove them from the menu      
+        for action in file_menu.actions():
+            action_name = action.text()
+            if action_name == 'Save' or action_name == 'Save + Exit':
+                file_menu.removeAction(action)
+            
+        # insert image selection as first action in file menu:
+
+        image2_action = QAction("Select Image Overlay", self)
+        image2_action.triggered.connect(lambda: self.setViewersInput([self.viewer1], input_num=2))
+        file_menu.insertAction(file_menu.actions()[0], image2_action)
+
+        image1_action = QAction("Select Image", self)
+        image1_action.triggered.connect(lambda: self.setViewersInput([self.viewer1, self.viewer2]))
+        file_menu.insertAction(file_menu.actions()[0], image1_action)
+
+    def closeEvent(self, event):
+        '''
+        Overwrites the SessionMainWindow's closeEvent 
+        so that the application is closed when the window is closed.
+
+        This method occurs when we call self.close() or when the user clicks the X button on the window.
+        '''
         pass
 
+    def createViewerCoordsDockWidget(self):
+        '''
+        Creates a dock widget which contains widgets for displaying the 
+        image shown on the viewer, and the coordinate system of the viewer.
 
-    def display_image(self, image1=None, image2=None, **kwargs):
-        if image1 is not None:
-            self.frame1.viewer.setInputData(image1)
-            self.frame2.viewer.setInputData(image1)
-            self.input_data1 = image1
-            self.viewer_coords_dock.getWidgets()['coords_combo_field'].setEnabled(True)
-        if image2 is not None:
-            viewers = [self.frame1.viewer, self.frame2.viewer]
-            for viewer in viewers:
-                if type(viewer) == CILViewer2D:
-                    viewer.setInputData2(image2)
-            self.input_data2 = image2
+        Override to add checkbox for showing and hiding the image overlay.
+        '''
+        super().createViewerCoordsDockWidget()
+        checkbox = QCheckBox("Show Image Overlay")
+        checkbox.setChecked(True)
+        checkbox.setVisible(False)
+        self.viewer_coords_dock.widget().addSpanningWidget(checkbox, 'image_overlay')
+        checkbox.stateChanged.connect(partial(self.showHideImageOverlay, self.viewer_coords_dock.viewers))
+
+    def showHideImageOverlay(self, viewers, state):
+        '''
+        Shows or hides the image overlay on the viewers
+        '''
+        for viewer in viewers:
+            if isinstance(viewer, viewer2D):
+                if state:
+                    viewer.setInputData2(self.image_overlay)
+                else:
+                    self.image_overlay = viewer.image2
+                    viewer.setInputData2(vtk.vtkImageData())
 
         
 class standalone_viewer(object):
