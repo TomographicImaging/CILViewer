@@ -201,7 +201,14 @@ class ViewerMainWindow(SessionMainWindow):
                                    resample_z=resample_z)
         image_reader_worker = Worker(image_reader.Read)
         self.threadpool.start(image_reader_worker)
+        self.createUnknownProgressWindow("Reading Image")
         image_reader_worker.signals.result.connect(partial(self.displayImage, viewers, input_num, image_reader, image_file))
+        image_reader_worker.signals.finished.connect(self.finishProcess("Reading Image"))
+        image_reader_worker.signals.error.connect(self.process_error_dialog)
+
+    def process_error_dialog(self, error, **kwargs):
+        dialog = ErrorDialog(self, "Error", str(error[1]), str(error[2]))
+        dialog.open()
 
     def displayImage(self, viewers, input_num, reader,  image_file, image):
         '''

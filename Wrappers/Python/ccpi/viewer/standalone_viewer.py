@@ -110,7 +110,9 @@ class TwoViewersMainWindow(ViewerMainWindow):
         '''Override the method to remove Copy Files checkbox from the dialog'''
         super().setAppSettingsDialogWidgets(dialog)
 
-        widget_to_remove = dialog.getWidget('copy_files_checkbox_field')
+        widget_to_remove = dialog.getWidget('copy_files_checkbox')
+        # TODO: this getLayout() method is not implemented in the FormWidget class
+        # get the layout from the formWidget
         layout = dialog.formWidget.getLayout()
         layout.removeWidget(widget_to_remove)
         dialog.formWidget.widgets.pop('copy_files_checkbox_field')
