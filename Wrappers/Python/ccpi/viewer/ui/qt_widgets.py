@@ -1,6 +1,5 @@
-
 from eqt.ui.UIFormWidget import FormDockWidget
-from PySide2.QtWidgets import QComboBox, QLabel    
+from PySide2.QtWidgets import QComboBox, QLabel
 
 
 class ViewerCoordsDockWidget(FormDockWidget):

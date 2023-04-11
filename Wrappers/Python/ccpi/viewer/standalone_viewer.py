@@ -40,6 +40,7 @@ from PySide2.QtWidgets import (QAction, QCheckBox, QComboBox, QDockWidget, QFile
 
 from ccpi.viewer.ui.main_windows import TwoViewersMainWindow
 
+
 class StandaloneViewerMainWindow(TwoViewersMainWindow):
 
     def __init__(self,
@@ -68,7 +69,6 @@ class StandaloneViewerMainWindow(TwoViewersMainWindow):
         image1_action = QAction("Select Image", self)
         image1_action.triggered.connect(lambda: self.setViewersInput(self.viewers))
         file_menu.insertAction(file_menu.actions()[0], image1_action)
-
 
     def createViewerCoordsDockWidget(self):
         '''

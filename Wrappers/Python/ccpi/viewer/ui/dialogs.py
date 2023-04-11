@@ -3,7 +3,7 @@ import h5py
 from eqt.ui import FormDialog
 from eqt.ui.SessionDialogs import AppSettingsDialog, ErrorDialog
 from PySide2 import QtCore, QtGui, QtWidgets
-from PySide2.QtWidgets import QCheckBox, QDoubleSpinBox,  QLabel, QLineEdit, QComboBox
+from PySide2.QtWidgets import QCheckBox, QDoubleSpinBox, QLabel, QLineEdit, QComboBox
 
 
 class ViewerSettingsDialog(AppSettingsDialog):
@@ -59,12 +59,11 @@ class ViewerSessionSettingsDialog(ViewerSettingsDialog):
         self.formWidget.addSeparator('session_settings_separator')
 
         self.formWidget.addTitle(QLabel("Session Settings"), 'session_settings_title')
-        
+
         copy_files_checkbox = QCheckBox("Allow a copy of the image files to be stored. ")
 
         self.addSpanningWidget(copy_files_checkbox, 'copy_files_checkbox')
 
-        
 
 class RawInputDialog(FormDialog):
     '''
@@ -433,4 +432,3 @@ class HDF5InputDialog(FormDialog):
             parent_group = current_group
 
         return parent_group
-
