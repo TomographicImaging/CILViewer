@@ -58,7 +58,7 @@ with open(fname, "w") as f:
 setup(
     name="ccpi-viewer",
     version=version,
-    packages=["ccpi", "ccpi.viewer", "ccpi.viewer.utils", "ccpi.web_viewer", "ccpi.viewer.widgets", "ccpi.viewer.cli"],
+    packages=["ccpi", "ccpi.viewer", "ccpi.viewer.utils", "ccpi.web_viewer", "ccpi.viewer.widgets", "ccpi.viewer.cli", "ccpi.viewer.ui"],
     install_requires=requires,
     zip_safe=False,
     # metadata for upload to PyPI
