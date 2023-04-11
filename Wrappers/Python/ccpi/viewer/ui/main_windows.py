@@ -463,11 +463,13 @@ class ViewerSessionMainWindow(SessionMainWindow, ViewerMainWindow):
 
 # TODO: change to just have the viewer functionality:
 
+
 class TwoViewersWindow(QMainWindow):
 
     def __init__(self) -> None:
         super().__init__()
-        
+
+
 class TwoViewersMainWindow(ViewerMainWindow):
     ''' Creates a window containing two viewers, both in dockwidgets.
     The viewers are linked together, so that they share the same

@@ -1,7 +1,6 @@
 import unittest
 from unittest import mock
 
-
 from PySide2.QtWidgets import QMainWindow
 import os
 
@@ -29,12 +28,14 @@ if not skip_as_conda_build:
 else:
     skip_test = True
 
+
 @unittest.skipIf(skip_as_conda_build, "On conda builds do not do any test with interfaces")
 class TestViewerMainWindow(unittest.TestCase):
 
     def test_init(self):
         vmw = ViewerMainWindow(title="Testing Title", app_name="testing app name")
         assert vmw is not None
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -53,7 +53,6 @@ class ViewerSessionSettingsDialog(ViewerSettingsDialog):
 
         self._addViewerSessionSettingsWidgets()
 
-
     def _addViewerSessionSettingsWidgets(self):
 
         self.formWidget.addSeparator('session_settings_separator')
