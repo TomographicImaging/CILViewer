@@ -60,7 +60,6 @@ class ViewerMainWindow(ProgressMainWindow):
         self.default_downsampled_size = 512**3
 
         self.createViewerCoordsDockWidget()
-        # could get rid of this:
         self.addDockWidget(QtCore.Qt.BottomDockWidgetArea, self.viewer_coords_dock)
 
         self.viewers = []
@@ -633,7 +632,7 @@ class TwoViewersMainWindow(ViewerMainWindow):
 
 
 def create_main_window():
-    window = TwoViewersMainWindow("Test Viewer Main Window", 'Test Viewer Main Window')
+    window = ViewerMainWindow("Test Viewer Main Window", 'Test Viewer Main Window')
     return window
 
 

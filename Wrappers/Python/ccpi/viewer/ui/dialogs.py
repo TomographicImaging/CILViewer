@@ -15,6 +15,9 @@ class ViewerSettingsDialog(AppSettingsDialog):
     def __init__(self, parent):
         super(ViewerSettingsDialog, self).__init__(parent)
 
+        self._addViewerSettingsWidgets()
+
+    def _addViewerSettingsWidgets(self):
         self.formWidget.addSeparator('viewer_settings_separator')
 
         self.formWidget.addTitle(QLabel("Viewer Settings"), "viewer_settings_title")
@@ -47,6 +50,11 @@ class ViewerSessionSettingsDialog(ViewerSettingsDialog):
     def __init__(self, parent):
 
         super(ViewerSessionSettingsDialog, self).__init__(parent)
+
+        self._addViewerSessionSettingsWidgets()
+
+
+    def _addViewerSessionSettingsWidgets(self):
 
         self.formWidget.addSeparator('session_settings_separator')
 
