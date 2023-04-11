@@ -1,4 +1,3 @@
-
 import os
 import sys
 from functools import partial
@@ -9,9 +8,7 @@ import vtk
 from ccpi.viewer import viewer2D, viewer3D
 from ccpi.viewer.CILViewer2D import CILViewer2D
 from ccpi.viewer.QCILViewerWidget import QCILDockableWidget
-from ccpi.viewer.ui.dialogs import (HDF5InputDialog, RawInputDialog,
-                                    ViewerSessionSettingsDialog,
-                                    ViewerSettingsDialog)
+from ccpi.viewer.ui.dialogs import (HDF5InputDialog, RawInputDialog, ViewerSessionSettingsDialog, ViewerSettingsDialog)
 from ccpi.viewer.ui.qt_widgets import ViewerCoordsDockWidget
 from ccpi.viewer.utils import cilPlaneClipper
 from ccpi.viewer.utils.io import ImageReader
@@ -387,7 +384,6 @@ class ViewerMainWindow(ProgressMainWindow):
         return self.default_downsampled_size
 
 
-
 class ViewerSessionMainWindow(SessionMainWindow, ViewerMainWindow):
     ''' Creates a window which is designed to house one or more viewers.
     Note: does not create a viewer as we don't know whether the user would like it to exist in a
@@ -415,13 +411,13 @@ class ViewerSessionMainWindow(SessionMainWindow, ViewerMainWindow):
                  *args,
                  **kwargs):
 
+        ViewerMainWindow.__init__(self,
+                                  title,
+                                  app_name,
+                                  settings_name=settings_name,
+                                  organisation_name=organisation_name)
 
-        ViewerMainWindow.__init__(self, title, app_name,
-                                    settings_name=settings_name,
-                                    organisation_name=organisation_name)
-        
         self._setupSessionMainWindow()
-
 
     def createAppSettingsDialog(self):
         '''Create a dialog to change the application settings.
@@ -447,7 +443,6 @@ class ViewerSessionMainWindow(SessionMainWindow, ViewerMainWindow):
         sw = dialog.widgets
         if self.settings.value('copy_files') is not None:
             sw['copy_files_checkbox_field'].setChecked(int(self.settings.value('copy_files')))
-
 
     def onAppSettingsDialogAccepted(self, settings_dialog):
         '''This is called when the user clicks the OK button on the
@@ -520,7 +515,6 @@ class TwoViewersMainWindow(ViewerMainWindow):
 
         self.setupPlaneClipping()
 
-
     def addViewer(self, viewer):
         '''Add a viewer to the window, inside a DockWidget, within the
         central widget.
@@ -548,11 +542,8 @@ class TwoViewersMainWindow(ViewerMainWindow):
         else:
             raise ValueError("viewer must be either viewer2D or viewer3D")
 
-        dock = QCILDockableWidget(viewer=viewer,
-                                shape=(600, 600),
-                                interactorStyle=interactor_style,
-                                title=dock_title)
-        
+        dock = QCILDockableWidget(viewer=viewer, shape=(600, 600), interactorStyle=interactor_style, title=dock_title)
+
         if self.viewers == []:
             self.central_widget.addDockWidget(Qt.LeftDockWidgetArea, dock)
         else:
@@ -563,7 +554,6 @@ class TwoViewersMainWindow(ViewerMainWindow):
         self.viewers.append(dock.frame.viewer)
         self.frames.append(dock.frame)
         self.viewer_docks.append(dock)
-
 
     def linkedViewersSetUp(self, viewers):
         '''
@@ -595,7 +585,6 @@ class TwoViewersMainWindow(ViewerMainWindow):
         else:
             self.viewer_docks[viewer_num].show()
 
-
     def setupPlaneClipping(self):
         '''
         Set up plane clipping for all 2D viewers.
@@ -604,16 +593,9 @@ class TwoViewersMainWindow(ViewerMainWindow):
             if isinstance(viewer, viewer2D):
                 viewer.PlaneClipper = cilPlaneClipper()
                 viewer.PlaneClipper.SetInteractorStyle(viewer.style)
-                viewer.style.AddObserver(
-                    "MouseWheelForwardEvent",
-                    viewer.PlaneClipper.UpdateClippingPlanes, 0.9)
-                viewer.style.AddObserver(
-                    "MouseWheelBackwardEvent",
-                    viewer.PlaneClipper.UpdateClippingPlanes, 0.9)
-                viewer.style.AddObserver(
-                    "KeyPressEvent",
-                    viewer.PlaneClipper.UpdateClippingPlanes, 0.9)
-                
+                viewer.style.AddObserver("MouseWheelForwardEvent", viewer.PlaneClipper.UpdateClippingPlanes, 0.9)
+                viewer.style.AddObserver("MouseWheelBackwardEvent", viewer.PlaneClipper.UpdateClippingPlanes, 0.9)
+                viewer.style.AddObserver("KeyPressEvent", viewer.PlaneClipper.UpdateClippingPlanes, 0.9)
 
     def createViewerCoordsDockWidget(self):
         '''
@@ -626,7 +608,6 @@ class TwoViewersMainWindow(ViewerMainWindow):
         overlay_checkbox = QCheckBox("Show Image Overlay")
         overlay_checkbox.setChecked(True)
         overlay_checkbox.setVisible(False)
- 
 
 
 # For running example window -----------------------------------------------------------
