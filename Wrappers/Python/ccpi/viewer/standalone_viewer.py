@@ -41,6 +41,7 @@ from PySide2.QtWidgets import (QAction, QCheckBox, QComboBox, QDockWidget, QFile
 from ccpi.viewer.ui.main_windows import TwoViewersMainWindow
 from eqt.ui.ProgressMainWindow import ProgressMainWindow
 
+
 class StandaloneViewerMainWindow(TwoViewersMainWindow):
 
     def __init__(self,
@@ -50,7 +51,8 @@ class StandaloneViewerMainWindow(TwoViewersMainWindow):
                  organisation_name=None,
                  viewer1=viewer2D,
                  viewer2=viewer3D):
-        super(StandaloneViewerMainWindow, self).__init__(title, app_name, settings_name, organisation_name, viewer1, viewer2)
+        super(StandaloneViewerMainWindow, self).__init__(title, app_name, settings_name, organisation_name, viewer1,
+                                                         viewer2)
 
         self.image_overlay = vtk.vtkImageData()
 

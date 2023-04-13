@@ -120,7 +120,7 @@ class ImageReader(object):
         elif file_name is not None:
             if not (os.path.isfile(file_name) or os.path.isdir(file_name)):
                 raise Exception('Path\n {}\n does not exist.'.format(file_name))
-        
+
         self._OriginalImageAttrs = {}
 
         self.SetFileName(file_name)
@@ -133,7 +133,6 @@ class ImageReader(object):
         self.SetHDF5DatasetName(hdf5_dataset_name)
         self.SetRawImageAttributes(raw_image_attrs)
         self.SetLogFileName(log_file)
-        
 
     def SetFileName(self, file_name):
         '''
@@ -318,7 +317,9 @@ class ImageReader(object):
                     reader.SetFileName(image_files)
 
                 else:
-                    raise Exception('File format is not supported. Accepted formats include: .mhd, .mha, .npy, .tif, .tiff, .raw, .nxs, .h5, .hdf5')
+                    raise Exception(
+                        'File format is not supported. Accepted formats include: .mhd, .mha, .npy, .tif, .tiff, .raw, .nxs, .h5, .hdf5'
+                    )
             else:  # If we are given a folder, not a file, look for tiff files and try to read them
                 image_files = list(
                     glob.glob(os.path.join(self._FileName, '*.tif')) +
@@ -433,7 +434,7 @@ class ImageReader(object):
         reader.SetDatasetName(self._HDF5DatasetName)
 
         return reader
-    
+
     def _GetVTKImageResampler(self):
         if self._Crop:
             raise NotImplementedError("Cropping is not implemented for reading VTK images from memory.")
@@ -897,14 +898,14 @@ class cilviewerHDF5Reader(HDF5Reader):
             output.SetOrigin(attrs['origin'])
             output.SetSpacing(attrs['spacing'])
         return 1
-    
+
     def GetOriginalImageAttrs(self):
         '''
         Returns a dictionary of the attributes of the original dataset.
         This is the dataset saved in entry1.
         '''
         import copy
-        
+
         current_dataset_entry_number = copy.deepcopy(self.GetDatasetEntryNumber())
         # create a copy of this number so we can change the dataset entry number
         # without affecting the current object
@@ -912,10 +913,9 @@ class cilviewerHDF5Reader(HDF5Reader):
         attrs = self.GetDataSetAttributes()
         self.SetDatasetEntryNumber(current_dataset_entry_number)
         return attrs
-    
+
     def GetLoadedImageAttrs(self):
         '''
         Returns a dictionary of the attributes of the dataset that is currently loaded.
         '''
         return self.GetDataSetAttributes()
-
