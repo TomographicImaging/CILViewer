@@ -60,7 +60,6 @@ class ViewerMainWindow(ProgressMainWindow):
         self.viewer_docks = []
 
         self.createViewerCoordsDockWidget()
-        
 
     def createAppSettingsDialog(self):
         '''Create a dialog to change the application settings.
@@ -208,7 +207,6 @@ class ViewerMainWindow(ProgressMainWindow):
         image_file = self.selectImage()
         if image_file is not None:
             self.setViewersInput(image_file, viewers, input_num=input_num)
-
 
     def setViewersInput(self, image, viewers, input_num=1, image_name=None):
         '''
@@ -505,8 +503,6 @@ class ViewerSessionMainWindow(SessionMainWindow, ViewerMainWindow):
             self.settings.setValue("copy_files", 0)
 
 
-
-
 class TwoViewersMainWindowMixin(QMainWindow):
     '''
     Provides a mixin for a TwoViewersMainWindow or a TwoViewersSessionMainWindow class.
@@ -532,7 +528,7 @@ class TwoViewersMainWindowMixin(QMainWindow):
     viewer2 : CILViewer2D, CILViewer, or None, optional
         The class of the second viewer
     '''
-  
+
     def setupTwoViewers(self, viewer1, viewer2):
         if not hasattr(self, 'central_widget'):
             cw = QMainWindow()
@@ -553,7 +549,6 @@ class TwoViewersMainWindowMixin(QMainWindow):
         self.viewer_coords_dock.setViewers(self.viewers)
 
         self.setupPlaneClipping()
-
 
     def addViewer(self, viewer):
         '''Add a viewer to the window, inside a DockWidget, within the
@@ -656,8 +651,7 @@ class TwoViewersMainWindowMixin(QMainWindow):
         Positions the viewer coords dock widget below the viewers
         '''
         self.central_widget.addDockWidget(Qt.BottomDockWidgetArea, self.viewer_coords_dock)
-        self.viewer_coords_dock.setMaximumHeight(self.size().height()*0.5)
-
+        self.viewer_coords_dock.setMaximumHeight(self.size().height() * 0.5)
 
 
 class TwoViewersMainWindow(TwoViewersMainWindowMixin, ViewerMainWindow):
@@ -696,13 +690,11 @@ class TwoViewersMainWindow(TwoViewersMainWindowMixin, ViewerMainWindow):
                  organisation_name=None,
                  viewer1=CILViewer2D,
                  viewer2=CILViewer):
-        
-        super(TwoViewersMainWindow, self).__init__(title, app_name, settings_name, organisation_name)  
-        
+
+        super(TwoViewersMainWindow, self).__init__(title, app_name, settings_name, organisation_name)
+
         self.setupTwoViewers(viewer1, viewer2)
 
-        
-        
 
 class TwoViewersSessionMainWindow(TwoViewersMainWindowMixin, ViewerSessionMainWindow):
     '''
@@ -748,8 +740,8 @@ class TwoViewersSessionMainWindow(TwoViewersMainWindowMixin, ViewerSessionMainWi
                  organisation_name=None,
                  viewer1=CILViewer2D,
                  viewer2=CILViewer):
-        super(TwoViewersSessionMainWindow, self).__init__(title, app_name, settings_name, organisation_name)  
-        
+        super(TwoViewersSessionMainWindow, self).__init__(title, app_name, settings_name, organisation_name)
+
         self.setupTwoViewers(viewer1, viewer2)
 
 

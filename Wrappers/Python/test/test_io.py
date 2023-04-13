@@ -295,18 +295,16 @@ class TestImageReaderAndWriter(unittest.TestCase):
         # Check the attributes are the same:
         read_resampled_image_attrs = reader.GetLoadedImageAttrs()
         for key, value in resampled_image_attrs.items():
-            if key == 'spacing' or key =='origin':
+            if key == 'spacing' or key == 'origin':
                 np.testing.assert_array_equal(value, read_resampled_image_attrs[key])
             else:
                 self.assertEqual(value, read_resampled_image_attrs[key])
         read_original_image_attrs = reader.GetOriginalImageAttrs()
         for key, value in original_image_attrs.items():
-            if key == 'spacing' or key =='origin' or key=='shape':
+            if key == 'spacing' or key == 'origin' or key == 'shape':
                 np.testing.assert_array_equal(value, read_original_image_attrs[key])
             else:
                 self.assertEqual(value, read_original_image_attrs[key])
-
-
 
     def tearDown(self):
         files = [self.hdf5_filename_3D] + self.tiff_fnames

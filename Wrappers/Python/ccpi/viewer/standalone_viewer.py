@@ -8,6 +8,7 @@ from PySide2 import QtWidgets
 from PySide2.QtWidgets import QAction, QCheckBox
 
 
+
 class StandaloneViewerMainWindow(TwoViewersMainWindow):
     '''
     A main window for displaying two viewers side by side, with a menu bar
@@ -28,7 +29,8 @@ class StandaloneViewerMainWindow(TwoViewersMainWindow):
                  organisation_name=None,
                  viewer1=viewer2D,
                  viewer2=viewer3D):
-        super(StandaloneViewerMainWindow, self).__init__(title, app_name, settings_name, organisation_name, viewer1, viewer2)
+        super(StandaloneViewerMainWindow, self).__init__(title, app_name, settings_name, organisation_name, viewer1,
+                                                         viewer2)
 
         self.image_overlay = vtk.vtkImageData()
 

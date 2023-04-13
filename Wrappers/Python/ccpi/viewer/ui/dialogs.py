@@ -146,7 +146,7 @@ class RawInputDialog(FormDialog):
         raw_attrs['typecode'] = widgets['dtype_field'].currentText()
 
         return raw_attrs
-    
+
     def enableDisableDimZ(self):
         '''
         Enables or disables the Z dimension entry based on the dimensionality
@@ -157,7 +157,6 @@ class RawInputDialog(FormDialog):
             widgets['dim_Z_field'].setEnabled(True)
         else:
             widgets['dim_Z_field'].setEnabled(False)
-
 
 
 class HDF5InputDialog(FormDialog):
