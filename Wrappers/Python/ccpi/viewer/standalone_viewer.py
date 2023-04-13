@@ -8,7 +8,6 @@ from PySide2 import QtWidgets
 from PySide2.QtWidgets import QAction, QCheckBox
 
 
-
 class StandaloneViewerMainWindow(TwoViewersMainWindow):
     '''
     A main window for displaying two viewers side by side, with a menu bar
@@ -173,6 +172,6 @@ def main():
 
     return 0
 
+
 if __name__ == '__main__':
     main()
-

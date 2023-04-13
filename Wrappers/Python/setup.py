@@ -72,6 +72,9 @@ setup(
     keywords="3D data viewer",
     url="http://www.ccpi.ac.uk",  # project home page, if any
     entry_points={
-        "console_scripts": ["resample = ccpi.viewer.cli.resample:main", "web_cilviewer = ccpi.web_viewer.web_app:main", "cilviewer = ccpi.viewer.standalone_viewer:main"]
+        "console_scripts": [
+            "resample = ccpi.viewer.cli.resample:main", "web_cilviewer = ccpi.web_viewer.web_app:main",
+            "cilviewer = ccpi.viewer.standalone_viewer:main"
+        ]
     },
 )
