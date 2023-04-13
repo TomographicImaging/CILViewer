@@ -148,6 +148,9 @@ class RawInputDialog(FormDialog):
         return raw_attrs
     
     def enableDisableDimZ(self):
+        '''
+        Enables or disables the Z dimension entry based on the dimensionality
+        '''
         widgets = self.formWidget.widgets
         dimensionality = [3, 2][widgets['dimensionality_field'].currentIndex()]
         if dimensionality == 3:

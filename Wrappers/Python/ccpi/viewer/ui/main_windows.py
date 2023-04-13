@@ -247,7 +247,7 @@ class ViewerMainWindow(ProgressMainWindow):
             image_name = image
         image_reader_worker.signals.result.connect(
             partial(self.displayImage, viewers, input_num, image_reader, image_name))
-        image_reader_worker.signals.finished.connect(self.finishProcess("Reading Image"))
+        image_reader_worker.signals.finished.connect(lambda: self.finishProcess("Reading Image"))
         image_reader_worker.signals.error.connect(self.processErrorDialog)
 
     def processErrorDialog(self, error, **kwargs):
@@ -263,7 +263,7 @@ class ViewerMainWindow(ProgressMainWindow):
 
         Parameters
         ----------
-        viewer: CILViewer2D or CILViewer, or list of CILViewer2D or CILViewer
+        viewers: CILViewer2D or CILViewer, or list of CILViewer2D or CILViewer
             The viewer(s) to display the image on.
         input_num : int
             The input number to the viewer. 1 or 2. Only used if the viewer is
@@ -447,7 +447,7 @@ class ViewerSessionMainWindow(SessionMainWindow, ViewerMainWindow):
     '''
 
     def __init__(self,
-                 title="ViewerMainWindow",
+                 title="ViewerSessionMainWindow",
                  app_name=None,
                  settings_name=None,
                  organisation_name=None,
@@ -514,6 +514,9 @@ class TwoViewersMainWindowMixin(QMainWindow):
     creates a window containing two viewers, both in dockwidgets.
     The viewers are linked together, so that they share the same
     camera position and orientation.
+
+    Also provides other methods for adding viewers, and for
+    setting up the viewer coordinates dockwidget.
     
     If a viewer is 2D, then it will be PlaneClipped.
     
@@ -687,8 +690,8 @@ class TwoViewersMainWindow(TwoViewersMainWindowMixin, ViewerMainWindow):
     '''
 
     def __init__(self,
-                 title="StandaloneViewer",
-                 app_name="Standalone Viewer",
+                 title="TwoViewersMainWindow",
+                 app_name="TwoViewersMainWindow",
                  settings_name=None,
                  organisation_name=None,
                  viewer1=CILViewer2D,
@@ -739,8 +742,8 @@ class TwoViewersSessionMainWindow(TwoViewersMainWindowMixin, ViewerSessionMainWi
     '''
 
     def __init__(self,
-                 title="StandaloneViewer",
-                 app_name="Standalone Viewer",
+                 title="TwoViewersSessionMainWindow",
+                 app_name="TwoViewersSessionMainWindow",
                  settings_name=None,
                  organisation_name=None,
                  viewer1=CILViewer2D,

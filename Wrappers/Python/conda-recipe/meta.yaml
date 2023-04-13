@@ -13,6 +13,7 @@ build:
   entry_points:
     - resample = ccpi.viewer.cli.resample:main
     - web_cilviewer = ccpi.web_viewer.web_app:main
+    - cilviewer = ccpi.viewer.standalone_viewer:main
   
 test:
   requires:
