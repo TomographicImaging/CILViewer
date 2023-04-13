@@ -98,9 +98,7 @@ class RawInputDialog(FormDialog):
             Label = QLabel("Size {}".format(dim))
             fw.addWidget(ValueEntry, Label, 'dim_{}'.format(dim))
 
-        dimensionalityValue.currentIndexChanged.connect(
-            lambda: fw.widgets['dim_Z_field'].setEnabled(True)
-            if fw.widgets['dimensionality_field'].currentIndex() == 0 else fw.widgets['dim_Z_field'].setEnabled(False))
+        dimensionalityValue.currentIndexChanged.connect(self.enableDisableDimZ)
 
         # Data Type
         dtypeLabel = QLabel("Data Type")
@@ -148,6 +146,15 @@ class RawInputDialog(FormDialog):
         raw_attrs['typecode'] = widgets['dtype_field'].currentText()
 
         return raw_attrs
+    
+    def enableDisableDimZ(self):
+        widgets = self.formWidget.widgets
+        dimensionality = [3, 2][widgets['dimensionality_field'].currentIndex()]
+        if dimensionality == 3:
+            widgets['dim_Z_field'].setEnabled(True)
+        else:
+            widgets['dim_Z_field'].setEnabled(False)
+
 
 
 class HDF5InputDialog(FormDialog):
@@ -347,7 +354,7 @@ class HDF5InputDialog(FormDialog):
             else:
                 error_dialog = ErrorDialog(
                     self, "Error", "The selected item could not be opened.",
-                    "f{new_path} either does not exist, or is not a group or dataset, so can't be opened.")
+                    f"{new_path} either does not exist, or is not a group or dataset, so can't be opened.")
                 error_dialog.open()
 
     def descendHDF5AndFillTable(self):
@@ -422,6 +429,8 @@ class HDF5InputDialog(FormDialog):
     def getCurrentParentGroup(self):
         '''
         This method returns the parent group of the current group.
+        If there is no parent group, it returns the current group,
+        which is the root group.
         '''
         current_group = self.getCurrentGroup()
         if current_group != "/" and current_group != "//" and current_group != "":
@@ -429,5 +438,8 @@ class HDF5InputDialog(FormDialog):
             parent_group = current_group[:-len(item_to_remove)]
         else:
             parent_group = current_group
+
+        if parent_group == "":
+            parent_group = "/"
 
         return parent_group

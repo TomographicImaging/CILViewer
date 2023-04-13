@@ -39,7 +39,7 @@ from PySide2.QtWidgets import (QAction, QCheckBox, QComboBox, QDockWidget, QFile
                                QMenu, QMessageBox, QProgressDialog, QPushButton, QSpinBox, QStackedWidget, QTabWidget)
 
 from ccpi.viewer.ui.main_windows import TwoViewersMainWindow
-
+from eqt.ui.ProgressMainWindow import ProgressMainWindow
 
 class StandaloneViewerMainWindow(TwoViewersMainWindow):
 
@@ -50,7 +50,7 @@ class StandaloneViewerMainWindow(TwoViewersMainWindow):
                  organisation_name=None,
                  viewer1=viewer2D,
                  viewer2=viewer3D):
-        TwoViewersMainWindow.__init__(self, title, app_name, settings_name, organisation_name)
+        super(StandaloneViewerMainWindow, self).__init__(title, app_name, settings_name, organisation_name, viewer1, viewer2)
 
         self.image_overlay = vtk.vtkImageData()
 
@@ -63,11 +63,11 @@ class StandaloneViewerMainWindow(TwoViewersMainWindow):
         # insert image selection as first action in file menu:
 
         image2_action = QAction("Select Image Overlay", self)
-        image2_action.triggered.connect(lambda: self.setViewersInput([self.viewers[0]], input_num=2))
+        image2_action.triggered.connect(lambda: self.setViewersInputFromDialog([self.viewers[0]], input_num=2))
         file_menu.insertAction(file_menu.actions()[0], image2_action)
 
         image1_action = QAction("Select Image", self)
-        image1_action.triggered.connect(lambda: self.setViewersInput(self.viewers))
+        image1_action.triggered.connect(lambda: self.setViewersInputFromDialog(self.viewers))
         file_menu.insertAction(file_menu.actions()[0], image1_action)
 
     def createViewerCoordsDockWidget(self):
@@ -86,12 +86,12 @@ class StandaloneViewerMainWindow(TwoViewersMainWindow):
 
         checkbox2 = QCheckBox("Show 2D Viewer")
         checkbox2.setChecked(True)
-        checkbox2.stateChanged.connect(lambda: self.showHideViewer(0))
+        checkbox2.stateChanged.connect(partial(self.showHideViewer, 0))
 
         checkbox3 = QCheckBox("Show 3D Viewer")
         checkbox3.setChecked(True)
         self.viewer_coords_dock.widget().addWidget(checkbox3, checkbox2, 'show_viewer')
-        checkbox3.stateChanged.connect(lambda: self.showHideViewer(1))
+        checkbox3.stateChanged.connect(partial(self.showHideViewer, 1))
 
     def showHideImageOverlay(self, viewers, state):
         '''

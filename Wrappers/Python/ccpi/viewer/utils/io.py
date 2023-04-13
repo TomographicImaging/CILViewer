@@ -12,7 +12,7 @@ from ccpi.viewer.utils import Converter
 from ccpi.viewer.utils.conversion import (cilHDF5CroppedReader, cilHDF5ResampleReader, cilMetaImageCroppedReader,
                                           cilMetaImageResampleReader, cilNumpyCroppedReader, cilNumpyResampleReader,
                                           cilRawCroppedReader, cilRawResampleReader, cilTIFFCroppedReader,
-                                          cilTIFFResampleReader)
+                                          cilTIFFResampleReader, vtkImageResampler)
 from ccpi.viewer.utils.error_handling import EndObserver, ErrorObserver
 from ccpi.viewer.utils.hdf5_io import HDF5Reader
 #from ccpi.viewer.version import version
@@ -64,6 +64,7 @@ class ImageReader(object):
     '''
     Generic reader for reading to vtkImageData
     Currently reads: HDF5, MetaImage, Numpy, Raw, TIFF stacks
+    or vtk image data in memory.
     Supports resampling OR cropping the dataset whilst
     reading.
     Currently doesn't support both cropping and resampling
@@ -72,6 +73,7 @@ class ImageReader(object):
 
     def __init__(self,
                  file_name=None,
+                 vtk_image=None,
                  resample=True,
                  target_size=512**3,
                  crop=False,
@@ -88,6 +90,9 @@ class ImageReader(object):
         file_name: os.path or string, default None
             file name to read
             In case of TIFF files, either the directory to the TIFF files, or the path to one such file is needed.
+        vtk_image: vtkImageData, default None
+            vtkImageData to read 
+            Must be given if file_name is None
         resample: bool, default True
             whether to resample
         crop: bool, default False
@@ -110,15 +115,16 @@ class ImageReader(object):
             log verbose output to file of this name            
         '''
 
-        if file_name is None:
-            raise Exception('Path to file is required.')
-
-        if not (os.path.isfile(file_name) or os.path.isdir(file_name)):
-            raise Exception('Path\n {}\n does not exist.'.format(file_name))
-
+        if file_name is None and vtk_image is None:
+            raise Exception('Path to file (file_name) or vtk image (vtk_image) is required.')
+        elif file_name is not None:
+            if not (os.path.isfile(file_name) or os.path.isdir(file_name)):
+                raise Exception('Path\n {}\n does not exist.'.format(file_name))
+        
         self._OriginalImageAttrs = {}
 
         self.SetFileName(file_name)
+        self.SetVTKImage(vtk_image)
         self.SetResample(resample)
         self.SetTargetSize(target_size)
         self.SetCrop(crop)
@@ -127,6 +133,7 @@ class ImageReader(object):
         self.SetHDF5DatasetName(hdf5_dataset_name)
         self.SetRawImageAttributes(raw_image_attrs)
         self.SetLogFileName(log_file)
+        
 
     def SetFileName(self, file_name):
         '''
@@ -136,6 +143,15 @@ class ImageReader(object):
             file name to read
         '''
         self._FileName = file_name
+
+    def SetVTKImage(self, vtk_image):
+        '''
+        Parameters
+        ----------
+        vtk_image: vtkImageData, default None
+            vtkImageData to read
+        '''
+        self._VTKImage = vtk_image
 
     def SetResample(self, resample):
         '''
@@ -264,54 +280,60 @@ class ImageReader(object):
     def _GetReader(self, progress_callback=None):
         '''
         Returns an appropriate reader for the image file provided.
-        The appropriate reader is decided by matching the extension of the file to be read, which can be:
+        If a filename is given, the appropriate reader is decided by
+        matching the extension of the file to be read, which can be:
         - mha, mhd for METAIO files
         - npy for numpy file format
         - raw for binary blobs
         - nxs, h5, or hdf5 for HDF5 files
         - tiff or tif for TIFF stacks.
         No actual check of the file format is performed.
+
+        If a vtk image is given, the reader is a vtkImageResampler
         '''
-        if os.path.isfile(self._FileName):
-            file_extension = os.path.splitext(self._FileName)[1]
+        if self._FileName is None:
+            reader = self._GetVTKImageResampler()
+        else:
+            if os.path.isfile(self._FileName):
+                file_extension = os.path.splitext(self._FileName)[1]
 
-            if file_extension in ['.mha', '.mhd']:
-                reader = self._GetMetaImageReader()
+                if file_extension in ['.mha', '.mhd']:
+                    reader = self._GetMetaImageReader()
 
-            elif file_extension in ['.npy']:
-                reader = self._GetNumpyImageReader()
+                elif file_extension in ['.npy']:
+                    reader = self._GetNumpyImageReader()
 
-            elif file_extension in ['.raw']:
-                reader = self._GetRawImageReader()
+                elif file_extension in ['.raw']:
+                    reader = self._GetRawImageReader()
 
-            elif file_extension in ['.nxs', '.h5', '.hdf5']:
-                reader = self._GetHDF5ImageReader()
-                self._OriginalImageAttrs['dataset_name'] = self._HDF5DatasetName
+                elif file_extension in ['.nxs', '.h5', '.hdf5']:
+                    reader = self._GetHDF5ImageReader()
+                    self._OriginalImageAttrs['dataset_name'] = self._HDF5DatasetName
 
-            elif file_extension in ['.tif', '.tiff']:
-                image_files = glob.glob(os.path.join(os.path.dirname(self._FileName), '*{}'.format(file_extension)))
+                elif file_extension in ['.tif', '.tiff']:
+                    image_files = glob.glob(os.path.join(os.path.dirname(self._FileName), '*{}'.format(file_extension)))
+                    if len(image_files) == 0:
+                        raise Exception('No tiff files were found in: {}'.format(os.path.dirname(self._FileName)))
+                    reader = self._GetTiffImageReader()
+                    reader.SetFileName(image_files)
+
+                else:
+                    raise Exception('File format is not supported. Accepted formats include: .mhd, .mha, .npy, .tif, .tiff, .raw, .nxs, .h5, .hdf5')
+            else:  # If we are given a folder, not a file, look for tiff files and try to read them
+                image_files = list(
+                    glob.glob(os.path.join(self._FileName, '*.tif')) +
+                    list(glob.glob(os.path.join(self._FileName, '*.tiff'))))
                 if len(image_files) == 0:
-                    raise Exception('No tiff files were found in: {}'.format(os.path.dirname(self._FileName)))
+                    raise Exception('No tiff files were found in: {}'.format(self._FileName))
                 reader = self._GetTiffImageReader()
                 reader.SetFileName(image_files)
+                file_extension = '.tiff'
 
+            if file_extension not in ['.tif', '.tiff']:
+                # currently the tiff reader doesn't take these inputs:
+                reader.SetFileName(self._FileName)
             else:
-                raise Exception('File format is not supported. Accepted formats include: .mhd, .mha, .npy, .tif, .raw')
-        else:  # If we are given a folder, not a file, look for tiff files and try to read them
-            image_files = list(
-                glob.glob(os.path.join(self._FileName, '*.tif')) +
-                list(glob.glob(os.path.join(self._FileName, '*.tiff'))))
-            if len(image_files) == 0:
-                raise Exception('No tiff files were found in: {}'.format(self._FileName))
-            reader = self._GetTiffImageReader()
-            reader.SetFileName(image_files)
-            file_extension = '.tiff'
-
-        if file_extension not in ['.tif', '.tiff']:
-            # currently the tiff reader doesn't take these inputs:
-            reader.SetFileName(self._FileName)
-        else:
-            image_files.sort(key=self.__natural_keys)
+                image_files.sort(key=self.__natural_keys)
 
         # setting SetIsAcquisitionData determines whether to crop on Z:
         reader.SetIsAcquisitionData(not self._ResampleZ)
@@ -411,6 +433,15 @@ class ImageReader(object):
         reader.SetDatasetName(self._HDF5DatasetName)
 
         return reader
+    
+    def _GetVTKImageResampler(self):
+        if self._Crop:
+            raise NotImplementedError("Cropping is not implemented for reading VTK images from memory.")
+        else:
+            reader = vtkImageResampler()
+            reader.SetInputDataObject(self._VTKImage)
+
+        return reader
 
     def _SetUpLogger(self, fname=None, log_level=logging.INFO):
         """Set up the logger """
@@ -453,11 +484,20 @@ class ImageReader(object):
         self._OriginalImageAttrs['spacing'] = reader.GetElementSpacing()
         self._OriginalImageAttrs['origin'] = reader.GetOrigin()
         self._OriginalImageAttrs['bit_depth'] = str(reader.GetBytesPerElement() * 8)
-        self._OriginalImageAttrs['is_big_endian'] = reader.GetBigEndian()
-        self._OriginalImageAttrs['header_length'] = reader.GetFileHeaderLength()
         self._OriginalImageAttrs['file_name'] = self._FileName
         self._OriginalImageAttrs['resampled'] = False
         self._OriginalImageAttrs['cropped'] = False
+
+        # If reader is vtkImageResampler, then we are reading from memory, so we don't have
+        # the following attributes:
+        try:
+            self._OriginalImageAttrs['is_big_endian'] = reader.GetBigEndian()
+        except:
+            self._OriginalImageAttrs['is_big_endian'] = None
+        try:
+            self._OriginalImageAttrs['header_length'] = reader.GetFileHeaderLength()
+        except:
+            self._OriginalImageAttrs['header_length'] = None
 
 
 class ImageWriterInterface(object):
@@ -857,3 +897,25 @@ class cilviewerHDF5Reader(HDF5Reader):
             output.SetOrigin(attrs['origin'])
             output.SetSpacing(attrs['spacing'])
         return 1
+    
+    def GetOriginalImageAttrs(self):
+        '''
+        Returns a dictionary of the attributes of the original dataset.
+        This is the dataset saved in entry1.
+        '''
+        import copy
+        
+        current_dataset_entry_number = copy.deepcopy(self.GetDatasetEntryNumber())
+        # create a copy of this number so we can change the dataset entry number
+        # without affecting the current object
+        self.SetDatasetEntryNumber(1)
+        attrs = self.GetDataSetAttributes()
+        self.SetDatasetEntryNumber(current_dataset_entry_number)
+        return attrs
+    
+    def GetLoadedImageAttrs(self):
+        '''
+        Returns a dictionary of the attributes of the dataset that is currently loaded.
+        '''
+        return self.GetDataSetAttributes()
+

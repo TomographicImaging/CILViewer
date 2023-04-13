@@ -5,8 +5,9 @@ from pathlib import Path
 
 import ccpi.viewer.viewerLinker as vlink
 import vtk
-from ccpi.viewer import viewer2D, viewer3D
+from ccpi.viewer import CILViewer2D, CILViewer
 from ccpi.viewer.CILViewer2D import CILViewer2D
+from ccpi.viewer.CILViewer import CILViewer
 from ccpi.viewer.QCILViewerWidget import QCILDockableWidget
 from ccpi.viewer.ui.dialogs import (HDF5InputDialog, RawInputDialog, ViewerSessionSettingsDialog, ViewerSettingsDialog)
 from ccpi.viewer.ui.qt_widgets import ViewerCoordsDockWidget
@@ -15,9 +16,8 @@ from ccpi.viewer.utils.io import ImageReader
 from eqt.threading import Worker
 from eqt.ui.SessionDialogs import ErrorDialog
 from eqt.ui.SessionMainWindow import ProgressMainWindow, SessionMainWindow
-from PySide2 import QtCore
 from PySide2.QtCore import Qt
-from PySide2.QtWidgets import QApplication, QCheckBox, QFileDialog, QMainWindow
+from PySide2.QtWidgets import QApplication, QCheckBox, QFileDialog, QMainWindow, QSizePolicy
 
 
 class ViewerMainWindow(ProgressMainWindow):
@@ -56,10 +56,11 @@ class ViewerMainWindow(ProgressMainWindow):
 
         self.default_downsampled_size = 512**3
 
-        self.createViewerCoordsDockWidget()
-        self.addDockWidget(QtCore.Qt.BottomDockWidgetArea, self.viewer_coords_dock)
-
         self.viewers = []
+        self.viewer_docks = []
+
+        self.createViewerCoordsDockWidget()
+        
 
     def createAppSettingsDialog(self):
         '''Create a dialog to change the application settings.
@@ -110,7 +111,7 @@ class ViewerMainWindow(ProgressMainWindow):
         if settings_dialog.widgets['gpu_checkbox_field'].isChecked():
             self.settings.setValue("volume_mapper", "gpu")
             for viewer in self.viewers:
-                if isinstance(viewer, viewer3D):
+                if isinstance(viewer, CILViewer):
                     viewer.volume_mapper = vtk.vtkSmartVolumeMapper()
         else:
             self.settings.setValue("volume_mapper", "cpu")
@@ -123,29 +124,39 @@ class ViewerMainWindow(ProgressMainWindow):
         ----------
         label : QLabel, optional
             The label to display the basename of the file name on.
+        
+        Returns
+        -------
+        file : str
+            The file name of the image selected by the user.
         '''
         dialog = QFileDialog()
         file = dialog.getOpenFileName(self, "Select Images")[0]
+        if file is None:
+            return
         file_extension = Path(file).suffix.lower()
         self.raw_attrs = {}
         self.hdf5_attrs = {}
         if 'tif' in file_extension:
-            print('tif ', file)
             file = os.path.dirname(file)
         if 'raw' in file_extension:
             raw_dialog = RawInputDialog(self, file)
             raw_dialog.Ok.clicked.connect(lambda: self.getRawAttrsFromDialog(raw_dialog))
             raw_dialog.exec_()
+            if self.raw_attrs == {}:
+                return None
         elif file_extension in ['.nxs', '.h5', '.hdf5']:
-            raw_dialog = HDF5InputDialog(self, file)
-            raw_dialog.Ok.clicked.connect(lambda: self.getHDF5AttrsFromDialog(raw_dialog))
-            raw_dialog.exec_()
+            dialog = HDF5InputDialog(self, file)
+            dialog.Ok.clicked.connect(lambda: self.getHDF5AttrsFromDialog(dialog))
+            dialog.exec_()
+            if self.hdf5_attrs == {}:
+                return None
 
         self.input_dataset_file = file
         if label is not None:
             label.setText(os.path.basename(file))
 
-        return file, self.raw_attrs, self.hdf5_attrs
+        return file
 
     def getRawAttrsFromDialog(self, dialog):
         '''Gets the raw attributes from the dialog and saves them to the
@@ -182,9 +193,24 @@ class ViewerMainWindow(ProgressMainWindow):
         '''
         dock = ViewerCoordsDockWidget(self)
         self.viewer_coords_dock = dock
+        self.viewer_coords_dock.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
         dock.getWidgets()['coords_combo_field'].currentIndexChanged.connect(self.updateViewerCoords)
 
-    def setViewersInput(self, viewers, input_num=1):
+    def placeViewerCoordsDockWidget(self):
+        '''
+        Places the viewer coords dock widget in the main window.
+        May be overridden by subclasses to place the dock widget in a different
+        location.
+        '''
+        self.addDockWidget(Qt.BottomDockWidgetArea, self.viewer_coords_dock)
+
+    def setViewersInputFromDialog(self, viewers, input_num=1):
+        image_file = self.selectImage()
+        if image_file is not None:
+            self.setViewersInput(image_file, viewers, input_num=input_num)
+
+
+    def setViewersInput(self, image, viewers, input_num=1, image_name=None):
         '''
         Opens a file dialog to select an image file and then displays it in the viewer.
 
@@ -192,26 +218,35 @@ class ViewerMainWindow(ProgressMainWindow):
         ----------
         viewer: CILViewer2D or CILViewer, or list of CILViewer2D or CILViewer
             The viewer(s) to display the image in.
+        image: str or vtk.vtkImageData
+            The image to display. If a string, it is assumed to be a file name.
         input_num : int
             The input number to the viewer. 1 or 2. Only used if the viewer is
             a 2D viewer. 1 is the default image and 2 is the overlay image.
+        image_name : str
+            The name of the image. If not given, the file name is used.
+            Must be set if no file name is given.
         '''
-        image_file, raw_image_attrs, hdf5_image_attrs = self.selectImage()
-
+        raw_image_attrs = self.raw_attrs
+        hdf5_image_attrs = self.hdf5_attrs
         dataset_name = hdf5_image_attrs.get('dataset_name')
         resample_z = hdf5_image_attrs.get('resample_z')
-        print("The image attrs: ", raw_image_attrs)
         target_size = self.getTargetImageSize()
-        image_reader = ImageReader(file_name=image_file,
-                                   target_size=target_size,
-                                   raw_image_attrs=raw_image_attrs,
-                                   hdf5_dataset_name=dataset_name,
-                                   resample_z=resample_z)
+        if isinstance(image, str):
+            image_reader = ImageReader(file_name=image)
+        else:
+            image_reader = ImageReader(vtk_image=image)
+        image_reader.SetTargetSize(target_size)
+        image_reader.SetRawImageAttributes(raw_image_attrs)
+        image_reader.SetHDF5DatasetName(dataset_name)
+        image_reader.SetResampleZ(resample_z)
         image_reader_worker = Worker(image_reader.Read)
         self.threadpool.start(image_reader_worker)
         self.createUnknownProgressWindow("Reading Image")
+        if image_name is None and isinstance(image, str):
+            image_name = image
         image_reader_worker.signals.result.connect(
-            partial(self.displayImage, viewers, input_num, image_reader, image_file))
+            partial(self.displayImage, viewers, input_num, image_reader, image_name))
         image_reader_worker.signals.finished.connect(self.finishProcess("Reading Image"))
         image_reader_worker.signals.error.connect(self.processErrorDialog)
 
@@ -222,7 +257,7 @@ class ViewerMainWindow(ProgressMainWindow):
         dialog = ErrorDialog(self, "Error", str(error[1]), str(error[2]))
         dialog.open()
 
-    def displayImage(self, viewers, input_num, reader, image_file, image):
+    def displayImage(self, viewers, input_num, reader, image_name, image):
         '''
         Displays an image on the viewer/s.
 
@@ -236,10 +271,11 @@ class ViewerMainWindow(ProgressMainWindow):
         reader: ImageReader
             The reader used to read the image. This contains some extra info about the
             original image file.
+        image_name: str
+            The image file name, or label to display on the viewer.
         image: vtkImageData
             The image to display.
-        image_file: str
-            The image file name.
+
         '''
         if image is None:
             return
@@ -248,14 +284,15 @@ class ViewerMainWindow(ProgressMainWindow):
         for viewer in viewers:
             if input_num == 1:
                 viewer.setInputData(image)
-                if viewer == self.viewers[0]:
-                    self.updateViewerCoordsDockWidgetWithCoords(reader)
             elif input_num == 2:
                 if isinstance(viewer, CILViewer2D):
                     viewer.setInputData2(image)
-        self.updateGUIForNewImage(reader, viewer, image_file)
+                # If input_num=2 we don't want to update the viewer coords dock widget
+                # with the name of the image file, as this is the overlay image.
+                image_name = None
+        self.updateGUIForNewImage(reader, viewer, image_name)
 
-    def updateGUIForNewImage(self, reader=None, viewer=None, image_file=None):
+    def updateGUIForNewImage(self, reader=None, viewer=None, image_name=None):
         '''
         Updates the GUI for a new image:
         - Updates the viewer coordinates dock widget with the displayed image dimensions
@@ -264,9 +301,9 @@ class ViewerMainWindow(ProgressMainWindow):
         In subclass, may want to add more functionality.
         '''
         self.updateViewerCoordsDockWidgetWithCoords(reader)
-        self.updateViewerCoordsDockWidgetWithImageFileName(image_file)
+        self.updateViewerCoordsDockWidgetWithImageFileName(image_name)
 
-    def updateViewerCoordsDockWidgetWithImageFileName(self, image_file=None):
+    def updateViewerCoordsDockWidgetWithImageFileName(self, image_name=None):
         '''
         Updates the viewer coordinates dock widget with the image file name.
 
@@ -275,12 +312,12 @@ class ViewerMainWindow(ProgressMainWindow):
         image_file: str
             The image file name.
         '''
-        if image_file is None:
+        if image_name is None:
             return
 
         widgets = self.viewer_coords_dock.getWidgets()
         widgets['image_field'].clear()
-        widgets['image_field'].addItem(image_file)
+        widgets['image_field'].addItem(image_name)
         widgets['image_field'].setCurrentIndex(0)
 
     def updateViewerCoordsDockWidgetWithCoords(self, reader=None):
@@ -297,7 +334,7 @@ class ViewerMainWindow(ProgressMainWindow):
 
         viewer = self.viewer_coords_dock.viewers[0]
 
-        if not isinstance(viewer, (viewer2D, viewer3D)):
+        if not isinstance(viewer, (CILViewer2D, CILViewer)):
             return
 
         image = viewer.img3D
@@ -323,6 +360,13 @@ class ViewerMainWindow(ProgressMainWindow):
         else:
             loaded_image_attrs = reader.GetLoadedImageAttrs()
             resampled = loaded_image_attrs.get('resampled')
+
+            if resampled:
+                # Check if the image was actually resampled:
+                original_image_attrs = reader.GetOriginalImageAttrs()
+                original_image_dims = original_image_attrs.get('shape')
+                if list(original_image_dims) == list(displayed_image_dims):
+                    resampled = False
 
         widgets['coords_warning_field'].setVisible(resampled)
         widgets['coords_info_field'].setVisible(resampled)
@@ -350,10 +394,10 @@ class ViewerMainWindow(ProgressMainWindow):
 
         '''
         viewer_coords_widgets = self.viewer_coords_dock.getWidgets()
-        viewer = viewer_coords_widgets.viewers[0]
+        viewer = self.viewer_coords_dock.viewers[0]
         shown_resample_rate = viewer.getVisualisationDownsampling()
-        for viewer in viewer_coords_widgets.viewers:
-            if viewer.img3D is not None:
+        for viewer in self.viewer_coords_dock.viewers:
+            if isinstance(viewer, CILViewer2D) and viewer.img3D is not None:
                 if viewer_coords_widgets['coords_combo_field'].currentIndex() == 0:
                     viewer.setDisplayUnsampledCoordinates(True)
                     if shown_resample_rate != [1, 1, 1]:
@@ -461,17 +505,13 @@ class ViewerSessionMainWindow(SessionMainWindow, ViewerMainWindow):
             self.settings.setValue("copy_files", 0)
 
 
-# TODO: change to just have the viewer functionality:
 
 
-class TwoViewersWindow(QMainWindow):
-
-    def __init__(self) -> None:
-        super().__init__()
-
-
-class TwoViewersMainWindow(ViewerMainWindow):
-    ''' Creates a window containing two viewers, both in dockwidgets.
+class TwoViewersMainWindowMixin(QMainWindow):
+    '''
+    Provides a mixin for a TwoViewersMainWindow or a TwoViewersSessionMainWindow class.
+    Provides the setupTwoViewers method, which:
+    creates a window containing two viewers, both in dockwidgets.
     The viewers are linked together, so that they share the same
     camera position and orientation.
     
@@ -484,33 +524,19 @@ class TwoViewersMainWindow(ViewerMainWindow):
 
     Parameters
     ----------
-    title : str
-        The title of the window
-    app_name : str
-        The name of the application
-    settings_name : str
-        The name of the settings file
-    organisation_name : str
-        The name of the organisation
     viewer1 : CILViewer2D or CILViewer
         The class of the first viewer
     viewer2 : CILViewer2D, CILViewer, or None, optional
         The class of the second viewer
     '''
+  
+    def setupTwoViewers(self, viewer1, viewer2):
+        if not hasattr(self, 'central_widget'):
+            cw = QMainWindow()
+            self.setCentralWidget(cw)
+            self.central_widget = cw
 
-    def __init__(self,
-                 title="StandaloneViewer",
-                 app_name="Standalone Viewer",
-                 settings_name=None,
-                 organisation_name=None,
-                 viewer1=viewer2D,
-                 viewer2=viewer3D):
-        ViewerMainWindow.__init__(self, title, app_name, settings_name, organisation_name)
-
-        cw = QMainWindow()
-        self.setCentralWidget(cw)
-        self.central_widget = cw
-
+        self.viewers = []
         self.frames = []
         self.viewer_docks = []
 
@@ -519,9 +545,12 @@ class TwoViewersMainWindow(ViewerMainWindow):
         if viewer2 is not None:
             self.addViewer(viewer2)
 
+        self.placeViewerCoordsDockWidget()
+
         self.viewer_coords_dock.setViewers(self.viewers)
 
         self.setupPlaneClipping()
+
 
     def addViewer(self, viewer):
         '''Add a viewer to the window, inside a DockWidget, within the
@@ -541,14 +570,14 @@ class TwoViewersMainWindow(ViewerMainWindow):
         if len(self.viewers) == 2:
             raise ValueError("Cannot add more than two viewers to this window.")
 
-        if viewer == viewer2D:
+        if viewer == CILViewer2D:
             interactor_style = vlink.Linked2DInteractorStyle
             dock_title = "2D View"
-        elif viewer == viewer3D:
+        elif viewer == CILViewer:
             interactor_style = vlink.Linked3DInteractorStyle
             dock_title = "3D View"
         else:
-            raise ValueError("viewer must be either viewer2D or viewer3D")
+            raise ValueError("viewer must be either CILViewer2D or CILViewer")
 
         dock = QCILDockableWidget(viewer=viewer, shape=(600, 600), interactorStyle=interactor_style, title=dock_title)
 
@@ -580,15 +609,17 @@ class TwoViewersMainWindow(ViewerMainWindow):
         self.linker.setLinkWindowLevel(True)
         self.linker.setLinkSlice(True)
 
-    def showHideViewer(self, viewer_num):
-        '''Show or  hide a viewer, depending on its current state.
+    def showHideViewer(self, viewer_num, show=True):
+        '''Show or  hide a viewer.
         
         Parameters
         ----------
         viewer_num : int
             The index of the viewer to show or hide, in the list self.viewers.
+        show : bool, optional
+            Whether to show the viewer. Default is True.
         '''
-        if self.viewer_docks[viewer_num].isVisible():
+        if not show:
             self.viewer_docks[viewer_num].hide()
         else:
             self.viewer_docks[viewer_num].show()
@@ -598,7 +629,7 @@ class TwoViewersMainWindow(ViewerMainWindow):
         Set up plane clipping for all 2D viewers.
         '''
         for viewer in self.viewers:
-            if isinstance(viewer, viewer2D):
+            if isinstance(viewer, CILViewer2D):
                 viewer.PlaneClipper = cilPlaneClipper()
                 viewer.PlaneClipper.SetInteractorStyle(viewer.style)
                 viewer.style.AddObserver("MouseWheelForwardEvent", viewer.PlaneClipper.UpdateClippingPlanes, 0.9)
@@ -617,12 +648,113 @@ class TwoViewersMainWindow(ViewerMainWindow):
         overlay_checkbox.setChecked(True)
         overlay_checkbox.setVisible(False)
 
+    def placeViewerCoordsDockWidget(self):
+        '''
+        Positions the viewer coords dock widget below the viewers
+        '''
+        self.central_widget.addDockWidget(Qt.BottomDockWidgetArea, self.viewer_coords_dock)
+        self.viewer_coords_dock.setMaximumHeight(self.size().height()*0.5)
+
+
+
+class TwoViewersMainWindow(TwoViewersMainWindowMixin, ViewerMainWindow):
+    '''
+    Creates a window containing two viewers, both in dockwidgets.
+    The viewers are linked together, so that they share the same
+    camera position and orientation.
+    
+    If a viewer is 2D, then it will be PlaneClipped.
+    
+    Properties of note:
+        viewers: a list of the two viewers
+        frames: a list of the two frames
+        viewer_docks: a list of the two viewer docks
+    
+    Parameters
+    ----------
+    title : str
+        The title of the window
+    app_name : str
+        The name of the application
+    settings_name : str
+        The name of the settings file
+    organisation_name : str
+        The name of the organisation
+    viewer1 : CILViewer2D or CILViewer
+        The class of the first viewer
+    viewer2 : CILViewer2D, CILViewer, or None, optional
+        The class of the second viewer
+    '''
+
+    def __init__(self,
+                 title="StandaloneViewer",
+                 app_name="Standalone Viewer",
+                 settings_name=None,
+                 organisation_name=None,
+                 viewer1=CILViewer2D,
+                 viewer2=CILViewer):
+        
+        super(TwoViewersMainWindow, self).__init__(title, app_name, settings_name, organisation_name)  
+        
+        self.setupTwoViewers(viewer1, viewer2)
+
+        
+        
+
+class TwoViewersSessionMainWindow(TwoViewersMainWindowMixin, ViewerSessionMainWindow):
+    '''
+    Creates a window containing two viewers, both in dockwidgets.
+    This main window has methods for saving and loading sessions.
+
+    The viewers are linked together, so that they share the same
+    camera position and orientation.
+    
+    If a viewer is 2D, then it will be PlaneClipped.
+    
+    Properties of note:
+        viewers: a list of the two viewers
+        frames: a list of the two frames
+        viewer_docks: a list of the two viewer docks
+
+    This class is meant to be subclassed, and the subclass should implement the following methods:
+     - getSessionConfig
+     - finishLoadConfig
+     as these deal with the session saving and loading. See 'SessionMainWindow' for more details.
+
+    
+    Parameters
+    ----------
+    title : str
+        The title of the window
+    app_name : str
+        The name of the application
+    settings_name : str
+        The name of the settings file
+    organisation_name : str
+        The name of the organisation
+    viewer1 : CILViewer2D or CILViewer
+        The class of the first viewer
+    viewer2 : CILViewer2D, CILViewer, or None, optional
+        The class of the second viewer
+    '''
+
+    def __init__(self,
+                 title="StandaloneViewer",
+                 app_name="Standalone Viewer",
+                 settings_name=None,
+                 organisation_name=None,
+                 viewer1=CILViewer2D,
+                 viewer2=CILViewer):
+        super(TwoViewersSessionMainWindow, self).__init__(title, app_name, settings_name, organisation_name)  
+        
+        self.setupTwoViewers(viewer1, viewer2)
+
 
 # For running example window -----------------------------------------------------------
 
 
 def create_main_window():
-    window = ViewerMainWindow("Test Viewer Main Window", 'Test Viewer Main Window')
+    window = TwoViewersMainWindow("Test Viewer Main Window", 'Test Viewer Main Window')
     return window
 
 
