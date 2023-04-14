@@ -14,7 +14,7 @@ An example of use of the viewers in another app is the [iDVC app](https://github
 To install via `conda`, create a new environment using:
 
 ```bash
-conda create --name cil-viewer -c ccpi -c paskino -c conda-forge"
+conda create --name cil-viewer -c ccpi -c paskino -c conda-forge
 ```
 
 ## Running the CILViewer app
@@ -30,6 +30,8 @@ conda create --name cil-viewer -c ccpi -c paskino -c conda-forge"
 
 ## Web viewer
 See [here](https://github.com/vais-ral/CILViewer/tree/master/Wrappers/Python/ccpi/web_viewer) for instructions on how to install and run the web viewer.
+
+
 
 ## Using the 2D and 3D Viewers
 
@@ -76,24 +78,19 @@ The interactive 3D viewer CILViewer provides:
     - 'z' slices on the XY
     - 'r' save render to current_render.png
     - 's' toggle visibility of slice
-    - 'v' toggle visibility of volume render\n"
+    - 'v' toggle visibility of volume render
     - 'c' activates volume render clipping plane widget, for slicing through a volume.
     - 'a' whole image Auto Window/Level on the slice.
     - 'i' interpolation of the slice.
-  - Slice: Mouse Scroll\n"
-  - Zoom: Right Mouse + Move Up/Down\n"
+  - Slice: Mouse Scroll
+  - Zoom: Right Mouse + Move Up/Down
   - Pan: Middle Mouse Button + Move or Shift + Left Mouse + Move
   - Adjust Camera: Left Mouse + Move
-                             "  - Rotate: Ctrl + Left Mouse + Move\n"
-                             "\n"
-                             "Keyboard Interactions:\n"
-                             "\n"
-                             "h: Display this help\n"
-                             "x:  YZ Plane\n"
-                             "y:  XZ Plane\n"
-                             "z:  XY Plane\n"
-      ne widget\n"
-                             "\n
+  - Rotate: Ctrl + Left Mouse + Move
+
+## References
+Kinder egg dataset shown in above examples is dataset `egg2`:
+Jakob Sauer Jørgensen, Martin Skovgaard Andersen, & Carsten Gundlach. (2021). HDTomo TXRM micro-CT datasets [Data set]. Zenodo. https://doi.org/10.5281/zenodo.4822516
 
 ## Notice
 The CIL Viewer code took initial inspiration from a previous project of Edoardo Pasca and Lukas Batteau [PyVE](https://sourceforge.net/p/pyve/code/ci/master/tree/PyVE/), the license of which we report here:
@@ -128,58 +125,4 @@ ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF S
 ```
 
 
-
-
-
-## Install the demos locally
-
-
-
-where,
-
-```astra-toolbox``` will allow you to use CIL with the [ASTRA toolbox](http://www.astra-toolbox.com/) projectors (GPLv3 license).
-
-```tigre``` will allow you to use CIL with the [TIGRE](https://github.com/CERN/TIGRE) toolbox projectors (BSD license).
-
-```ccpi-regulariser``` will give you access to the [CCPi Regularisation Toolkit](https://github.com/vais-ral/CCPi-Regularisation-Toolkit).
-
-```tomophantom``` [Tomophantom](https://github.com/dkazanc/TomoPhantom) will allow you to generate phantoms to use as test data.
-
-```cudatoolkit``` If you have GPU drivers compatible with more recent CUDA versions you can modify this package selector (installing tigre via conda requires 9.2).
-
-```ipywidgets``` will allow you to use interactive widgets in our jupyter notebooks.
-
-### Dependency Notes
-
-CIL's [optimised FDK/FBP](https://github.com/TomographicImaging/CIL/discussions/1070) `recon` module requires:
-1. the Intel [Integrated Performance Primitives](https://www.intel.com/content/www/us/en/developer/tools/oneapi/ipp.html#gs.gxwq5p) Library ([license](https://www.intel.com/content/dam/develop/external/us/en/documents/pdf/intel-simplified-software-license-version-august-2021.pdf)) which can be installed via conda from the `intel` [channel](https://anaconda.org/intel/ipp).
-2. [TIGRE](https://github.com/CERN/TIGRE), which can be installed via conda from the `ccpi` channel.
-
-## Run the demos locally
-
-- Activate your environment using: ``conda activate cil-demos``.
-
-- Clone the ``CIL-Demos`` repository and move into the ``CIL-Demos`` folder.
-
-- Run: ``jupyter-notebook`` on the command line.
-
-- Navigate into ``demos/1_Introduction``
-
-The best place to start is the ``01_intro_walnut_conebeam.ipynb`` notebook.
-However, this requires installing the walnut dataset.
-
-To test your notebook installation, instead run ``03_preprocessing.ipynb``, which uses a dataset shipped with CIL, which will
-have automatically been installed by conda.
-
-Instead of using the ``jupyter-notebook`` command, an alternative is to run the notebooks in ``VSCode``.
-
-
-## Advanced Demos
-
-For more advanced general imaging and tomography demos, please visit the following repositories:
-
-* [**Core Imaging Library part I: a versatile python framework for tomographic imaging**](https://github.com/TomographicImaging/Paper-2021-RSTA-CIL-Part-I)
-
-* [**Core Imaging Library part II: multichannel reconstruction
-for dynamic and spectral tomography**](https://github.com/TomographicImaging/Paper-2021-RSTA-CIL-Part-II).
 
