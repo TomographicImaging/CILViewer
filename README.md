@@ -34,7 +34,7 @@ conda create --name cil-viewer -c ccpi -c paskino -c conda-forge
 ## Web viewer
 See [here](https://github.com/vais-ral/CILViewer/tree/master/Wrappers/Python/ccpi/web_viewer) for instructions on how to install and run the web viewer.
 
-
+<img src="Documentation/readme-images/WebCILViewer3D.PNG" alt="Your image title" width="500"/>
 
 ## Using the 2D and 3D Viewers
 
@@ -93,6 +93,7 @@ The interactive 3D viewer CILViewer provides:
 
 ## References
 Kinder egg dataset shown in above examples is dataset `egg2`:
+
 Jakob Sauer Jørgensen, Martin Skovgaard Andersen, & Carsten Gundlach. (2021). HDTomo TXRM micro-CT datasets [Data set]. Zenodo. https://doi.org/10.5281/zenodo.4822516
 
 ## Notice
