@@ -15,7 +15,6 @@
 
 from setuptools import setup
 import os
-import sys
 import subprocess
 
 
@@ -36,18 +35,17 @@ def version2pep440(version):
     return v_pep440
 
 
-git_version_string = subprocess.check_output(
-    'git describe', shell=True).decode("utf-8").rstrip()[1:]
+git_version_string = subprocess.check_output('git describe', shell=True).decode("utf-8").rstrip()[1:]
 
 if os.environ.get('CONDA_BUILD', 0) == '1':
     cwd = os.path.join(os.environ.get('RECIPE_DIR'), '..')
     # requirements are processed by conda
     requires = []
-    version = git_version_string
 else:
     requires = ['numpy', 'vtk']
     cwd = os.getcwd()
-    version = version2pep440(git_version_string)
+
+version = version2pep440(git_version_string)
 
 # update the version string
 fname = os.path.join(cwd, 'ccpi', 'viewer', 'version.py')
@@ -60,7 +58,14 @@ with open(fname, 'w') as f:
 setup(
     name="ccpi-viewer",
     version=version,
-    packages=['ccpi', 'ccpi.viewer', 'ccpi.viewer.utils'],
+    packages=[
+        'ccpi',
+        'ccpi.viewer',
+        'ccpi.viewer.utils',
+        'ccpi.web_viewer',
+        'ccpi.viewer.widgets',
+        'ccpi.viewer.cli',
+    ],
     install_requires=requires,
     zip_safe=False,
     # metadata for upload to PyPI
@@ -70,6 +75,6 @@ setup(
     license="Apache v2.0",
     keywords="3D data viewer",
     url="http://www.ccpi.ac.uk",  # project home page, if any
-
-    # could also include long_description, download_url, classifiers, etc.
-)
+    entry_points={
+        'console_scripts': ['resample = ccpi.viewer.cli.resample:main', 'web_cilviewer = ccpi.web_viewer.web_app:main']
+    })

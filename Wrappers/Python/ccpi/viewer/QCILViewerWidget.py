@@ -41,21 +41,20 @@ class QCILViewerWidget(QtWidgets.QFrame):
         else:
             self.ren = vtk.vtkRenderer()
         self.vtkWidget.GetRenderWindow().AddRenderer(self.ren)
+        # https://discourse.vtk.org/t/qvtkwidget-render-window-is-outside-main-qt-app-window/1539/8?u=edoardo_pasca
         self.iren = self.vtkWidget.GetRenderWindow().GetInteractor()
         try:
 
             # print ("provided viewer class ", kwargs['viewer'])
-            self.viewer = kwargs['viewer'](
-                renWin=self.vtkWidget.GetRenderWindow(),
-                iren=self.iren,
-                ren=self.ren,
-                dimx=dimx,
-                dimy=dimy,
-                debug=kwargs.get('debug', False))
+            self.viewer = kwargs['viewer'](renWin=self.vtkWidget.GetRenderWindow(),
+                                           iren=self.iren,
+                                           ren=self.ren,
+                                           dimx=dimx,
+                                           dimy=dimy,
+                                           debug=kwargs.get('debug', False))
         except KeyError:
-            raise KeyError(
-                "Viewer class not provided. Submit an uninstantiated viewer class object"
-                "using 'viewer' keyword")
+            raise KeyError("Viewer class not provided. Submit an uninstantiated viewer class object"
+                           "using 'viewer' keyword")
 
         if 'interactorStyle' in kwargs.keys():
             self.viewer.style = kwargs['interactorStyle'](self.viewer)

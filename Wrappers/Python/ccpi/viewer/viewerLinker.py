@@ -237,13 +237,11 @@ class ViewerLinkObserver():
 
         # Strange bug with middle button, only target viewer responds to
         # MiddleButtonPressEvent, but not to ReleaseEvent. Let's ignore it.
-        if (event == "MiddleButtonPressEvent"
-                or event == "MiddleButtonReleaseEvent"):
+        if (event == "MiddleButtonPressEvent" or event == "MiddleButtonReleaseEvent"):
             shouldPassEvent = False
 
             # Zoom
-        if (((event == "LeftButtonPressEvent") and interactor.GetAltKey() == 0
-             and interactor.GetControlKey() == 0
+        if (((event == "LeftButtonPressEvent") and interactor.GetAltKey() == 0 and interactor.GetControlKey() == 0
              and interactor.GetShiftKey() == 1) or state == 4 or state == 5):
             # Check if zooming is linked
             if (not self.linkZoom):
@@ -256,8 +254,7 @@ class ViewerLinkObserver():
                         self.sourceCamera.GetParallelScale())
 
         # Pan
-        if (((event == "LeftButtonPressEvent") and interactor.GetAltKey() == 0
-             and interactor.GetControlKey() == 1
+        if (((event == "LeftButtonPressEvent") and interactor.GetAltKey() == 0 and interactor.GetControlKey() == 1
              and interactor.GetShiftKey() == 0) or state == 2):
             # Check if panning is linked
             if (not self.linkPan):
@@ -265,8 +262,7 @@ class ViewerLinkObserver():
                 shouldPassEvent = False
 
         # Pick
-        if (((event == "LeftButtonPressEvent") and interactor.GetAltKey() == 0
-             and interactor.GetControlKey() == 0
+        if (((event == "LeftButtonPressEvent") and interactor.GetAltKey() == 0 and interactor.GetControlKey() == 0
              and interactor.GetShiftKey() == 0) or state == 1025):
             if isinstance(sourceInteractorStyle, Linked3DInteractorStyle):
                 shouldPassEvent = False
@@ -288,8 +284,7 @@ class ViewerLinkObserver():
                     shouldPassEvent = False
 
         # WindowLevel
-        if (((event == "RightButtonPressEvent") and interactor.GetAltKey() == 1
-             and interactor.GetControlKey() == 0
+        if (((event == "RightButtonPressEvent") and interactor.GetAltKey() == 1 and interactor.GetControlKey() == 0
              and interactor.GetShiftKey() == 0) or state == 1024):
             # Check if windowing/leveling is linked
             if (not self.linkWindowLevel):
@@ -297,51 +292,46 @@ class ViewerLinkObserver():
                 shouldPassEvent = False
             else:
                 # Set current window/level
-                window = self.sourceViewer.getColourWindow()
-                level = self.sourceViewer.getColourLevel()
-                self.targetVtkViewer.setColourWindowLevel(window, level)
+                window = self.sourceViewer.getSliceColorWindow()
+                level = self.sourceViewer.getSliceColorLevel()
+                self.targetVtkViewer.setSliceColorWindowLevel(window, level)
 
         # Update window level on mouse move
-        if (event == "MouseMoveEvent"
-                and self.sourceViewer.event.isActive("WINDOW_LEVEL_EVENT")):
+        if (event == "MouseMoveEvent" and self.sourceViewer.event.isActive("WINDOW_LEVEL_EVENT")):
 
             if not self.linkWindowLevel:
                 shouldPassEvent = False
             else:
-                window = self.sourceViewer.getColourWindow()
-                level = self.sourceViewer.getColourLevel()
-                self.targetVtkViewer.setColourWindowLevel(window, level)
+                window = self.sourceViewer.getSliceColorWindow()
+                level = self.sourceViewer.getSliceColorLevel()
+                self.targetVtkViewer.setSliceColorWindowLevel(window, level)
 
         # Slice
-        if (event == "MouseWheelForwardEvent"
-                or event == "MouseWheelBackwardEvent" or state == 1026):
+        if (event == "MouseWheelForwardEvent" or event == "MouseWheelBackwardEvent" or state == 1026):
             # Check if slicing is linked
             if (not self.linkSlice):
                 shouldPassEvent = False
             else:
                 # Linked, check if orientation is the same
-                if (self.sourceVtkViewer.GetSliceOrientation() !=
-                        self.targetVtkViewer.GetSliceOrientation()):
+                if (self.sourceVtkViewer.getSliceOrientation() != self.targetVtkViewer.getSliceOrientation()):
                     shouldPassEvent = False
 
         # KeyPress and orientation
         if (event == "KeyPressEvent" or state == 1026):
-            orientation_link_event = self.linkOrientation and (
-                interactor.GetKeyCode() == "x" or interactor.GetKeyCode()
-                == "y" or interactor.GetKeyCode() == "z")
-            window_level_link_event = self.linkWindowLevel and (
-                interactor.GetKeyCode() == "a"
-                or interactor.GetKeyCode() == "w")
-            interpolation_link_event = self.linkInterpolation and interactor.GetKeyCode(
-            ) == "i"
+            orientation_link_event = self.linkOrientation and (interactor.GetKeyCode() == "x"
+                                                               or interactor.GetKeyCode() == "y"
+                                                               or interactor.GetKeyCode() == "z")
+            window_level_link_event = self.linkWindowLevel and (interactor.GetKeyCode() == "a"
+                                                                or interactor.GetKeyCode() == "w")
+            interpolation_link_event = self.linkInterpolation and interactor.GetKeyCode() == "i"
             if not (orientation_link_event or interpolation_link_event):
                 shouldPassEvent = False
 
             if window_level_link_event:
                 # Set current window/level
-                window = self.sourceViewer.getColourWindow()
-                level = self.sourceViewer.getColourLevel()
-                self.targetVtkViewer.setColourWindowLevel(window, level)
+                window = self.sourceViewer.getSliceColorWindow()
+                level = self.sourceViewer.getSliceColorLevel()
+                self.targetVtkViewer.setSliceColorWindowLevel(window, level)
 
         # Check if event should be passed
         if (shouldPassEvent):

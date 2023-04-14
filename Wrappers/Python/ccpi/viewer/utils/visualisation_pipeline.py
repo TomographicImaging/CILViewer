@@ -28,8 +28,7 @@ class cilClipPolyDataBetweenPlanes(VTKPythonAlgorithmBase):
 
         self.visPlane = [vtk.vtkPlane(), vtk.vtkPlane()]
         self.planeClipper = [vtk.vtkClipPolyData(), vtk.vtkClipPolyData()]
-        self.planeClipper[1].SetInputConnection(
-            self.planeClipper[0].GetOutputPort())
+        self.planeClipper[1].SetInputConnection(self.planeClipper[0].GetOutputPort())
 
         self.planeClipper[0].SetClipFunction(self.visPlane[0])
         self.planeClipper[1].SetClipFunction(self.visPlane[1])
@@ -133,9 +132,10 @@ class cilClipPolyDataBetweenPlanes(VTKPythonAlgorithmBase):
 
 class cilPlaneClipper(object):
 
-    def __init__(self, interactor, data_list_to_clip={}):
-        self.SetInteractor(interactor)
-        self.SetDataListToClip(data_list_to_clip)
+    def __init__(self):
+        # initilise with an empty dictionary of polydata to clip
+        list2clip = {}
+        self.SetDataListToClip(list2clip)
 
     def SetDataListToClip(self, data_list_to_clip):
         self.DataListToClip = {}
@@ -169,50 +169,39 @@ class cilPlaneClipper(object):
     def GetClippedData(self, key):
         return self.DataListToClip[key]
 
-    def SetInteractor(self, interactor):
-        self.Interactor = interactor
+    def SetInteractorStyle(self, interactor_style):
+        self.InteractorStyle = interactor_style
 
-    def GetInteractor(self):
-        return self.Interactor
+    def GetInteractorStyle(self):
+        return self.InteractorStyle
 
-    def UpdateClippingPlanes(self, interactor=None, event="ClipData"):
+    def UpdateClippingPlanes(self, interactor_style=None, event="ClipData"):
         try:
             if len(self.DataListToClip) > 0:
-                if interactor is None:
-                    interactor = self.Interactor
-                    interactor.UpdatePipeline()
-
-                # print("Update Clipping Planes", self.DataListToClip)
-                # print("Clipping Event: ", event)
-
-                # print("Orientation", interactor.GetSliceOrientation())
-                # print("Interactor", interactor)
+                if interactor_style is None:
+                    interactor_style = self.InteractorStyle
+                    interactor_style.UpdatePipeline()
 
                 normal = [0, 0, 0]
                 origin = [0, 0, 0]
                 norm = 1
 
-                orientation = interactor.GetSliceOrientation()
+                orientation = interactor_style.GetSliceOrientation()
 
-                spac = interactor.GetInputData().GetSpacing()
-                orig = interactor.GetInputData().GetOrigin()
+                spac = interactor_style.GetInputData().GetSpacing()
+                orig = interactor_style.GetInputData().GetOrigin()
                 slice_thickness = spac[orientation]
 
-                #print("Current active slice in image coords:", interactor.GetActiveSlice())
-
                 current_slice = [0, 0, 0]
-                current_slice[orientation] = interactor.GetActiveSlice()
-                current_slice = interactor.image2world(current_slice)
-
-                #print("Current active slice in world coords: ", current_slice)
+                current_slice[orientation] = interactor_style.GetActiveSlice()
+                current_slice = interactor_style.image2world(current_slice)
 
                 beta_up = 0.5 - 1e-9
                 beta_down = 0.5
 
                 slice_above = [0, 0, 0]
-                slice_above[orientation] = interactor.GetActiveSlice(
-                ) + beta_up
-                slice_above = interactor.image2world(slice_above)
+                slice_above[orientation] = interactor_style.GetActiveSlice() + beta_up
+                slice_above = interactor_style.image2world(slice_above)
 
                 normal[orientation] = norm
                 origin = slice_above
@@ -220,15 +209,13 @@ class cilPlaneClipper(object):
 
                 # update the  plane below
                 slice_below = [0, 0, 0]
-                slice_below[orientation] = interactor.GetActiveSlice(
-                ) - beta_down
-                slice_below = interactor.image2world(slice_below)
+                slice_below[orientation] = interactor_style.GetActiveSlice() - beta_down
+                slice_below = interactor_style.image2world(slice_below)
 
                 origin_below = [i for i in origin]
                 origin_below = slice_below
 
                 for data_to_clip in self.DataListToClip.values():
-                    #print("On data: ", list(self.DataListToClip.keys())[list(self.DataListToClip.values()).index(data_to_clip)])
                     data_to_clip.SetPlaneOriginAbove(origin_above)
                     data_to_clip.SetPlaneNormalAbove(normal)
                     data_to_clip.SetPlaneOriginBelow(origin_below)
@@ -236,7 +223,7 @@ class cilPlaneClipper(object):
                         (-normal[0], -normal[1], -normal[2]))
                     data_to_clip.Update()
 
-                interactor.UpdatePipeline()
+                interactor_style.UpdatePipeline()
 
         except AttributeError as ae:
             print(ae)
@@ -303,8 +290,7 @@ class cilMaskPolyData(VTKPythonAlgorithmBase):
                 i += 1
 
             if not outside:
-                mm = mask.GetScalarComponentAsDouble(int(ic[0]), int(ic[1]),
-                                                     int(ic[2]), 0)
+                mm = mask.GetScalarComponentAsDouble(int(ic[0]), int(ic[1]), int(ic[2]), 0)
 
                 if int(mm) == int(self.GetMaskValue()):
                     # print ("value of point {} {}".format(mm, ic))
@@ -328,9 +314,7 @@ class cilMaskPolyData(VTKPythonAlgorithmBase):
         spac = imagedata.GetSpacing()
         orig = imagedata.GetOrigin()
 
-        return [
-            round((world_coordinates[i] + orig[i]) / spac[i]) for i in range(3)
-        ]
+        return [round((world_coordinates[i] + orig[i]) / spac[i]) for i in range(3)]
 
     def points2vertices(self, points):
         '''returns a vtkCellArray from a vtkPoints'''

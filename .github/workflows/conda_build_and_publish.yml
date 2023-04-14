@@ -14,13 +14,16 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v3
+      with:
+        fetch-depth: 0 # All history for use later with the meta.yaml file for conda-recipes
     - name: publish-to-conda
-      uses: paskino/conda-package-publish-action@v1.4.3
+      uses: paskino/conda-package-publish-action@v1.4.4
       with:
         subDir: 'Wrappers/Python/conda-recipe'
-        channels: 'conda-forge -c paskino'
+        channels: '-c conda-forge -c paskino -c ccpi'
         AnacondaToken: ${{ secrets.ANACONDA_TOKEN }}
         publish: ${{ github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags') }}
         test_all: ${{(github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')) || (github.ref == 'refs/heads/master')}}
+        additional_apt_packages: 'libegl1-mesa libegl1-mesa-dev'
 

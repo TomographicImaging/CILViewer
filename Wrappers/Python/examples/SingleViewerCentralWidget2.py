@@ -4,6 +4,8 @@ from PySide2 import QtCore, QtWidgets
 from ccpi.viewer import viewer2D, viewer3D
 from ccpi.viewer.QCILViewerWidget import QCILViewerWidget
 import os
+from ccpi.viewer.utils import example_data
+
 
 
 class SingleViewerCenterWidget(QtWidgets.QMainWindow):
@@ -13,20 +15,10 @@ class SingleViewerCenterWidget(QtWidgets.QMainWindow):
         self.setGeometry(450, 250, 1000, 1000)
         self.frame = QCILViewerWidget(viewer=viewer, shape=(2000, 2000))
 
-        reader = vtk.vtkMetaImageReader()
-        reader.SetFileName(
-            os.path.join(
-                "c:/Users/ofn77899/Dev/CILViewer/Wrappers/Python/examples",
-                'head.mha'))
-        reader.Update()
-        reader2 = vtk.vtkMetaImageReader()
-        reader2.SetFileName(
-            os.path.join(
-                "c:/Users/ofn77899/Dev/CILViewer/Wrappers/Python/examples",
-                'head_root.mha'))
-        reader2.Update()
-        self.frame.viewer.setInputData(reader2.GetOutput())
-        self.frame.viewer.setInputData2(reader.GetOutput())
+        head = example_data.HEAD.get()
+
+        self.frame.viewer.setInputData(head)
+        self.frame.viewer.setInputData2(head)
 
         self.setCentralWidget(self.frame)
 

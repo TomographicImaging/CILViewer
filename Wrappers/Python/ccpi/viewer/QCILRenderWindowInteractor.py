@@ -41,15 +41,13 @@ class QCILRenderWindowInteractor(QVTKRenderWindowInteractor):
     def enterEvent(self, ev):
         '''Overload of enterEvent from base class to use _GetCtrlShiftAlt'''
         ctrl, shift, alt = self._GetCtrlShiftAlt(ev)
-        self._Iren.SetEventInformationFlipY(self.__saveX, self.__saveY, ctrl,
-                                            shift, chr(0), 0, None)
+        self._Iren.SetEventInformationFlipY(self.__saveX, self.__saveY, ctrl, shift, chr(0), 0, None)
         self._Iren.EnterEvent()
 
     def leaveEvent(self, ev):
         '''Overload of leaveEvent from base class to use _GetCtrlShiftAlt'''
         ctrl, shift, alt = self._GetCtrlShiftAlt(ev)
-        self._Iren.SetEventInformationFlipY(self.__saveX, self.__saveY, ctrl,
-                                            shift, chr(0), 0, None)
+        self._Iren.SetEventInformationFlipY(self.__saveX, self.__saveY, ctrl, shift, chr(0), 0, None)
         self._Iren.LeaveEvent()
 
     def mousePressEvent(self, ev):
@@ -58,8 +56,7 @@ class QCILRenderWindowInteractor(QVTKRenderWindowInteractor):
         repeat = 0
         if ev.type() == QEvent.MouseButtonDblClick:
             repeat = 1
-        self._Iren.SetEventInformationFlipY(ev.x(), ev.y(), ctrl, shift,
-                                            chr(0), repeat, None)
+        self._Iren.SetEventInformationFlipY(ev.x(), ev.y(), ctrl, shift, chr(0), repeat, None)
         self._Iren.SetAltKey(alt)
         self._Iren.SetShiftKey(shift)
         self._Iren.SetControlKey(ctrl)
@@ -82,7 +79,6 @@ class QCILRenderWindowInteractor(QVTKRenderWindowInteractor):
 
         #ctrl, shift = self._GetCtrlShift(ev)
         ctrl, shift, alt = self._GetCtrlShiftAlt(ev)
-        self._Iren.SetEventInformationFlipY(ev.x(), ev.y(), ctrl, shift,
-                                            chr(0), 0, None)
+        self._Iren.SetEventInformationFlipY(ev.x(), ev.y(), ctrl, shift, chr(0), 0, None)
         self._Iren.SetAltKey(alt)
         self._Iren.MouseMoveEvent()
