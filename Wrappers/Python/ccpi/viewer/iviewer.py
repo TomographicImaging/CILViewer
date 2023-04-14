@@ -9,7 +9,6 @@ import numpy as np
 from ccpi.viewer.utils import example_data
 
 
-
 class SingleViewerCenterWidget(QtWidgets.QMainWindow):
 
     def __init__(self, parent=None, viewer=viewer2D):

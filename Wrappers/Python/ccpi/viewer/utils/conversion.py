@@ -89,11 +89,7 @@ class Converter(object):
     # Utility functions to transform numpy arrays to vtkImageData and viceversa
 
     @staticmethod
-    def numpy2vtkImage(nparray,
-                       spacing=(1., 1., 1.),
-                       origin=(0, 0, 0),
-                       deep=0,
-                       output=None):
+    def numpy2vtkImage(nparray, spacing=(1., 1., 1.), origin=(0, 0, 0), deep=0, output=None):
 
         shape = numpy.shape(nparray)
         if (nparray.flags["FNC"]):
@@ -252,10 +248,7 @@ class cilNumpyMETAImageWriter(object):
             hdr.write(header)
 
     @staticmethod
-    def WriteNumpyAsMETAImage(array,
-                              filename,
-                              spacing=(1., 1., 1.),
-                              origin=(0., 0., 0.)):
+    def WriteNumpyAsMETAImage(array, filename, spacing=(1., 1., 1.), origin=(0., 0., 0.)):
         '''Writes a NumPy array and a METAImage text header so that the npy file can be used as data file'''
         # save the data as numpy
         datafname = os.path.abspath(filename) + '.npy'
@@ -266,8 +259,7 @@ class cilNumpyMETAImageWriter(object):
             numpy.save(datafname, numpy.asfortranarray(array))
         npyhdr = parseNpyHeader(datafname)
         typecode = str(array.dtype)
-        big_endian = 'True' if npyhdr['description']['descr'][
-            0] == '>' else 'False'
+        big_endian = 'True' if npyhdr['description']['descr'][0] == '>' else 'False'
         readshape = npyhdr['description']['shape']
         is_fortran = npyhdr['description']['fortran_order']
         if is_fortran:
@@ -286,17 +278,11 @@ class cilNumpyMETAImageWriter(object):
                                                      origin=origin)
 
 
-def WriteNumpyAsMETAImage(array,
-                          filename,
-                          spacing=(1., 1., 1.),
-                          origin=(0., 0., 0.)):
+def WriteNumpyAsMETAImage(array, filename, spacing=(1., 1., 1.), origin=(0., 0., 0.)):
     '''Writes a NumPy array and a METAImage text header so that the npy file can be used as data file
 
     same as cilNumpyMETAImageWriter.WriteNumpyAsMETAImage'''
-    return cilNumpyMETAImageWriter.WriteNumpyAsMETAImage(array,
-                                                         filename,
-                                                         spacing=spacing,
-                                                         origin=origin)
+    return cilNumpyMETAImageWriter.WriteNumpyAsMETAImage(array, filename, spacing=spacing, origin=origin)
 
 
 def parseNpyHeader(filename):
@@ -549,8 +535,7 @@ class cilReaderInterface(VTKPythonAlgorithmBase):
         which tries to read info about the dataset and
         will raise specific errors if inputs required for the 
         file type are not set.'''
-        raise NotImplementedError(
-            "ReadDataSetInfo is not implemented in base class.")
+        raise NotImplementedError("ReadDataSetInfo is not implemented in base class.")
 
     def GetOutput(self):
         return self.GetOutputDataObject(0)
@@ -743,12 +728,9 @@ class cilMetaImageReaderInterface(cilReaderInterface):
                     # print(self.GetStoredArrayShape())
                 elif 'ElementType' in line:
                     typecode = line.split('= ')[-1]
-                    if typecode not in Converter.MetaImageType_to_vtkType.keys(
-                    ):
-                        raise ValueError(
-                            "Unexpected Type:  {}".format(typecode))
-                    self.SetOutputVTKType(
-                        Converter.MetaImageType_to_vtkType[typecode])
+                    if typecode not in Converter.MetaImageType_to_vtkType.keys():
+                        raise ValueError("Unexpected Type:  {}".format(typecode))
+                    self.SetOutputVTKType(Converter.MetaImageType_to_vtkType[typecode])
                 elif 'CompressedData' in line:
                     compressed = line.split('= ')[-1]
                     self.SetIsCompressedData(eval(compressed))
@@ -1464,8 +1446,7 @@ class cilBaseCroppedReader(cilReaderInterface):
         slice_length = self._GetSliceLengthInFile()
 
         try:
-            if self.GetTargetZExtent(
-            )[1] >= shape[2] and self.GetTargetZExtent()[0] <= 0:
+            if self.GetTargetZExtent()[1] >= shape[2] and self.GetTargetZExtent()[0] <= 0:
                 # in this case we don't need to crop, so we read the whole dataset
                 # print("Don't crop")
 
@@ -1503,8 +1484,7 @@ class cilBaseCroppedReader(cilReaderInterface):
 
             # In the case we do need to crop: ---------------------------------------------
 
-            shape[2] = self.GetTargetZExtent()[1] - self.GetTargetZExtent(
-            )[0] + 1
+            shape[2] = self.GetTargetZExtent()[1] - self.GetTargetZExtent()[0] + 1
 
             chunk_file_name = os.path.join(tmpdir, "chunk.raw")
 
@@ -1674,10 +1654,7 @@ class cilHDF5CroppedReader(cilBaseCroppedReader, cilHDF5ReaderInterface):
         # Either the TargetExtent or TargetZExtent should have been set.
         # We prioritise the TargetExtent
         if self.GetTargetExtent() is None:
-            extent = [
-                0, -1, 0, -1, self.GetTargetZExtent[0],
-                self.GetTargetZExtent[1]
-            ]
+            extent = [0, -1, 0, -1, self.GetTargetZExtent[0], self.GetTargetZExtent[1]]
         else:
             extent = self.GetTargetExtent()
         reader.SetUpdateExtent(extent)

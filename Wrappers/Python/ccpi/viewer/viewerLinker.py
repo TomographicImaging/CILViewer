@@ -85,10 +85,8 @@ class ViewerLinker():
         # Make sure the observers aren't added twice
         self.disable()
 
-        self._observerToId = self._viewer1.getInteractor().AddObserver(
-            "AnyEvent", self._to)
-        self._observerFromId = self._viewer2.getInteractor().AddObserver(
-            "AnyEvent", self._from)
+        self._observerToId = self._viewer1.getInteractor().AddObserver("AnyEvent", self._to)
+        self._observerFromId = self._viewer2.getInteractor().AddObserver("AnyEvent", self._from)
 
     def disable(self):
         """
@@ -196,10 +194,8 @@ class ViewerLinkObserver():
         self.targetVtkViewer = self.targetViewer
         self.sourceInteractor = self.sourceViewer.getInteractor()
         self.targetInteractor = self.targetViewer.getInteractor()
-        self.sourceCamera = self.sourceVtkViewer.getRenderer().GetActiveCamera(
-        )
-        self.targetCamera = self.targetVtkViewer.getRenderer().GetActiveCamera(
-        )
+        self.sourceCamera = self.sourceVtkViewer.getRenderer().GetActiveCamera()
+        self.targetCamera = self.targetVtkViewer.getRenderer().GetActiveCamera()
         self.linkZoom = True
         self.linkPan = True
         self.linkPick = True
@@ -250,8 +246,7 @@ class ViewerLinkObserver():
             else:
                 # Set current zoom
                 if (event == "LeftButtonPressEvent"):
-                    self.targetCamera.SetParallelScale(
-                        self.sourceCamera.GetParallelScale())
+                    self.targetCamera.SetParallelScale(self.sourceCamera.GetParallelScale())
 
         # Pan
         if (((event == "LeftButtonPressEvent") and interactor.GetAltKey() == 0 and interactor.GetControlKey() == 1
@@ -341,8 +336,7 @@ class ViewerLinkObserver():
             # Check if source interactor is already linked itself
             if (sourceInteractorStyle.GetLinkedEvent()):
                 # Already linked, pass source interactor
-                targetInteractorStyle.SetLinkedInteractor(
-                    sourceInteractorStyle.GetLinkedInteractor())
+                targetInteractorStyle.SetLinkedInteractor(sourceInteractorStyle.GetLinkedInteractor())
             else:
                 # Not linked, this is the source interactor
                 targetInteractorStyle.SetLinkedInteractor(interactor)

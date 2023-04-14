@@ -145,8 +145,7 @@ class UndirectedGraph(vtkGraphLayoutView):
         self.SetLayoutStrategy(layoutStrategy)
 
         annotation_link = vtk.vtkAnnotationLink()
-        annotation_link.AddObserver("AnnotationChangedEvent",
-                                    self.select_callback)
+        annotation_link.AddObserver("AnnotationChangedEvent", self.select_callback)
         self.GetRepresentation(0).SetAnnotationLink(annotation_link)
         self.GetRepresentation(0).SetScalingArrayName('VertexID')
         self.GetRepresentation(0).ScalingOn()

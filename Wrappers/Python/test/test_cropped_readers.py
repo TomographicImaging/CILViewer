@@ -6,6 +6,7 @@ import vtk
 from ccpi.viewer.utils.conversion import (Converter, cilRawCroppedReader, cilMetaImageCroppedReader,
                                           cilNumpyCroppedReader, cilTIFFCroppedReader)
 
+
 class TestCroppedReaders(unittest.TestCase):
 
     def setUp(self):

@@ -369,14 +369,11 @@ class CILInteractorStyle(vtk.vtkInteractorStyle):
                 self._viewer.imageTracer.On()
         elif interactor.GetKeyCode() == "i":
             # toggle interpolation of slice actor
-            is_interpolated = self._viewer.imageSlice.GetProperty(
-            ).GetInterpolationType()
+            is_interpolated = self._viewer.imageSlice.GetProperty().GetInterpolationType()
             if is_interpolated:
-                self._viewer.imageSlice.GetProperty(
-                ).SetInterpolationTypeToNearest()
+                self._viewer.imageSlice.GetProperty().SetInterpolationTypeToNearest()
             else:
-                self._viewer.imageSlice.GetProperty(
-                ).SetInterpolationTypeToLinear()
+                self._viewer.imageSlice.GetProperty().SetInterpolationTypeToLinear()
             self._viewer.updatePipeline()
 
         elif interactor.GetKeyCode() == '1':
@@ -445,8 +442,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyle):
         if display:
             if (self._viewer.displayHistogram == 0):
                 #self.GetRenderer().AddActor(self._viewer.histogramPlotActor)
-                self._viewer.AddActor(self._viewer.histogramPlotActor,
-                                      HISTOGRAM_ACTOR)
+                self._viewer.AddActor(self._viewer.histogramPlotActor, HISTOGRAM_ACTOR)
                 self.firstHistogram = 1
                 self.Render()
 
@@ -790,10 +786,8 @@ class CILInteractorStyle(vtk.vtkInteractorStyle):
                 self.SetInitialLevel(level)
                 self.SetInitialWindow(window)
 
-                self._viewer.imageSlice.GetProperty().SetColorLevel(
-                    self.GetInitialLevel())
-                self._viewer.imageSlice.GetProperty().SetColorWindow(
-                    self.GetInitialWindow())
+                self._viewer.imageSlice.GetProperty().SetColorLevel(self.GetInitialLevel())
+                self._viewer.imageSlice.GetProperty().SetColorWindow(self.GetInitialWindow())
 
                 self.UpdateImageSlice()
 
@@ -901,8 +895,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyle):
     def HandlePanEvent(self, interactor, event):
         #Camera uses world coordinates, not display coordinates so we have to make a coneversion
         interactor_event_position = interactor.GetEventPosition()
-        interactor_initial_event_position = interactor.GetInitialEventPosition(
-        )
+        interactor_initial_event_position = interactor.GetInitialEventPosition()
 
         event_position = interactor.image2world(interactor.display2imageCoordinate(interactor_event_position)[:-1])
         initial_event_position = interactor.image2world(
@@ -1238,8 +1231,7 @@ class CILViewer2D(CILViewerBase):
         self.voi.SetVOI(extent[0], extent[1], extent[2], extent[3], extent[4], extent[5])
         self.log("extent {0}".format(extent))
         self.voi.Update()
-        self.log("VOI dimensions {0}".format(
-            self.voi.GetOutput().GetDimensions()))
+        self.log("VOI dimensions {0}".format(self.voi.GetOutput().GetDimensions()))
         return extent
 
     def updateImageWithOverlayPipeline(self, resetcamera=False):
@@ -1288,9 +1280,7 @@ class CILViewer2D(CILViewerBase):
 
     @vis_mode.setter
     def vis_mode(self, value):
-        if value in [
-                CILViewer2D.IMAGE_WITH_OVERLAY, CILViewer2D.RECTILINEAR_WIPE
-        ]:
+        if value in [CILViewer2D.IMAGE_WITH_OVERLAY, CILViewer2D.RECTILINEAR_WIPE]:
             self.__vis_mode = value
 
     def setVisualisationPipelineMethodTo(self, method):
@@ -1601,29 +1591,21 @@ class CILViewer2D(CILViewerBase):
             # y = abs(roi[1][1] - roi[0][1])
         elif self.getSliceOrientation() == SLICE_ORIENTATION_XZ:
             self.log("slice orientation : XZ")
-            extent[0] = self.validateValue(min(self.ROI[0][0], self.ROI[1][0]),
-                                           'x')
-            extent[1] = self.validateValue(max(self.ROI[0][0], self.ROI[1][0]),
-                                           'x')
+            extent[0] = self.validateValue(min(self.ROI[0][0], self.ROI[1][0]), 'x')
+            extent[1] = self.validateValue(max(self.ROI[0][0], self.ROI[1][0]), 'x')
             # x = abs(roi[1][0] - roi[0][0])
-            extent[4] = self.validateValue(min(self.ROI[0][2], self.ROI[1][2]),
-                                           'z')
-            extent[5] = self.validateValue(max(self.ROI[0][2], self.ROI[1][2]),
-                                           'z')
+            extent[4] = self.validateValue(min(self.ROI[0][2], self.ROI[1][2]), 'z')
+            extent[5] = self.validateValue(max(self.ROI[0][2], self.ROI[1][2]), 'z')
             # y = abs(roi[1][2] - roi[0][2])
             extent[2] = self.getActiveSlice()
             extent[3] = self.getActiveSlice()
         elif self.getSliceOrientation() == SLICE_ORIENTATION_YZ:
             self.log("slice orientation : YZ")
-            extent[2] = self.validateValue(min(self.ROI[0][1], self.ROI[1][1]),
-                                           'y')
-            extent[3] = self.validateValue(max(self.ROI[0][1], self.ROI[1][1]),
-                                           'y')
+            extent[2] = self.validateValue(min(self.ROI[0][1], self.ROI[1][1]), 'y')
+            extent[3] = self.validateValue(max(self.ROI[0][1], self.ROI[1][1]), 'y')
             # x = abs(roi[1][1] - roi[0][1])
-            extent[4] = self.validateValue(min(self.ROI[0][2], self.ROI[1][2]),
-                                           'z')
-            extent[5] = self.validateValue(max(self.ROI[0][2], self.ROI[1][2]),
-                                           'z')
+            extent[4] = self.validateValue(min(self.ROI[0][2], self.ROI[1][2]), 'z')
+            extent[5] = self.validateValue(max(self.ROI[0][2], self.ROI[1][2]), 'z')
             # y = abs(roi[1][2] - roi[0][2])
             extent[0] = self.getActiveSlice()
             extent[1] = self.getActiveSlice()
@@ -1720,10 +1702,8 @@ class CILViewer2D(CILViewerBase):
 
             # fill
             if self.linePlot == 0:
-                self.linePlotActor.AddDataSetInputConnection(
-                    self.lineVOIX.GetOutputPort())
-                self.linePlotActor.AddDataSetInputConnection(
-                    self.lineVOIY.GetOutputPort())
+                self.linePlotActor.AddDataSetInputConnection(self.lineVOIX.GetOutputPort())
+                self.linePlotActor.AddDataSetInputConnection(self.lineVOIY.GetOutputPort())
                 # self.getRenderer().AddActor(self.linePlotActor)
                 self.AddActor(self.linePlotActor, LINEPLOT_ACTOR)
                 self.linePlot = 1
@@ -1750,15 +1730,13 @@ class CILViewer2D(CILViewerBase):
                 (origin_display[0] - x_min_offset, origin_display[1] - y_min_offset))
 
             # Calculate the far right border
-            top_right_disp = self.style.world2display(
-                self.style.GetImageWorldExtent())
+            top_right_disp = self.style.world2display(self.style.GetImageWorldExtent())
             top_right_nview = self.style.display2normalisedViewport(
                 (top_right_disp[0] + border + height, top_right_disp[1]))
 
             # Set the position on the image
             self.linePlotActor.SetPosition(origin_nview)
-            self.linePlotActor.SetPosition2(
-                top_right_nview[0] - origin_nview[0], 0.4)
+            self.linePlotActor.SetPosition2(top_right_nview[0] - origin_nview[0], 0.4)
 
             self.log("data length x {0} y {1}".format(self.lineVOIX.GetOutput().GetDimensions(),
                                                       self.lineVOIY.GetOutput().GetDimensions()))
