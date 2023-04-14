@@ -29,7 +29,7 @@ conda create --name cil-viewer -c ccpi -c paskino -c conda-forge
   - Numpy
   - Metaimage (mha and mhd)
 
-[Example of Standalone Viewer](Documentation/readme-images/StandaloneViewerEgg.PNG)
+<img src="Documentation/readme-images/StandaloneViewerEgg.PNG" alt="Your image title" width="500"/>
 
 ## Web viewer
 See [here](https://github.com/vais-ral/CILViewer/tree/master/Wrappers/Python/ccpi/web_viewer) for instructions on how to install and run the web viewer.
