@@ -13,7 +13,7 @@
 #   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
-   
+
 import glob
 import os
 import re
@@ -105,7 +105,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
 
     def GetViewerEvent(self, event):
         return self._viewer.event.isActive(event)
-    
+
     def SetInitialLevel(self, level):
         self._viewer.InitialLevel = level
 
@@ -131,13 +131,15 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
             advance = 10
 
         if event == 'MouseWheelForwardEvent':
-            maxSlice = self._viewer.img3D.GetExtent()[self.GetSliceOrientation()*2+1]
+            maxSlice = self._viewer.img3D.GetExtent()[
+                self.GetSliceOrientation() * 2 + 1]
             # print (self.GetActiveSlice())
             if (self.GetActiveSlice() + advance <= maxSlice):
                 self.SetActiveSlice(self.GetActiveSlice() + advance)
                 self.UpdatePipeline()
         else:
-            minSlice = self._viewer.img3D.GetExtent()[self.GetSliceOrientation()*2]
+            minSlice = self._viewer.img3D.GetExtent()[
+                self.GetSliceOrientation() * 2]
             if (self.GetActiveSlice() - advance >= minSlice):
                 self.SetActiveSlice(self.GetActiveSlice() - advance)
                 self.UpdatePipeline()
@@ -149,6 +151,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
     def OnLeftMouseRelease(self, interactor, event):
         self.SetDecimalisation(0.0)
         self.OnLeftButtonUp()
+
     def OnRightMousePress(self, interactor, event):
         ctrl = interactor.GetControlKey()
         alt = interactor.GetAltKey()
@@ -177,7 +180,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
         alt = interactor.GetShiftKey()
 
         if interactor.GetKeyCode() == "x":
-            self.SetSliceOrientation( SLICE_ORIENTATION_YZ )
+            self.SetSliceOrientation(SLICE_ORIENTATION_YZ)
             self.UpdatePipeline(resetcamera=True)
 
         elif interactor.GetKeyCode() == "y":
@@ -200,8 +203,10 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
             self.SetInitialLevel(level)
             self.SetInitialWindow(window)
 
-            self._viewer.imageSlice.GetProperty().SetColorLevel(self.GetInitialLevel())
-            self._viewer.imageSlice.GetProperty().SetColorWindow(self.GetInitialWindow())
+            self._viewer.imageSlice.GetProperty().SetColorLevel(
+                self.GetInitialLevel())
+            self._viewer.imageSlice.GetProperty().SetColorWindow(
+                self.GetInitialWindow())
 
             self._viewer.imageSlice.Update()
             self.Render()
@@ -211,14 +216,13 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
             position = interactor.GetEventPosition()
             # print ("3D VIEWER MOUSE POSITION", position)
 
-
         # elif alt and not (shift and ctrl):
         #     # DELETE ROI
         #     print ("DELETE ROI")
 
         elif interactor.GetKeyCode() == "h":
             self.DisplayHelp()
-            
+
         elif interactor.GetKeyCode() == "r":
             filename = "current_render"
             self.SaveRender(filename)
@@ -235,8 +239,8 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
                 self._viewer.light.SwitchOn()
             self._viewer.updatePipeline()
         elif interactor.GetKeyCode() == "s":
-            # toggle visibility of the slice 
-            
+            # toggle visibility of the slice
+
             if self._viewer.imageSlice.GetVisibility():
                 self._viewer.imageSlice.VisibilityOff()
             else:
@@ -244,17 +248,21 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
             self._viewer.updatePipeline()
         elif interactor.GetKeyCode() == "i":
             # toggle interpolation of image slice
-            is_interpolated = self._viewer.imageSlice.GetProperty().GetInterpolationType()
+            is_interpolated = self._viewer.imageSlice.GetProperty(
+            ).GetInterpolationType()
             if is_interpolated:
-                self._viewer.imageSlice.GetProperty().SetInterpolationTypeToNearest()
+                self._viewer.imageSlice.GetProperty(
+                ).SetInterpolationTypeToNearest()
             else:
-                self._viewer.imageSlice.GetProperty().SetInterpolationTypeToLinear()
+                self._viewer.imageSlice.GetProperty(
+                ).SetInterpolationTypeToLinear()
             self._viewer.updatePipeline()
-        elif interactor.GetKeyCode() == "c" and self._viewer.volume_render_initialised:
+        elif interactor.GetKeyCode(
+        ) == "c" and self._viewer.volume_render_initialised:
             viewer = self._viewer
-            viewer.imageSlice.VisibilityOff() 
+            viewer.imageSlice.VisibilityOff()
             # clip a volume render if available
-            if hasattr(self._viewer, 'planew'):   
+            if hasattr(self._viewer, 'planew'):
                 is_enabled = viewer.planew.GetEnabled()
                 viewer.planew.SetEnabled(not is_enabled)
                 # print ("should set to not", is_enabled)
@@ -262,26 +270,29 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
             else:
                 # print ("handling c")
                 planew = vtk.vtkImplicitPlaneWidget2()
-                
+
                 rep = vtk.vtkImplicitPlaneRepresentation()
                 world_extent = self.GetImageWorldExtent()
-                extent = [0, world_extent[0], 0, world_extent[1], 0, world_extent[2]]
+                extent = [
+                    0, world_extent[0], 0, world_extent[1], 0, world_extent[2]
+                ]
                 rep.SetWidgetBounds(*extent)
                 planew.SetInteractor(viewer.getInteractor())
                 planew.SetRepresentation(rep)
 
                 rep.SetNormalToCamera()
-                rep.SetOutlineTranslation(False) # this means user can't move bounding box
+                rep.SetOutlineTranslation(
+                    False)  # this means user can't move bounding box
 
                 plane = vtk.vtkPlane()
                 # should be in the focal point
                 cam = self.GetActiveCamera()
                 foc = cam.GetFocalPoint()
-                plane.SetOrigin( *foc )
-                
+                plane.SetOrigin(*foc)
+
                 proj = cam.GetDirectionOfProjection()
                 proj = [x + 0.3 for x in list(proj)]
-                plane.SetNormal( *proj )
+                plane.SetNormal(*proj)
                 rep.SetPlane(plane)
                 rep.UpdatePlacement()
 
@@ -290,10 +301,12 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
                 planew.On()
                 viewer.plane = plane
                 viewer.planew = planew
-                planew.AddObserver('InteractionEvent', self.update_clipping_plane, 0.5)
+                planew.AddObserver('InteractionEvent',
+                                   self.update_clipping_plane, 0.5)
             viewer.updatePipeline()
         else:
             print("Unhandled event %s" % interactor.GetKeyCode())
+
     def update_clipping_plane(self, interactor, event):
         # event translator should you want to filter events
         # event_translator = planew.GetEventTranslator()
@@ -303,17 +316,15 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
         rep = planew.GetRepresentation()
         plane = vtk.vtkPlane()
         rep.GetPlane(plane)
-        
+
         viewer.volume.GetMapper().RemoveAllClippingPlanes()
         viewer.volume.GetMapper().AddClippingPlane(plane)
         viewer.volume.Modified()
         viewer.getRenderer().Render()
 
-
     def DisplayHelp(self):
         help_actor = self._viewer.helpActor
         slice_actor = self._viewer.imageSlice
-
 
         if help_actor.GetVisibility():
             help_actor.VisibilityOff()
@@ -339,26 +350,26 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
         # The text is on multiple lines and center-justified (both horizontal and
         # vertical).
         textMapperC = vtk.vtkTextMapper()
-        textMapperC.SetInput("Mouse Interactions:\n"
-                             "\n"
-                             "  - Slice: Mouse Scroll\n"
-                             "  - Zoom: Right Mouse + Move Up/Down\n"
-                             "  - Pan: Middle Mouse Button + Move or Shift + Left Mouse + Move\n"
-                             "  - Adjust Camera: Left Mouse + Move\n"
-                             "  - Rotate: Ctrl + Left Mouse + Move\n"
-                             "\n"
-                             "Keyboard Interactions:\n"
-                             "\n"
-                             "h: Display this help\n"
-                             "x:  YZ Plane\n"
-                             "y:  XZ Plane\n"
-                             "z:  XY Plane\n"
-                             "r:  Save render to current_render.png\n"
-                             "s:  Toggle visibility of slice\n"
-                             "v:  Toggle visibility of volume render\n"
-                             "c:  Activates volume render clipping plane widget\n"
-                             "a:  Whole image Auto Window/Level\n"
-                             )
+        textMapperC.SetInput(
+            "Mouse Interactions:\n"
+            "\n"
+            "  - Slice: Mouse Scroll\n"
+            "  - Zoom: Right Mouse + Move Up/Down\n"
+            "  - Pan: Middle Mouse Button + Move or Shift + Left Mouse + Move\n"
+            "  - Adjust Camera: Left Mouse + Move\n"
+            "  - Rotate: Ctrl + Left Mouse + Move\n"
+            "\n"
+            "Keyboard Interactions:\n"
+            "\n"
+            "h: Display this help\n"
+            "x:  YZ Plane\n"
+            "y:  XZ Plane\n"
+            "z:  XY Plane\n"
+            "r:  Save render to current_render.png\n"
+            "s:  Toggle visibility of slice\n"
+            "v:  Toggle visibility of volume render\n"
+            "c:  Activates volume render clipping plane widget\n"
+            "a:  Whole image Auto Window/Level\n")
         tprop = textMapperC.GetTextProperty()
         tprop.ShallowCopy(multiLineTextProp)
         tprop.SetJustificationToLeft()
@@ -371,6 +382,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
         self.HideActor(1)
 
         self.Render()
+
     def SaveRender(self, filename):
         self._viewer.saveRender(filename)
 
@@ -388,8 +400,10 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
         spac = self.GetInputData().GetSpacing()
         orig = self.GetInputData().GetOrigin()
 
-        return [round((world_coordinates[i]) / spac[i] - orig[i]) for i in range(3)]
-    
+        return [
+            round((world_coordinates[i]) / spac[i] - orig[i]) for i in range(3)
+        ]
+
     def world2imageCoordinateFloat(self, world_coordinates):
         """
         Convert from the world or global coordinates to image coordinates
@@ -402,7 +416,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
         spac = self.GetInputData().GetSpacing()
         orig = self.GetInputData().GetOrigin()
 
-        return [(world_coordinates[i]) / spac[i] - orig[i]  for i in range(3)]
+        return [(world_coordinates[i]) / spac[i] - orig[i] for i in range(3)]
 
     def image2world(self, image_coordinates):
 
@@ -416,15 +430,21 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
         Compute and return the maximum extent of the image in the rendered world
         """
         return self.image2world(self.GetInputData().GetExtent()[1::2])
-    
-    
+
     def GetInputData(self):
         return self._viewer.img3D
 
+
 class CILViewer():
     '''Simple 3D Viewer based on VTK classes'''
-    
-    def __init__(self, dimx=600,dimy=600, renWin=None, iren=None, ren=None, debug=False):
+
+    def __init__(self,
+                 dimx=600,
+                 dimy=600,
+                 renWin=None,
+                 iren=None,
+                 ren=None,
+                 debug=False):
         '''creates the rendering pipeline'''
 
         # Handle arguments
@@ -437,20 +457,19 @@ class CILViewer():
             self.iren = iren
         else:
             self.iren = vtk.vtkRenderWindowInteractor()
-        
+
         # create a rendering window and renderer
-        if ren is not None: 
+        if ren is not None:
             self.ren = ren
         else:
             self.ren = vtk.vtkRenderer()
-        self.renWin.SetSize(dimx,dimy)
+        self.renWin.SetSize(dimx, dimy)
         self.renWin.AddRenderer(self.ren)
 
         # img 3D as slice
         self.img3D = None
-        self.slicenos = [0,0,0]
+        self.slicenos = [0, 0, 0]
         self.sliceOrientation = SLICE_ORIENTATION_XY
-
 
         imageSlice = vtk.vtkImageSlice()
         imageSliceMapper = vtk.vtkImageSliceMapper()
@@ -480,11 +499,11 @@ class CILViewer():
 
         # Help text
         self.helpActor = vtk.vtkActor2D()
-        self.helpActor.GetPositionCoordinate().SetCoordinateSystemToNormalizedDisplay()
+        self.helpActor.GetPositionCoordinate(
+        ).SetCoordinateSystemToNormalizedDisplay()
         self.helpActor.GetPositionCoordinate().SetValue(0.1, 0.5)
         self.helpActor.VisibilityOff()
         self.ren.AddActor(self.helpActor)
-
 
         # volume render
         volumeMapper = vtk.vtkSmartVolumeMapper()
@@ -494,7 +513,6 @@ class CILViewer():
         volumeProperty = vtk.vtkVolumeProperty()
         self.volume_property = volumeProperty
 
-        
         # The volume holds the mapper and the property and
         # can be used to position/orient the volume.
         volume = vtk.vtkVolume()
@@ -503,14 +521,14 @@ class CILViewer():
         self.volume = volume
         self.volume_colormap_name = 'viridis'
         self.volume_render_initialised = False
-        
+
         # axis orientation widget
         om = vtk.vtkAxesActor()
         ori = vtk.vtkOrientationMarkerWidget()
-        ori.SetOutlineColor( 0.9300, 0.5700, 0.1300 )
+        ori.SetOutlineColor(0.9300, 0.5700, 0.1300)
         ori.SetInteractor(self.iren)
         ori.SetOrientationMarker(om)
-        ori.SetViewport( 0.0, 0.0, 0.4, 0.4 )
+        ori.SetViewport(0.0, 0.0, 0.4, 0.4)
         ori.SetEnabled(1)
         ori.InteractiveOff()
         self.orientation_marker = ori
@@ -544,7 +562,7 @@ class CILViewer():
 
     def getColourWindow(self):
         return self.imageSlice.GetProperty().GetColorWindow()
-    
+
     def getColourLevel(self):
         return self.imageSlice.GetProperty().GetColorLevel()
 
@@ -569,10 +587,10 @@ class CILViewer():
     def setPolyDataActor(self, actor):
         '''displays the given polydata'''
 
-        self.hideActor(1,delete=True)
+        self.hideActor(1, delete=True)
         self.ren.AddActor(actor)
 
-        self.actors[len(self.actors)+1] = [actor, True]
+        self.actors[len(self.actors) + 1] = [actor, True]
         self.iren.Initialize()
         self.renWin.Render()
 
@@ -591,9 +609,9 @@ class CILViewer():
                 self.renWin.Render()
 
         except KeyError as ke:
-            print ("Warning Actor not present")
-        
-    def showActor(self, actorno, actor = None):
+            print("Warning Actor not present")
+
+    def showActor(self, actorno, actor=None):
         '''Shows hidden actor identified by its number in the list of actors'''
         try:
             if not self.actors[actorno][1]:
@@ -604,13 +622,12 @@ class CILViewer():
             # adds it to the actors if not there already
             if actor != None:
                 self.ren.AddActor(actor)
-                self.actors[len(self.actors)+1] = [actor, True]
+                self.actors[len(self.actors) + 1] = [actor, True]
                 return len(self.actors)
 
     def addActor(self, actor):
         '''Adds an actor to the render'''
         return self.showActor(0, actor)
-            
 
     def startRenderLoop(self):
         self.iren.Start()
@@ -628,16 +645,17 @@ class CILViewer():
             doubleImg = vtk.vtkImageData()
             shape = numpy.shape(numpyarray)
             doubleImg.SetDimensions(shape[0], shape[1], shape[2])
-            doubleImg.SetOrigin(0,0,0)
-            doubleImg.SetSpacing(1,1,1)
-            doubleImg.SetExtent(0, shape[0]-1, 0, shape[1]-1, 0, shape[2]-1)
-            doubleImg.AllocateScalars(vtk.VTK_DOUBLE,1)
-            
+            doubleImg.SetOrigin(0, 0, 0)
+            doubleImg.SetSpacing(1, 1, 1)
+            doubleImg.SetExtent(0, shape[0] - 1, 0, shape[1] - 1, 0,
+                                shape[2] - 1)
+            doubleImg.AllocateScalars(vtk.VTK_DOUBLE, 1)
+
             for i in range(shape[0]):
                 for j in range(shape[1]):
                     for k in range(shape[2]):
                         doubleImg.SetScalarComponentFromDouble(
-                            i,j,k,0, numpyarray[i][j][k])
+                            i, j, k, 0, numpyarray[i][j][k])
 
             # rescale to appropriate VTK_UNSIGNED_SHORT
             stats = vtk.vtkImageAccumulate()
@@ -647,7 +665,7 @@ class CILViewer():
             iMax = stats.GetMax()[0]
             scale = vtk.VTK_UNSIGNED_SHORT_MAX / (iMax - iMin)
 
-            shiftScaler = vtk.vtkImageShiftScale ()
+            shiftScaler = vtk.vtkImageShiftScale()
             shiftScaler.SetInputData(doubleImg)
             shiftScaler.SetScale(scale)
             shiftScaler.SetShift(iMin)
@@ -665,8 +683,8 @@ class CILViewer():
                 self.ren.RemoveActor(actor)
                 i += 1
         except TypeError as te:
-            print (te)
-            print (self.ren.GetActors())
+            print(te)
+            print(self.ren.GetActors())
 
         self.installSliceActorPipeline()
         # self.installVolumeRenderActorPipeline()
@@ -680,7 +698,7 @@ class CILViewer():
         self.renWin.Render()
 
     def installVolumeRenderActorPipeline(self):
-        
+
         self.volume_mapper.SetInputData(self.img3D)
 
         # define colors and opacity with default values
@@ -692,11 +710,11 @@ class CILViewer():
         elif self.getVolumeRenderOpacityMethod() == 'scalar':
             self.volume_property.SetScalarOpacity(opacity)
         else:
-            # currently this is not relevant, but in the future one may want to do 
+            # currently this is not relevant, but in the future one may want to do
             # something fancier
             # see also https://www.kitware.com/new-in-paraview-5-9-volume-rendering-with-a-separate-opacity-array/
             self.volume_property.SetGradientOpacity(opacity)
-                        
+
         self.volume_property.ShadeOn()
         self.volume_property.SetInterpolationTypeToLinear()
 
@@ -704,24 +722,28 @@ class CILViewer():
         self.volume_render_initialised = True
         self.volume.VisibilityOff()
         self.addHeadlight()
-        
+
     def addHeadlight(self):
         lgt = vtk.vtkLight()
         lgt.SetLightTypeToHeadlight()
         lgt.SwitchOff()
         self.getRenderer().AddLight(lgt)
         self.light = lgt
-    
+
     def getVolumeRenderOpacityMethod(self):
         if not hasattr(self, '_vol_render_opacity_method'):
             self.setVolumeRenderOpacityMethod('gradient')
         return self._vol_render_opacity_method
+
     def setVolumeRenderOpacityMethod(self, method='gradient'):
         if method in ['scalar', 'gradient']:
             self._vol_render_opacity_method = method
         # if the method is not supported it does nothing???
 
-    def getColorOpacityForVolumeRender(self, percentiles=(80.,99.), color_num=255, max_opacity=0.1):
+    def getColorOpacityForVolumeRender(self,
+                                       percentiles=(80., 99.),
+                                       color_num=255,
+                                       max_opacity=0.1):
         '''Defines the color and opacity tables
         
         Parameters:
@@ -731,46 +753,44 @@ class CILViewer():
 
         ia = vtk.vtkImageHistogramStatistics()
         ia.SetInputData(self.img3D)
-        ia.SetAutoRangePercentiles( *percentiles )
+        ia.SetAutoRangePercentiles(*percentiles)
         ia.Update()
-        
+
         cmin, cmax = ia.GetAutoRange()
         self.volume_colormap_limits = (cmin, cmax)
-        
+
         # accomodates all values between the level an the percentiles
-        colors = colormaps.CILColorMaps.get_color_transfer_function(self.getVolumeColorMapName(), (cmin,cmax))
+        colors = colormaps.CILColorMaps.get_color_transfer_function(
+            self.getVolumeColorMapName(), (cmin, cmax))
 
         x = numpy.linspace(ia.GetMinimum(), ia.GetMaximum(), num=color_num)
-        
-        opacity = colormaps.CILColorMaps.get_opacity_transfer_function(x, 
-          colormaps.relu, cmin, cmax, max_opacity)
+
+        opacity = colormaps.CILColorMaps.get_opacity_transfer_function(
+            x, colormaps.relu, cmin, cmax, max_opacity)
 
         return colors, opacity
-    
+
     def setVolumeColorMapName(self, cmap='magma'):
         '''set the volume color map name
         
         :param cmap: string with one of ['viridis', 'plasma', 'magma', 'inferno'], or matplotlib's cmaps if available'''
         self.volume_colormap_name = cmap
 
-
     def getVolumeColorMapName(self):
         '''get the volume color map name'''
         return self.volume_colormap_name
-        
 
     def installSliceActorPipeline(self):
         self.voi.SetInputData(self.img3D)
 
-        extent = [ i for i in self.img3D.GetExtent()]
+        extent = [i for i in self.img3D.GetExtent()]
         for i in range(len(self.slicenos)):
-            self.slicenos[i] = round((extent[i * 2+1] + extent[i * 2])/2)
+            self.slicenos[i] = round((extent[i * 2 + 1] + extent[i * 2]) / 2)
         extent[self.sliceOrientation * 2] = self.getActiveSlice()
         extent[self.sliceOrientation * 2 + 1] = self.getActiveSlice()
 
-        self.voi.SetVOI(extent[0], extent[1],
-                   extent[2], extent[3],
-                   extent[4], extent[5])
+        self.voi.SetVOI(extent[0], extent[1], extent[2], extent[3], extent[4],
+                        extent[5])
 
         self.voi.Update()
 
@@ -779,10 +799,10 @@ class CILViewer():
         self.ia.Update()
 
         cmin, cmax = self.ia.GetAutoRange()
-        # set the level to the average between the percentiles 
-        level = (cmin + cmax)/2
+        # set the level to the average between the percentiles
+        level = (cmin + cmax) / 2
         # accomodates all values between the level an the percentiles
-        window = (cmax - cmin)/2
+        window = (cmax - cmin) / 2
 
         self.InitialLevel = level
         self.InitialWindow = window
@@ -798,17 +818,15 @@ class CILViewer():
         self.imageSlice.Update()
 
         self.ren.AddActor(self.imageSlice)
-        
 
-    def updatePipeline(self, resetcamera = False):
+    def updatePipeline(self, resetcamera=False):
         self.hideActor(self.sliceActorNo)
 
         extent = [i for i in self.img3D.GetExtent()]
         extent[self.sliceOrientation * 2] = self.getActiveSlice()
         extent[self.sliceOrientation * 2 + 1] = self.getActiveSlice()
-        self.voi.SetVOI(extent[0], extent[1],
-                   extent[2], extent[3],
-                   extent[4], extent[5])
+        self.voi.SetVOI(extent[0], extent[1], extent[2], extent[3], extent[4],
+                        extent[5])
 
         self.voi.Update()
         self.ia.Update()
@@ -827,16 +845,18 @@ class CILViewer():
 
     def updateVolumePipeline(self):
         if self.volume_render_initialised and self.volume.GetVisibility():
-            cmin , cmax = self.volume_colormap_limits
-            colors = colormaps.CILColorMaps.get_color_transfer_function(self.volume_colormap_name, (cmin,cmax))
+            cmin, cmax = self.volume_colormap_limits
+            colors = colormaps.CILColorMaps.get_color_transfer_function(
+                self.volume_colormap_name, (cmin, cmax))
 
-            x = numpy.linspace(self.ia.GetMinimum(), self.ia.GetMaximum(), num=255)
+            x = numpy.linspace(self.ia.GetMinimum(),
+                               self.ia.GetMaximum(),
+                               num=255)
             scaling = 0.1
-            opacity = colormaps.CILColorMaps.get_opacity_transfer_function(x, 
-            colormaps.relu, cmin, cmax, scaling)
+            opacity = colormaps.CILColorMaps.get_opacity_transfer_function(
+                x, colormaps.relu, cmin, cmax, scaling)
             self.volume_property.SetColor(colors)
             self.volume_property.SetScalarOpacity(opacity)
-        
 
     def setVolumeColorLevelWindow(self, cmin, cmax):
         self.volume_colormap_limits = (cmin, cmax)
@@ -849,7 +869,7 @@ class CILViewer():
     def getVolumeColorName(self):
         return self.volume_colormap_name
 
-    def adjustCamera(self, resetcamera= False):
+    def adjustCamera(self, resetcamera=False):
 
         self.ren.ResetCameraClippingRange()
 
@@ -872,7 +892,7 @@ class CILViewer():
         self.imageSlice.Update()
         self.ren.Render()
         self.renWin.Render()
-        
+
     def saveRender(self, filename, renWin=None):
         '''Save the render window to PNG file'''
         if renWin == None:

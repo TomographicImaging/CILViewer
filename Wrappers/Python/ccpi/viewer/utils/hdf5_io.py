@@ -7,7 +7,10 @@ from vtk.numpy_interface import dataset_adapter as dsa
 # Methods for reading and writing HDF5 files:
 
 
-def write_image_data_to_hdf5(filename, data, dataset_name, attributes={},
+def write_image_data_to_hdf5(filename,
+                             data,
+                             dataset_name,
+                             attributes={},
                              array_name='vtkarray'):
     '''
     Writes vtkImageData to a dataset in a HDF5 file
@@ -72,10 +75,12 @@ class HDF5Reader(VTKPythonAlgorithmBase):
             # whereas h5py reads in C order. When writing we pretend that the
             # data was C order so we have to flip the extents/dimensions.
             if len(shape) == 3:
-                data = f[self.__DatasetName][ue[4]:ue[5]+1, ue[2]:ue[3]+1, ue[0]:ue[1]+1]
+                data = f[self.__DatasetName][ue[4]:ue[5] + 1, ue[2]:ue[3] + 1,
+                                             ue[0]:ue[1] + 1]
             elif len(shape) == 4:
-                data = f[self.__DatasetName][self.__4DIndex][
-                    ue[4]:ue[5] + 1, ue[2]:ue[3]+1, ue[0]:ue[1]+1]
+                data = f[self.__DatasetName][self.__4DIndex][ue[4]:ue[5] + 1,
+                                                             ue[2]:ue[3] + 1,
+                                                             ue[0]:ue[1] + 1]
             # print("attributes: ", f.attrs.items())
             output = dsa.WrapDataObject(vtk.vtkImageData.GetData(outInfo))
             output.SetExtent(ue)
@@ -116,7 +121,7 @@ class HDF5Reader(VTKPythonAlgorithmBase):
 
     def GetOrigin(self):
         # There is not a standard way to set the origin in a HDF5
-        # file so we do not have a way to read it. Therefore we 
+        # file so we do not have a way to read it. Therefore we
         # assume it is at 0,0,0
         return (0, 0, 0)
 
@@ -131,11 +136,12 @@ class HDF5Reader(VTKPythonAlgorithmBase):
         dims = self.GetDimensions()
         info = outInfo.GetInformationObject(0)
         info.Set(vtk.vtkStreamingDemandDrivenPipeline.WHOLE_EXTENT(),
-                 (0, dims[0]-1, 0, dims[1]-1, 0, dims[2]-1), 6)
+                 (0, dims[0] - 1, 0, dims[1] - 1, 0, dims[2] - 1), 6)
         return 1
 
 
 class HDF5SubsetReader(VTKPythonAlgorithmBase):
+
     def __init__(self):
         VTKPythonAlgorithmBase.__init__(self,
                                         nInputPorts=1,

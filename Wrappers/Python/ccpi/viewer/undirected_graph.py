@@ -82,17 +82,17 @@ class GraphInteractorStyle(vtk.vtkInteractorStyleRubberBand2D):
     def display2world(self, viewerposition):
         vc = vtk.vtkCoordinate()
         vc.SetCoordinateSystemToViewport()
-        vc.SetValue(viewerposition + (0.0,))
+        vc.SetValue(viewerposition + (0.0, ))
 
         return vc.GetComputedWorldValue(self.GetRenderer())
 
     def OnMouseMoveEvent(self, interactor, event):
         position = interactor.GetInteractor().GetEventPosition()
         world_position = self.display2world(position)
-        level = world_position[1]*100
+        level = world_position[1] * 100
 
         # Don't display values outside the graph scope
-        if level <0:
+        if level < 0:
             level = 0
         if level > 100:
             level = 100
@@ -105,14 +105,9 @@ class GraphInteractorStyle(vtk.vtkInteractorStyleRubberBand2D):
         self.Render()
 
 
-
-
 class UndirectedGraph(vtkGraphLayoutView):
 
-    annotations = {
-        "featureAnnotation": 0,
-        "pointAnnotation": 2
-    }
+    annotations = {"featureAnnotation": 0, "pointAnnotation": 2}
 
     def __init__(self, renWin=None, iren=None):
         super().__init__()
@@ -136,14 +131,12 @@ class UndirectedGraph(vtkGraphLayoutView):
         self.featureAnnotation = self.createCornerAnnotation()
         self.pointAnnotation = self.createCornerAnnotation()
 
-
     def update(self, input_data):
 
         # Create layout strategy
         layoutStrategy = vtk.vtkAssignCoordinatesLayoutStrategy()
         layoutStrategy.SetYCoordArrayName('Y')
         layoutStrategy.SetXCoordArrayName('X')
-
 
         self.AddRepresentationFromInput(input_data)
         self.SetVertexLabelArrayName("VertexID")
@@ -152,7 +145,8 @@ class UndirectedGraph(vtkGraphLayoutView):
         self.SetLayoutStrategy(layoutStrategy)
 
         annotation_link = vtk.vtkAnnotationLink()
-        annotation_link.AddObserver("AnnotationChangedEvent", self.select_callback)
+        annotation_link.AddObserver("AnnotationChangedEvent",
+                                    self.select_callback)
         self.GetRepresentation(0).SetAnnotationLink(annotation_link)
         self.GetRepresentation(0).SetScalingArrayName('VertexID')
         self.GetRepresentation(0).ScalingOn()
@@ -162,10 +156,10 @@ class UndirectedGraph(vtkGraphLayoutView):
 
     def createCornerAnnotation(self):
         cornerAnnotation = vtk.vtkCornerAnnotation()
-        cornerAnnotation.SetMaximumFontSize(12);
-        cornerAnnotation.PickableOff();
-        cornerAnnotation.VisibilityOff();
-        cornerAnnotation.GetTextProperty().ShadowOn();
+        cornerAnnotation.SetMaximumFontSize(12)
+        cornerAnnotation.PickableOff()
+        cornerAnnotation.VisibilityOff()
+        cornerAnnotation.GetTextProperty().ShadowOn()
         self.GetRenderer().AddActor(cornerAnnotation)
 
         return cornerAnnotation
@@ -199,7 +193,7 @@ class UndirectedGraph(vtkGraphLayoutView):
     def display2world(self, viewerposition):
         vc = vtk.vtkCoordinate()
         vc.SetCoordinateSystemToViewport()
-        vc.SetValue(viewerposition + (0.0,))
+        vc.SetValue(viewerposition + (0.0, ))
 
         return vc.GetComputedWorldValue(self.GetRenderer())
 
@@ -210,10 +204,10 @@ class UndirectedGraph(vtkGraphLayoutView):
 
         position = interactor.GetEventPosition()
         world_position = self.display2world(position)
-        level = world_position[1]*100
+        level = world_position[1] * 100
 
         # Don't display values outside the graph scope
-        if level <0:
+        if level < 0:
             level = 0
         if level > 100:
             level = 100
@@ -224,6 +218,7 @@ class UndirectedGraph(vtkGraphLayoutView):
         # Set the label and push change
         self.updateCornerAnnotation('pointAnnotation', point_label)
         self.Render()
+
 
 if __name__ == "__main__":
     UndirectedGraph().run(generate_data())

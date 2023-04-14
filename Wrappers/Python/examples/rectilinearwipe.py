@@ -6,11 +6,15 @@ import vtk
 import numpy
 import os
 from ccpi.viewer.utils.conversion import Converter
-from vtk.util import numpy_support , vtkImageImportFromArray
+from vtk.util import numpy_support, vtkImageImportFromArray
 
 # Utility functions to transform numpy arrays to vtkImageData and viceversa
-    
-def numpy2vtkImporter(nparray, spacing=(1.,1.,1.), origin=(0,0,0), transpose=[2,1,0]):
+
+
+def numpy2vtkImporter(nparray,
+                      spacing=(1., 1., 1.),
+                      origin=(0, 0, 0),
+                      transpose=[2, 1, 0]):
     '''Creates a vtkImageImportFromArray object and returns it.
     
     It handles the different axis order from numpy to VTK'''
@@ -20,6 +24,7 @@ def numpy2vtkImporter(nparray, spacing=(1.,1.,1.), origin=(0,0,0), transpose=[2,
     importer.SetDataOrigin(origin)
     return importer
 
+
 ren = vtk.vtkRenderer()
 renWin = vtk.vtkRenderWindow()
 renWin.AddRenderer(ren)
@@ -27,10 +32,12 @@ interactor = vtk.vtkRenderWindowInteractor()
 interactor.SetRenderWindow(renWin)
 
 # here we load the whole dataset. It may be possible to read only part of it?
-data1 = numpy.load(os.path.abspath("C:/Users/ofn77899/Data/dvc/frame_000_f.npy"))
-data2 = numpy.load(os.path.abspath("C:/Users/ofn77899/Data/dvc/frame_010_f.npy"))
-img1 = Converter.numpy2vtkImage(data1, deep = 0)
-img2 = Converter.numpy2vtkImage(data2, deep = 1)
+data1 = numpy.load(
+    os.path.abspath("C:/Users/ofn77899/Data/dvc/frame_000_f.npy"))
+data2 = numpy.load(
+    os.path.abspath("C:/Users/ofn77899/Data/dvc/frame_010_f.npy"))
+img1 = Converter.numpy2vtkImage(data1, deep=0)
+img2 = Converter.numpy2vtkImage(data2, deep=1)
 
 reader1 = vtk.vtkExtractVOI()
 reader2 = vtk.vtkExtractVOI()
@@ -61,9 +68,8 @@ reader2.SetVOI(*extent2)
 wipe = vtk.vtkImageRectilinearWipe()
 wipe.SetInputConnection(0, reader1.GetOutputPort())
 wipe.SetInputConnection(1, reader2.GetOutputPort())
-wipe.SetPosition(256,256)
+wipe.SetPosition(256, 256)
 wipe.SetWipe(0)
-
 
 wipeActor = vtk.vtkImageActor()
 wipeActor.GetMapper().SetInputConnection(wipe.GetOutputPort())
@@ -78,10 +84,8 @@ wipeWidgetRep.GetProperty().SetLineWidth(2.0)
 wipeWidgetRep.GetProperty().SetOpacity(0.75)
 
 ren.AddActor(wipeActor)
-renWin.SetSize(512,512)
+renWin.SetSize(512, 512)
 
 renWin.Render()
 wipeWidget.On()
 interactor.Start()
-
-
