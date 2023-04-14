@@ -7,6 +7,7 @@ A simple Viewer for 3D data built with VTK and Python.
 There are two versions:
 - GUI built with Python Qt
 - Web viewer, built with trame
+
 The viewers can also be embedded into any Qt application.
 An example of use of the viewers in another app is the [iDVC app](https://github.com/TomographicImaging/iDVC)
 
@@ -27,6 +28,8 @@ conda create --name cil-viewer -c ccpi -c paskino -c conda-forge
   - Tiff
   - Numpy
   - Metaimage (mha and mhd)
+
+[Example of Standalone Viewer](Documentation/readme-images/StandaloneViewerEgg.PNG)
 
 ## Web viewer
 See [here](https://github.com/vais-ral/CILViewer/tree/master/Wrappers/Python/ccpi/web_viewer) for instructions on how to install and run the web viewer.
