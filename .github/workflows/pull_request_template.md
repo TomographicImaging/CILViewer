@@ -18,7 +18,8 @@
 - [ ] Change pull request label to 'waiting for review' 
 
 ## Contribution Notes
-All contributed code must be under [Apache-2.0](https://spdx.org/licenses/Apache-2.0.html)
+- [ ] The content of this Pull Request (the Contribution) is intentionally submitted for inclusion in CILViewer (the Work) under the terms and conditions of the [Apache-2.0 License](https://spdx.org/licenses/Apache-2.0.html)
+- [ ] I confirm that the contribution does not violate any intellectual property rights of third parties
 
 Qt contributions should follow Qt naming conventions i.e. camelCase method names.
 
