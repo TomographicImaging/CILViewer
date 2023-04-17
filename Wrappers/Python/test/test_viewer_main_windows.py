@@ -69,8 +69,9 @@ class TestViewerMainWindow(unittest.TestCase):
         vmw.onAppSettingsDialogAccepted(settings_dialog)
 
         vmw.settings.assert_has_calls([mock.call.setValue('volume_mapper', 'gpu'),
-                                    mock.call.setValue('vis_size', 1.0)], any_order=True)
-        
+                                       mock.call.setValue('vis_size', 1.0)],
+                                      any_order=True)
+
         assert isinstance(vmw.viewers[0].volume_mapper, vtk.vtkSmartVolumeMapper)
 
     def _setup_onAppSettingsDialogAccepted_tests(self):
@@ -84,9 +85,11 @@ class TestViewerMainWindow(unittest.TestCase):
         dark_checkbox_field = mock.MagicMock()
         dark_checkbox_field.isChecked.return_value = False
         settings_dialog = mock.MagicMock()
-        settings_dialog.widgets = {'vis_size_field': vis_size_field,
-                                'gpu_checkbox_field': gpu_checkbox_field,
-                                'dark_checkbox_field': dark_checkbox_field}
+        settings_dialog.widgets = {
+            'vis_size_field': vis_size_field,
+            'gpu_checkbox_field': gpu_checkbox_field,
+            'dark_checkbox_field': dark_checkbox_field
+        }
         viewer3D = CILViewer()
         viewer3D.volume_mapper = None
         vmw.viewers = [viewer3D]
@@ -98,15 +101,16 @@ class TestViewerMainWindow(unittest.TestCase):
 
         vmw.onAppSettingsDialogAccepted(settings_dialog)
         vmw.settings.assert_has_calls([mock.call.setValue('volume_mapper', 'cpu'),
-                                        mock.call.setValue('vis_size', 1.0)], any_order=True)
-        
+                                       mock.call.setValue('vis_size', 1.0)],
+                                      any_order=True)
+
         assert isinstance(vmw.viewers[0].volume_mapper, vtk.vtkFixedPointVolumeRayCastMapper)
 
     def test_setDefaultDownsampledSize(self):
         vmw = ViewerMainWindow(title="Testing Title", app_name="testing app name")
         vmw.setDefaultDownsampledSize(5)
         assert vmw.default_downsampled_size == 5
-    
+
     def test_getDefaultDownsampledSize(self):
         vmw = ViewerMainWindow(title="Testing Title", app_name="testing app name")
         # Test what the default value is:
@@ -121,8 +125,7 @@ class TestViewerMainWindow(unittest.TestCase):
         vmw.getDefaultDownsampledSize.return_value = 512**3
         returned_target_size = vmw.getTargetImageSize()
         vmw.getDefaultDownsampledSize.assert_called_once()
-        assert(returned_target_size == 512**3)
-
+        assert (returned_target_size == 512**3)
 
     def test_getTargetImageSize_when_vis_size_is_not_None(self):
         vmw = ViewerMainWindow(title="Testing Title", app_name="testing app name")
@@ -130,13 +133,12 @@ class TestViewerMainWindow(unittest.TestCase):
         vmw.getDefaultDownsampledSize = mock.MagicMock()
         returned_target_size = vmw.getTargetImageSize()
         vmw.getDefaultDownsampledSize.assert_not_called()
-        assert(returned_target_size == 5* (1024**3))
-        
+        assert (returned_target_size == 5 * (1024**3))
 
     def test_updateViewerCoords_with_display_unsampled_coords_selected(self):
         vmw = ViewerMainWindow(title="Testing Title", app_name="testing app name")
         viewer2D = CILViewer2D()
-        viewer2D.visualisation_downsampling = [2,2,2]
+        viewer2D.visualisation_downsampling = [2, 2, 2]
         viewer2D.img3D = vtk.vtkImageData()
         viewer2D.setDisplayUnsampledCoordinates = mock.MagicMock()
         viewer2D.updatePipeline = mock.MagicMock()
@@ -152,18 +154,17 @@ class TestViewerMainWindow(unittest.TestCase):
         viewer_coords_widgets['coords_warning_field'].setVisible.assert_called_once_with(True)
         viewer2D.updatePipeline.assert_called_once()
 
-        viewer2D.updatePipeline = mock.MagicMock() # reset call count
+        viewer2D.updatePipeline = mock.MagicMock()  # reset call count
         viewer2D.visualisation_downsampling = [1, 1, 1]
         vmw.updateViewerCoords()
         # Expect the warning field to be hidden:
         viewer_coords_widgets['coords_warning_field'].setVisible.assert_called_with(False)
         viewer2D.updatePipeline.assert_called_once()
 
-
     def test_updateViewerCoords_with_display_downsampled_coords_selected(self):
         vmw = ViewerMainWindow(title="Testing Title", app_name="testing app name")
         viewer2D = CILViewer2D()
-        viewer2D.visualisation_downsampling = [2,2,2]
+        viewer2D.visualisation_downsampling = [2, 2, 2]
         viewer2D.img3D = vtk.vtkImageData()
         viewer2D.setDisplayUnsampledCoordinates = mock.MagicMock()
         viewer2D.updatePipeline = mock.MagicMock()
@@ -182,7 +183,7 @@ class TestViewerMainWindow(unittest.TestCase):
     def test_updateViewerCoords_with_3D_viewer(self):
         vmw = ViewerMainWindow(title="Testing Title", app_name="testing app name")
         viewer3D = CILViewer()
-        viewer3D.visualisation_downsampling = [2,2,2]
+        viewer3D.visualisation_downsampling = [2, 2, 2]
         viewer3D.updatePipeline = mock.MagicMock()
         viewer3D.setDisplayUnsampledCoordinates = mock.MagicMock()
         vmw.viewer_coords_dock.viewers = [viewer3D]
@@ -199,7 +200,7 @@ class TestViewerMainWindow(unittest.TestCase):
     def test_updateViewerCoords_with_no_img3D(self):
         vmw = ViewerMainWindow(title="Testing Title", app_name="testing app name")
         viewer2D = CILViewer2D()
-        viewer2D.visualisation_downsampling = [2,2,2]
+        viewer2D.visualisation_downsampling = [2, 2, 2]
         viewer2D.img3D = None
         viewer2D.setDisplayUnsampledCoordinates = mock.MagicMock()
         viewer2D.updatePipeline = mock.MagicMock()
@@ -213,9 +214,6 @@ class TestViewerMainWindow(unittest.TestCase):
         viewer2D.setDisplayUnsampledCoordinates.assert_not_called()
         viewer_coords_widgets['coords_warning_field'].setVisible.assert_not_called()
         viewer2D.updatePipeline.assert_not_called()
-
-
-
 
 
 if __name__ == '__main__':

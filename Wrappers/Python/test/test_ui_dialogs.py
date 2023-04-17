@@ -164,15 +164,12 @@ class TestHDF5InputDialog(unittest.TestCase):
         HDF5InputDialog.getCurrentParentGroup.return_value = 'test'
         HDF5InputDialog.descendHDF5AndFillTable = mock.Mock()
         h5id = HDF5InputDialog(self.parent, self.fname)
-        
+
         h5id.goToParentGroup()
         HDF5InputDialog.getCurrentParentGroup.assert_called_once()
         HDF5InputDialog.descendHDF5AndFillTable.assert_called_once()
         # check we have moved to parent group:
         assert h5id.current_group == 'test'
-
-
-
 
 
 @unittest.skipIf(skip_as_conda_build, "On conda builds do not do any test with interfaces")
