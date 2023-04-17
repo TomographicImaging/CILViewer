@@ -114,6 +114,9 @@ class ViewerMainWindow(ProgressMainWindow):
                     viewer.volume_mapper = vtk.vtkSmartVolumeMapper()
         else:
             self.settings.setValue("volume_mapper", "cpu")
+            for viewer in self.viewers:
+                if isinstance(viewer, CILViewer):
+                    viewer.volume_mapper = vtk.vtkFixedPointVolumeRayCastMapper()
 
     def selectImage(self, label=None):
         ''' This selects opens a file dialog for the user to select the image

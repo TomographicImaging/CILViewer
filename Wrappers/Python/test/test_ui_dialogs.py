@@ -128,6 +128,52 @@ class TestHDF5InputDialog(unittest.TestCase):
         h5id.getWidget('resample_z').setCurrentText("True")
         assert h5id.getHDF5Attributes() == {'dataset_name': 'test', 'resample_z': True}
 
+    def test_getCurrentGroup(self):
+        HDF5InputDialog.createLineEditForDatasetName = mock.Mock()
+        HDF5InputDialog.createLineEditForDatasetName.return_value = (None, None, QLineEdit(), QPushButton())
+        HDF5InputDialog.setDefaultDatasetName = mock.Mock()
+        h5id = HDF5InputDialog(self.parent, self.fname)
+        h5id.current_group = '/'
+        assert h5id.getCurrentGroup() == '/'
+
+    def test_getCurrentParentGroup_when_parent_exists(self):
+        HDF5InputDialog.createLineEditForDatasetName = mock.Mock()
+        HDF5InputDialog.createLineEditForDatasetName.return_value = (None, None, QLineEdit(), QPushButton())
+        HDF5InputDialog.setDefaultDatasetName = mock.Mock()
+        h5id = HDF5InputDialog(self.parent, self.fname)
+        h5id.current_group = '/test'
+        assert h5id.getCurrentParentGroup() == ''
+
+    def test_getCurrentParentGroup_when_parent_does_not_exist(self):
+        HDF5InputDialog.createLineEditForDatasetName = mock.Mock()
+        HDF5InputDialog.createLineEditForDatasetName.return_value = (None, None, QLineEdit(), QPushButton())
+        HDF5InputDialog.setDefaultDatasetName = mock.Mock()
+        h5id = HDF5InputDialog(self.parent, self.fname)
+        h5id.current_group = '/'
+        assert h5id.getCurrentParentGroup() == '/'
+        h5id.current_group = '//'
+        assert h5id.getCurrentParentGroup() == '//'
+        h5id.current_group = ''
+        assert h5id.getCurrentParentGroup() == ''
+
+    def test_goToParentGroup(self):
+        HDF5InputDialog.createLineEditForDatasetName = mock.Mock()
+        HDF5InputDialog.createLineEditForDatasetName.return_value = (None, None, QLineEdit(), QPushButton())
+        HDF5InputDialog.setDefaultDatasetName = mock.Mock()
+        HDF5InputDialog.getCurrentParentGroup = mock.Mock()
+        HDF5InputDialog.getCurrentParentGroup.return_value = 'test'
+        HDF5InputDialog.descendHDF5AndFillTable = mock.Mock()
+        h5id = HDF5InputDialog(self.parent, self.fname)
+        
+        h5id.goToParentGroup()
+        HDF5InputDialog.getCurrentParentGroup.assert_called_once()
+        HDF5InputDialog.descendHDF5AndFillTable.assert_called_once()
+        # check we have moved to parent group:
+        assert h5id.current_group == 'test'
+
+
+
+
 
 @unittest.skipIf(skip_as_conda_build, "On conda builds do not do any test with interfaces")
 class TestRawInputDialog(unittest.TestCase):
