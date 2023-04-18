@@ -7,7 +7,7 @@ import os
 from unittest import mock
 from PySide2.QtCore import QSettings, QThreadPool
 from PySide2.QtWidgets import QApplication, QDialog, QLabel, QFrame, QDoubleSpinBox, QCheckBox, QPushButton, QLineEdit, QComboBox, QWidget
-from eqt.ui.ProgressMainWindow import ProgressMainWindow
+from eqt.ui.MainWindowWithProgressDialogs import MainWindowWithProgressDialogs
 
 import sys
 

@@ -15,12 +15,12 @@ from ccpi.viewer.utils import cilPlaneClipper
 from ccpi.viewer.utils.io import ImageReader
 from eqt.threading import Worker
 from eqt.ui.SessionDialogs import ErrorDialog
-from eqt.ui.SessionMainWindow import ProgressMainWindow, SessionMainWindow
+from eqt.ui.MainWindowWithSessionManagement import MainWindowWithProgressDialogs, MainWindowWithSessionManagement
 from PySide2.QtCore import Qt
 from PySide2.QtWidgets import QApplication, QCheckBox, QFileDialog, QMainWindow, QSizePolicy
 
 
-class ViewerMainWindow(ProgressMainWindow):
+class ViewerMainWindow(MainWindowWithProgressDialogs):
     ''' Creates a window which is designed to house one or more viewers.
     Note: does not create a viewer as we don't know whether the user would like it to exist in a
     dockwidget or central widget
@@ -63,7 +63,7 @@ class ViewerMainWindow(ProgressMainWindow):
 
     def createAppSettingsDialog(self):
         '''Create a dialog to change the application settings.
-        This is a method in the SessionMainWindow class, which we
+        This is a method in the MainWindowWithSessionManagement class, which we
         override here to make our own settings dialog'''
         dialog = ViewerSettingsDialog(self)
         dialog.Ok.clicked.connect(lambda: self.onAppSettingsDialogAccepted(dialog))
@@ -428,7 +428,7 @@ class ViewerMainWindow(ProgressMainWindow):
         return self.default_downsampled_size
 
 
-class ViewerSessionMainWindow(SessionMainWindow, ViewerMainWindow):
+class ViewerMainWindowWithSessionManagement(MainWindowWithSessionManagement, ViewerMainWindow):
     ''' Creates a window which is designed to house one or more viewers.
     Note: does not create a viewer as we don't know whether the user would like it to exist in a
     dockwidget or central widget
@@ -448,7 +448,7 @@ class ViewerSessionMainWindow(SessionMainWindow, ViewerMainWindow):
     '''
 
     def __init__(self,
-                 title="ViewerSessionMainWindow",
+                 title="ViewerMainWindowWithSessionManagement",
                  app_name=None,
                  settings_name=None,
                  organisation_name=None,
@@ -461,11 +461,11 @@ class ViewerSessionMainWindow(SessionMainWindow, ViewerMainWindow):
                                   settings_name=settings_name,
                                   organisation_name=organisation_name)
 
-        self._setupSessionMainWindow()
+        self._setupMainWindowWithSessionManagement()
 
     def createAppSettingsDialog(self):
         '''Create a dialog to change the application settings.
-        This is a method in the SessionMainWindow class, which we
+        This is a method in the MainWindowWithSessionManagement class, which we
         override here to make our own settings dialog
         '''
         dialog = ViewerSessionSettingsDialog(self)
@@ -508,7 +508,7 @@ class ViewerSessionMainWindow(SessionMainWindow, ViewerMainWindow):
 
 class TwoViewersMainWindowMixin(QMainWindow):
     '''
-    Provides a mixin for a TwoViewersMainWindow or a TwoViewersSessionMainWindow class.
+    Provides a mixin for a TwoViewersMainWindow or a TwoViewersMainWindowWithSessionManagement class.
     Provides the setupTwoViewers method, which:
     creates a window containing two viewers, both in dockwidgets.
     The viewers are linked together, so that they share the same
@@ -699,7 +699,7 @@ class TwoViewersMainWindow(TwoViewersMainWindowMixin, ViewerMainWindow):
         self.setupTwoViewers(viewer1, viewer2)
 
 
-class TwoViewersSessionMainWindow(TwoViewersMainWindowMixin, ViewerSessionMainWindow):
+class TwoViewersMainWindowWithSessionManagement(TwoViewersMainWindowMixin, ViewerMainWindowWithSessionManagement):
     '''
     Creates a window containing two viewers, both in dockwidgets.
     This main window has methods for saving and loading sessions.
@@ -717,7 +717,7 @@ class TwoViewersSessionMainWindow(TwoViewersMainWindowMixin, ViewerSessionMainWi
     This class is meant to be subclassed, and the subclass should implement the following methods:
      - getSessionConfig
      - finishLoadConfig
-     as these deal with the session saving and loading. See 'SessionMainWindow' for more details.
+     as these deal with the session saving and loading. See 'MainWindowWithSessionManagement' for more details.
 
     
     Parameters
@@ -737,13 +737,13 @@ class TwoViewersSessionMainWindow(TwoViewersMainWindowMixin, ViewerSessionMainWi
     '''
 
     def __init__(self,
-                 title="TwoViewersSessionMainWindow",
-                 app_name="TwoViewersSessionMainWindow",
+                 title="TwoViewersMainWindowWithSessionManagement",
+                 app_name="TwoViewersMainWindowWithSessionManagement",
                  settings_name=None,
                  organisation_name=None,
                  viewer1=CILViewer2D,
                  viewer2=CILViewer):
-        super(TwoViewersSessionMainWindow, self).__init__(title, app_name, settings_name, organisation_name)
+        super(TwoViewersMainWindowWithSessionManagement, self).__init__(title, app_name, settings_name, organisation_name)
 
         self.setupTwoViewers(viewer1, viewer2)
 
