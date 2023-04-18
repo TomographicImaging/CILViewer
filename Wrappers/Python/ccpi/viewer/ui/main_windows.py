@@ -743,7 +743,8 @@ class TwoViewersMainWindowWithSessionManagement(TwoViewersMainWindowMixin, Viewe
                  organisation_name=None,
                  viewer1=CILViewer2D,
                  viewer2=CILViewer):
-        super(TwoViewersMainWindowWithSessionManagement, self).__init__(title, app_name, settings_name, organisation_name)
+        super(TwoViewersMainWindowWithSessionManagement, self).__init__(title, app_name, settings_name,
+                                                                        organisation_name)
 
         self.setupTwoViewers(viewer1, viewer2)
 
