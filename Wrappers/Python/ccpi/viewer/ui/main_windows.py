@@ -455,13 +455,11 @@ class ViewerMainWindowWithSessionManagement(MainWindowWithSessionManagement, Vie
                  *args,
                  **kwargs):
 
-        ViewerMainWindow.__init__(self,
-                                  title,
-                                  app_name,
-                                  settings_name=settings_name,
-                                  organisation_name=organisation_name)
-
-        self._setupMainWindowWithSessionManagement()
+        super(ViewerMainWindowWithSessionManagement, self).__init__(title,
+                         app_name,
+                         settings_name=settings_name,
+                         organisation_name=organisation_name)
+        
 
     def createAppSettingsDialog(self):
         '''Create a dialog to change the application settings.
@@ -506,7 +504,7 @@ class ViewerMainWindowWithSessionManagement(MainWindowWithSessionManagement, Vie
             self.settings.setValue("copy_files", 0)
 
 
-class TwoViewersMainWindowMixin(QMainWindow):
+class TwoViewersMainWindowMixin(object):
     '''
     Provides a mixin for a TwoViewersMainWindow or a TwoViewersMainWindowWithSessionManagement class.
     Provides the setupTwoViewers method, which:
@@ -693,7 +691,7 @@ class TwoViewersMainWindow(TwoViewersMainWindowMixin, ViewerMainWindow):
                  organisation_name=None,
                  viewer1=CILViewer2D,
                  viewer2=CILViewer):
-
+        
         super(TwoViewersMainWindow, self).__init__(title, app_name, settings_name, organisation_name)
 
         self.setupTwoViewers(viewer1, viewer2)
