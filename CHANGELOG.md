@@ -10,12 +10,28 @@
   - `ViewerSessionSettingsDialog` - allows user to set session settings including whether to allow copies of images to be saved in the session.
   - `RawInputDialog` - for setting info for loading a raw file including, size of dimensions, data type etc.
   - `HDF5InputDialog` - for setting info for loading a HDF5 file, including the dataset name
+  - Unit tests for creating each dialog.
   Adds the following widgets to `ui.qt_widgets.py`:
   - `ViewerCoordsDockWidget` - for showing original and downsampled image size and allowing user to select which coord system to show on viewer.
-Adds a `cilviewer` entrypoint:
+- Adds a `cilviewer` entrypoint:
  - This launches a standalone viewer application with a 2D and 3D viewer and allows users to load any image file types we support using the File menu.
  - This launches a `StandaloneViewer` instance (`standalone_viewer.py`)
 - Updates README with how to run standalone viewer app and web viewer, and more image examples
+- Adds methods to `CILViewerBase`:
+ - `setVisualisationDownsampling` (moved out of CILViewer2D)
+ - `getVisualisationDownsampling` (moved out of CILViewer2D)
+- Adds methods to `CILViewer`:
+  - `setVolumeMapper`
+  - `getVolumeMapper`
+- Modifies `ImageReader`:
+  - Previously could read only from a file, now can read from memory instead by setting `vtk_image` parameter instead of `file_name` parameter.
+  - Add `SetVTKImage` method
+  - Added unit tests to cover providing a VTK image instead of file name
+- Add methods to `cilviewerHDF5Reader`:
+  - GetOriginalImageAttrs
+  - GetLoadedImageAttrs
+  - These methods are the same as those in `ImageReader` to be consistent.
+
 
 ## v23.0.0
 - add `deleteWidget` method to CILViewerBase
