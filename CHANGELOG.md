@@ -1,5 +1,22 @@
 # Changelog
 
+## vx.x.x
+- Adds the following base classes to `ui.main_windows.py`:
+  - Add `ViewerMainWindow` and `ViewerMainWindowWithSessionManagement` - baseclasses for windows which would house viewers, with methods needed for creating settings dialogs, creating a coordinate settings dockwidget, and loading images.
+  - Add `TwoViewersMainWindow` and `TwoViewersMainWindowWithSessionManagement` - baseclasses which create a main window with 2 linked viewers in dockwidgets.
+  - `TwoViewersMainWindowMixin` - a mixin which provides methods to both `TwoViewersMainWindowWithSessionManagement` and `TwoViewersMainWindow`. These methods are for adding viewers to the window, setting them up, linking them and adding a dockwidget for coordinate settings.
+- Adds the following dialogs to `ui.dialogs.py`:
+  - `ViewerSettingsDialog` - allows user to set downsample size settings and whether to use GPU for volume render.
+  - `ViewerSessionSettingsDialog` - allows user to set session settings including whether to allow copies of images to be saved in the session.
+  - `RawInputDialog` - for setting info for loading a raw file including, size of dimensions, data type etc.
+  - `HDF5InputDialog` - for setting info for loading a HDF5 file, including the dataset name
+  Adds the following widgets to `ui.qt_widgets.py`:
+  - `ViewerCoordsDockWidget` - for showing original and downsampled image size and allowing user to select which coord system to show on viewer.
+Adds a `cilviewer` entrypoint:
+ - This launches a standalone viewer application with a 2D and 3D viewer and allows users to load any image file types we support using the File menu.
+ - This launches a `StandaloneViewer` instance (`standalone_viewer.py`)
+- Updates README with how to run standalone viewer app and web viewer, and more image examples
+
 ## v23.0.0
 - add `deleteWidget` method to CILViewerBase
 - Add environment file for development of the viewer

@@ -43,8 +43,6 @@ class ViewerSessionSettingsDialog(ViewerSettingsDialog):
     ''' This is a dialog window which configures settings for the viewer.
     It is intended to be used in the context of a session, and allows the user to set:
     - whether they would like copies of the images to be saved in the session
-    - maximum size to downsample images to for display
-    - Whether to use GPU for volume rendering
     '''
 
     def __init__(self, parent):
