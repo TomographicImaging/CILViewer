@@ -88,8 +88,9 @@ class ViewerMainWindow(MainWindowWithProgressDialogs):
         else:
             sw['vis_size_field'].setValue(self.getDefaultDownsampledSize() / (1024**3))
 
-        if self.settings.value("volume_mapper") is not None:
-            sw['gpu_checkbox_field'].setChecked(self.settings.value("volume_mapper") == "gpu")
+        if self.settings.value("use_gpu_volume_mapper") is not None:
+            use_gpu = str(self.settings.value("use_gpu_volume_mapper"))
+            sw['gpu_checkbox_field'].setChecked(use_gpu == "true")
         else:
             sw['gpu_checkbox_field'].setChecked(True)
 
@@ -107,16 +108,25 @@ class ViewerMainWindow(MainWindowWithProgressDialogs):
 
         self.settings.setValue("vis_size", float(settings_dialog.widgets['vis_size_field'].value()))
 
-        if settings_dialog.widgets['gpu_checkbox_field'].isChecked():
-            self.settings.setValue("volume_mapper", "gpu")
-            for viewer in self.viewers:
-                if isinstance(viewer, CILViewer):
-                    viewer.volume_mapper = vtk.vtkSmartVolumeMapper()
+        # Check if the user has changed the volume mapper setting:
+        current_setting = self.settings.value("use_gpu_volume_mapper")
+
+        if current_setting == str(settings_dialog.widgets['gpu_checkbox_field'].isChecked()):
+            return
         else:
-            self.settings.setValue("volume_mapper", "cpu")
+            bool_to_volume_mapper = {True: vtk.vtkSmartVolumeMapper(), False: vtk.vtkFixedPointVolumeRayCastMapper()}
+
+            use_gpu_volume_mapper = settings_dialog.widgets['gpu_checkbox_field'].isChecked()
+
+            self.settings.setValue("use_gpu_volume_mapper", use_gpu_volume_mapper)
+
             for viewer in self.viewers:
                 if isinstance(viewer, CILViewer):
-                    viewer.volume_mapper = vtk.vtkFixedPointVolumeRayCastMapper()
+                    viewer.setVolumeMapper(bool_to_volume_mapper[use_gpu_volume_mapper])
+                    if viewer.volume_render_initialised:
+                        viewer.installVolumeRenderActorPipeline()
+                        viewer.updatePipeline()
+
 
     def selectImage(self, label=None):
         ''' This selects opens a file dialog for the user to select the image

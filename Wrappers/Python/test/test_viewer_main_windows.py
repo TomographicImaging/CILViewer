@@ -68,11 +68,23 @@ class TestViewerMainWindow(unittest.TestCase):
 
         vmw.onAppSettingsDialogAccepted(settings_dialog)
 
-        vmw.settings.assert_has_calls([mock.call.setValue('volume_mapper', 'gpu'),
+        vmw.settings.assert_has_calls([mock.call.setValue('use_gpu_volume_mapper', True),
                                        mock.call.setValue('vis_size', 1.0)],
                                       any_order=True)
 
         assert isinstance(vmw.viewers[0].volume_mapper, vtk.vtkSmartVolumeMapper)
+
+    def test_onAppSettingsDialogAccepted_when_gpu_unchecked(self):
+
+        vmw, settings_dialog = self._setup_onAppSettingsDialogAccepted_tests()
+
+        vmw.onAppSettingsDialogAccepted(settings_dialog)
+
+        vmw.settings.assert_has_calls([mock.call.setValue('use_gpu_volume_mapper', False),
+                                       mock.call.setValue('vis_size', 1.0)],
+                                      any_order=True)
+
+        assert isinstance(vmw.viewers[0].volume_mapper, vtk.vtkFixedPointVolumeRayCastMapper)
 
     def _setup_onAppSettingsDialogAccepted_tests(self):
         vmw = ViewerMainWindow(title="Testing Title", app_name="testing app name")
@@ -100,7 +112,7 @@ class TestViewerMainWindow(unittest.TestCase):
         settings_dialog.widgets['gpu_checkbox_field'].isChecked.return_value = False
 
         vmw.onAppSettingsDialogAccepted(settings_dialog)
-        vmw.settings.assert_has_calls([mock.call.setValue('volume_mapper', 'cpu'),
+        vmw.settings.assert_has_calls([mock.call.setValue('use_gpu_volume_mapper', False),
                                        mock.call.setValue('vis_size', 1.0)],
                                       any_order=True)
 

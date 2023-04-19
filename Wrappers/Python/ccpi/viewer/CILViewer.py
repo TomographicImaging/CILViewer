@@ -448,8 +448,10 @@ class CILViewer(CILViewerBase):
 
         # These may be optionally set by the user:
         self.volume_colormap_limits = None
-
         self.volume_colormap_name = 'viridis'
+
+        self.volume_mapper = vtk.vtkSmartVolumeMapper()
+
         self.volume_render_initialised = False
         self.clipping_plane_initialised = False
 
@@ -625,11 +627,21 @@ class CILViewer(CILViewerBase):
             self.adjustCamera(resetcamera=True)
             CameraData.CopyDataToCamera(self.default_camera_data, self.getCamera())
 
+    def setVolumeMapper(self, mapper):
+        '''Sets the volume mapper to the specified mapper
+        Parameters
+        ----------
+        mapper : vtkVolumeMapper
+            The volume mapper to use, defaults is vtkSmartVolumeMapper
+        '''
+        self.volume_mapper = mapper
+    
+    def getVolumeMapper(self):
+        '''Returns the volume mapper'''
+        return self.volume_mapper
+
     def installVolumeRenderActorPipeline(self):
         # volume render
-        volumeMapper = vtk.vtkSmartVolumeMapper()
-        #volumeMapper = vtk.vtkFixedPointVolumeRayCastMapper()
-        self.volume_mapper = volumeMapper
         volumeProperty = vtk.vtkVolumeProperty()
 
         self.volume_property = volumeProperty
@@ -638,7 +650,7 @@ class CILViewer(CILViewerBase):
         # The volume holds the mapper and the property and
         # can be used to position/orient the volume.
         volume = vtk.vtkVolume()
-        volume.SetMapper(volumeMapper)
+        volume.SetMapper(self.volume_mapper)
         volume.SetProperty(volumeProperty)
         self.volume = volume
 
