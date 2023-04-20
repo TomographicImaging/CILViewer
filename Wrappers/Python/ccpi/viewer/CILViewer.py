@@ -635,7 +635,7 @@ class CILViewer(CILViewerBase):
             The volume mapper to use, defaults is vtkSmartVolumeMapper
         '''
         self.volume_mapper = mapper
-    
+
     def getVolumeMapper(self):
         '''Returns the volume mapper'''
         return self.volume_mapper

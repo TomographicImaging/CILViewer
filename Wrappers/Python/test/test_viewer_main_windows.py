@@ -68,9 +68,9 @@ class TestViewerMainWindow(unittest.TestCase):
 
         vmw.onAppSettingsDialogAccepted(settings_dialog)
 
-        vmw.settings.assert_has_calls([mock.call.setValue('use_gpu_volume_mapper', True),
-                                       mock.call.setValue('vis_size', 1.0)],
-                                      any_order=True)
+        vmw.settings.assert_has_calls(
+            [mock.call.setValue('use_gpu_volume_mapper', True),
+             mock.call.setValue('vis_size', 1.0)], any_order=True)
 
         assert isinstance(vmw.viewers[0].volume_mapper, vtk.vtkSmartVolumeMapper)
 
@@ -80,9 +80,9 @@ class TestViewerMainWindow(unittest.TestCase):
 
         vmw.onAppSettingsDialogAccepted(settings_dialog)
 
-        vmw.settings.assert_has_calls([mock.call.setValue('use_gpu_volume_mapper', False),
-                                       mock.call.setValue('vis_size', 1.0)],
-                                      any_order=True)
+        vmw.settings.assert_has_calls(
+            [mock.call.setValue('use_gpu_volume_mapper', False),
+             mock.call.setValue('vis_size', 1.0)], any_order=True)
 
         assert isinstance(vmw.viewers[0].volume_mapper, vtk.vtkFixedPointVolumeRayCastMapper)
 
@@ -112,9 +112,9 @@ class TestViewerMainWindow(unittest.TestCase):
         settings_dialog.widgets['gpu_checkbox_field'].isChecked.return_value = False
 
         vmw.onAppSettingsDialogAccepted(settings_dialog)
-        vmw.settings.assert_has_calls([mock.call.setValue('use_gpu_volume_mapper', False),
-                                       mock.call.setValue('vis_size', 1.0)],
-                                      any_order=True)
+        vmw.settings.assert_has_calls(
+            [mock.call.setValue('use_gpu_volume_mapper', False),
+             mock.call.setValue('vis_size', 1.0)], any_order=True)
 
         assert isinstance(vmw.viewers[0].volume_mapper, vtk.vtkFixedPointVolumeRayCastMapper)
 

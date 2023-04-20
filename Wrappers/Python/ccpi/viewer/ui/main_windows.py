@@ -127,7 +127,6 @@ class ViewerMainWindow(MainWindowWithProgressDialogs):
                         viewer.installVolumeRenderActorPipeline()
                         viewer.updatePipeline()
 
-
     def selectImage(self, label=None):
         ''' This selects opens a file dialog for the user to select the image
         and gets the user to enter relevant data, but does not load them on a viewer yet.
