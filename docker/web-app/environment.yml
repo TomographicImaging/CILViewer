@@ -8,6 +8,7 @@ dependencies:
   - pip
   - schema
   - pyyaml
+  - eqt>=0.7.0
   - pip:
     # Have to install Trame via pip due to unavailability on conda
     - trame <3, >=2.1.1  # Unpinned worked with version 2.1.1, should work with higher versions.
