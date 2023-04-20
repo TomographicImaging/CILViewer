@@ -36,7 +36,7 @@ requirements:
     - numpy
     - vtk {{ vtk }}
     - pyside2
-    - eqt
+    - eqt>=0.7.0
     - importlib_metadata    # [py<38]
     - h5py
     - schema
