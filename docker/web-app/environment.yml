@@ -1,5 +1,6 @@
 name: cilviewer_webapp
 channels:
+  - paskino
   - conda-forge
 dependencies:
   - python==3.9
