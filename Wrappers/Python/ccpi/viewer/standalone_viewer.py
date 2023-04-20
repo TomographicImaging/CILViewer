@@ -30,7 +30,7 @@ class StandaloneViewerMainWindow(TwoViewersMainWindow):
                  viewer2=viewer3D):
         super(StandaloneViewerMainWindow, self).__init__(title, app_name, settings_name, organisation_name, viewer1,
                                                          viewer2)
-        
+
         self.addToMenu()
 
         self.image_overlay = vtk.vtkImageData()

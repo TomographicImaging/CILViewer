@@ -466,10 +466,9 @@ class ViewerMainWindowWithSessionManagement(MainWindowWithSessionManagement, Vie
                  **kwargs):
 
         super(ViewerMainWindowWithSessionManagement, self).__init__(title,
-                         app_name,
-                         settings_name=settings_name,
-                         organisation_name=organisation_name)
-        
+                                                                    app_name,
+                                                                    settings_name=settings_name,
+                                                                    organisation_name=organisation_name)
 
     def createAppSettingsDialog(self):
         '''Create a dialog to change the application settings.
@@ -701,7 +700,7 @@ class TwoViewersMainWindow(TwoViewersMainWindowMixin, ViewerMainWindow):
                  organisation_name=None,
                  viewer1=CILViewer2D,
                  viewer2=CILViewer):
-        
+
         super(TwoViewersMainWindow, self).__init__(title, app_name, settings_name, organisation_name)
 
         self.setupTwoViewers(viewer1, viewer2)
