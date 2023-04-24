@@ -27,7 +27,7 @@ if not skip_as_conda_build:
         else:
             app = QApplication.instance()
     except:
-        skip_test = True # skip test if no display is available
+        skip_test = True  # skip test if no display is available
 else:
     skip_test = True
 
