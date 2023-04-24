@@ -27,6 +27,14 @@ class ViewerMainWindow(MainWindowWithProgressDialogs):
     Instead it creates a main window with many of the tools needed for a window
     that will house a viewer. 
     
+    Methods of Interest
+    -------------------
+    self.createViewerCoordsDockWidget
+        Creates a dock widget that displays the shape of the loaded image
+        and if downsampled, the shape of the downsampled image. Allows user
+        to select whether the coordinates on the viewer are shown in the
+        original or downsampled image system.
+    
     Assumes that at least one viewer is present, saved in self.viewers
 
     Parameters

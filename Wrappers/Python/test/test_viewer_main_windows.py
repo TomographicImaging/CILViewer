@@ -26,16 +26,7 @@ else:
 
 print("skip_as_conda_build is set to ", skip_as_conda_build)
 
-if not skip_as_conda_build:
-    try:
-        if not QApplication.instance():
-            app = QApplication(sys.argv)
-        else:
-            app = QApplication.instance()
-    except:
-        skip_test = True # if we cannot create QApplication, skip the test
-else:
-    skip_test = True
+_instance = None
 
 
 @unittest.skipIf(skip_as_conda_build, "On conda builds do not do any test with interfaces")
@@ -47,6 +38,11 @@ class TestViewerMainWindow(unittest.TestCase):
     - getTargetImageSize
     - updateViewerCoords
     '''
+
+    def setUp(self):
+        global _instance
+        if _instance is None:
+            _instance = QApplication(sys.argv)
 
     def test_init(self):
         vmw = ViewerMainWindow(title="Testing Title", app_name="testing app name")

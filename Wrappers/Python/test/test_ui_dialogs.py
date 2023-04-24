@@ -20,20 +20,16 @@ else:
 
 print("skip_as_conda_build is set to ", skip_as_conda_build)
 
-if not skip_as_conda_build:
-    try:
-        if not QApplication.instance():
-            app = QApplication(sys.argv)
-        else:
-            app = QApplication.instance()
-    except:
-        skip_test = True # skip test if no display is available
-else:
-    skip_test = True
+_instance = None
 
 
 @unittest.skipIf(skip_as_conda_build, "On conda builds do not do any test with interfaces")
 class TestViewerSettingsDialog(unittest.TestCase):
+
+    def setUp(self):
+        global _instance
+        if _instance is None:
+            _instance = QApplication(sys.argv)
 
     def test_init(self):
         parent = QMainWindow()
@@ -66,6 +62,11 @@ class TestViewerSettingsDialog(unittest.TestCase):
 @unittest.skipIf(skip_as_conda_build, "On conda builds do not do any test with interfaces")
 class TestViewerSessionSettingsDialog(unittest.TestCase):
 
+    def setUp(self):
+        global _instance
+        if _instance is None:
+            _instance = QApplication(sys.argv)
+
     def test_init(self):
         parent = QMainWindow()
         vssd = ViewerSessionSettingsDialog(parent)
@@ -95,6 +96,9 @@ class TestHDF5InputDialog(unittest.TestCase):
     # TODO: test creation of HDF5 dataset browsing widget functionality
 
     def setUp(self):
+        global _instance
+        if _instance is None:
+            _instance = QApplication(sys.argv)
         self.parent = QMainWindow()
         self.fname = "test.h5"
 
@@ -145,7 +149,7 @@ class TestHDF5InputDialog(unittest.TestCase):
         HDF5InputDialog.setDefaultDatasetName = mock.Mock()
         h5id = HDF5InputDialog(self.parent, self.fname)
         h5id.current_group = '/test'
-        assert h5id.getCurrentParentGroup() == ''
+        self.assertEqual(h5id.getCurrentParentGroup(), '')
 
     def test_getCurrentParentGroup_when_parent_does_not_exist(self):
         HDF5InputDialog.createLineEditForDatasetName = mock.Mock()
@@ -153,11 +157,11 @@ class TestHDF5InputDialog(unittest.TestCase):
         HDF5InputDialog.setDefaultDatasetName = mock.Mock()
         h5id = HDF5InputDialog(self.parent, self.fname)
         h5id.current_group = '/'
-        assert h5id.getCurrentParentGroup() == '/'
+        self.assertEqual(h5id.getCurrentParentGroup(), '/')
         h5id.current_group = '//'
-        assert h5id.getCurrentParentGroup() == '//'
+        self.assertEqual(h5id.getCurrentParentGroup(), '//')
         h5id.current_group = ''
-        assert h5id.getCurrentParentGroup() == ''
+        self.assertEqual(h5id.getCurrentParentGroup(), '')
 
     def test_goToParentGroup(self):
         HDF5InputDialog.createLineEditForDatasetName = mock.Mock()
@@ -179,6 +183,9 @@ class TestHDF5InputDialog(unittest.TestCase):
 class TestRawInputDialog(unittest.TestCase):
 
     def setUp(self):
+        global _instance
+        if _instance is None:
+            _instance = QApplication(sys.argv)
         self.parent = QMainWindow()
         self.fname = "test.raw"
 
