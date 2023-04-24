@@ -148,8 +148,8 @@ class TestHDF5InputDialog(unittest.TestCase):
         HDF5InputDialog.createLineEditForDatasetName.return_value = (None, None, QLineEdit(), QPushButton())
         HDF5InputDialog.setDefaultDatasetName = mock.Mock()
         h5id = HDF5InputDialog(self.parent, self.fname)
-        h5id.current_group = '/test'
-        self.assertEqual(h5id.getCurrentParentGroup(), '')
+        h5id.current_group = '/test/child'
+        self.assertEqual(h5id.getCurrentParentGroup(), '/test')
 
     def test_getCurrentParentGroup_when_parent_does_not_exist(self):
         HDF5InputDialog.createLineEditForDatasetName = mock.Mock()
@@ -161,7 +161,7 @@ class TestHDF5InputDialog(unittest.TestCase):
         h5id.current_group = '//'
         self.assertEqual(h5id.getCurrentParentGroup(), '//')
         h5id.current_group = ''
-        self.assertEqual(h5id.getCurrentParentGroup(), '')
+        self.assertEqual(h5id.getCurrentParentGroup(), '/')
 
     def test_goToParentGroup(self):
         HDF5InputDialog.createLineEditForDatasetName = mock.Mock()
