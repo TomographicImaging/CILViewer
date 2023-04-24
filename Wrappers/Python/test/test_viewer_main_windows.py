@@ -27,10 +27,13 @@ else:
 print("skip_as_conda_build is set to ", skip_as_conda_build)
 
 if not skip_as_conda_build:
-    if not QApplication.instance():
-        app = QApplication(sys.argv)
-    else:
-        app = QApplication.instance()
+    try:
+        if not QApplication.instance():
+            app = QApplication(sys.argv)
+        else:
+            app = QApplication.instance()
+    except:
+        skip_test = True # if we cannot create QApplication, skip the test
 else:
     skip_test = True
 
