@@ -66,3 +66,12 @@ class ViewerCoordsDockWidget(FormDockWidget):
         viewers : list of CILViewer2D and/or CILViewer3D
             The viewers which this dock widget will display information for.'''
         self.viewers = viewers
+
+    def getViewers(self):
+        ''' Get the viewers which this dock widget will display information for.
+        
+        Returns
+        -------
+        list of CILViewer2D and/or CILViewer3D
+            The viewers which this dock widget will display information for.'''
+        return self.viewers

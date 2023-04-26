@@ -32,6 +32,7 @@ class StandaloneViewerMainWindow(TwoViewersMainWindow):
                                                          viewer2)
 
         self.addToMenu()
+        self.addToViewerCoordsDockWidget()
 
         self.image_overlay = vtk.vtkImageData()
 
@@ -51,14 +52,12 @@ class StandaloneViewerMainWindow(TwoViewersMainWindow):
         image1_action.triggered.connect(lambda: self.setViewersInputFromDialog(self.viewers))
         file_menu.insertAction(file_menu.actions()[0], image1_action)
 
-    def createViewerCoordsDockWidget(self):
-        '''
-        Creates a dock widget which contains widgets for displaying the 
-        image shown on the viewer, and the coordinate system of the viewer.
 
-        Override to add checkbox for showing and hiding the image overlay.
+    def addToViewerCoordsDockWidget(self):
         '''
-        super().createViewerCoordsDockWidget()
+        Adds widgets to the viewer coords dock widget for displaying the
+        image overlay, and for showing/hiding the 2D and 3D viewers.
+        '''
         checkbox = QCheckBox("Show Image Overlay")
         checkbox.setChecked(True)
         self.viewer_coords_dock.widget().addSpanningWidget(checkbox, 'image_overlay')
