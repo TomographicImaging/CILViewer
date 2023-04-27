@@ -1,22 +1,13 @@
+import os
+import sys
 import unittest
 from unittest import mock
 
-from PySide2.QtWidgets import QMainWindow
-import os
-
-from unittest import mock
-from PySide2.QtCore import QSettings, QThreadPool
-from PySide2.QtWidgets import QApplication, QDialog, QLabel, QFrame, QDoubleSpinBox, QCheckBox, QPushButton, QLineEdit, QComboBox, QWidget
-from eqt.ui.MainWindowWithProgressDialogs import MainWindowWithProgressDialogs
-
-import sys
-
-from ccpi.viewer.ui.main_windows import ViewerMainWindow
-from ccpi.viewer.ui.dialogs import ViewerSettingsDialog
+import vtk
 from ccpi.viewer.CILViewer import CILViewer
 from ccpi.viewer.CILViewer2D import CILViewer2D
-
-import vtk
+from ccpi.viewer.ui.main_windows import ViewerMainWindow
+from PySide2.QtWidgets import QApplication
 
 # skip the tests on GitHub actions
 if os.environ.get('CONDA_BUILD', '0') == '1':

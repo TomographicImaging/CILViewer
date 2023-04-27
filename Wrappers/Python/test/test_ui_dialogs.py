@@ -1,13 +1,12 @@
 import unittest
 from unittest import mock
-from ccpi.viewer.ui.dialogs import ViewerSessionSettingsDialog, ViewerSettingsDialog, HDF5InputDialog, RawInputDialog
+from ccpi.viewer.ui.dialogs import ViewerSettingsDialog, HDF5InputDialog, RawInputDialog
 from eqt.ui.SessionDialogs import AppSettingsDialog
 
 from PySide2.QtWidgets import QMainWindow
 import os
 
 from unittest import mock
-from PySide2.QtCore import QSettings, QThreadPool
 from PySide2.QtWidgets import QApplication, QLabel, QFrame, QDoubleSpinBox, QCheckBox, QPushButton, QLineEdit, QComboBox, QWidget
 
 import sys
@@ -97,7 +96,6 @@ class TestHDF5InputDialog(unittest.TestCase):
         HDF5InputDialog.createLineEditForDatasetName.return_value = (None, None, QLineEdit(), QPushButton())
         HDF5InputDialog.setDefaultDatasetName = mock.Mock()
         h5id = HDF5InputDialog(self.parent, self.fname)
-        print(h5id.getHDF5Attributes())
         assert h5id.getHDF5Attributes() == {'dataset_name': '', 'resample_z': False}
         h5id.getWidget('dataset_name', 'field').setText('test')
         h5id.getWidget('resample_z').setCurrentText("True")

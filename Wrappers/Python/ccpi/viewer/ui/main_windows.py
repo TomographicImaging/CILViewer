@@ -9,7 +9,7 @@ from ccpi.viewer import CILViewer2D, CILViewer
 from ccpi.viewer.CILViewer2D import CILViewer2D
 from ccpi.viewer.CILViewer import CILViewer
 from ccpi.viewer.QCILViewerWidget import QCILDockableWidget
-from ccpi.viewer.ui.dialogs import (HDF5InputDialog, RawInputDialog, ViewerSessionSettingsDialog, ViewerSettingsDialog)
+from ccpi.viewer.ui.dialogs import HDF5InputDialog, RawInputDialog, ViewerSettingsDialog
 from ccpi.viewer.ui.qt_widgets import ViewerCoordsDockWidget
 from ccpi.viewer.utils import cilPlaneClipper
 from ccpi.viewer.utils.io import ImageReader
@@ -17,7 +17,7 @@ from eqt.threading import Worker
 from eqt.ui.SessionDialogs import ErrorDialog
 from eqt.ui.MainWindowWithSessionManagement import MainWindowWithProgressDialogs, MainWindowWithSessionManagement
 from PySide2.QtCore import Qt
-from PySide2.QtWidgets import QApplication, QCheckBox, QFileDialog, QMainWindow, QSizePolicy
+from PySide2.QtWidgets import QApplication, QFileDialog, QMainWindow, QSizePolicy
 
 
 class ViewerMainWindow(MainWindowWithProgressDialogs):
