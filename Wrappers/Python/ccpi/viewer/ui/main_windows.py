@@ -75,11 +75,13 @@ class ViewerMainWindow(MainWindowWithProgressDialogs):
         override here to make our own settings dialog'''
         dialog = ViewerSettingsDialog(self)
         dialog.Ok.clicked.connect(lambda: self.onAppSettingsDialogAccepted(dialog))
+        dialog.Ok.clicked.connect(lambda: self.acceptViewerSettings(dialog))
         dialog.Cancel.clicked.connect(dialog.close)
         self.setAppSettingsDialogWidgets(dialog)
+        self.setViewerSettingsDialogWidgets(dialog)
         dialog.open()
 
-    def setAppSettingsDialogWidgets(self, dialog):
+    def setViewerSettingsDialogWidgets(self, dialog):
         '''Set the widgets on the app settings dialog, based on the 
         current settings of the app.
         
@@ -88,7 +90,6 @@ class ViewerMainWindow(MainWindowWithProgressDialogs):
         dialog : ViewerSettingsDialog
             The dialog to set the widgets on.
         '''
-        super().setAppSettingsDialogWidgets(dialog)
         sw = dialog.widgets
 
         if self.settings.value("vis_size") is not None:
@@ -102,7 +103,7 @@ class ViewerMainWindow(MainWindowWithProgressDialogs):
         else:
             sw['gpu_checkbox_field'].setChecked(True)
 
-    def onAppSettingsDialogAccepted(self, settings_dialog):
+    def acceptViewerSettings(self, settings_dialog):
         '''This is called when the user clicks the OK button on the
         app settings dialog. We override this method to save the
         settings to the QSettings object.
@@ -112,7 +113,6 @@ class ViewerMainWindow(MainWindowWithProgressDialogs):
         settings_dialog : ViewerSettingsDialog
             The dialog to get the settings from.
         '''
-        super().onAppSettingsDialogAccepted(settings_dialog)
 
         self.settings.setValue("vis_size", float(settings_dialog.widgets['vis_size_field'].value()))
 
