@@ -82,7 +82,7 @@ class ViewerMainWindow(MainWindowWithProgressDialogs):
         dialog.open()
 
     def setViewerSettingsDialogWidgets(self, dialog):
-        '''Set the widgets on the app settings dialog, based on the 
+        '''Set the viewer-specific widgets on the app settings dialog, based on the 
         current settings of the app.
         
         Parameters
@@ -105,8 +105,8 @@ class ViewerMainWindow(MainWindowWithProgressDialogs):
 
     def acceptViewerSettings(self, settings_dialog):
         '''This is called when the user clicks the OK button on the
-        app settings dialog. We override this method to save the
-        settings to the QSettings object.
+        app settings dialog.
+        Saves the viewer settings to the QSettings object.
         
         Parameters
         ----------
@@ -484,12 +484,14 @@ class ViewerMainWindowWithSessionManagement(MainWindowWithSessionManagement, Vie
         '''
         dialog = ViewerSessionSettingsDialog(self)
         dialog.Ok.clicked.connect(lambda: self.onAppSettingsDialogAccepted(dialog))
+        dialog.Ok.clicked.connect(lambda: self.acceptSessionSettings(dialog))
         dialog.Cancel.clicked.connect(dialog.close)
         self.setAppSettingsDialogWidgets(dialog)
+        self.setSessionSettingsDialogWidgets(dialog)
         dialog.open()
 
-    def setAppSettingsDialogWidgets(self, dialog):
-        '''Set the widgets on the app settings dialog, based on the 
+    def setSessionSettingsDialogWidgets(self, dialog):
+        '''Set the session-specific widgets on the app settings dialog, based on the 
         current settings of the app
         
         Parameters
@@ -497,23 +499,20 @@ class ViewerMainWindowWithSessionManagement(MainWindowWithSessionManagement, Vie
         dialog : ViewerSessionSettingsDialog
             The settings dialog
         '''
-        super().setAppSettingsDialogWidgets(dialog)
         sw = dialog.widgets
         if self.settings.value('copy_files') is not None:
             sw['copy_files_checkbox_field'].setChecked(int(self.settings.value('copy_files')))
 
-    def onAppSettingsDialogAccepted(self, settings_dialog):
+    def acceptSessionSettings(self, settings_dialog):
         '''This is called when the user clicks the OK button on the
-        app settings dialog. We override this method to save the
-        settings to the QSettings object.
+        app settings dialog.
+        Accepts the session-specific settings, saving them to the QSettings object.
         
         Parameters
         ----------
         settings_dialog : ViewerSessionSettingsDialog
             The settings dialog
         '''
-        super().onAppSettingsDialogAccepted(settings_dialog)
-
         if settings_dialog.widgets['copy_files_checkbox_field'].isChecked():
             self.settings.setValue("copy_files", 1)
         else:
@@ -651,17 +650,6 @@ class TwoViewersMainWindowMixin(object):
                 viewer.style.AddObserver("MouseWheelBackwardEvent", viewer.PlaneClipper.UpdateClippingPlanes, 0.9)
                 viewer.style.AddObserver("KeyPressEvent", viewer.PlaneClipper.UpdateClippingPlanes, 0.9)
 
-    def createViewerCoordsDockWidget(self):
-        '''
-        Creates a dock widget which contains widgets for displaying the 
-        image shown on the viewer, and the coordinate system of the viewer.
-
-        Override to add checkbox for showing and hiding the image overlay
-        '''
-        super().createViewerCoordsDockWidget()
-        overlay_checkbox = QCheckBox("Show Image Overlay")
-        overlay_checkbox.setChecked(True)
-        overlay_checkbox.setVisible(False)
 
     def placeViewerCoordsDockWidget(self):
         '''
