@@ -52,7 +52,6 @@ class StandaloneViewerMainWindow(TwoViewersMainWindow):
         image1_action.triggered.connect(lambda: self.setViewersInputFromDialog(self.viewers))
         file_menu.insertAction(file_menu.actions()[0], image1_action)
 
-
     def addToViewerCoordsDockWidget(self):
         '''
         Adds widgets to the viewer coords dock widget for displaying the
