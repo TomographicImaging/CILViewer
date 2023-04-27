@@ -478,7 +478,6 @@ class ViewerMainWindowWithSessionManagement(MainWindowWithSessionManagement, Vie
                                                                     organisation_name=organisation_name)
 
 
-
 class TwoViewersMainWindowMixin(object):
     '''
     Provides a mixin for a TwoViewersMainWindow or a TwoViewersMainWindowWithSessionManagement class.
@@ -609,7 +608,6 @@ class TwoViewersMainWindowMixin(object):
                 viewer.style.AddObserver("MouseWheelForwardEvent", viewer.PlaneClipper.UpdateClippingPlanes, 0.9)
                 viewer.style.AddObserver("MouseWheelBackwardEvent", viewer.PlaneClipper.UpdateClippingPlanes, 0.9)
                 viewer.style.AddObserver("KeyPressEvent", viewer.PlaneClipper.UpdateClippingPlanes, 0.9)
-
 
     def placeViewerCoordsDockWidget(self):
         '''

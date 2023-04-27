@@ -39,8 +39,6 @@ class ViewerSettingsDialog(AppSettingsDialog):
         self.addSpanningWidget(gpu_checkbox, 'gpu_checkbox')
 
 
-
-
 class RawInputDialog(FormDialog):
     '''
     This is a dialog window which allows the user to set information
