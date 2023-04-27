@@ -7,7 +7,6 @@
   - `TwoViewersMainWindowMixin` - a mixin which provides methods to both `TwoViewersMainWindowWithSessionManagement` and `TwoViewersMainWindow`. These methods are for adding viewers to the window, setting them up, linking them and adding a dockwidget for coordinate settings.
 - Adds the following dialogs to `ui.dialogs.py`:
   - `ViewerSettingsDialog` - allows user to set downsample size settings and whether to use GPU for volume render.
-  - `ViewerSessionSettingsDialog` - allows user to set session settings including whether to allow copies of images to be saved in the session.
   - `RawInputDialog` - for setting info for loading a raw file including, size of dimensions, data type etc.
   - `HDF5InputDialog` - for setting info for loading a HDF5 file, including the dataset name
   - Unit tests for creating each dialog.

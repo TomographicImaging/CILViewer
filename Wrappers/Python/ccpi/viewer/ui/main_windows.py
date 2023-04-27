@@ -477,46 +477,6 @@ class ViewerMainWindowWithSessionManagement(MainWindowWithSessionManagement, Vie
                                                                     settings_name=settings_name,
                                                                     organisation_name=organisation_name)
 
-    def createAppSettingsDialog(self):
-        '''Create a dialog to change the application settings.
-        This is a method in the MainWindowWithSessionManagement class, which we
-        override here to make our own settings dialog
-        '''
-        dialog = ViewerSessionSettingsDialog(self)
-        dialog.Ok.clicked.connect(lambda: self.onAppSettingsDialogAccepted(dialog))
-        dialog.Ok.clicked.connect(lambda: self.acceptSessionSettings(dialog))
-        dialog.Cancel.clicked.connect(dialog.close)
-        self.setAppSettingsDialogWidgets(dialog)
-        self.setSessionSettingsDialogWidgets(dialog)
-        dialog.open()
-
-    def setSessionSettingsDialogWidgets(self, dialog):
-        '''Set the session-specific widgets on the app settings dialog, based on the 
-        current settings of the app
-        
-        Parameters
-        ----------
-        dialog : ViewerSessionSettingsDialog
-            The settings dialog
-        '''
-        sw = dialog.widgets
-        if self.settings.value('copy_files') is not None:
-            sw['copy_files_checkbox_field'].setChecked(int(self.settings.value('copy_files')))
-
-    def acceptSessionSettings(self, settings_dialog):
-        '''This is called when the user clicks the OK button on the
-        app settings dialog.
-        Accepts the session-specific settings, saving them to the QSettings object.
-        
-        Parameters
-        ----------
-        settings_dialog : ViewerSessionSettingsDialog
-            The settings dialog
-        '''
-        if settings_dialog.widgets['copy_files_checkbox_field'].isChecked():
-            self.settings.setValue("copy_files", 1)
-        else:
-            self.settings.setValue("copy_files", 0)
 
 
 class TwoViewersMainWindowMixin(object):

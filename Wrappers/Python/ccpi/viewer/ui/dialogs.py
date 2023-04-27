@@ -39,27 +39,6 @@ class ViewerSettingsDialog(AppSettingsDialog):
         self.addSpanningWidget(gpu_checkbox, 'gpu_checkbox')
 
 
-class ViewerSessionSettingsDialog(ViewerSettingsDialog):
-    ''' This is a dialog window which configures settings for the viewer.
-    It is intended to be used in the context of a session, and allows the user to set:
-    - whether they would like copies of the images to be saved in the session
-    '''
-
-    def __init__(self, parent):
-
-        super(ViewerSessionSettingsDialog, self).__init__(parent)
-
-        self._addViewerSessionSettingsWidgets()
-
-    def _addViewerSessionSettingsWidgets(self):
-
-        self.formWidget.addSeparator('session_settings_separator')
-
-        self.formWidget.addTitle(QLabel("Session Settings"), 'session_settings_title')
-
-        copy_files_checkbox = QCheckBox("Allow a copy of the image files to be stored. ")
-
-        self.addSpanningWidget(copy_files_checkbox, 'copy_files_checkbox')
 
 
 class RawInputDialog(FormDialog):

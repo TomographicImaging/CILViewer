@@ -60,38 +60,6 @@ class TestViewerSettingsDialog(unittest.TestCase):
 
 
 @unittest.skipIf(skip_as_conda_build, "On conda builds do not do any test with interfaces")
-class TestViewerSessionSettingsDialog(unittest.TestCase):
-
-    def setUp(self):
-        global _instance
-        if _instance is None:
-            _instance = QApplication(sys.argv)
-
-    def test_init(self):
-        parent = QMainWindow()
-        vssd = ViewerSessionSettingsDialog(parent)
-        assert vssd is not None
-
-    def test_init_calls_init_ViewerSettingsDialog_and_addViewerSessionSettingsWidgets(self):
-        parent = QMainWindow()
-        with mock.patch.object(ViewerSettingsDialog, '__init__') as mock_ViewerSettingsDialog_init:
-            with mock.patch.object(ViewerSessionSettingsDialog,
-                                   '_addViewerSessionSettingsWidgets') as mock_addViewerSessionSettingsWidgets:
-                ViewerSessionSettingsDialog(parent)
-                mock_ViewerSettingsDialog_init.assert_called_once_with(parent)
-                mock_addViewerSessionSettingsWidgets.assert_called_once()
-
-    def test_addViewerSessionSettingsWidgets(self):
-        parent = QMainWindow()
-        vssd = ViewerSessionSettingsDialog(parent)
-
-        #Check we have the widgets that we expect:
-        assert isinstance(vssd.getWidget('session_settings_separator'), QFrame)
-        assert isinstance(vssd.getWidget('session_settings_title'), QLabel)
-        assert isinstance(vssd.getWidget('copy_files_checkbox'), QCheckBox)
-
-
-@unittest.skipIf(skip_as_conda_build, "On conda builds do not do any test with interfaces")
 class TestHDF5InputDialog(unittest.TestCase):
     # TODO: test creation of HDF5 dataset browsing widget functionality
 
