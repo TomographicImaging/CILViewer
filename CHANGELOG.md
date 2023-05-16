@@ -1,5 +1,7 @@
 # Changelog
 
+## v x.x.x
+- Raise error if try to add multiple widgets with the same name.
 ## v23.0.0
 - add `deleteWidget` method to CILViewerBase
 - Add environment file for development of the viewer

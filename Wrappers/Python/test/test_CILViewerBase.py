@@ -49,6 +49,14 @@ class CILViewer3DTest(unittest.TestCase):
         actual_percentages = self.cil_viewer.getSliceColorPercentiles()
         self.assertEqual(expected_percentages, actual_percentages)
 
+    def test_multiple_widgets_cant_be_saved_with_same_name(self):
+        widget1 = mock.MagicMock()
+        widget2 = mock.MagicMock()
+        widget_name = "widget1"
+        self.cil_viewer.addWidgetReference(widget1, widget_name)
+        with self.assertRaises(ValueError):
+            self.cil_viewer.addWidgetReference(widget2, widget_name)
+
 
 if __name__ == '__main__':
     unittest.main()
