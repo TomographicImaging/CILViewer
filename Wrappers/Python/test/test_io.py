@@ -131,7 +131,7 @@ class TestImageReaderAndWriter(unittest.TestCase):
         readers['raw'] = ImageReader(file_name=self.raw_filename_3D,
                                      resample=False,
                                      raw_image_attrs=self.raw_image_attrs)
-        readers['tiff_file'] = ImageReader(file_name=self.tiff_fnames[0], resample=False)
+        readers['tiff_file'] = ImageReader(file_name=self.tiff_fnames, resample=False)
         readers['tiff_dir'] = ImageReader(file_name=self.tiff_dirname, resample=False)
         readers['vtk'] = ImageReader(vtk_image=self.vtk_image, resample=False)
 
@@ -182,7 +182,7 @@ class TestImageReaderAndWriter(unittest.TestCase):
                                 resample_z=False,
                                 raw_image_attrs=self.raw_image_attrs)
         self._test_resampling_acq_data(readerraw, target_size)
-        readertiff = ImageReader(file_name=self.tiff_fnames[0], target_size=target_size, resample_z=False)
+        readertiff = ImageReader(file_name=self.tiff_fnames, target_size=target_size, resample_z=False)
         self._test_resampling_acq_data(readertiff, target_size)
         readervtk = ImageReader(vtk_image=self.vtk_image, target_size=target_size, resample_z=False)
         self._test_resampling_acq_data(readervtk, target_size)
@@ -248,7 +248,7 @@ class TestImageReaderAndWriter(unittest.TestCase):
         np.testing.assert_array_equal(cropped_array, read_cropped_array)
 
         # TIFF: ------------------------------------------------------------------------
-        reader = ImageReader(file_name=self.tiff_fnames[0], crop=True, resample=False, target_z_extent=[1, 1])
+        reader = ImageReader(file_name=self.tiff_fnames, crop=True, resample=False, target_z_extent=[1, 1])
         array_image_data = reader.Read()
         read_cropped_array = Converter.vtk2numpy(array_image_data)
         np.testing.assert_array_equal(cropped_array, read_cropped_array)

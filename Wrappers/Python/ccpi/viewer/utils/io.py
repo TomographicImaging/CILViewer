@@ -87,9 +87,9 @@ class ImageReader(object):
 
         Parameters
         ----------
-        file_name: os.path or string, default None
+        file_name: os.path or string, or list, default None
             file name to read
-            In case of TIFF files, either the directory to the TIFF files, or the path to one such file is needed.
+            In case of TIFF files, either the directory to the TIFF files, or the list of file names is needed.
         vtk_image: vtkImageData, default None
             vtkImageData to read 
             Must be given if file_name is None
@@ -114,12 +114,8 @@ class ImageReader(object):
         log_file: str, optional, default None
             log verbose output to file of this name            
         '''
-
         if file_name is None and vtk_image is None:
             raise Exception('Path to file (file_name) or vtk image (vtk_image) is required.')
-        elif file_name is not None:
-            if not (os.path.isfile(file_name) or os.path.isdir(file_name)):
-                raise Exception('Path\n {}\n does not exist.'.format(file_name))
 
         self._OriginalImageAttrs = {}
 
@@ -141,6 +137,14 @@ class ImageReader(object):
         file_name: os.path or string, default None
             file name to read
         '''
+        if file_name is not None:
+            if not isinstance(file_name, list):
+                if not (os.path.isfile(file_name) or os.path.isdir(file_name)):
+                    raise Exception('Path\n {}\n does not exist.'.format(file_name))
+            else:
+                for f in file_name:
+                    if not os.path.isfile(f):
+                        raise Exception('Path\n {}\n does not exist.'.format(f))
         self._FileName = file_name
 
     def SetVTKImage(self, vtk_image):
@@ -293,7 +297,13 @@ class ImageReader(object):
         if self._FileName is None:
             reader = self._GetVTKImageResampler()
         else:
-            if os.path.isfile(self._FileName):
+            if isinstance(self._FileName, list):
+                # When self._FileName is set as a list, we already have checked that
+                # the files are all tiffs.
+                reader = self._GetTiffImageReader()
+                reader.SetFileName(self._FileName)
+                file_extension = '.tiff'
+            elif os.path.isfile(self._FileName):
                 file_extension = os.path.splitext(self._FileName)[1]
 
                 if file_extension in ['.mha', '.mhd']:
@@ -310,22 +320,21 @@ class ImageReader(object):
                     self._OriginalImageAttrs['dataset_name'] = self._HDF5DatasetName
 
                 elif file_extension in ['.tif', '.tiff']:
-                    image_files = glob.glob(os.path.join(os.path.dirname(self._FileName), '*{}'.format(file_extension)))
-                    if len(image_files) == 0:
-                        raise Exception('No tiff files were found in: {}'.format(os.path.dirname(self._FileName)))
                     reader = self._GetTiffImageReader()
-                    reader.SetFileName(image_files)
+                    reader.SetFileName(self._FileName)
 
                 else:
                     raise Exception(
                         'File format is not supported. Accepted formats include: .mhd, .mha, .npy, .tif, .tiff, .raw, .nxs, .h5, .hdf5'
                     )
-            else:  # If we are given a folder, not a file, look for tiff files and try to read them
+            
+            elif os.path.isdir(self._FileName):  # If we are given a folder, not a file, look for tiff files and try to read them
                 image_files = list(
                     glob.glob(os.path.join(self._FileName, '*.tif')) +
                     list(glob.glob(os.path.join(self._FileName, '*.tiff'))))
                 if len(image_files) == 0:
                     raise Exception('No tiff files were found in: {}'.format(self._FileName))
+                image_files.sort(key=self.__natural_keys)
                 reader = self._GetTiffImageReader()
                 reader.SetFileName(image_files)
                 file_extension = '.tiff'
@@ -333,9 +342,7 @@ class ImageReader(object):
             if file_extension not in ['.tif', '.tiff']:
                 # currently the tiff reader doesn't take these inputs:
                 reader.SetFileName(self._FileName)
-            else:
-                image_files.sort(key=self.__natural_keys)
-
+                
         # setting SetIsAcquisitionData determines whether to crop on Z:
         reader.SetIsAcquisitionData(not self._ResampleZ)
 

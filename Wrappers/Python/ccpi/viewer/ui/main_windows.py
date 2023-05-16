@@ -150,32 +150,34 @@ class ViewerMainWindow(MainWindowWithProgressDialogs):
             The file name of the image selected by the user.
         '''
         dialog = QFileDialog()
-        file = dialog.getOpenFileName(self, "Select Images")[0]
-        if file is None:
-            return
-        file_extension = Path(file).suffix.lower()
+        files = list(dialog.getOpenFileNames(self, "Select Images")[0])
         self.raw_attrs = {}
         self.hdf5_attrs = {}
-        if 'tif' in file_extension:
-            file = os.path.dirname(file)
-        if 'raw' in file_extension:
-            raw_dialog = RawInputDialog(self, file)
-            raw_dialog.Ok.clicked.connect(lambda: self.getRawAttrsFromDialog(raw_dialog))
-            raw_dialog.exec_()
-            if self.raw_attrs == {}:
-                return None
-        elif file_extension in ['.nxs', '.h5', '.hdf5']:
-            dialog = HDF5InputDialog(self, file)
-            dialog.Ok.clicked.connect(lambda: self.getHDF5AttrsFromDialog(dialog))
-            dialog.exec_()
-            if self.hdf5_attrs == {}:
-                return None
+        if files is None:
+            return
+        if len(files) == 1:
+            file = files[0]
+            file_extension = Path(file).suffix.lower()
+            if 'raw' in file_extension:
+                raw_dialog = RawInputDialog(self, file)
+                raw_dialog.Ok.clicked.connect(lambda: self.getRawAttrsFromDialog(raw_dialog))
+                raw_dialog.exec_()
+                if self.raw_attrs == {}:
+                    return None
+            elif file_extension in ['.nxs', '.h5', '.hdf5']:
+                dialog = HDF5InputDialog(self, file)
+                dialog.Ok.clicked.connect(lambda: self.getHDF5AttrsFromDialog(dialog))
+                dialog.exec_()
+                if self.hdf5_attrs == {}:
+                    return None
+            self.input_dataset_file = file
+        else:
+            self.input_dataset_file = files
 
-        self.input_dataset_file = file
         if label is not None:
-            label.setText(os.path.basename(file))
+            label.setText(os.path.basename(files[0]))
 
-        return file
+        return self.input_dataset_file
 
     def getRawAttrsFromDialog(self, dialog):
         '''Gets the raw attributes from the dialog and saves them to the
@@ -236,8 +238,8 @@ class ViewerMainWindow(MainWindowWithProgressDialogs):
         ----------
         viewer: CILViewer2D or CILViewer, or list of CILViewer2D or CILViewer
             The viewer(s) to display the image in.
-        image: str or vtk.vtkImageData
-            The image to display. If a string, it is assumed to be a file name.
+        image: str, list or vtk.vtkImageData
+            The image or images to display. If a string, it is assumed to be a file name.
         input_num : int
             The input number to the viewer. 1 or 2. Only used if the viewer is
             a 2D viewer. 1 is the default image and 2 is the overlay image.
@@ -250,7 +252,7 @@ class ViewerMainWindow(MainWindowWithProgressDialogs):
         dataset_name = hdf5_image_attrs.get('dataset_name')
         resample_z = hdf5_image_attrs.get('resample_z')
         target_size = self.getTargetImageSize()
-        if isinstance(image, str):
+        if isinstance(image, str) or isinstance(image, list):
             image_reader = ImageReader(file_name=image)
         else:
             image_reader = ImageReader(vtk_image=image)
