@@ -327,8 +327,9 @@ class ImageReader(object):
                     raise Exception(
                         'File format is not supported. Accepted formats include: .mhd, .mha, .npy, .tif, .tiff, .raw, .nxs, .h5, .hdf5'
                     )
-            
-            elif os.path.isdir(self._FileName):  # If we are given a folder, not a file, look for tiff files and try to read them
+
+            elif os.path.isdir(
+                    self._FileName):  # If we are given a folder, not a file, look for tiff files and try to read them
                 image_files = list(
                     glob.glob(os.path.join(self._FileName, '*.tif')) +
                     list(glob.glob(os.path.join(self._FileName, '*.tiff'))))
@@ -342,7 +343,7 @@ class ImageReader(object):
             if file_extension not in ['.tif', '.tiff']:
                 # currently the tiff reader doesn't take these inputs:
                 reader.SetFileName(self._FileName)
-                
+
         # setting SetIsAcquisitionData determines whether to crop on Z:
         reader.SetIsAcquisitionData(not self._ResampleZ)
 
