@@ -38,6 +38,10 @@ class ViewerSettingsDialog(AppSettingsDialog):
 
         self.addSpanningWidget(gpu_checkbox, 'gpu_checkbox')
 
+        # self.formWidget.setSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Preferred)
+        # self.formWidget.uiElements['verticalLayout'].setSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Preferred)
+        # self.formWidget.uiElements['groupBox'].setSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Preferred)
+        # self.formWidget.uiElements['groupBoxFormLayout'].setSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Preferred)
 
 class RawInputDialog(FormDialog):
     '''
@@ -132,7 +136,6 @@ class RawInputDialog(FormDialog):
             widgets['dim_Z_field'].setEnabled(True)
         else:
             widgets['dim_Z_field'].setEnabled(False)
-
 
 class HDF5InputDialog(FormDialog):
     '''
