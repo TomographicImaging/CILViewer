@@ -364,6 +364,8 @@ class CILViewerBase():
 
     def addWidgetReference(self, widget, name):
         '''Adds widget to dictionary of widgets'''
+        if self.getWidget(name) is not None:
+            raise ValueError(f'Could not save reference to widget, as a widget with name {name} already exists.')
         self.widgets[name] = widget
 
     def getWidget(self, name):
