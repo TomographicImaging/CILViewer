@@ -3,6 +3,7 @@ from PySide2.QtWidgets import QComboBox, QLabel
 from ccpi.viewer.CILViewer import CILViewer
 from ccpi.viewer.CILViewer2D import CILViewer2D
 
+
 class ViewerCoordsDockWidget(FormDockWidget):
     ''' This is the dockwidget which
     shows the original and downsampled image
@@ -76,7 +77,7 @@ class ViewerCoordsDockWidget(FormDockWidget):
         list of CILViewer2D and/or CILViewer3D instances
             The viewers which this dock widget will display information for.'''
         return self._viewers
-    
+
     @viewers.setter
     def viewers(self, viewers):
         '''
@@ -95,7 +96,6 @@ class ViewerCoordsDockWidget(FormDockWidget):
                     raise TypeError("viewers must be a list of CILViewer2D and/or CILViewer instances")
         self._viewers = viewers
 
-
     def setViewers(self, viewers):
         ''' Set the viewers which this dock widget will display information for.
 
@@ -105,7 +105,6 @@ class ViewerCoordsDockWidget(FormDockWidget):
             The viewers which this dock widget will display information for.
         '''
         self.viewers = viewers
-
 
     def getViewers(self):
         ''' Get the viewers which this dock widget will display information for.

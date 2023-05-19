@@ -75,26 +75,25 @@ class ViewerMainWindow(MainWindowWithProgressDialogs):
     def viewers(self):
         '''The list of viewers in the window'''
         return self._viewers
-    
+
     @property
     def viewer_docks(self):
         '''The list of dock widgets that contain the viewers'''
         return self._viewer_docks
-    
+
     @property
     def frames(self):
         '''The list of frames in the window'''
         return self._frames
-    
+
     @property
     def vs_dialog(self):
         '''The viewer settings dialog'''
         return self._vs_dialog
-    
+
     @vs_dialog.setter
     def vs_dialog(self, value):
         self._vs_dialog = value
-  
 
     def createAppSettingsDialog(self):
         '''Create a dialog to change the application settings, or open an existing one.
@@ -494,8 +493,11 @@ class ViewerMainWindowWithSessionManagement(MainWindowWithSessionManagement, Vie
         If None, this is set to the app name.
     '''
 
-    def __init__(self, title="ViewerMainWindowWithSessionManagement", app_name="ViewerMainWindowWithSessionManagement",
-                    settings_name=None, organisation_name=None):
+    def __init__(self,
+                 title="ViewerMainWindowWithSessionManagement",
+                 app_name="ViewerMainWindowWithSessionManagement",
+                 settings_name=None,
+                 organisation_name=None):
 
         super(ViewerMainWindowWithSessionManagement, self).__init__(title,
                                                                     app_name,

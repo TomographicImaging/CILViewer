@@ -43,6 +43,7 @@ class ViewerSettingsDialog(AppSettingsDialog):
         # self.formWidget.uiElements['groupBox'].setSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Preferred)
         # self.formWidget.uiElements['groupBoxFormLayout'].setSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Preferred)
 
+
 class RawInputDialog(FormDialog):
     '''
     This is a dialog window which allows the user to set information
@@ -136,6 +137,7 @@ class RawInputDialog(FormDialog):
             widgets['dim_Z_field'].setEnabled(True)
         else:
             widgets['dim_Z_field'].setEnabled(False)
+
 
 class HDF5InputDialog(FormDialog):
     '''

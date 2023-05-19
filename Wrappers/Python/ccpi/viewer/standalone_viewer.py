@@ -28,8 +28,8 @@ class StandaloneViewerMainWindow(TwoViewersMainWindow):
                  organisation_name=None,
                  viewer1_type='2D',
                  viewer2_type='3D'):
-        super(StandaloneViewerMainWindow, self).__init__(title, app_name, settings_name, organisation_name, viewer1_type,
-                                                         viewer2_type)
+        super(StandaloneViewerMainWindow, self).__init__(title, app_name, settings_name, organisation_name,
+                                                         viewer1_type, viewer2_type)
 
         self.addToMenu()
         self.addToViewerCoordsDockWidget()
