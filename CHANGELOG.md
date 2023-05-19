@@ -1,6 +1,7 @@
 # Changelog
 
 ## vx.x.x
+- Raise error if try to add multiple widgets with the same name to CILViewer or CILViewer2D.
 - Adds the following base classes to `ui.main_windows.py`:
   - Add `ViewerMainWindow` and `ViewerMainWindowWithSessionManagement` - baseclasses for windows which would house viewers, with methods needed for creating settings dialogs, creating a coordinate settings dockwidget, and loading images.
   - Add `TwoViewersMainWindow` and `TwoViewersMainWindowWithSessionManagement` - baseclasses which create a main window with 2 linked viewers in dockwidgets.
@@ -30,7 +31,6 @@
   - GetOriginalImageAttrs
   - GetLoadedImageAttrs
   - These methods are the same as those in `ImageReader` to be consistent.
-
 
 ## v23.0.0
 - add `deleteWidget` method to CILViewerBase
