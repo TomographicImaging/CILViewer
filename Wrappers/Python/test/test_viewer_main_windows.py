@@ -56,9 +56,9 @@ class TestViewerMainWindow(unittest.TestCase):
 
     def test_acceptViewerSettings_when_gpu_checked(self):
 
-        vmw, settings_dialog = self._setup_acceptViewerSettings_tests()
+        vmw = self._setup_acceptViewerSettings_tests()
 
-        vmw.acceptViewerSettings(settings_dialog)
+        vmw.acceptViewerSettings()
 
         vmw.settings.assert_has_calls(
             [mock.call.setValue('use_gpu_volume_mapper', True),
@@ -96,14 +96,15 @@ class TestViewerMainWindow(unittest.TestCase):
         }
         viewer3D = CILViewer()
         viewer3D.volume_mapper = None
-        vmw.viewers = [viewer3D]
-        return vmw, settings_dialog
+        vmw._viewers = [viewer3D]
+        vmw._vs_dialog = settings_dialog
+        return vmw
 
     def test_acceptViewerSettings_when_gpu_unchecked(self):
-        vmw, settings_dialog = self._setup_acceptViewerSettings_tests()
-        settings_dialog.widgets['gpu_checkbox_field'].isChecked.return_value = False
+        vmw = self._setup_acceptViewerSettings_tests()
+        vmw._vs_dialog.widgets['gpu_checkbox_field'].isChecked.return_value = False
 
-        vmw.acceptViewerSettings(settings_dialog)
+        vmw.acceptViewerSettings()
         vmw.settings.assert_has_calls(
             [mock.call.setValue('use_gpu_volume_mapper', False),
              mock.call.setValue('vis_size', 1.0)], any_order=True)
