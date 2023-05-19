@@ -282,15 +282,15 @@ class HDF5InputDialog(FormDialog):
         '''
         pb = QtWidgets.QPushButton()
         pb.setText("Browse for Dataset...")
-        pb.clicked.connect(lambda: self.descendHDF5AndFillTable())
+        pb.clicked.connect(self.descendHDF5AndFillTable)
 
         up = QtWidgets.QPushButton()
         up.setIcon(QtWidgets.QApplication.style().standardPixmap((QtWidgets.QStyle.SP_ArrowUp)))
-        up.clicked.connect(lambda: self.goToParentGroup())
+        up.clicked.connect(self.goToParentGroup)
         up.setFixedSize(QtCore.QSize(30, 30))
 
         le = QtWidgets.QLineEdit(self)
-        le.returnPressed.connect(lambda: self.descendHDF5AndFillTable())
+        le.returnPressed.connect(self.descendHDF5AndFillTable)
         le.setClearButtonEnabled(True)
 
         hl = QtWidgets.QHBoxLayout()

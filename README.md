@@ -92,7 +92,7 @@ The interactive 3D viewer CILViewer provides:
   - Rotate: Ctrl + Left Mouse + Move
 
 ## References
-Kinder egg dataset shown in above examples is dataset `egg2`:
+The chocolate egg dataset shown in above examples is dataset `egg2`:
 
 Jakob Sauer Jørgensen, Martin Skovgaard Andersen, & Carsten Gundlach. (2021). HDTomo TXRM micro-CT datasets [Data set]. Zenodo. https://doi.org/10.5281/zenodo.4822516
 

@@ -42,20 +42,20 @@ class ViewerMainWindow(MainWindowWithProgressDialogs):
     title : str, optional
         The title of the window. The default is "ViewerMainWindow".
     app_name : str, optional
-        The name of the application. The default is None.
+        The name of the application. The default is "ViewerMainWindow".
     settings_name : str, optional
         The name of the settings file. The default is None.
+        If None, this is set to the app name.
     organisation_name : str, optional
         The name of the organisation. The default is None.
+        If None, this is set to the app name.
     '''
 
     def __init__(self,
                  title="ViewerMainWindow",
-                 app_name=None,
+                 app_name="ViewerMainWindow",
                  settings_name=None,
-                 organisation_name=None,
-                 *args,
-                 **kwargs):
+                 organisation_name=None):
 
         super(ViewerMainWindow, self).__init__(title,
                                                app_name,
@@ -64,33 +64,56 @@ class ViewerMainWindow(MainWindowWithProgressDialogs):
 
         self.default_downsampled_size = 512**3
 
-        self.viewers = []
-        self.viewer_docks = []
+        self._viewers = []
+        self._viewer_docks = []
+        self._frames = []
+        self._vs_dialog = None
 
         self.createViewerCoordsDockWidget()
 
+    @property
+    def viewers(self):
+        '''The list of viewers in the window'''
+        return self._viewers
+    
+    @property
+    def viewer_docks(self):
+        '''The list of dock widgets that contain the viewers'''
+        return self._viewer_docks
+    
+    @property
+    def frames(self):
+        '''The list of frames in the window'''
+        return self._frames
+    
+    @property
+    def vs_dialog(self):
+        '''The viewer settings dialog'''
+        return self._vs_dialog
+    
+    @vs_dialog.setter
+    def vs_dialog(self, value):
+        self._vs_dialog = value
+  
+
     def createAppSettingsDialog(self):
-        '''Create a dialog to change the application settings.
+        '''Create a dialog to change the application settings, or open an existing one.
         This is a method in the MainWindowWithSessionManagement class, which we
         override here to make our own settings dialog'''
-        dialog = ViewerSettingsDialog(self)
-        dialog.Ok.clicked.connect(lambda: self.onAppSettingsDialogAccepted(dialog))
-        dialog.Ok.clicked.connect(lambda: self.acceptViewerSettings(dialog))
-        dialog.Cancel.clicked.connect(dialog.close)
-        self.setAppSettingsDialogWidgets(dialog)
-        self.setViewerSettingsDialogWidgets(dialog)
-        dialog.open()
+        if self.vs_dialog is None:
+            self.vs_dialog = ViewerSettingsDialog(self)
+            self.vs_dialog.Ok.clicked.connect(lambda: self.onAppSettingsDialogAccepted(self.vs_dialog))
+            self.vs_dialog.Ok.clicked.connect(self.acceptViewerSettings)
+            self.vs_dialog.Cancel.clicked.connect(self.vs_dialog.close)
+        self.setAppSettingsDialogWidgets(self.vs_dialog)
+        self.setViewerSettingsDialogWidgets()
+        self.vs_dialog.open()
 
-    def setViewerSettingsDialogWidgets(self, dialog):
+    def setViewerSettingsDialogWidgets(self):
         '''Set the viewer-specific widgets on the app settings dialog, based on the 
         current settings of the app.
-        
-        Parameters
-        ----------
-        dialog : ViewerSettingsDialog
-            The dialog to set the widgets on.
         '''
-        sw = dialog.widgets
+        sw = self.vs_dialog.widgets
 
         if self.settings.value("vis_size") is not None:
             sw['vis_size_field'].setValue(float(self.settings.value("vis_size")))
@@ -103,28 +126,23 @@ class ViewerMainWindow(MainWindowWithProgressDialogs):
         else:
             sw['gpu_checkbox_field'].setChecked(True)
 
-    def acceptViewerSettings(self, settings_dialog):
+    def acceptViewerSettings(self):
         '''This is called when the user clicks the OK button on the
         app settings dialog.
         Saves the viewer settings to the QSettings object.
-        
-        Parameters
-        ----------
-        settings_dialog : ViewerSettingsDialog
-            The dialog to get the settings from.
         '''
 
-        self.settings.setValue("vis_size", float(settings_dialog.widgets['vis_size_field'].value()))
+        self.settings.setValue("vis_size", float(self.vs_dialog.widgets['vis_size_field'].value()))
 
         # Check if the user has changed the volume mapper setting:
         current_setting = self.settings.value("use_gpu_volume_mapper")
 
-        if current_setting == str(settings_dialog.widgets['gpu_checkbox_field'].isChecked()):
+        if current_setting == str(self.vs_dialog.widgets['gpu_checkbox_field'].isChecked()):
             return
         else:
             bool_to_volume_mapper = {True: vtk.vtkSmartVolumeMapper(), False: vtk.vtkFixedPointVolumeRayCastMapper()}
 
-            use_gpu_volume_mapper = settings_dialog.widgets['gpu_checkbox_field'].isChecked()
+            use_gpu_volume_mapper = self.vs_dialog.widgets['gpu_checkbox_field'].isChecked()
 
             self.settings.setValue("use_gpu_volume_mapper", use_gpu_volume_mapper)
 
@@ -161,13 +179,17 @@ class ViewerMainWindow(MainWindowWithProgressDialogs):
             if 'raw' in file_extension:
                 raw_dialog = RawInputDialog(self, file)
                 raw_dialog.Ok.clicked.connect(lambda: self.getRawAttrsFromDialog(raw_dialog))
-                raw_dialog.exec_()
+                # See https://doc.qt.io/qt-6/qdialog.html#exec
+                # Shows a modal dialog, blocking until the user closes it.
+                raw_dialog.exec()
                 if self.raw_attrs == {}:
                     return None
             elif file_extension in ['.nxs', '.h5', '.hdf5']:
                 dialog = HDF5InputDialog(self, file)
                 dialog.Ok.clicked.connect(lambda: self.getHDF5AttrsFromDialog(dialog))
-                dialog.exec_()
+                # See https://doc.qt.io/qt-6/qdialog.html#exec
+                # Shows a modal dialog, blocking until the user closes it.
+                dialog.exec()
                 if self.hdf5_attrs == {}:
                     return None
             self.input_dataset_file = file
@@ -222,17 +244,21 @@ class ViewerMainWindow(MainWindowWithProgressDialogs):
         Places the viewer coords dock widget in the main window.
         May be overridden by subclasses to place the dock widget in a different
         location.
+        This method is a courtesy method and gets never explicitly called.
+        So it's the user's responsibility to place the widget, for example by
+        calling this method.
         '''
         self.addDockWidget(Qt.BottomDockWidgetArea, self.viewer_coords_dock)
 
     def setViewersInputFromDialog(self, viewers, input_num=1):
+        '''Displays an image in the viewer(s).'''
         image_file = self.selectImage()
         if image_file is not None:
             self.setViewersInput(image_file, viewers, input_num=input_num)
 
     def setViewersInput(self, image, viewers, input_num=1, image_name=None):
         '''
-        Opens a file dialog to select an image file and then displays it in the viewer.
+        Displays an image in the viewer/s.
 
         Parameters
         ----------
@@ -241,8 +267,8 @@ class ViewerMainWindow(MainWindowWithProgressDialogs):
         image: str, list or vtk.vtkImageData
             The image or images to display. If a string, it is assumed to be a file name.
         input_num : int
-            The input number to the viewer. 1 or 2. Only used if the viewer is
-            a 2D viewer. 1 is the default image and 2 is the overlay image.
+            The input number to the viewer. 1 or 2, where 1 is the default image and 2 is the overlay
+            image. Only used if the viewer is a 2D viewer.
         image_name : str
             The name of the image. If not given, the file name is used.
             Must be set if no file name is given.
@@ -261,7 +287,6 @@ class ViewerMainWindow(MainWindowWithProgressDialogs):
         image_reader.SetHDF5DatasetName(dataset_name)
         image_reader.SetResampleZ(resample_z)
         image_reader_worker = Worker(image_reader.Read)
-        self.threadpool.start(image_reader_worker)
         self.createUnknownProgressWindow("Reading Image")
         if image_name is None and isinstance(image, str):
             image_name = image
@@ -269,6 +294,7 @@ class ViewerMainWindow(MainWindowWithProgressDialogs):
             partial(self.displayImage, viewers, input_num, image_reader, image_name))
         image_reader_worker.signals.finished.connect(lambda: self.finishProcess("Reading Image"))
         image_reader_worker.signals.error.connect(self.processErrorDialog)
+        self.threadpool.start(image_reader_worker)
 
     def processErrorDialog(self, error, **kwargs):
         '''
@@ -456,23 +482,20 @@ class ViewerMainWindowWithSessionManagement(MainWindowWithSessionManagement, Vie
 
     Parameters
     ----------
-    title: str
-        The title of the window
-    app_name: str
-        The name of the application
-    settings_name: str
-        The name of the settings file
-    organisation_name: str
-        The name of the organisation
+    title : str, optional
+        The title of the window. The default is "ViewerMainWindowWithSessionManagement".
+    app_name : str, optional
+        The name of the application. The default is "ViewerMainWindowWithSessionManagement".
+    settings_name : str, optional
+        The name of the settings file. The default is None.
+        If None, this is set to the app name.
+    organisation_name : str, optional
+        The name of the organisation. The default is None.
+        If None, this is set to the app name.
     '''
 
-    def __init__(self,
-                 title="ViewerMainWindowWithSessionManagement",
-                 app_name=None,
-                 settings_name=None,
-                 organisation_name=None,
-                 *args,
-                 **kwargs):
+    def __init__(self, title="ViewerMainWindowWithSessionManagement", app_name="ViewerMainWindowWithSessionManagement",
+                    settings_name=None, organisation_name=None):
 
         super(ViewerMainWindowWithSessionManagement, self).__init__(title,
                                                                     app_name,
@@ -491,31 +514,34 @@ class TwoViewersMainWindowMixin(object):
     Also provides other methods for adding viewers, and for
     setting up the viewer coordinates dockwidget.
     
-    If a viewer is 2D, then it will be PlaneClipped.
+    If a viewer is 2D, then a :code:`cilPlaneClipper` will be added to the viewer
+    to clip any 3D object in the view, such as a sphere source.
     
     Properties of note:
         viewers: a list of the two viewers
         frames: a list of the two frames
         viewer_docks: a list of the two viewer docks
 
-    Parameters
-    ----------
-    viewer1 : CILViewer2D or CILViewer
-        The class of the first viewer
-    viewer2 : CILViewer2D, CILViewer, or None, optional
-        The class of the second viewer
+
     '''
 
     def setupTwoViewers(self, viewer1, viewer2):
+        '''
+        Adds the viewers as dockwidgets inside the central widget.
+        Also adds a ViewerCoordinatesDockWidget to the window.
+
+        Parameters
+        ----------
+        viewer1: CILViewer2D or CILViewer
+            The class of the first viewer
+        viewer2: CILViewer2D, CILViewer, or None, optional
+            The class of the second viewer
+        '''
         if not hasattr(self, 'central_widget'):
             cw = QMainWindow()
             cw.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.MinimumExpanding)
             self.setCentralWidget(cw)
             self.central_widget = cw
-
-        self.viewers = []
-        self.frames = []
-        self.viewer_docks = []
 
         self.addViewer(viewer1)
 
@@ -524,7 +550,7 @@ class TwoViewersMainWindowMixin(object):
 
         self.placeViewerCoordsDockWidget()
 
-        self.viewer_coords_dock.setViewers(self.viewers)
+        self.viewer_coords_dock.viewers = self.viewers
 
         self.setupPlaneClipping()
 
@@ -546,10 +572,10 @@ class TwoViewersMainWindowMixin(object):
         if len(self.viewers) == 2:
             raise ValueError("Cannot add more than two viewers to this window.")
 
-        if viewer == CILViewer2D:
+        if issubclass(viewer, CILViewer2D):
             interactor_style = vlink.Linked2DInteractorStyle
             dock_title = "2D View"
-        elif viewer == CILViewer:
+        elif issubclass(viewer, CILViewer):
             interactor_style = vlink.Linked3DInteractorStyle
             dock_title = "3D View"
         else:
@@ -558,9 +584,9 @@ class TwoViewersMainWindowMixin(object):
         dock = QCILDockableWidget(viewer=viewer, shape=(600, 600), interactorStyle=interactor_style, title=dock_title)
         dock.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.MinimumExpanding)
 
-        if self.viewers == []:
+        if len(self.viewers) == 0:
             self.central_widget.addDockWidget(Qt.LeftDockWidgetArea, dock)
-        else:
+        elif len(self.viewers) == 1:
             self.central_widget.addDockWidget(Qt.RightDockWidgetArea, dock)
             self.linkedViewersSetUp([self.viewers[0], dock.frame.viewer])
             self.linker.enable()
@@ -581,8 +607,8 @@ class TwoViewersMainWindowMixin(object):
         v1 = viewers[0]
         v2 = viewers[1]
         self.linker = vlink.ViewerLinker(v1, v2)
-        self.linker.setLinkPan(True)
-        self.linker.setLinkZoom(True)
+        self.linker.setLinkPan(False)
+        self.linker.setLinkZoom(False)
         self.linker.setLinkWindowLevel(True)
         self.linker.setLinkSlice(True)
 
@@ -627,7 +653,8 @@ class TwoViewersMainWindow(TwoViewersMainWindowMixin, ViewerMainWindow):
     The viewers are linked together, so that they share the same
     camera position and orientation.
     
-    If a viewer is 2D, then it will be PlaneClipped.
+    If a viewer is 2D, then a :code:`cilPlaneClipper` will be added to the
+    viewer to clip any 3D object in the view, such as a sphere source.
     
     Properties of note:
         viewers: a list of the two viewers
@@ -636,14 +663,16 @@ class TwoViewersMainWindow(TwoViewersMainWindowMixin, ViewerMainWindow):
     
     Parameters
     ----------
-    title : str
-        The title of the window
-    app_name : str
-        The name of the application
-    settings_name : str
-        The name of the settings file
-    organisation_name : str
-        The name of the organisation
+    title : str, optional
+        The title of the window. The default is "TwoViewersMainWindow".
+    app_name : str, optional
+        The name of the application. The default is "TwoViewersMainWindow".
+    settings_name : str, optional
+        The name of the settings file. The default is None.
+        If None, this is set to the `app_name`.
+    organisation_name : str, optional
+        The name of the organisation. The default is None.
+        If None, this is set to the `app_name`.
     viewer1 : CILViewer2D or CILViewer
         The class of the first viewer
     viewer2 : CILViewer2D, CILViewer, or None, optional
@@ -685,14 +714,18 @@ class TwoViewersMainWindowWithSessionManagement(TwoViewersMainWindowMixin, Viewe
     
     Parameters
     ----------
-    title : str
-        The title of the window
-    app_name : str
-        The name of the application
-    settings_name : str
-        The name of the settings file
-    organisation_name : str
-        The name of the organisation
+    title : str, optional
+        The title of the window.
+        The default is "TwoViewersMainWindowWithSessionManagement".
+    app_name : str, optional
+        The name of the application.
+        The default is "TwoViewersMainWindowWithSessionManagement".
+    settings_name : str, optional
+        The name of the settings file. The default is None.
+        If None, this is set to the app name.
+    organisation_name : str, optional
+        The name of the organisation. The default is None.
+        If None, this is set to the app name.
     viewer1 : CILViewer2D or CILViewer
         The class of the first viewer
     viewer2 : CILViewer2D, CILViewer, or None, optional
