@@ -525,17 +525,22 @@ class TwoViewersMainWindowMixin(object):
 
     '''
 
-    def setupTwoViewers(self, viewer1, viewer2):
+    def setupTwoViewers(self, viewer1_type, viewer2_type=None):
         '''
         Adds the viewers as dockwidgets inside the central widget.
         Also adds a ViewerCoordinatesDockWidget to the window.
 
         Parameters
         ----------
-        viewer1: CILViewer2D or CILViewer
-            The class of the first viewer
-        viewer2: CILViewer2D, CILViewer, or None, optional
-            The class of the second viewer
+        viewer1_type: '2D' or '3D'
+            The type of the first viewer.
+            If '2D', then a CILViewer2D is created.
+            If '3D', then a CILViewer is created.
+        viewer2_type: '2D' or '3D', or None, optional
+            The type of the second viewer.
+            If '2D', then a CILViewer2D is created.
+            If '3D', then a CILViewer is created.
+            If None, then no second viewer is created.
         '''
         if not hasattr(self, 'central_widget'):
             cw = QMainWindow()
@@ -543,10 +548,10 @@ class TwoViewersMainWindowMixin(object):
             self.setCentralWidget(cw)
             self.central_widget = cw
 
-        self.addViewer(viewer1)
+        self.addViewer(viewer1_type)
 
-        if viewer2 is not None:
-            self.addViewer(viewer2)
+        if viewer2_type is not None:
+            self.addViewer(viewer2_type)
 
         self.placeViewerCoordsDockWidget()
 
@@ -554,8 +559,9 @@ class TwoViewersMainWindowMixin(object):
 
         self.setupPlaneClipping()
 
-    def addViewer(self, viewer):
-        '''Add a viewer to the window, inside a DockWidget, within the
+    def addViewer(self, viewer_type):
+        '''
+        Add a viewer to the window, inside a DockWidget, within the
         central widget.
 
         Saves the viewer to self.viewers, saves the frame to self.frames,
@@ -566,20 +572,22 @@ class TwoViewersMainWindowMixin(object):
         
         Parameters
         ----------
-        viewer : CILViewer or CILViewer2D
-            The viewer to add to the window.
+        viewer_type: '2D' or '3D'
+            The type of viewer to add to the window.
         '''
         if len(self.viewers) == 2:
             raise ValueError("Cannot add more than two viewers to this window.")
 
-        if issubclass(viewer, CILViewer2D):
+        if viewer_type == '2D':
             interactor_style = vlink.Linked2DInteractorStyle
             dock_title = "2D View"
-        elif issubclass(viewer, CILViewer):
+            viewer = CILViewer2D
+        elif viewer_type == '3D':
             interactor_style = vlink.Linked3DInteractorStyle
             dock_title = "3D View"
+            viewer = CILViewer
         else:
-            raise ValueError("viewer must be either CILViewer2D or CILViewer")
+            raise ValueError("viewer_type must be either '2D' or '3D'")
 
         dock = QCILDockableWidget(viewer=viewer, shape=(600, 600), interactorStyle=interactor_style, title=dock_title)
         dock.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.MinimumExpanding)
@@ -644,7 +652,6 @@ class TwoViewersMainWindowMixin(object):
         Positions the viewer coords dock widget below the viewers
         '''
         self.addDockWidget(Qt.BottomDockWidgetArea, self.viewer_coords_dock)
-        # self.viewer_coords_dock.setMaximumHeight(self.size().height() * 0.5)
 
 
 class TwoViewersMainWindow(TwoViewersMainWindowMixin, ViewerMainWindow):
@@ -673,10 +680,15 @@ class TwoViewersMainWindow(TwoViewersMainWindowMixin, ViewerMainWindow):
     organisation_name : str, optional
         The name of the organisation. The default is None.
         If None, this is set to the `app_name`.
-    viewer1 : CILViewer2D or CILViewer
-        The class of the first viewer
-    viewer2 : CILViewer2D, CILViewer, or None, optional
-        The class of the second viewer
+    viewer1_type: '2D' or '3D', default '2D'
+        The type of the first viewer. 
+        If '2D', then a CILViewer2D is created.
+        If '3D', then a CILViewer is created.
+    viewer2_type: '2D' or '3D', or None, optional. Default '3D'
+        The type of the second viewer. 
+        If '2D', then a CILViewer2D is created.
+        If '3D', then a CILViewer is created.
+        If None, then no second viewer is created.
     '''
 
     def __init__(self,
@@ -684,11 +696,11 @@ class TwoViewersMainWindow(TwoViewersMainWindowMixin, ViewerMainWindow):
                  app_name="TwoViewersMainWindow",
                  settings_name=None,
                  organisation_name=None,
-                 viewer1=CILViewer2D,
-                 viewer2=CILViewer):
+                 viewer1_type='2D',
+                 viewer2_type='3D'):
 
         super(TwoViewersMainWindow, self).__init__(title, app_name, settings_name, organisation_name)
-        self.setupTwoViewers(viewer1, viewer2)
+        self.setupTwoViewers(viewer1_type, viewer2_type)
 
 
 class TwoViewersMainWindowWithSessionManagement(TwoViewersMainWindowMixin, ViewerMainWindowWithSessionManagement):
@@ -726,10 +738,15 @@ class TwoViewersMainWindowWithSessionManagement(TwoViewersMainWindowMixin, Viewe
     organisation_name : str, optional
         The name of the organisation. The default is None.
         If None, this is set to the app name.
-    viewer1 : CILViewer2D or CILViewer
-        The class of the first viewer
-    viewer2 : CILViewer2D, CILViewer, or None, optional
-        The class of the second viewer
+    viewer1_type: '2D' or '3D', default '2D'
+        The type of the first viewer. 
+        If '2D', then a CILViewer2D is created.
+        If '3D', then a CILViewer is created.
+    viewer2_type: '2D' or '3D', or None, optional. Default '3D'
+        The type of the second viewer. 
+        If '2D', then a CILViewer2D is created.
+        If '3D', then a CILViewer is created.
+        If None, then no second viewer is created.
     '''
 
     def __init__(self,
@@ -737,11 +754,11 @@ class TwoViewersMainWindowWithSessionManagement(TwoViewersMainWindowMixin, Viewe
                  app_name="TwoViewersMainWindowWithSessionManagement",
                  settings_name=None,
                  organisation_name=None,
-                 viewer1=CILViewer2D,
-                 viewer2=CILViewer):
+                 viewer1_type='2D',
+                 viewer2_type='3D'):
         super(TwoViewersMainWindowWithSessionManagement, self).__init__(title, app_name, settings_name,
                                                                         organisation_name)
-        self.setupTwoViewers(viewer1, viewer2)
+        self.setupTwoViewers(viewer1_type, viewer2_type)
 
 
 # For running example window -----------------------------------------------------------

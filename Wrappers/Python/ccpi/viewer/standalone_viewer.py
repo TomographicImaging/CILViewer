@@ -26,10 +26,10 @@ class StandaloneViewerMainWindow(TwoViewersMainWindow):
                  app_name="Standalone Viewer",
                  settings_name=None,
                  organisation_name=None,
-                 viewer1=viewer2D,
-                 viewer2=viewer3D):
-        super(StandaloneViewerMainWindow, self).__init__(title, app_name, settings_name, organisation_name, viewer1,
-                                                         viewer2)
+                 viewer1_type='2D',
+                 viewer2_type='3D'):
+        super(StandaloneViewerMainWindow, self).__init__(title, app_name, settings_name, organisation_name, viewer1_type,
+                                                         viewer2_type)
 
         self.addToMenu()
         self.addToViewerCoordsDockWidget()
@@ -128,21 +128,7 @@ class standalone_viewer(object):
             if None, only one viewer is displayed
         '''
 
-        if viewer1_type == '2D':
-            viewer1 = viewer2D
-        elif viewer1_type == '3D':
-            viewer1 = viewer3D
-        else:
-            raise ValueError("viewer1_type must be '2D' or '3D'")
-
-        if viewer2_type == '2D':
-            viewer2 = viewer2D
-        elif viewer2_type == '3D':
-            viewer2 = viewer3D
-        else:
-            viewer2 = None
-
-        window = StandaloneViewerMainWindow(title, viewer1=viewer1, viewer2=viewer2)
+        window = StandaloneViewerMainWindow(title, viewer1_type, viewer2_type)
 
         self.window = window
         self.has_run = None
