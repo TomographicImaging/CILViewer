@@ -713,7 +713,8 @@ class TwoViewersMainWindowWithSessionManagement(TwoViewersMainWindowMixin, Viewe
     The viewers are linked together, so that they share the same
     camera position and orientation.
     
-    If a viewer is 2D, then it will be PlaneClipped.
+    If a viewer is 2D, then a :code:`cilPlaneClipper` will be added to the
+    viewer to clip any 3D object in the view, such as a sphere source.
     
     Properties of note:
         viewers: a list of the two viewers
