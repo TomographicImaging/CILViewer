@@ -8,7 +8,7 @@ dependencies:
     - numpy
     - vtk >=9.0.3
     - pyside2
-    - eqt
+    - eqt>=0.7.0
     - importlib_metadata    # [py<38]
     - h5py
     - cil-data >=22.0.0

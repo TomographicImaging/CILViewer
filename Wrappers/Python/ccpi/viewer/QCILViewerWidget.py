@@ -1,4 +1,3 @@
-from PySide2 import QtWidgets
 import vtk
 import sys
 import vtk
@@ -31,10 +30,7 @@ class QCILViewerWidget(QtWidgets.QFrame):
         dimx, dimy = kwargs.get('shape', (600, 600))
         # self.resize(dimx, dimy)
 
-        self.vl = QtWidgets.QVBoxLayout()
-        #self.vtkWidget = QVTKRenderWindowInteractor(self)
         self.vtkWidget = QCILRenderWindowInteractor(self)
-        self.vl.addWidget(self.vtkWidget)
 
         if 'renderer' in kwargs.keys():
             self.ren = kwargs['renderer']
@@ -43,6 +39,7 @@ class QCILViewerWidget(QtWidgets.QFrame):
         self.vtkWidget.GetRenderWindow().AddRenderer(self.ren)
         # https://discourse.vtk.org/t/qvtkwidget-render-window-is-outside-main-qt-app-window/1539/8?u=edoardo_pasca
         self.iren = self.vtkWidget.GetRenderWindow().GetInteractor()
+
         try:
 
             # print ("provided viewer class ", kwargs['viewer'])
@@ -60,6 +57,8 @@ class QCILViewerWidget(QtWidgets.QFrame):
             self.viewer.style = kwargs['interactorStyle'](self.viewer)
             self.viewer.iren.SetInteractorStyle(self.viewer.style)
 
+        self.vl = QtWidgets.QVBoxLayout()
+        self.vl.addWidget(self.vtkWidget)
         self.setLayout(self.vl)
         self.adjustSize()
 

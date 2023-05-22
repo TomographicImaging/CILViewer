@@ -162,9 +162,7 @@ class HDF5Reader(VTKPythonAlgorithmBase):
         if self._FileName is None:
             raise Exception("FileName must be set.")
         with h5py.File(self._FileName, 'r') as f:
-            data_type = type(f[self._DatasetName][0][0][0])
-            if isinstance(data_type, np.ndarray):
-                data_type = type(f[self._DatasetName][0][0][0])
+            data_type = f.get(self._DatasetName).dtype
             return data_type
 
     def RequestInformation(self, request, inInfo, outInfo):
