@@ -3,7 +3,7 @@
 ## v23.1.0
 - Raise error if try to add multiple widgets with the same name to CILViewer or CILViewer2D.
 - Adds the following base classes to `ui.main_windows.py`:
-  - Add `ViewerMainWindow` and `ViewerMainWindowWithSessionManagement` - baseclasses for windows which would house viewers, with methods needed for creating settings dialogs, creating a coordinate settings dockwidget, and loading images.
+  - Add `ViewerMainWindow` and `ViewerMainWindowWithSessionManagement` - base classes for windows which would house viewers, with methods needed for creating settings dialogs, creating a coordinate settings dockwidget, and loading images.
   - Add `TwoViewersMainWindow` and `TwoViewersMainWindowWithSessionManagement` - baseclasses which create a main window with 2 linked viewers in dockwidgets.
   - `TwoViewersMainWindowMixin` - a mixin which provides methods to both `TwoViewersMainWindowWithSessionManagement` and `TwoViewersMainWindow`. These methods are for adding viewers to the window, setting them up, linking them and adding a dockwidget for coordinate settings.
 - Adds the following dialogs to `ui.dialogs.py`:
