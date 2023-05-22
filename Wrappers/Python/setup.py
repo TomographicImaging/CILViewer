@@ -41,11 +41,11 @@ if os.environ.get('CONDA_BUILD', 0) == '1':
     cwd = os.path.join(os.environ.get('RECIPE_DIR'), '..')
     # requirements are processed by conda
     requires = []
-    version = git_version_string
 else:
     requires = ['numpy', 'vtk']
     cwd = os.getcwd()
-    version = version2pep440(git_version_string)
+
+version = version2pep440(git_version_string)
 
 # update the version string
 fname = os.path.join(cwd, 'ccpi', 'viewer', 'version.py')

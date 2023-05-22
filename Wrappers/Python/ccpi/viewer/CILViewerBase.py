@@ -266,6 +266,13 @@ class CILViewerBase():
         min_val, max_val = self.getSliceMapRange((min_percentage, max_percentage), 'scalar')
         self.setSliceMapRange(min_val, max_val)
 
+    def getSliceColorPercentiles(self):
+        min_val, max_val = self.getSliceMapWholeRange('scalar')
+        min_color, max_color = self.getSliceMapRange()
+        min_percentage = (min_color - min_val) / (max_val - min_val) * 100
+        max_percentage = (max_color - min_val) / (max_val - min_val) * 100
+        return min_percentage, max_percentage
+
     def setSliceColorWindow(self, window):
         '''
         Set the window for the 2D slice of the 3D image.
@@ -357,6 +364,8 @@ class CILViewerBase():
 
     def addWidgetReference(self, widget, name):
         '''Adds widget to dictionary of widgets'''
+        if self.getWidget(name) is not None:
+            raise ValueError(f'Could not save reference to widget, as a widget with name {name} already exists.')
         self.widgets[name] = widget
 
     def getWidget(self, name):
