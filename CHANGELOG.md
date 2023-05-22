@@ -2,6 +2,9 @@
 
 ## v x.x.x
 - Raise error if try to add multiple widgets with the same name.
+- Github actions:
+  - Update conda build and publish action to v2.0.0
+ 
 ## v23.0.0
 - add `deleteWidget` method to CILViewerBase
 - Add environment file for development of the viewer
