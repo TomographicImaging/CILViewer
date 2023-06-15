@@ -5,6 +5,7 @@ from ccpi.viewer.ui.VolumeRenderSettingsDialog import VolumeRenderSettingsDialog
 
 
 class QCILViewer3DToolBar(QtWidgets.QToolBar):
+
     def __init__(self, parent=None, viewer=None, **kwargs):
         """
         Parameters

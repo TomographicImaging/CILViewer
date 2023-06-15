@@ -125,8 +125,8 @@ class VolumeRenderSettingsDialog(FormDialog):
     def change_color_range(self):
         """Change the volume color range."""
         self.viewer.setVolumeColorPercentiles(
-            self.getWidget("color_range_slider_min").value(), self.getWidget("color_range_slider_max").value()
-        )
+            self.getWidget("color_range_slider_min").value(),
+            self.getWidget("color_range_slider_max").value())
 
     def change_volume_opacity_min(self):
         """Change the volume opacity mapping min value."""

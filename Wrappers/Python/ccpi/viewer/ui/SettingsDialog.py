@@ -112,8 +112,7 @@ class SettingsDialog(FormDialog):
         window_default = self.viewer.getSliceColorWindow()
         self.getWidget("slice_window_slider").setValue(window_default)
         self.getWidget("slice_window_slider").valueChanged.connect(
-            lambda: self.viewer.setSliceColorWindow(self.getWidget("slice_window_slider").value())
-        )
+            lambda: self.viewer.setSliceColorWindow(self.getWidget("slice_window_slider").value()))
 
         # Level window sliders
         level_min, level_max = self.viewer.getImageMapRange((0.0, 100.0), "scalar")
@@ -122,8 +121,7 @@ class SettingsDialog(FormDialog):
         level_default = self.viewer.getSliceColorLevel()
         self.getWidget("slice_level_slider").setValue(level_default)
         self.getWidget("slice_level_slider").valueChanged.connect(
-            lambda: self.viewer.setSliceColorLevel(self.getWidget("slice_level_slider").value())
-        )
+            lambda: self.viewer.setSliceColorLevel(self.getWidget("slice_level_slider").value()))
 
         # Background color
         self.getWidget("background_color").currentIndexChanged.connect(self.change_background_color)

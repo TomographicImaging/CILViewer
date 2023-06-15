@@ -7,6 +7,7 @@ except ImportError:
     from ccpi.viewer.utils import CILColorMaps
 
     class BackupColorMaps:
+
         @staticmethod
         def colormaps():
             return ["viridis", "plasma", "inferno", "magma"]
@@ -24,12 +25,10 @@ def color_scheme_list():
 def background_color_list():
     """Return a list of background colors for the background color dropdown menu."""
     initial_list = dir(colors)
-    color_list = [
-        {
-            "text": "Miles blue",
-            "value": "cil_viewer_blue",
-        }
-    ]
+    color_list = [{
+        "text": "Miles blue",
+        "value": "cil_viewer_blue",
+    }]
 
     initial_list.insert(0, initial_list.pop(initial_list.index("white")))
     initial_list.insert(1, initial_list.pop(initial_list.index("black")))

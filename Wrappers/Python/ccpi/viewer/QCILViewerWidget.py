@@ -63,13 +63,12 @@ class QCILViewerWidget(QtWidgets.QFrame):
         toolBar = self.getToolbar(parent)
         if toolBar is not None:
             self.vl.addWidget(toolBar)
-            
+
         self.vl.addWidget(self.vtkWidget)
 
         self.setLayout(self.vl)
         self.adjustSize()
-    
-    
+
     def getToolbar(self, parent=None):
         # Adds a toolbar to the QFrame if we have a 3D viewer
         if isinstance(self.viewer, viewer3D):
