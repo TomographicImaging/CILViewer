@@ -3,7 +3,8 @@ import sys
 import vtk
 from PySide2 import QtCore, QtWidgets
 from ccpi.viewer.QCILRenderWindowInteractor import QCILRenderWindowInteractor
-from ccpi.viewer import viewer2D
+from ccpi.viewer import viewer2D, viewer3D
+from ccpi.viewer.QCILViewer3DToolBar import QCILViewer3DToolBar
 
 
 class QCILViewerWidget(QtWidgets.QFrame):
@@ -58,9 +59,22 @@ class QCILViewerWidget(QtWidgets.QFrame):
             self.viewer.iren.SetInteractorStyle(self.viewer.style)
 
         self.vl = QtWidgets.QVBoxLayout()
+
+        toolBar = self.getToolbar(parent)
+        if toolBar is not None:
+            self.vl.addWidget(toolBar)
+            
         self.vl.addWidget(self.vtkWidget)
+
         self.setLayout(self.vl)
         self.adjustSize()
+    
+    
+    def getToolbar(self, parent=None):
+        # Adds a toolbar to the QFrame if we have a 3D viewer
+        if isinstance(self.viewer, viewer3D):
+            toolBar = QCILViewer3DToolBar(viewer=self.viewer, parent=parent)
+            return toolBar
 
 
 class QCILDockableWidget(QtWidgets.QDockWidget):
