@@ -1,5 +1,8 @@
 # Changelog
 
+## v23.x.x
+- adds Qt GUI toolbar to control 3D viewer
+
 ## v23.1.0
 - Raise error if try to add multiple widgets with the same name to CILViewer or CILViewer2D.
 - Adds the following base classes to `ui.main_windows.py`:
