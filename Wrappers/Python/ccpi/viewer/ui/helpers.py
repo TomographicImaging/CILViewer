@@ -1,4 +1,10 @@
-from vtkmodules.util import colors
+# from vtkmodules.util import colors
+try:
+    import vtkmodules.all as vtk
+    # from vtkmodules.util import colors
+except ImportError:
+    import vtk
+from vtk.util import colors
 
 try:
     import matplotlib.pyplot as plt

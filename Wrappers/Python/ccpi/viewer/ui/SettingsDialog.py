@@ -2,7 +2,13 @@ import os
 
 from eqt.ui import FormDialog, UISliderWidget
 from PySide2 import QtCore, QtWidgets
-from vtkmodules.util import colors
+
+try:
+    import vtkmodules.all as vtk
+    # from vtkmodules.util import colors
+except ImportError:
+    import vtk
+from vtk.util import colors
 
 from ccpi.viewer.ui.helpers import background_color_list
 
