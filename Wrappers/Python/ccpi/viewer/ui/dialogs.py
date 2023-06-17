@@ -4,8 +4,18 @@ from eqt.ui import FormDialog
 from eqt.ui.SessionDialogs import AppSettingsDialog, ErrorDialog
 from PySide2 import QtCore, QtGui, QtWidgets
 from PySide2.QtWidgets import QCheckBox, QDoubleSpinBox, QLabel, QLineEdit, QComboBox
+import matplotlib.pyplot as plt
+import numpy as np
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
+from matplotlib.figure import Figure
 
 
+class MplCanvas(FigureCanvasQTAgg):
+
+    def __init__(self, parent=None, width=5, height=4, dpi=100):
+        fig = Figure(figsize=(width, height), dpi=dpi)
+        self.axes = fig.add_subplot(111)
+        super(MplCanvas, self).__init__(fig)
 class ViewerSettingsDialog(AppSettingsDialog):
     ''' This is a dialog window which allows the user to set:
     - maximum size to downsample images to for display
@@ -57,6 +67,7 @@ class RawInputDialog(FormDialog):
 
     def __init__(self, parent, fname):
         super(RawInputDialog, self).__init__(parent, fname)
+        self.fname = os.path.abspath(fname)
         title = "Config for " + os.path.basename(fname)
         self.setWindowTitle(title)
         fw = self.formWidget
@@ -101,6 +112,13 @@ class RawInputDialog(FormDialog):
         fortranOrder.setCurrentIndex(0)
         fw.addWidget(fortranOrder, fortranLabel, "is_fortran")
 
+        # preview button
+        previewButton = QtWidgets.QPushButton("Preview")
+        fw.addWidget(previewButton, "preview_button", "preview_button")
+        self.preview_open = False
+        previewButton.clicked.connect(self.preview)
+
+
         self.setLayout(fw.uiElements['verticalLayout'])
 
     def getRawAttrs(self):
@@ -137,6 +155,78 @@ class RawInputDialog(FormDialog):
             widgets['dim_Z_field'].setEnabled(True)
         else:
             widgets['dim_Z_field'].setEnabled(False)
+
+    def preview(self):
+        self.preview_open = True
+        pars = self.getRawAttrs()
+        # widgets = self.formWidget.widgets
+
+        # retrieve info about image file from interface
+        dimensionality = [3, 2][self.getWidgets('dimensionality').currentIndex()]
+        dimX, dimY, dimZ = pars['shape']
+        isFortran = pars['isFortran']
+        isBigEndian = pars['is_big_endian']
+        typecode = pars['typecode']
+
+        
+        if isFortran:
+            shape = (dimX, dimY)
+        else:
+            shape = (dimY, dimX)
+        if dimensionality == 3:
+            if isFortran:
+                shape = (dimX, dimY, dimZ)
+            else:
+                shape = (dimZ, dimY, dimX)
+
+        
+        if typecode == 0 or typecode == 1:
+            bytes_per_element = 1
+        else:
+            bytes_per_element = 2
+
+        # basic sanity check
+        file_size = os.stat(self.fname).st_size
+
+        expected_size = 1
+        for el in shape:
+            expected_size *= el
+
+        if typecode in [0, 1]:
+            mul = 1
+        elif typecode in [2, 3]:
+            mul = 2
+        elif typecode in [4, 5, 6]:
+            mul = 4
+        else:
+            mul = 8
+        expected_size *= mul
+        if file_size != expected_size:
+            errors = {"type": "size", "file_size": file_size,
+                    "expected_size": expected_size}
+            return (errors)
+
+        # read data with numpy, centre slice
+        offset = 0
+        slice_size = -1
+        if dimensionality == 3:
+            # read one slice
+            slice_size = shape[1]*shape[2]
+            offset = shape[0]*slice_size//2
+        
+
+        data = np.fromfile(self.fname, dtype=typecode, offset=offset, count=slice_size).reshape(shape[1:])
+        sc = MplCanvas(self, width=5, height=4, dpi=100)
+
+        # should open a dialog with a matplotlib canvas
+        # sc.axes.imshow(data)
+        # self.setCentralWidget(sc)
+
+        # self.show()
+
+        # plt.show()
+
+
 
 
 class HDF5InputDialog(FormDialog):
