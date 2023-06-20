@@ -16,6 +16,7 @@ class MplCanvas(FigureCanvasQTAgg):
         fig = Figure(figsize=(width, height), dpi=dpi)
         self.axes = fig.add_subplot(111)
         super(MplCanvas, self).__init__(fig)
+
 class ViewerSettingsDialog(AppSettingsDialog):
     ''' This is a dialog window which allows the user to set:
     - maximum size to downsample images to for display
@@ -155,18 +156,17 @@ class RawInputDialog(FormDialog):
             widgets['dim_Z_field'].setEnabled(True)
         else:
             widgets['dim_Z_field'].setEnabled(False)
-
+    
     def preview(self):
-        self.preview_open = True
         pars = self.getRawAttrs()
-        # widgets = self.formWidget.widgets
-
+        
         # retrieve info about image file from interface
-        dimensionality = [3, 2][self.getWidgets('dimensionality').currentIndex()]
+        dimensionality = [3, 2][self.getWidget('dimensionality').currentIndex()]
         dimX, dimY, dimZ = pars['shape']
-        isFortran = pars['isFortran']
+        isFortran = pars['is_fortran']
         isBigEndian = pars['is_big_endian']
-        typecode = pars['typecode']
+        # typecode = pars['typecode']
+        typecode = self.getWidget('dtype').currentIndex()
 
         
         if isFortran:
@@ -214,19 +214,56 @@ class RawInputDialog(FormDialog):
             slice_size = shape[1]*shape[2]
             offset = shape[0]*slice_size//2
         
+        # Construct a data type
+        dt_txt = ""
+        
+        if isBigEndian:
+            dt_txt = ">" # big endian
+        else:
+            dt_txt = "<"
 
-        data = np.fromfile(self.fname, dtype=typecode, offset=offset, count=slice_size).reshape(shape[1:])
+        if typecode == 0:
+            dt_txt += "i1"
+        elif typecode == 1:
+            dt_txt += "u1"
+        elif typecode == 2:
+            dt_txt += "i2"
+        elif typecode == 3:
+            dt_txt += "u2"
+        elif typecode == 4:
+            dt_txt += "i4"
+        elif typecode == 5:
+            dt_txt += "u4"
+
+        dtype = np.dtype(dt_txt)
+        
+        # read one slice in the middle
+        slice_size = shape[1]*shape[2]
+        offset = shape[0]*slice_size//2
+
+        data = np.fromfile(self.fname, dtype=dtype, offset=offset, count=slice_size).reshape(shape[1:])
+        
+        # Now open a modal dialog with a matplotlib canvas
+        diag = QtWidgets.QDialog(parent=self)
+        diag.setModal(True)
+        # add a layout
+        verticalLayout = QtWidgets.QVBoxLayout(diag)
+        verticalLayout.setContentsMargins(10, 10, 10, 10)
+
+        # create the Matplotlib canvas
         sc = MplCanvas(self, width=5, height=4, dpi=100)
+        sc.axes.imshow(data, cmap='gray')
+        
+        # add it to the layout of the dialog
+        verticalLayout.addWidget(sc)
+        # add the layout to the dialog
+        diag.setLayout(verticalLayout)
 
-        # should open a dialog with a matplotlib canvas
-        # sc.axes.imshow(data)
-        # self.setCentralWidget(sc)
-
-        # self.show()
-
-        # plt.show()
-
-
+        # save the dialog and canvas so that it doesn't crash
+        self.preview_dialog = diag
+        self.preview_mpl_canvas = sc
+        # finally open the dialog
+        diag.open()
 
 
 class HDF5InputDialog(FormDialog):
