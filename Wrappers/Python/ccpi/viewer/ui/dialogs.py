@@ -5,21 +5,11 @@ from eqt.ui.SessionDialogs import AppSettingsDialog, ErrorDialog
 from PySide2 import QtCore, QtGui, QtWidgets
 from PySide2.QtWidgets import QCheckBox, QDoubleSpinBox, QLabel, QLineEdit, QComboBox
 import numpy as np
-# import matplotlib.pyplot as plt
-# from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
-# from matplotlib.figure import Figure
 from ccpi.viewer.utils import Converter
 from ccpi.viewer.QCILViewerWidget import QCILViewerWidget
 from ccpi.viewer.CILViewer2D import CILViewer2D as viewer2D
 import vtk
 
-
-# class MplCanvas(FigureCanvasQTAgg):
-
-#     def __init__(self, parent=None, width=5, height=4, dpi=100):
-#         fig = Figure(figsize=(width, height), dpi=dpi)
-#         self.axes = fig.add_subplot(111)
-#         super(MplCanvas, self).__init__(fig)
 
 class ViewerSettingsDialog(AppSettingsDialog):
     ''' This is a dialog window which allows the user to set:
@@ -270,22 +260,13 @@ class RawInputDialog(FormDialog):
 
         print("reading")
         reader2.Update()
-        # # read one slice in the middle
-        # slice_size = shape[1]*shape[2]
-        # offset = shape[0]*slice_size//2
-
-        # data = np.fromfile(self.fname, dtype=dtype, offset=offset, count=slice_size).reshape(shape[1:])
+        # read one slice in the middle and display it in a viewer in a modal dialog
         
-        # Now open a modal dialog with a matplotlib canvas
         diag = QtWidgets.QDialog(parent=self)
         diag.setModal(True)
         # add a layout
         verticalLayout = QtWidgets.QVBoxLayout(diag)
         verticalLayout.setContentsMargins(10, 10, 10, 10)
-
-        # # create the Matplotlib canvas
-        # sc = MplCanvas(self, width=5, height=4, dpi=100)
-        # sc.axes.imshow(data, cmap='gray')
         
         # add a CILViewer widget
         sc = QCILViewerWidget(diag, viewer=viewer2D)
