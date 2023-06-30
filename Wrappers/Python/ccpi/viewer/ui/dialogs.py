@@ -4,22 +4,22 @@ from eqt.ui import FormDialog
 from eqt.ui.SessionDialogs import AppSettingsDialog, ErrorDialog
 from PySide2 import QtCore, QtGui, QtWidgets
 from PySide2.QtWidgets import QCheckBox, QDoubleSpinBox, QLabel, QLineEdit, QComboBox
-import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
-from matplotlib.figure import Figure
+# import matplotlib.pyplot as plt
+# from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
+# from matplotlib.figure import Figure
 from ccpi.viewer.utils import Converter
 from ccpi.viewer.QCILViewerWidget import QCILViewerWidget
 from ccpi.viewer.CILViewer2D import CILViewer2D as viewer2D
 import vtk
 
 
-class MplCanvas(FigureCanvasQTAgg):
+# class MplCanvas(FigureCanvasQTAgg):
 
-    def __init__(self, parent=None, width=5, height=4, dpi=100):
-        fig = Figure(figsize=(width, height), dpi=dpi)
-        self.axes = fig.add_subplot(111)
-        super(MplCanvas, self).__init__(fig)
+#     def __init__(self, parent=None, width=5, height=4, dpi=100):
+#         fig = Figure(figsize=(width, height), dpi=dpi)
+#         self.axes = fig.add_subplot(111)
+#         super(MplCanvas, self).__init__(fig)
 
 class ViewerSettingsDialog(AppSettingsDialog):
     ''' This is a dialog window which allows the user to set:
