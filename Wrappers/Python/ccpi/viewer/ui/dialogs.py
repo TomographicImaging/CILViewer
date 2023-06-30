@@ -8,6 +8,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
+from ccpi.viewer.utils import Converter
+from ccpi.viewer.QCILViewerWidget import QCILViewerWidget
+from ccpi.viewer.CILViewer2D import CILViewer2D as viewer2D
+import vtk
 
 
 class MplCanvas(FigureCanvasQTAgg):
@@ -179,40 +183,8 @@ class RawInputDialog(FormDialog):
             else:
                 shape = (dimZ, dimY, dimX)
 
+
         
-        if typecode == 0 or typecode == 1:
-            bytes_per_element = 1
-        else:
-            bytes_per_element = 2
-
-        # basic sanity check
-        file_size = os.stat(self.fname).st_size
-
-        expected_size = 1
-        for el in shape:
-            expected_size *= el
-
-        if typecode in [0, 1]:
-            mul = 1
-        elif typecode in [2, 3]:
-            mul = 2
-        elif typecode in [4, 5, 6]:
-            mul = 4
-        else:
-            mul = 8
-        expected_size *= mul
-        if file_size != expected_size:
-            errors = {"type": "size", "file_size": file_size,
-                    "expected_size": expected_size}
-            return (errors)
-
-        # read data with numpy, centre slice
-        offset = 0
-        slice_size = -1
-        if dimensionality == 3:
-            # read one slice
-            slice_size = shape[1]*shape[2]
-            offset = shape[0]*slice_size//2
         
         # Construct a data type
         dt_txt = ""
@@ -222,26 +194,87 @@ class RawInputDialog(FormDialog):
         else:
             dt_txt = "<"
 
+        bytes_per_element = 1
+
         if typecode == 0:
             dt_txt += "i1"
         elif typecode == 1:
             dt_txt += "u1"
         elif typecode == 2:
             dt_txt += "i2"
+            bytes_per_element = 2
         elif typecode == 3:
             dt_txt += "u2"
+            bytes_per_element = 2
         elif typecode == 4:
             dt_txt += "i4"
+            bytes_per_element = 4
         elif typecode == 5:
             dt_txt += "u4"
+            bytes_per_element = 4
+
+        # basic sanity check
+        file_size = os.stat(self.fname).st_size
+
+        expected_size = 1
+        for el in shape:
+            expected_size *= el
+        expected_size *= bytes_per_element
+        
+        
+        if file_size != expected_size:
+            errors = {"type": "size", "file_size": file_size,
+                    "expected_size": expected_size}
+            return (errors)
+
+        
 
         dtype = np.dtype(dt_txt)
-        
-        # read one slice in the middle
-        slice_size = shape[1]*shape[2]
-        offset = shape[0]*slice_size//2
+        # read centre slice
+        offset = 0
+        slice_size = -1
+        if dimensionality == 3:
+            # read one slice
+            slice_size = shape[1]*shape[0]
+            offset = shape[2]*slice_size//2
 
-        data = np.fromfile(self.fname, dtype=dtype, offset=offset, count=slice_size).reshape(shape[1:])
+        rawfname = os.path.join(os.path.dirname(self.fname),"test.raw")
+        offset = offset * bytes_per_element
+        with open(self.fname, 'br') as f:
+            f.seek(offset)
+            raw_data = f.read(slice_size*bytes_per_element)
+            with open(rawfname, 'wb') as f2:
+                f2.write(raw_data)
+
+        reader2 = vtk.vtkImageReader2()
+        reader2.SetFileName(rawfname)
+
+        vtktype = Converter.dtype_name_to_vtkType[dtype.name]
+        reader2.SetDataScalarType(vtktype)
+
+        if isBigEndian:
+            reader2.SetDataByteOrderToBigEndian()
+        else:
+            reader2.SetDataByteOrderToLittleEndian()
+
+        reader2.SetFileDimensionality(len(shape))
+        vtkshape = shape[:]
+        if not isFortran:
+            # need to reverse the shape (again)
+            vtkshape = shape[::-1]
+        # vtkshape = shape[:]
+        slice_idx = vtkshape[2]//2
+        reader2.SetDataExtent(0, vtkshape[0]-1, 0, vtkshape[1]-1, slice_idx, slice_idx)
+        reader2.SetDataSpacing(1, 1, 1)
+        reader2.SetDataOrigin(0, 0, 0)
+
+        print("reading")
+        reader2.Update()
+        # # read one slice in the middle
+        # slice_size = shape[1]*shape[2]
+        # offset = shape[0]*slice_size//2
+
+        # data = np.fromfile(self.fname, dtype=dtype, offset=offset, count=slice_size).reshape(shape[1:])
         
         # Now open a modal dialog with a matplotlib canvas
         diag = QtWidgets.QDialog(parent=self)
@@ -250,10 +283,14 @@ class RawInputDialog(FormDialog):
         verticalLayout = QtWidgets.QVBoxLayout(diag)
         verticalLayout.setContentsMargins(10, 10, 10, 10)
 
-        # create the Matplotlib canvas
-        sc = MplCanvas(self, width=5, height=4, dpi=100)
-        sc.axes.imshow(data, cmap='gray')
+        # # create the Matplotlib canvas
+        # sc = MplCanvas(self, width=5, height=4, dpi=100)
+        # sc.axes.imshow(data, cmap='gray')
         
+        # add a CILViewer widget
+        sc = QCILViewerWidget(diag, viewer=viewer2D)
+        sc.viewer.setInputData(reader2.GetOutput())
+
         # add it to the layout of the dialog
         verticalLayout.addWidget(sc)
         # add the layout to the dialog
