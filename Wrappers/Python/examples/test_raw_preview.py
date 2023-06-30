@@ -8,6 +8,7 @@ import vtk
 # notice that vtk 8.1.2 cannot read very large raw files as the offset is unsigned long
 # https://github.com/Kitware/VTK/blob/c3b3b592c7c7e9a1fd34978a41a119cc681b75d5/IO/Image/vtkImageReader.cxx#L141
 # this is not the case in vtk 9
+from ccpi.viewer.utils import Converter
 
 fname = os.path.abspath("C:/Users/ofn77899/Data/dvc/catherine/104506_distortion_corrected_2560_2560_1600_16bit.raw")
 is_fortran = True
@@ -115,7 +116,10 @@ with open(fname, 'br') as f:
 
 reader2 = vtk.vtkImageReader2()
 reader2.SetFileName("test.raw")
-reader2.SetDataScalarTypeToUnsignedShort()
+
+vtktype = Converter.dtype_name_to_vtkType[dtype.name]
+reader2.SetDataScalarType(vtktype)
+
 if is_big_endian:
     reader2.SetDataByteOrderToBigEndian()
 else:
