@@ -280,6 +280,9 @@ class RawInputDialog(FormDialog):
         # save the dialog and canvas so that it doesn't crash
         self.preview_dialog = diag
         self.preview_mpl_canvas = sc
+
+        # the dialog must delete the temp file when it is closed
+        diag.finished.connect(lambda: os.remove(rawfname))
         # finally open the dialog
         diag.open()
 

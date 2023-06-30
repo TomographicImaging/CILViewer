@@ -68,6 +68,9 @@ plt.show()
 
 #### VTK doesn't seem to be able to handle very large files as the offset is (unsigned) long
 #### https://github.com/Kitware/VTK/blob/f2c452c9c42005672a3f3ed9218dd9a7fecca79a/IO/Image/vtkImageReader.cxx#L162
+#### This has been fixed very recently and not released in VTK yet
+#### https://github.com/Kitware/VTK/commit/97fcf0cf8e11d11b7cbb42a81873ae932a4162da
+
 #### So the only way to read a very large file is to read it in chunks, saving the chunk to a temporary file
 #### and then read the temporary file with vtkImageReader2
 
