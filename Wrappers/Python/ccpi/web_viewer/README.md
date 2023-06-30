@@ -5,6 +5,6 @@ Follow these steps:
 - Create the conda environment:
     - `mamba env create -f dev-environment.yml`
 - With the activated conda environment you can now start the web application:
-    - `python web_app.py path/to/folder/of/data/to/use`
+    - `web_cilviewer path/to/folder/of/data/to/use`
 - If you want to use the 2D viewer pass the 2D arg to the script i.e. --2D or -d args, like this need to be added before the path like in the example.: 
-    - `python web_app.py --2D path/to/folder/of/data/to/use`
+    - `web_cilviewer --2D path/to/folder/of/data/to/use`
