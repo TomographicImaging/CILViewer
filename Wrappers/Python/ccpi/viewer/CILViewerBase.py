@@ -266,6 +266,13 @@ class CILViewerBase():
         min_val, max_val = self.getSliceMapRange((min_percentage, max_percentage), 'scalar')
         self.setSliceMapRange(min_val, max_val)
 
+    def getSliceColorPercentiles(self):
+        min_val, max_val = self.getSliceMapWholeRange('scalar')
+        min_color, max_color = self.getSliceMapRange()
+        min_percentage = (min_color - min_val) / (max_val - min_val) * 100
+        max_percentage = (max_color - min_val) / (max_val - min_val) * 100
+        return min_percentage, max_percentage
+
     def setSliceColorWindow(self, window):
         '''
         Set the window for the 2D slice of the 3D image.
@@ -357,7 +364,33 @@ class CILViewerBase():
 
     def addWidgetReference(self, widget, name):
         '''Adds widget to dictionary of widgets'''
+        if self.getWidget(name) is not None:
+            raise ValueError(f'Could not save reference to widget, as a widget with name {name} already exists.')
         self.widgets[name] = widget
 
     def getWidget(self, name):
         return self.widgets.get(name)
+
+    def deleteWidget(self, name):
+        ''' deletes a widget
+        Parameters:
+        name: string
+            reference name given to the widget in the 
+            dictionary of widgets'''
+
+        widget = self.getWidget(name)
+
+        if widget is not None:
+            widget.Off()
+            del widget
+            self.widgets.pop(name)
+
+    def setVisualisationDownsampling(self, value):
+        self.visualisation_downsampling = value
+        if value != [1, 1, 1]:
+            self.image_is_downsampled = True
+        else:
+            self.image_is_downsampled = False
+
+    def getVisualisationDownsampling(self):
+        return self.visualisation_downsampling

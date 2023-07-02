@@ -1522,16 +1522,11 @@ class CILViewer2D(CILViewerBase):
             self.style.OnKeyPress(self.getInteractor(), "KeyPressEvent")
 
     def setVisualisationDownsampling(self, value):
-        self.visualisation_downsampling = value
-        if value != [1, 1, 1]:
-            self.image_is_downsampled = True
+        super().setVisualisationDownsampling(value)
+        if self.image_is_downsampled:
             self.imageSlice.GetProperty().SetInterpolationTypeToLinear()
         else:
-            self.image_is_downsampled = False
             self.imageSlice.GetProperty().SetInterpolationTypeToNearest()
-
-    def getVisualisationDownsampling(self):
-        return self.visualisation_downsampling
 
     def setDisplayUnsampledCoordinates(self, value):
         self.display_unsampled_coords = value
