@@ -22,7 +22,7 @@ Created on Wed Jan 16 14:21:00 2019
 import os
 import math
 import numpy
-import vtk
+import vtkmodules.all as vtk
 from vtk.util.vtkAlgorithm import VTKPythonAlgorithmBase
 from vtk.util import numpy_support
 
@@ -1421,6 +1421,21 @@ class cilBaseCroppedReader(cilReaderInterface):
         Get the target extent to crop to on the z axis.
         '''
         return self._TargetZExtent
+    
+    def GetShape(self):
+        readshape = self.GetStoredArrayShape()
+        is_fortran = self.GetIsFortran()
+
+        if is_fortran:
+            shape = list(readshape)
+        else:
+            shape = list(readshape)[::-1]
+        return shape
+
+    def GetWholeExtent(self):
+        shape = self.GetShape()
+        extent = (0, shape[0] - 1, 0, shape[1] - 1, 0, shape[2] - 1)
+        return extent
 
     def RequestData(self, request, inInfo, outInfo):
         outData = vtk.vtkImageData.GetData(outInfo)
@@ -1429,14 +1444,8 @@ class cilBaseCroppedReader(cilReaderInterface):
 
         # get basic info
         big_endian = self.GetBigEndian()
-        readshape = self.GetStoredArrayShape()
         file_header_length = self.GetFileHeaderLength()
-        is_fortran = self.GetIsFortran()
-
-        if is_fortran:
-            shape = list(readshape)
-        else:
-            shape = list(readshape)[::-1]
+        shape = self.GetShape()
 
         tmpdir = tempfile.mkdtemp()
         header_filename = os.path.join(tmpdir, "header.mhd")
