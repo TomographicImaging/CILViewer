@@ -1,3 +1,4 @@
+# inspired by https://examples.vtk.org/site/Python/Visualization/FroggieView/
 import vtk
 from ccpi.viewer import viewer2D
 
