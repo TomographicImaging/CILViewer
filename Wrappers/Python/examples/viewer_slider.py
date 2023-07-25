@@ -5,8 +5,8 @@ from ccpi.viewer import viewer2D
 
 class SliderProperties:
     tube_width = 0.004
-    slider_length = 0.015
-    slider_width = 0.008
+    slider_length = 0.025
+    slider_width = 0.015
     end_cap_length = 0.008
     end_cap_width = 0.02
     title_height = 0.02
@@ -109,6 +109,14 @@ class SliderCallback:
         value = caller.GetActiveSlice()
         self.slider_widget.GetRepresentation().SetValue(value)
         self.update_label(slider_widget, value)
+        caller.GetRenderWindow().Render()
+
+    def update_orientation(self, caller, ev):
+        value = caller.GetActiveSlice()
+        dims = caller._viewer.img3D.GetDimensions()
+        maxslice = dims[caller.GetSliceOrientation()] -1
+        self.slider_widget.GetRepresentation().SetMaximumValue(maxslice)
+        self.update_from_viewer(caller, ev)
 
 
 if __name__ == '__main__':
@@ -119,8 +127,8 @@ if __name__ == '__main__':
 
     from ccpi.viewer.utils.io import ImageReader
     import os
-    reader = ImageReader(r"C:\Users\ofn77899\Data\dvc/frame_000_f.npy", resample=False)
-    # reader = ImageReader(r"{}/head_uncompressed.mha".format(os.path.dirname(__file__)), resample=False)
+    # reader = ImageReader(r"C:\Users\ofn77899\Data\dvc/frame_000_f.npy", resample=False)
+    reader = ImageReader(r"{}/head_uncompressed.mha".format(os.path.dirname(__file__)), resample=False)
     
     data = reader.Read()
     slider_properties.value_minimum = 0
@@ -142,6 +150,8 @@ if __name__ == '__main__':
 
     v.style.AddObserver("MouseWheelForwardEvent", cb.update_from_viewer, 0.9 )
     v.style.AddObserver("MouseWheelBackwardEvent", cb.update_from_viewer, 0.9 )
+
+    v.style.AddObserver("KeyPressEvent", cb.update_orientation, 0.9 )
 
     cb(slider_widget, None)
     v.startRenderLoop()
