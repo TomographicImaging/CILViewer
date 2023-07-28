@@ -8,7 +8,10 @@ import numpy as np
 from ccpi.viewer.utils import Converter
 from ccpi.viewer.QCILViewerWidget import QCILViewerWidget
 from ccpi.viewer.CILViewer2D import CILViewer2D as viewer2D
+import numpy as np
 import vtk
+from functools import reduce
+import tempfile
 
 
 class ViewerSettingsDialog(AppSettingsDialog):
@@ -60,6 +63,9 @@ class RawInputDialog(FormDialog):
     - fortran ordering
     '''
 
+    supported_types =  [ np.dtype(f) for f in ['int8', 'uint8', 'int16', 'uint16', \
+            'float16', 'float32', 'float64'] ]
+
     def __init__(self, parent, fname):
         super(RawInputDialog, self).__init__(parent, fname)
         self.fname = os.path.abspath(fname)
@@ -87,9 +93,10 @@ class RawInputDialog(FormDialog):
         dimensionalityValue.currentIndexChanged.connect(self.enableDisableDimZ)
 
         # Data Type
+        self.supported_types = RawInputDialog.supported_types.copy()
         dtypeLabel = QLabel("Data Type")
         dtypeValue = QComboBox()
-        dtypeValue.addItems(["int8", "uint8", "int16", "uint16"])
+        dtypeValue.addItems([np.dtype(dt).name for dt in self.supported_types])
         dtypeValue.setCurrentIndex(1)
         fw.addWidget(dtypeValue, dtypeLabel, 'dtype')
 
@@ -97,14 +104,14 @@ class RawInputDialog(FormDialog):
         endiannesLabel = QLabel("Byte Ordering")
         endiannes = QComboBox()
         endiannes.addItems(["Big Endian", "Little Endian"])
-        endiannes.setCurrentIndex(1)
+        endiannes.setCurrentIndex(0)
         fw.addWidget(endiannes, endiannesLabel, 'endianness')
 
         # Fortran Ordering
         fortranLabel = QLabel("Fortran Ordering")
         fortranOrder = QComboBox()
         fortranOrder.addItems(["Fortran Order: XYZ", "C Order: ZYX"])
-        fortranOrder.setCurrentIndex(0)
+        fortranOrder.setCurrentIndex(1)
         fw.addWidget(fortranOrder, fortranLabel, "is_fortran")
 
         # preview button
@@ -115,6 +122,21 @@ class RawInputDialog(FormDialog):
 
 
         self.setLayout(fw.uiElements['verticalLayout'])
+
+        self.Cancel.clicked.connect(self.close)
+
+
+    def setSupportedTypes(self, types):
+        '''Updates the list of supported types
+        
+        Parameters:
+        -----------
+            types: list 
+              list of dtypes accepted by numpy.dtype
+        '''
+        self.supported_types = types
+        self.getWidget('dtype').clear()
+        self.getWidget('dtype').addItems([np.dtype(dt).name for dt in self.supported_types])
 
     def getRawAttrs(self):
         '''
@@ -160,7 +182,7 @@ class RawInputDialog(FormDialog):
         isFortran = pars['is_fortran']
         isBigEndian = pars['is_big_endian']
         # typecode = pars['typecode']
-        typecode = self.getWidget('dtype').currentIndex()
+        typecode = self.getWidget('dtype').currentText()
 
         
         if isFortran:
@@ -177,69 +199,51 @@ class RawInputDialog(FormDialog):
         
         
         # Construct a data type
-        dt_txt = ""
+        dt = np.dtype(typecode)
         
         if isBigEndian:
             dt_txt = ">" # big endian
         else:
             dt_txt = "<"
+        dt = dt.newbyteorder(dt_txt)
 
-        bytes_per_element = 1
-
-        if typecode == 0:
-            dt_txt += "i1"
-        elif typecode == 1:
-            dt_txt += "u1"
-        elif typecode == 2:
-            dt_txt += "i2"
-            bytes_per_element = 2
-        elif typecode == 3:
-            dt_txt += "u2"
-            bytes_per_element = 2
-        elif typecode == 4:
-            dt_txt += "i4"
-            bytes_per_element = 4
-        elif typecode == 5:
-            dt_txt += "u4"
-            bytes_per_element = 4
+        bytes_per_element = dt.itemsize
 
         # basic sanity check
         file_size = os.stat(self.fname).st_size
 
-        expected_size = 1
-        for el in shape:
-            expected_size *= el
-        expected_size *= bytes_per_element
-        
+        expected_size = reduce (lambda x,y: x*y, shape, 1) * bytes_per_element        
         
         if file_size != expected_size:
-            errors = {"type": "size", "file_size": file_size,
-                    "expected_size": expected_size}
+            errors = {"type": "size", 
+                      "file_size": file_size,
+                      "expected_size": expected_size}
             return (errors)
 
-        
-
-        dtype = np.dtype(dt_txt)
         # read centre slice
         offset = 0
         slice_size = -1
         if dimensionality == 3:
-            # read one slice
+            # read the centre slice
             slice_size = shape[1]*shape[0]
             offset = shape[2]*slice_size//2
 
-        rawfname = os.path.join(os.path.dirname(self.fname),"test.raw")
+        rawfname = os.path.join(tempfile.gettempdir(),"test.raw")
+        
         offset = offset * bytes_per_element
+        slices_to_read = 1
+        if shape[2] > 1:
+            slices_to_read = 2
         with open(self.fname, 'br') as f:
             f.seek(offset)
-            raw_data = f.read(slice_size*bytes_per_element)
+            raw_data = f.read(slice_size*bytes_per_element* slices_to_read)
             with open(rawfname, 'wb') as f2:
                 f2.write(raw_data)
 
         reader2 = vtk.vtkImageReader2()
         reader2.SetFileName(rawfname)
 
-        vtktype = Converter.dtype_name_to_vtkType[dtype.name]
+        vtktype = Converter.dtype_name_to_vtkType[dt.name]
         reader2.SetDataScalarType(vtktype)
 
         if isBigEndian:
@@ -253,8 +257,11 @@ class RawInputDialog(FormDialog):
             # need to reverse the shape (again)
             vtkshape = shape[::-1]
         # vtkshape = shape[:]
-        slice_idx = vtkshape[2]//2
-        reader2.SetDataExtent(0, vtkshape[0]-1, 0, vtkshape[1]-1, slice_idx, slice_idx)
+        slice_idx = 0
+        if dimensionality == 3:
+            slice_idx = vtkshape[2]//2
+        reader2.SetDataExtent(0, vtkshape[0]-1, 0, vtkshape[1]-1, slice_idx, slice_idx+slices_to_read-1)
+        # DataSpacing and DataOrigin should be added to the interface
         reader2.SetDataSpacing(1, 1, 1)
         reader2.SetDataOrigin(0, 0, 0)
 
