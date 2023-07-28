@@ -1011,9 +1011,12 @@ class cilBaseResampleReader(cilReaderInterface):
                 # scaling is going to be similar in every axis
                 # (xy the same, z possibly different)
                 if not self.GetIsAcquisitionData():
+                    # xy scaling is the one we would get if we resampled 
+                    # equally in all dimensions
                     xy_axes_magnification = np.power(max_size / total_size, 1 / 3)
-                    num_slices_per_chunk = int(
-                        1 / xy_axes_magnification)  # number of slices in the z direction we are resampling together.
+                    # however we are binning in the z direction, so here the approximate
+                    # number of slices in the z direction which corresponds to the uniform resampling
+                    num_slices_per_chunk = int(np.round(1 / xy_axes_magnification))
                 else:
                     # If we have acquisition data we don't want to resample in the z
                     # direction because then we would be averaging projections together,
