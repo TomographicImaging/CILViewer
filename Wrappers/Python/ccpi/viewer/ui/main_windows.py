@@ -275,7 +275,7 @@ class ViewerMainWindow(MainWindowWithProgressDialogs):
         raw_image_attrs = self.raw_attrs
         hdf5_image_attrs = self.hdf5_attrs
         dataset_name = hdf5_image_attrs.get('dataset_name')
-        resample_z = hdf5_image_attrs.get('resample_z')
+        resample_z = hdf5_image_attrs.get('resample_z', True)
         target_size = self.getTargetImageSize()
         if isinstance(image, str) or isinstance(image, list):
             image_reader = ImageReader(file_name=image)
