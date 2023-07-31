@@ -1,4 +1,6 @@
 # Changelog
+## vx.x.x
+- Added preview to RawImportDialog
 
 ## v23.1.0
 - Raise error if try to add multiple widgets with the same name to CILViewer or CILViewer2D.
