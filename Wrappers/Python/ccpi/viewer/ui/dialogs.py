@@ -62,6 +62,18 @@ class RawInputDialog(FormDialog):
     - data type
     - endianness
     - fortran ordering
+
+    The dialog can let the user preview the data and verify that it is correct.
+
+    Example:
+    --------
+
+    One can instantiate this dialog and reduce the supported types by overriding the 
+    default supported_types with SetSupportedTypes:
+
+    >>> dialog = RawInputDialog(parent, fname)
+    >>> dialog.setSupportedTypes(['float32', 'float64'])
+
     '''
 
     supported_types =  [ np.dtype(f) for f in ['int8', 'uint8', 'int16', 'uint16', \
