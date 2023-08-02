@@ -1171,13 +1171,12 @@ class CILViewer2D(CILViewerBase):
                         dtype=vtk.VTK_UNSIGNED_SHORT):
         self.rescale[0] = rescale
 
-        importer = Converter.numpy2vtkImporter(numpyarray, spacing, origin)
-        importer.Update()
+        img = Converter.numpy2vtkImage(numpyarray, spacing, origin)
 
         if rescale:
             # rescale to appropriate VTK_UNSIGNED_SHORT
             stats = vtk.vtkImageAccumulate()
-            stats.SetInputData(importer.GetOutput())
+            stats.SetInputData(img)
             stats.Update()
             iMin = stats.GetMin()[0]
             iMax = stats.GetMax()[0]
@@ -1191,14 +1190,14 @@ class CILViewer2D(CILViewerBase):
 
             self.rescale[1] = (scale, -iMin)
             shiftScaler = vtk.vtkImageShiftScale()
-            shiftScaler.SetInputData(importer.GetOutput())
+            shiftScaler.SetInputData(img)
             shiftScaler.SetScale(scale)
             shiftScaler.SetShift(-iMin)
             shiftScaler.SetOutputScalarType(dtype)
             shiftScaler.Update()
             self.img3D = shiftScaler.GetOutput()
         else:
-            self.img3D = importer.GetOutput()
+            self.img3D = img
 
         self.installPipeline()
 

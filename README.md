@@ -20,7 +20,7 @@ conda create --name cilviewer ccpi-viewer=23.1.0 -c ccpi -c paskino -c conda-for
 
 ## Running the CILViewer app
 
-- Activate your environment using: ``conda activate cil-viewer``.
+- Activate your environment using: ``conda activate cilviewer``.
 - Launch by typing: `cilviewer`
 - Load a dataset using the File menu. Currently supported data formats:
   - HDF5, including Nexus
