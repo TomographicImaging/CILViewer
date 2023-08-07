@@ -69,7 +69,7 @@ class RawInputDialog(FormDialog):
     --------
 
     One can instantiate this dialog and reduce the supported types by overriding the 
-    default supported_types with SetSupportedTypes:
+    default supported_types with setSupportedTypes:
 
     >>> dialog = RawInputDialog(parent, fname)
     >>> dialog.setSupportedTypes(['float32', 'float64'])
@@ -130,7 +130,6 @@ class RawInputDialog(FormDialog):
         # preview button
         previewButton = QtWidgets.QPushButton("Preview")
         fw.addWidget(previewButton, "preview_button", "preview_button")
-        self.preview_open = False
         previewButton.clicked.connect(self.preview)
 
 
@@ -207,9 +206,6 @@ class RawInputDialog(FormDialog):
                 shape = (dimX, dimY, dimZ)
             else:
                 shape = (dimZ, dimY, dimX)
-
-
-        
         
         # Construct a data type
         dt = np.dtype(typecode)
@@ -269,7 +265,6 @@ class RawInputDialog(FormDialog):
         if not isFortran:
             # need to reverse the shape (again)
             vtkshape = shape[::-1]
-        # vtkshape = shape[:]
         slice_idx = 0
         if dimensionality == 3:
             slice_idx = vtkshape[2]//2
