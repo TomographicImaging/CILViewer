@@ -22,7 +22,7 @@ from ccpi.viewer import (ALT_KEY, CONTROL_KEY, SHIFT_KEY, CROSSHAIR_ACTOR, CURSO
 from ccpi.viewer.CILViewerBase import CILViewerBase
 from ccpi.viewer.utils import Converter
 
-from ccpi.viewer.widgets import cilviewerBoxWidget
+from ccpi.viewer.widgets import cilviewerBoxWidget, SliderProperties, SliderCallback
 
 
 class CILInteractorStyle(vtk.vtkInteractorStyle):
@@ -1140,6 +1140,10 @@ class CILViewer2D(CILViewerBase):
         self.imageTracer.AutoCloseOn()
         self.imageTracer.AddObserver(vtk.vtkWidgetEvent.Select, self.style.OnTracerModifiedEvent, 1.0)
 
+        # Slider widget
+        self.sliderProperty = SliderProperties()
+        self.sliderWidget = None
+
         self.__vis_mode = CILViewer2D.IMAGE_WITH_OVERLAY
         self.setVisualisationToImageWithOverlay()
 
@@ -1311,6 +1315,7 @@ class CILViewer2D(CILViewerBase):
         elif self.vis_mode == CILViewer2D.RECTILINEAR_WIPE:
             self.installRectilinearWipePipeline()
 
+        self.installSliderWidget()
         self.ren.ResetCamera()
         self.ren.Render()
 
@@ -1460,6 +1465,36 @@ class CILViewer2D(CILViewerBase):
         self.wipeActor = wipeSlice
 
         self.AddActor(wipeSlice, WIPE_ACTOR)
+
+    def installSliderWidget(self):
+        if self.sliderWidget is not None:
+            self.sliderProperty.value_minimum = 0
+            self.sliderProperty.value_maximum = self.img3D.GetDimensions()[2] - 1
+            
+            self.sliderProperty.value_initial = self.getActiveSlice()
+            return
+        self.sliderProperty.value_minimum = 0
+        self.sliderProperty.value_maximum = self.img3D.GetDimensions()[2] - 1
+        
+        self.sliderProperty.value_initial = self.getActiveSlice()
+        
+        sw = self.sliderProperty.make_slider_widget()
+        sw.SetInteractor(self.getInteractor())
+        sw.SetAnimationModeToAnimate()
+        sw.EnabledOn()
+
+        cb = SliderCallback(self, sw)
+        
+        # Add interaction observers
+        sw.AddObserver(vtk.vtkCommand.InteractionEvent, cb)
+
+        self.style.AddObserver("MouseWheelForwardEvent", cb.update_from_viewer, 0.9 )
+        self.style.AddObserver("MouseWheelBackwardEvent", cb.update_from_viewer, 0.9 )
+        self.style.AddObserver("KeyPressEvent", cb.update_orientation, 0.9 )
+
+        # save references
+        self.sliderWidget = sw
+        self.sliderCallback = cb
 
     def AdjustCamera(self, resetcamera=False):
         self.ren.ResetCameraClippingRange()
