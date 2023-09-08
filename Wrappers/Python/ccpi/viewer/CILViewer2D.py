@@ -1157,6 +1157,7 @@ class CILViewer2D(CILViewerBase):
 
     def setInputData(self, imageData):
         self.log("setInputData")
+        self.reset()
         self.img3D = imageData
         self.installPipeline()
         self.axes_initialised = True
@@ -1315,7 +1316,7 @@ class CILViewer2D(CILViewerBase):
         elif self.vis_mode == CILViewer2D.RECTILINEAR_WIPE:
             self.installRectilinearWipePipeline()
 
-        self.installSliderWidget()
+        self.installSliceSliderWidgetPipeline()
         self.ren.ResetCamera()
         self.ren.Render()
 
@@ -1466,13 +1467,22 @@ class CILViewer2D(CILViewerBase):
 
         self.AddActor(wipeSlice, WIPE_ACTOR)
 
-    def installSliderWidget(self):
+    def installSliceSliderWidgetPipeline(self):
+
         if self.sliderWidget is not None:
+            # reset the values to the appropriate ones of the new loaded image
             self.sliderProperty.value_minimum = 0
             self.sliderProperty.value_maximum = self.img3D.GetDimensions()[2] - 1
-            
             self.sliderProperty.value_initial = self.getActiveSlice()
+            
+            # update min and max of the slider
+            self.sliderWidget.GetRepresentation().SetMaximumValue(self.sliderProperty.value_maximum)
+            self.sliderWidget.GetRepresentation().SetValue(self.sliderProperty.value_initial)
+        
+            # update the label text
+            self.sliderCallback.update_from_viewer(self.style, 'reset')
             return
+
         self.sliderProperty.value_minimum = 0
         self.sliderProperty.value_maximum = self.img3D.GetDimensions()[2] - 1
         
@@ -1837,3 +1847,9 @@ class CILViewer2D(CILViewerBase):
         elif self.vis_mode == CILViewer2D.RECTILINEAR_WIPE:
             # rectilinear wipe visualises 2 images in the same pipeline
             pass
+
+    def reset(self):
+        self.uninstallPipeline()
+        if self.image2 is not None:
+            self.uninstallPipeline2()
+           
