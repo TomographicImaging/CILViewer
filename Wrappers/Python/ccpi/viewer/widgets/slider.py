@@ -1,34 +1,38 @@
 import vtk
 
 class SliderProperties:
-    tube_width = 0.004
-    slider_length = 0.025
-    slider_width = 0.015
-    end_cap_length = 0.008
-    end_cap_width = 0.02
-    title_height = 0.02
-    label_height = 0.02
+    def __init__(self):
+        self.tube_width = 0.004
+        self.slider_length = 0.025
+        self.slider_width = 0.015
+        self.end_cap_length = 0.008
+        self.end_cap_width = 0.02
+        self.title_height = 0.02
+        self.label_height = 0.02
 
-    value_minimum = 0.0
-    value_maximum = 1.0
-    value_initial = 1.0
+        self.value_minimum = 0.0
+        self.value_maximum = 1.0
+        self.value_initial = 1.0
 
-    p1 = [0.12, end_cap_width * 1.1]
-    p2 = [0.88, end_cap_width * 1.1]
+        self.orientation = 'horizontal'
+        self.offset = 0.12
 
-    title = None
+        self.p1 = [self.offset, self.end_cap_width * 1.1]
+        self.p2 = [1 - self.offset, self.end_cap_width * 1.1]
 
-    title_color = 'Black'
-    label_color = 'White'
-    value_color = 'White'
-    value_background_color = 'Black'
-    slider_color = 'Lime'
-    selected_color = 'Lime'
-    bar_color = 'Gray'
-    bar_ends_color = 'Yellow'
+        self.title = None
+
+        self.title_color = 'Black'
+        self.label_color = 'White'
+        self.value_color = 'White'
+        self.value_background_color = 'Black'
+        self.slider_color = 'Lime'
+        self.selected_color = 'Lime'
+        self.bar_color = 'Gray'
+        self.bar_ends_color = 'Yellow'
 
 
-    def make_slider_widget(properties):
+    def make_slider_widget(self, orientation='horizontal', offset=0.12):
         """
         Make the slider widget based on the properties of this class.
 
@@ -38,43 +42,46 @@ class SliderProperties:
         A configured vtkSliderWidget with its vtkSliderRepresentation2D.
 
         """
+
+        if orientation == 'vertical':
+            self.offset = offset
+            self.p1 = [self.end_cap_width * 1.1, self.offset]
+            self.p2 = [self.end_cap_width * 1.1, 1 - self.offset]
+
         slider = vtk.vtkSliderRepresentation2D()
 
-        slider.SetMinimumValue(properties.value_minimum)
-        slider.SetMaximumValue(properties.value_maximum)
-        slider.SetValue(properties.value_initial)
-        slider.SetTitleText(properties.title)
+        slider.SetMinimumValue(self.value_minimum)
+        slider.SetMaximumValue(self.value_maximum)
+        slider.SetValue(self.value_initial)
+        slider.SetTitleText(self.title)
 
         slider.GetPoint1Coordinate().SetCoordinateSystemToNormalizedDisplay()
-        slider.GetPoint1Coordinate().SetValue(properties.p1[0], properties.p1[1])
+        slider.GetPoint1Coordinate().SetValue(self.p1[0], self.p1[1])
         slider.GetPoint2Coordinate().SetCoordinateSystemToNormalizedDisplay()
-        slider.GetPoint2Coordinate().SetValue(properties.p2[0], properties.p2[1])
+        slider.GetPoint2Coordinate().SetValue(self.p2[0], self.p2[1])
 
-        slider.SetTubeWidth(properties.tube_width)
-        slider.SetSliderLength(properties.slider_length)
-        slider.SetSliderWidth(properties.slider_width)
-        slider.SetEndCapLength(properties.end_cap_length)
-        slider.SetEndCapWidth(properties.end_cap_width)
-        slider.SetTitleHeight(properties.title_height)
-        slider.SetLabelHeight(properties.label_height)
+        slider.SetTubeWidth(self.tube_width)
+        slider.SetSliderLength(self.slider_length)
+        slider.SetSliderWidth(self.slider_width)
+        slider.SetEndCapLength(self.end_cap_length)
+        slider.SetEndCapWidth(self.end_cap_width)
+        slider.SetTitleHeight(self.title_height)
+        slider.SetLabelHeight(self.label_height)
 
         colors = vtk.vtkNamedColors()
         # Set the colors of the slider components.
         # Change the color of the bar.
-        slider.GetTubeProperty().SetColor(colors.GetColor3d(properties.bar_color))
+        slider.GetTubeProperty().SetColor(colors.GetColor3d(self.bar_color))
         # Change the color of the ends of the bar.
-        slider.GetCapProperty().SetColor(colors.GetColor3d(properties.bar_ends_color))
+        slider.GetCapProperty().SetColor(colors.GetColor3d(self.bar_ends_color))
         # Change the color of the knob that slides.
-        slider.GetSliderProperty().SetColor(colors.GetColor3d(properties.slider_color))
+        slider.GetSliderProperty().SetColor(colors.GetColor3d(self.slider_color))
         # Change the color of the knob when the mouse is held on it.
-        slider.GetSelectedProperty().SetColor(colors.GetColor3d(properties.selected_color))
+        slider.GetSelectedProperty().SetColor(colors.GetColor3d(self.selected_color))
         # Change the color of the text displaying the value.
-        slider.GetLabelProperty().SetColor(colors.GetColor3d(properties.value_color))
-        slider.GetLabelProperty().SetBackgroundColor(colors.GetColor3d(properties.value_background_color))
+        slider.GetLabelProperty().SetColor(colors.GetColor3d(self.value_color))
+        slider.GetLabelProperty().SetBackgroundColor(colors.GetColor3d(self.value_background_color))
         slider.GetLabelProperty().ShadowOff()
-        #  Use the one color for the labels.
-        # slider.GetTitleProperty().SetColor(colors.GetColor3d(properties.label_color))
-        # Change the color of the text indicating what the slider controls
         
         slider.GetTitleProperty().SetColor(1,1,1)
         slider.GetTitleProperty().ShadowOff()
