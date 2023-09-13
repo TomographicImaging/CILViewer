@@ -75,9 +75,7 @@ class TestImageReaderAndWriter(unittest.TestCase):
     def _test_resampling_not_acq_data(self, reader, target_size):
         image = reader.Read()
         extent = image.GetExtent()
-        # resulting_shape = (extent[1] + 1, (extent[3] + 1), (extent[5] + 1))
         resulting_shape = tuple(image.GetDimensions())
-        print (resulting_shape)
         og_shape = np.shape(self.input_3D_array)
         og_shape = (og_shape[2], og_shape[1], og_shape[0])
         og_size = og_shape[0] * og_shape[1] * og_shape[2] * self.bytes_per_element
