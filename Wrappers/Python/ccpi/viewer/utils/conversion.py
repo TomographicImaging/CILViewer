@@ -898,6 +898,21 @@ class cilTIFFImageReaderInterface(cilReaderInterface):
 
 
 # ---------------------- RESAMPLE READERS -------------------------------------------------------------
+def calculate_target_downsample_magnification(max_size, total_size, acq=False):
+    if not acq:
+        # scaling is going to be similar in every axis
+        # (xy the same, z possibly different)        
+        xy_axes_magnification = np.power(max_size / total_size, 1 / 3)
+        slice_per_chunk = int(np.round(1 / xy_axes_magnification))
+    else:
+        # If we have acquisition data we don't want to resample in the z
+        # direction because then we would be averaging projections together,
+        # so we have one slice per chunk
+        slice_per_chunk = 1
+        xy_axes_magnification = np.power(max_size / total_size, 1 / 2)
+    
+    return (slice_per_chunk, xy_axes_magnification)
+
 class cilBaseResampleReader(cilReaderInterface):
     '''vtkAlgorithm to load and resample a file to an approximate memory footprint.
     This BaseClass provides the methods needed to resample a file, if the filename
@@ -1007,20 +1022,10 @@ class cilBaseResampleReader(cilReaderInterface):
                 outData.ShallowCopy(reader.GetOutput())
 
             else:
-
-                # scaling is going to be similar in every axis
-                # (xy the same, z possibly different)
-                if not self.GetIsAcquisitionData():
-                    xy_axes_magnification = np.power(max_size / total_size, 1 / 3)
-                    num_slices_per_chunk = int(np.round(
-                        1 / xy_axes_magnification))  # number of slices in the z direction we are resampling together.
-                else:
-                    # If we have acquisition data we don't want to resample in the z
-                    # direction because then we would be averaging projections together,
-                    # so we have one slice per chunk
-                    num_slices_per_chunk = 1  # number of slices in the z direction we are resampling together.
-                    xy_axes_magnification = np.power(max_size / total_size, 1 / 2)
-
+                num_slices_per_chunk, xy_axes_magnification = \
+                    calculate_target_downsample_magnification(max_size, 
+                                                              total_size, 
+                                                              self.GetIsAcquisitionData())
                 # Each chunk will be the z slices that we will resample together to form one new slice.
                 # Each chunk will contain num_slices_per_chunk number of slices.
                 self._SetNumSlicesPerChunk(num_slices_per_chunk)
