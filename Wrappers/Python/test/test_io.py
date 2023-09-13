@@ -8,7 +8,7 @@ from ccpi.viewer.utils.conversion import Converter
 from ccpi.viewer.utils.io import ImageReader, cilviewerHDF5Writer, cilviewerHDF5Reader
 
 
-from utils import calculate_target_downsample_shape
+from .utils import calculate_target_downsample_shape
 
 
 class TestImageReaderAndWriter(unittest.TestCase):

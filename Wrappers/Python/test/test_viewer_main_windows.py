@@ -31,14 +31,16 @@ class TestViewerMainWindow(unittest.TestCase):
     '''
 
     def setUp(self):
+        pass
+        
+    def tearDown(self) -> None:
+        pass
+        
+    def test_all(self):
         global _instance
         if _instance is None:
             _instance = QApplication(sys.argv)
 
-    def tearDown(self) -> None:
-        _instance = None
-
-    def test_all(self):
         # https://stackoverflow.com/questions/5387299/python-unittest-testcase-execution-order
         # https://stackoverflow.com/questions/11145583/unit-and-functional-testing-a-pyside-based-application
         self._test_init()
@@ -54,6 +56,8 @@ class TestViewerMainWindow(unittest.TestCase):
         self._test_updateViewerCoords_with_display_downsampled_coords_selected()
         self._test_updateViewerCoords_with_3D_viewer()
         self._test_updateViewerCoords_with_no_img3D()   
+
+        del _instance
 
 
     def _test_init(self):

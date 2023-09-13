@@ -8,7 +8,7 @@ from ccpi.viewer.utils.conversion import Converter, cilHDF5ResampleReader, cilHD
 from ccpi.viewer.utils.hdf5_io import (HDF5Reader, HDF5SubsetReader, write_image_data_to_hdf5)
 
 
-from utils import calculate_target_downsample_shape
+from .utils import calculate_target_downsample_shape
 
 
 class TestHDF5IO(unittest.TestCase):

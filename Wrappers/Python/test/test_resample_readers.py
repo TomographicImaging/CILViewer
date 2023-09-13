@@ -8,7 +8,7 @@ from ccpi.viewer.utils.conversion import (Converter, cilMetaImageResampleReader,
                                           cilNumpyResampleReader, cilRawResampleReader, cilTIFFResampleReader)
 
 
-from utils import calculate_target_downsample_shape
+from .utils import calculate_target_downsample_shape
 
 
 class TestResampleReaders(unittest.TestCase):
