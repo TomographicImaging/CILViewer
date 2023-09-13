@@ -35,6 +35,9 @@ class TestViewerMainWindow(unittest.TestCase):
         if _instance is None:
             _instance = QApplication(sys.argv)
 
+    def tearDown(self) -> None:
+        _instance = None
+
     def test_init(self):
         vmw = ViewerMainWindow(title="Testing Title", app_name="testing app name")
         assert vmw is not None
