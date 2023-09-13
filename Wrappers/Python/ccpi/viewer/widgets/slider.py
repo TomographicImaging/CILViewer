@@ -32,7 +32,7 @@ class SliderProperties:
         self.bar_ends_color = 'Yellow'
 
 
-    def make_slider_widget(self, orientation='horizontal', offset=0.12):
+    def get_slider_widget(self, orientation='horizontal', offset=0.12):
         """
         Make the slider widget based on the properties of this class.
 

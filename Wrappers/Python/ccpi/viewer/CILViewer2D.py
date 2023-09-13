@@ -1488,7 +1488,7 @@ class CILViewer2D(CILViewerBase):
         
         self.sliderProperty.value_initial = self.getActiveSlice()
         
-        sw = self.sliderProperty.make_slider_widget()
+        sw = self.sliderProperty.get_slider_widget(orientation='horizontal')
         sw.SetInteractor(self.getInteractor())
         sw.SetAnimationModeToAnimate()
         sw.EnabledOn()
