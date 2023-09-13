@@ -31,7 +31,7 @@ class SliderProperties:
     bar_ends_color = 'Yellow'
 
 
-def make_slider_widget(properties):
+def get_slider_widget(properties):
     """
     Make the slider widget.
 
@@ -121,37 +121,53 @@ class SliderCallback:
 
 if __name__ == '__main__':
     v = viewer2D()
-    slider_properties = SliderProperties()
-    slider_properties.title = ""
-
-
     from ccpi.viewer.utils.io import ImageReader
     import os
     # reader = ImageReader(r"C:\Users\ofn77899\Data\dvc/frame_000_f.npy", resample=False)
     reader = ImageReader(r"{}/head_uncompressed.mha".format(os.path.dirname(__file__)), resample=False)
     
     data = reader.Read()
-    slider_properties.value_minimum = 0
-    # slider_properties.value_maximum = reader.GetOutput().GetDimensions()[2] - 1
-    slider_properties.value_maximum = data.GetDimensions()[2] - 1
+    v.setInputData(data)
     
 
-    # v.setInputData(reader.GetOutput())
-    v.setInputData(data)
-    slider_properties.value_initial = v.getActiveSlice()
-    slider_widget = make_slider_widget(slider_properties)
+    # slider_properties = SliderProperties()
+    # slider_properties.title = ""
 
-    slider_widget.SetInteractor(v.getInteractor())
-    slider_widget.SetAnimationModeToAnimate()
-    slider_widget.EnabledOn()
 
-    cb = SliderCallback(v, slider_widget)
-    slider_widget.AddObserver(vtk.vtkCommand.InteractionEvent, cb)
+    # slider_properties.value_minimum = 0
+    # # slider_properties.value_maximum = reader.GetOutput().GetDimensions()[2] - 1
+    # slider_properties.value_maximum = data.GetDimensions()[2] - 1
+    
 
-    v.style.AddObserver("MouseWheelForwardEvent", cb.update_from_viewer, 0.9 )
-    v.style.AddObserver("MouseWheelBackwardEvent", cb.update_from_viewer, 0.9 )
+    # # v.setInputData(reader.GetOutput())
+    # slider_properties.value_initial = v.getActiveSlice()
+    # slider_widget = make_slider_widget(slider_properties)
 
-    v.style.AddObserver("KeyPressEvent", cb.update_orientation, 0.9 )
+    # slider_widget.SetInteractor(v.getInteractor())
+    # slider_widget.SetAnimationModeToAnimate()
+    # slider_widget.EnabledOn()
 
-    cb(slider_widget, None)
+    # cb = SliderCallback(v, slider_widget)
+    # slider_widget.AddObserver(vtk.vtkCommand.InteractionEvent, cb)
+
+    # v.style.AddObserver("MouseWheelForwardEvent", cb.update_from_viewer, 0.9 )
+    # v.style.AddObserver("MouseWheelBackwardEvent", cb.update_from_viewer, 0.9 )
+
+    # v.style.AddObserver("KeyPressEvent", cb.update_orientation, 0.9 )
+
+    # cb(slider_widget, None)
     v.startRenderLoop()
+
+    from ccpi.viewer.utils.conversion import cilHDF5ResampleReader
+    reader2 = cilHDF5ResampleReader()
+    fpath = 'C:/Users/ofn77899/Data/LizardHead/astra'
+    
+    reader2.SetFileName(os.path.join(fpath, "lizard_TVTGV_ch_55.nxs"))
+    # reader2.SetFileName("C:/Users/ofn77899/Data/CTMeeting2022/PDHG_iTV_alpha_0.001_it_1000.nxs")
+    reader2.SetDatasetName('entry1/tomo_entry/data/data')
+
+    # # reader.ReadDataSetInfo()
+    reader2.Update()
+    v.setInputData(reader2.GetOutput())
+    v.startRenderLoop()
+
