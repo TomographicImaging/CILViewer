@@ -18,13 +18,12 @@ build:
 test:
   requires:
     - pillow
+    - pytest
   source_files:
     - ./Wrappers/Python/test
 
   commands:
-    - ls # [not win]
-    - python -c "import os; print ('TESTING IN THIS DIRECTORY' , os.getcwd())" # [not win]
-    - python -m unittest discover -s Wrappers/Python/test -v # [not win]
+    - python -m pytest Wrappers/Python/test # [not win]
   
 requirements:
   build:
