@@ -38,18 +38,36 @@ class TestViewerMainWindow(unittest.TestCase):
     def tearDown(self) -> None:
         _instance = None
 
-    def test_init(self):
+    def test_all(self):
+        # https://stackoverflow.com/questions/5387299/python-unittest-testcase-execution-order
+        # https://stackoverflow.com/questions/11145583/unit-and-functional-testing-a-pyside-based-application
+        self._test_init()
+        self._test_init_calls_super_init()
+        self._test_createAppSettingsDialog_calls_setAppSettingsDialogWidgets()
+        self._test_acceptViewerSettings_when_gpu_checked()
+        self._test_acceptViewerSettings_when_gpu_unchecked()
+        self._test_setDefaultDownsampledSize()
+        self._test_getDefaultDownsampledSize()
+        self._test_getTargetImageSize_when_vis_size_is_None()
+        self._test_getTargetImageSize_when_vis_size_is_not_None()
+        self._test_updateViewerCoords_with_display_unsampled_coords_selected()
+        self._test_updateViewerCoords_with_display_downsampled_coords_selected()
+        self._test_updateViewerCoords_with_3D_viewer()
+        self._test_updateViewerCoords_with_no_img3D()   
+
+
+    def _test_init(self):
         vmw = ViewerMainWindow(title="Testing Title", app_name="testing app name")
         assert vmw is not None
 
-    def test_init_calls_super_init(self):
+    def _test_init_calls_super_init(self):
         vmw = ViewerMainWindow(title="Testing Title", app_name="testing app name")
         # If the super init is called, then the following attributes should be set:
         assert vmw.app_name == "testing app name"
         assert vmw.threadpool is not None
         assert vmw.progress_windows == {}
 
-    def test_createAppSettingsDialog_calls_setAppSettingsDialogWidgets(self):
+    def _test_createAppSettingsDialog_calls_setAppSettingsDialogWidgets(self):
         vmw = ViewerMainWindow(title="Testing Title", app_name="testing app name")
         vmw.setAppSettingsDialogWidgets = mock.MagicMock()
         vmw.setViewerSettingsDialogWidgets = mock.MagicMock()
@@ -57,7 +75,7 @@ class TestViewerMainWindow(unittest.TestCase):
         vmw.setAppSettingsDialogWidgets.assert_called_once()
         vmw.setViewerSettingsDialogWidgets.assert_called_once()
 
-    def test_acceptViewerSettings_when_gpu_checked(self):
+    def _test_acceptViewerSettings_when_gpu_checked(self):
 
         vmw = self._setup_acceptViewerSettings_tests()
 
@@ -69,7 +87,7 @@ class TestViewerMainWindow(unittest.TestCase):
 
         assert isinstance(vmw.viewers[0].volume_mapper, vtk.vtkSmartVolumeMapper)
 
-    def test_acceptViewerSettings_when_gpu_unchecked(self):
+    def _test_acceptViewerSettings_when_gpu_unchecked(self):
 
         vmw, settings_dialog = self._setup_acceptViewerSettings_tests()
 
@@ -103,7 +121,7 @@ class TestViewerMainWindow(unittest.TestCase):
         vmw._vs_dialog = settings_dialog
         return vmw
 
-    def test_acceptViewerSettings_when_gpu_unchecked(self):
+    def _test_acceptViewerSettings_when_gpu_unchecked(self):
         vmw = self._setup_acceptViewerSettings_tests()
         vmw._vs_dialog.widgets['gpu_checkbox_field'].isChecked.return_value = False
 
@@ -114,19 +132,19 @@ class TestViewerMainWindow(unittest.TestCase):
 
         assert isinstance(vmw.viewers[0].volume_mapper, vtk.vtkFixedPointVolumeRayCastMapper)
 
-    def test_setDefaultDownsampledSize(self):
+    def _test_setDefaultDownsampledSize(self):
         vmw = ViewerMainWindow(title="Testing Title", app_name="testing app name")
         vmw.setDefaultDownsampledSize(5)
         assert vmw.default_downsampled_size == 5
 
-    def test_getDefaultDownsampledSize(self):
+    def _test_getDefaultDownsampledSize(self):
         vmw = ViewerMainWindow(title="Testing Title", app_name="testing app name")
         # Test what the default value is:
         assert vmw.getDefaultDownsampledSize() == 512**3
         vmw.default_downsampled_size = 5
         assert vmw.getDefaultDownsampledSize() == 5
 
-    def test_getTargetImageSize_when_vis_size_is_None(self):
+    def _test_getTargetImageSize_when_vis_size_is_None(self):
         vmw = ViewerMainWindow(title="Testing Title", app_name="testing app name")
         vmw.settings.setValue("vis_size", None)
         vmw.getDefaultDownsampledSize = mock.MagicMock()
@@ -135,7 +153,7 @@ class TestViewerMainWindow(unittest.TestCase):
         vmw.getDefaultDownsampledSize.assert_called_once()
         assert (returned_target_size == 512**3)
 
-    def test_getTargetImageSize_when_vis_size_is_not_None(self):
+    def _test_getTargetImageSize_when_vis_size_is_not_None(self):
         vmw = ViewerMainWindow(title="Testing Title", app_name="testing app name")
         vmw.settings.setValue("vis_size", 5)
         vmw.getDefaultDownsampledSize = mock.MagicMock()
@@ -143,7 +161,7 @@ class TestViewerMainWindow(unittest.TestCase):
         vmw.getDefaultDownsampledSize.assert_not_called()
         assert (returned_target_size == 5 * (1024**3))
 
-    def test_updateViewerCoords_with_display_unsampled_coords_selected(self):
+    def _test_updateViewerCoords_with_display_unsampled_coords_selected(self):
         vmw = ViewerMainWindow(title="Testing Title", app_name="testing app name")
         viewer2D = CILViewer2D()
         viewer2D.visualisation_downsampling = [2, 2, 2]
@@ -169,7 +187,7 @@ class TestViewerMainWindow(unittest.TestCase):
         viewer_coords_widgets['coords_warning_field'].setVisible.assert_called_with(False)
         viewer2D.updatePipeline.assert_called_once()
 
-    def test_updateViewerCoords_with_display_downsampled_coords_selected(self):
+    def _test_updateViewerCoords_with_display_downsampled_coords_selected(self):
         vmw = ViewerMainWindow(title="Testing Title", app_name="testing app name")
         viewer2D = CILViewer2D()
         viewer2D.visualisation_downsampling = [2, 2, 2]
@@ -188,7 +206,7 @@ class TestViewerMainWindow(unittest.TestCase):
         viewer_coords_widgets['coords_warning_field'].setVisible.assert_called_once_with(False)
         viewer2D.updatePipeline.assert_called()
 
-    def test_updateViewerCoords_with_3D_viewer(self):
+    def _test_updateViewerCoords_with_3D_viewer(self):
         vmw = ViewerMainWindow(title="Testing Title", app_name="testing app name")
         viewer3D = CILViewer()
         viewer3D.visualisation_downsampling = [2, 2, 2]
@@ -205,7 +223,7 @@ class TestViewerMainWindow(unittest.TestCase):
         viewer_coords_widgets['coords_warning_field'].setVisible.assert_not_called()
         viewer3D.updatePipeline.assert_not_called()
 
-    def test_updateViewerCoords_with_no_img3D(self):
+    def _test_updateViewerCoords_with_no_img3D(self):
         vmw = ViewerMainWindow(title="Testing Title", app_name="testing app name")
         viewer2D = CILViewer2D()
         viewer2D.visualisation_downsampling = [2, 2, 2]
