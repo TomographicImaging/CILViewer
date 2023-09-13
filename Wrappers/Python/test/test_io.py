@@ -297,7 +297,8 @@ class TestImageReaderAndWriter(unittest.TestCase):
                 self.assertEqual(value, read_original_image_attrs[key])
 
     def tearDown(self):
-        files = [self.hdf5_filename_3D] + self.tiff_fnames
+        files = [self.hdf5_filename_3D, self.numpy_filename_3D,
+            self.mha_filename_3D, self.raw_filename_3D] + self.tiff_fnames
         for f in files:
             os.remove(f)
         os.rmdir('tiff_files')
