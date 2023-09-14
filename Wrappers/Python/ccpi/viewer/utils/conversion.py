@@ -899,6 +899,24 @@ class cilTIFFImageReaderInterface(cilReaderInterface):
 
 # ---------------------- RESAMPLE READERS -------------------------------------------------------------
 def calculate_target_downsample_magnification(max_size, total_size, acq=False):
+    '''calculate the magnification of each axis and the number of slices per chunk
+    
+    Parameters
+    ----------
+    max_size: int
+        target size of the image in number of pixels
+    total_size: int
+        actual size of the image in number of pixels
+    acq: bool, default: False
+        whether the data is acquisiton data or not
+
+    Returns
+    -------
+    slice_per_chunk: int
+        number of slices per chunk
+    xy_axes_magnification: float
+        magnification of the xy axes
+    '''
     if not acq:
         # scaling is going to be similar in every axis
         # (xy the same, z possibly different)        
@@ -912,6 +930,30 @@ def calculate_target_downsample_magnification(max_size, total_size, acq=False):
         xy_axes_magnification = np.power(max_size / total_size, 1 / 2)
     
     return (slice_per_chunk, xy_axes_magnification)
+
+def calculate_target_downsample_shape(max_size, total_size, shape, acq=False):
+    '''calculate the magnification of each axis and the number of slices per chunk
+    
+    Parameters
+    ----------
+    max_size: int
+        target size of the image in number of pixels
+    total_size: int
+        actual size of the image in number of pixels
+    acq: bool, default: False
+        whether the data is acquisition data or not
+        
+    Returns
+    -------
+    target_image_shape: tuple
+        shape of the resampled image
+    '''
+    slice_per_chunk, xy_axes_magnification = \
+        calculate_target_downsample_magnification(max_size, total_size, acq)
+    num_chunks = 1 + len([i for i in range(slice_per_chunk, shape[2], slice_per_chunk)])
+
+    target_image_shape = (int(xy_axes_magnification * shape[0]), int(xy_axes_magnification * shape[1]), num_chunks)
+    return target_image_shape
 
 class cilBaseResampleReader(cilReaderInterface):
     '''vtkAlgorithm to load and resample a file to an approximate memory footprint.
