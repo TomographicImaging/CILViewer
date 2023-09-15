@@ -13,6 +13,7 @@ import numpy as np
 import vtk
 from functools import reduce
 import tempfile
+import logging
 
 
 class ViewerSettingsDialog(AppSettingsDialog):
@@ -62,6 +63,18 @@ class RawInputDialog(FormDialog):
     - data type
     - endianness
     - fortran ordering
+
+    The dialog can let the user preview the data and verify that it is correct.
+
+    Example:
+    --------
+
+    One can instantiate this dialog and reduce the supported types by overriding the 
+    default supported_types with setSupportedTypes:
+
+    >>> dialog = RawInputDialog(parent, fname)
+    >>> dialog.setSupportedTypes(['float32', 'float64'])
+
     '''
 
     supported_types =  [ np.dtype(f) for f in ['int8', 'uint8', 'int16', 'uint16', \
@@ -195,9 +208,6 @@ class RawInputDialog(FormDialog):
                 shape = (dimX, dimY, dimZ)
             else:
                 shape = (dimZ, dimY, dimX)
-
-
-        
         
         # Construct a data type
         dt = np.dtype(typecode)

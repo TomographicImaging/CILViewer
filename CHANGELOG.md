@@ -1,4 +1,6 @@
 # Changelog
+## vx.x.x
+- Added preview to RawImportDialog
 
 ## vx.x.x
 - Fix bug with setInputAsNumpy() using deprecated `numpy2vtkImporter` in `CILViewer2D` - now uses `numpy2vtkImage`
