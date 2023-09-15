@@ -168,6 +168,7 @@ if __name__ == '__main__':
 
     # # reader.ReadDataSetInfo()
     reader2.Update()
+    v.setSliderWidgetEnabled(False)
     v.setInputData(reader2.GetOutput())
     v.startRenderLoop()
 

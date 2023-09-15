@@ -991,7 +991,7 @@ class CILViewer2D(CILViewerBase):
     IMAGE_WITH_OVERLAY = 0
     RECTILINEAR_WIPE = 1
 
-    def __init__(self, dimx=600, dimy=600, ren=None, renWin=None, iren=None, debug=True):
+    def __init__(self, dimx=600, dimy=600, ren=None, renWin=None, iren=None, debug=False, enableSliderWidget=True):
         CILViewerBase.__init__(self, dimx=dimx, dimy=dimy, ren=ren, renWin=renWin, iren=iren, debug=debug)
 
         self.setInteractorStyle(CILInteractorStyle(self))
@@ -1143,6 +1143,7 @@ class CILViewer2D(CILViewerBase):
         # Slider widget
         self.sliderProperty = SliderProperties()
         self.sliderWidget = None
+        self._sliderWidgetEnabled = enableSliderWidget
 
         self.__vis_mode = CILViewer2D.IMAGE_WITH_OVERLAY
         self.setVisualisationToImageWithOverlay()
@@ -1316,7 +1317,9 @@ class CILViewer2D(CILViewerBase):
         elif self.vis_mode == CILViewer2D.RECTILINEAR_WIPE:
             self.installRectilinearWipePipeline()
 
-        self.installSliceSliderWidgetPipeline()
+        if self.getSliderWidgetEnabled():
+            self.installSliceSliderWidgetPipeline()
+
         self.ren.ResetCamera()
         self.ren.Render()
 
@@ -1505,6 +1508,19 @@ class CILViewer2D(CILViewerBase):
         # save references
         self.sliderWidget = sw
         self.sliderCallback = cb
+
+    def uninstallSliderWidget(self):
+        
+        if self.sliderWidget is not None:
+            sr = self.sliderWidget.GetRepresentation()
+            if sr is not None:
+                sr.RemoveAllObservers()
+                coll = vtk.vtkPropCollection()
+                sr.GetActors(coll)
+                print ("coll", coll)
+                for actor in coll:
+                    print ("actor", actor)
+                    self.ren.RemoveActor(actor)
 
     def AdjustCamera(self, resetcamera=False):
         self.ren.ResetCameraClippingRange()
@@ -1852,4 +1868,13 @@ class CILViewer2D(CILViewerBase):
         self.uninstallPipeline()
         if self.image2 is not None:
             self.uninstallPipeline2()
+        if self.getSliderWidgetEnabled():
+            self.uninstallSliderWidget()
+
+    def getSliderWidgetEnabled(self):
+        return self._sliderWidgetEnabled
+    def setSliderWidgetEnabled(self, enable):
+        if enable:
+            self._sliderWidgetEnabled = enable
+        
            
