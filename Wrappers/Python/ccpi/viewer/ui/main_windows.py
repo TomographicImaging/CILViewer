@@ -255,6 +255,8 @@ class ViewerMainWindow(MainWindowWithProgressDialogs):
         if image_file is not None:
             self.setViewersInput(image_file, viewers, input_num=input_num)
 
+    import pysnooper
+    @pysnooper.snoop()
     def setViewersInput(self, image, viewers, input_num=1, image_name=None):
         '''
         Displays an image in the viewer/s.
