@@ -6,6 +6,7 @@ from PySide2 import QtCore, QtGui, QtWidgets
 from PySide2.QtWidgets import QCheckBox, QDoubleSpinBox, QLabel, QLineEdit, QComboBox
 import numpy as np
 from ccpi.viewer.utils import Converter
+from ccpi.viewer.utils.conversion import cilRawCroppedReader
 from ccpi.viewer.QCILViewerWidget import QCILViewerWidget
 from ccpi.viewer.CILViewer2D import CILViewer2D as viewer2D
 import numpy as np
@@ -116,7 +117,7 @@ class RawInputDialog(FormDialog):
 
         # preview button
         previewButton = QtWidgets.QPushButton("Preview")
-        fw.addWidget(previewButton, "preview_button", "preview_button")
+        fw.addWidget(previewButton, "", "preview_button")
         self.preview_open = False
         previewButton.clicked.connect(self.preview)
 
@@ -214,11 +215,21 @@ class RawInputDialog(FormDialog):
 
         expected_size = reduce (lambda x,y: x*y, shape, 1) * bytes_per_element        
         
-        if file_size != expected_size:
+        if file_size < expected_size:
             errors = {"type": "size", 
                       "file_size": file_size,
                       "expected_size": expected_size}
-            return (errors)
+            dmsg = f'The file size is smaller than expected.\nThe file size is {file_size} bytes, while the expected size is {expected_size} bytes'
+            # open a critical dialog
+            msg = QtWidgets.QMessageBox.critical(self, "Error", dmsg, QtWidgets.QMessageBox.Ok, QtWidgets.QMessageBox.Ok)
+            return
+            
+        if file_size > expected_size:
+            dmsg = f'Warning: The file size is larger than expected.\nThis means that parts of the file will be ignored. The file size is {file_size} bytes, while the expected size is {expected_size} bytes'
+            # open a warning dialog
+            msg = QtWidgets.QMessageBox.warning(self, "Warning", dmsg, QtWidgets.QMessageBox.Ok, QtWidgets.QMessageBox.Ok)
+            
+            
 
         # read centre slice
         offset = 0
@@ -228,45 +239,56 @@ class RawInputDialog(FormDialog):
             slice_size = shape[1]*shape[0]
             offset = shape[2]*slice_size//2
 
-        rawfname = os.path.join(tempfile.gettempdir(),"test.raw")
-        
-        offset = offset * bytes_per_element
-        slices_to_read = 1
-        if shape[2] > 1:
-            slices_to_read = 2
-        with open(self.fname, 'br') as f:
-            f.seek(offset)
-            raw_data = f.read(slice_size*bytes_per_element* slices_to_read)
-            with open(rawfname, 'wb') as f2:
-                f2.write(raw_data)
-
-        reader2 = vtk.vtkImageReader2()
-        reader2.SetFileName(rawfname)
-
-        vtktype = Converter.dtype_name_to_vtkType[dt.name]
-        reader2.SetDataScalarType(vtktype)
-
-        if isBigEndian:
-            reader2.SetDataByteOrderToBigEndian()
-        else:
-            reader2.SetDataByteOrderToLittleEndian()
-
-        reader2.SetFileDimensionality(len(shape))
-        vtkshape = shape[:]
-        if not isFortran:
-            # need to reverse the shape (again)
-            vtkshape = shape[::-1]
-        # vtkshape = shape[:]
-        slice_idx = 0
-        if dimensionality == 3:
-            slice_idx = vtkshape[2]//2
-        reader2.SetDataExtent(0, vtkshape[0]-1, 0, vtkshape[1]-1, slice_idx, slice_idx+slices_to_read-1)
-        # DataSpacing and DataOrigin should be added to the interface
-        reader2.SetDataSpacing(1, 1, 1)
-        reader2.SetDataOrigin(0, 0, 0)
-
-        print("reading")
+        # use the cilRawCroppedReader to read the slice
+        reader2 = cilRawCroppedReader()
+        reader2.SetFileName(self.fname)
+        reader2.SetTargetZExtent((shape[2]//2, shape[2]//2))
+        reader2.SetBigEndian(isBigEndian)
+        reader2.SetIsFortran(isFortran)
+        reader2.SetTypeCodeName(dt.name)
+        reader2.SetStoredArrayShape(shape)
         reader2.Update()
+        # image = reader2.GetOutput()
+
+        # rawfname = os.path.join(tempfile.gettempdir(),"test.raw")
+        
+        # offset = offset * bytes_per_element
+        # slices_to_read = 1
+        # if shape[2] > 1:
+        #     slices_to_read = 2
+        # with open(self.fname, 'br') as f:
+        #     f.seek(offset)
+        #     raw_data = f.read(slice_size*bytes_per_element* slices_to_read)
+        #     with open(rawfname, 'wb') as f2:
+        #         f2.write(raw_data)
+
+        # reader2 = vtk.vtkImageReader2()
+        # reader2.SetFileName(rawfname)
+
+        # vtktype = Converter.dtype_name_to_vtkType[dt.name]
+        # reader2.SetDataScalarType(vtktype)
+
+        # if isBigEndian:
+        #     reader2.SetDataByteOrderToBigEndian()
+        # else:
+        #     reader2.SetDataByteOrderToLittleEndian()
+
+        # reader2.SetFileDimensionality(len(shape))
+        # vtkshape = shape[:]
+        # if not isFortran:
+        #     # need to reverse the shape (again)
+        #     vtkshape = shape[::-1]
+        # # vtkshape = shape[:]
+        # slice_idx = 0
+        # if dimensionality == 3:
+        #     slice_idx = vtkshape[2]//2
+        # reader2.SetDataExtent(0, vtkshape[0]-1, 0, vtkshape[1]-1, slice_idx, slice_idx+slices_to_read-1)
+        # # DataSpacing and DataOrigin should be added to the interface
+        # reader2.SetDataSpacing(1, 1, 1)
+        # reader2.SetDataOrigin(0, 0, 0)
+
+        # print("reading")
+        # reader2.Update()
         # read one slice in the middle and display it in a viewer in a modal dialog
         
         diag = QtWidgets.QDialog(parent=self)
@@ -289,7 +311,7 @@ class RawInputDialog(FormDialog):
         self.preview_mpl_canvas = sc
 
         # the dialog must delete the temp file when it is closed
-        diag.finished.connect(lambda: os.remove(rawfname))
+        # diag.finished.connect(lambda: os.remove(rawfname))
         # finally open the dialog
         diag.open()
 
