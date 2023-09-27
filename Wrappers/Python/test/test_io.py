@@ -4,7 +4,7 @@ import unittest
 import h5py
 import numpy as np
 import vtk
-from ccpi.viewer.utils.conversion import *
+from ccpi.viewer.utils.conversion import Converter, calculate_target_downsample_shape
 from ccpi.viewer.utils.io import ImageReader, cilviewerHDF5Writer, cilviewerHDF5Reader
 
 class TestImageReaderAndWriter(unittest.TestCase):

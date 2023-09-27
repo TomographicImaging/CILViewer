@@ -4,7 +4,10 @@ import warnings
 
 import numpy as np
 import vtk
-from ccpi.viewer.utils.conversion import *
+from ccpi.viewer.utils.conversion import Converter, calculate_target_downsample_shape, \
+    cilRawResampleReader, cilTIFFResampleReader, cilNumpyMETAImageWriter, cilMetaImageResampleReader,\
+    cilNumpyResampleReader
+
 
 
 
