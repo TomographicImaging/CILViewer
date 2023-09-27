@@ -15,12 +15,12 @@ An example of use of the viewers in another app is the [iDVC app](https://github
 To install via `conda`, create a new environment using:
 
 ```bash
-conda create --name cilviewer ccpi-viewer=23.1.0 -c ccpi -c paskino -c conda-forge
+conda create --name cilviewer ccpi-viewer=23.1.0 -c ccpi -c conda-forge
 ```
 
 ## Running the CILViewer app
 
-- Activate your environment using: ``conda activate cil-viewer``.
+- Activate your environment using: ``conda activate cilviewer``.
 - Launch by typing: `cilviewer`
 - Load a dataset using the File menu. Currently supported data formats:
   - HDF5, including Nexus

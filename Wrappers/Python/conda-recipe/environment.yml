@@ -1,7 +1,6 @@
 name: cilviewer_dev
 channels:
   - ccpi
-  - paskino
   - conda-forge
 dependencies:
     - python
