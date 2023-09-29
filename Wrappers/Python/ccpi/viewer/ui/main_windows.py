@@ -210,6 +210,7 @@ class ViewerMainWindow(MainWindowWithProgressDialogs):
         dialog : RawInputDialog
             The dialog to get the attributes from.
         '''
+        dialog.saveAllWidgetStates()
         self.raw_attrs = dialog.getRawAttrs()
         dialog.close()
 
