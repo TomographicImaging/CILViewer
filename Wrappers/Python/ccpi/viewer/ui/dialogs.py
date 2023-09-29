@@ -82,9 +82,7 @@ class RawInputDialog(FormDialog):
 
     def __init__(self, parent, fname):
         super(RawInputDialog, self).__init__(parent, fname)
-        self.fname = os.path.abspath(fname)
-        title = "Config for " + os.path.basename(fname)
-        self.setWindowTitle(title)
+        self.setFileName(fname)
         fw = self.formWidget
 
         # dimensionality:
@@ -139,6 +137,12 @@ class RawInputDialog(FormDialog):
 
         self.Cancel.clicked.connect(self.close)
 
+    def setFileName(self, filename):
+        '''Set the filename used in the dialog'''
+        self.fname = os.path.abspath(filename)
+        title = "Config for " + os.path.basename(filename)
+        self.setWindowTitle(title)
+        
 
     def setSupportedTypes(self, types):
         '''Updates the list of supported types
