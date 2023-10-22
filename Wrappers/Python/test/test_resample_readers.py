@@ -9,8 +9,6 @@ from ccpi.viewer.utils.conversion import Converter, calculate_target_downsample_
     cilNumpyResampleReader
 
 
-
-
 class TestResampleReaders(unittest.TestCase):
 
     def setUp(self):

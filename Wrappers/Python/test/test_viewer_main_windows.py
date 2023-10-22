@@ -32,10 +32,10 @@ class TestViewerMainWindow(unittest.TestCase):
 
     def setUp(self):
         pass
-        
+
     def tearDown(self) -> None:
         pass
-        
+
     def test_all(self):
         global _instance
         if _instance is None:
@@ -55,10 +55,9 @@ class TestViewerMainWindow(unittest.TestCase):
         self._test_updateViewerCoords_with_display_unsampled_coords_selected()
         self._test_updateViewerCoords_with_display_downsampled_coords_selected()
         self._test_updateViewerCoords_with_3D_viewer()
-        self._test_updateViewerCoords_with_no_img3D()   
+        self._test_updateViewerCoords_with_no_img3D()
 
         del _instance
-
 
     def _test_init(self):
         vmw = ViewerMainWindow(title="Testing Title", app_name="testing app name")

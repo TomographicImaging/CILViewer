@@ -919,7 +919,7 @@ def calculate_target_downsample_magnification(max_size, total_size, acq=False):
     '''
     if not acq:
         # scaling is going to be similar in every axis
-        # (xy the same, z possibly different)        
+        # (xy the same, z possibly different)
         xy_axes_magnification = np.power(max_size / total_size, 1 / 3)
         slice_per_chunk = int(np.round(1 / xy_axes_magnification))
     else:
@@ -928,8 +928,9 @@ def calculate_target_downsample_magnification(max_size, total_size, acq=False):
         # so we have one slice per chunk
         slice_per_chunk = 1
         xy_axes_magnification = np.power(max_size / total_size, 1 / 2)
-    
+
     return (slice_per_chunk, xy_axes_magnification)
+
 
 def calculate_target_downsample_shape(max_size, total_size, shape, acq=False):
     '''calculate the magnification of each axis and the number of slices per chunk
@@ -954,6 +955,7 @@ def calculate_target_downsample_shape(max_size, total_size, shape, acq=False):
 
     target_image_shape = (int(xy_axes_magnification * shape[0]), int(xy_axes_magnification * shape[1]), num_chunks)
     return target_image_shape
+
 
 class cilBaseResampleReader(cilReaderInterface):
     '''vtkAlgorithm to load and resample a file to an approximate memory footprint.
@@ -1065,8 +1067,8 @@ class cilBaseResampleReader(cilReaderInterface):
 
             else:
                 num_slices_per_chunk, xy_axes_magnification = \
-                    calculate_target_downsample_magnification(max_size, 
-                                                              total_size, 
+                    calculate_target_downsample_magnification(max_size,
+                                                              total_size,
                                                               self.GetIsAcquisitionData())
                 # Each chunk will be the z slices that we will resample together to form one new slice.
                 # Each chunk will contain num_slices_per_chunk number of slices.
@@ -1898,8 +1900,8 @@ class vtkImageResampler(VTKPythonAlgorithmBase):
 
         else:
             num_slices_per_chunk, xy_axes_magnification = \
-                    calculate_target_downsample_magnification(max_size, 
-                                                              total_size, 
+                    calculate_target_downsample_magnification(max_size,
+                                                              total_size,
                                                               self.GetIsAcquisitionData())
 
             # Each chunk will be the z slices that we will resample together to form one new slice.
