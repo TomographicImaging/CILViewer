@@ -14,11 +14,11 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         fetch-depth: 0 # All history for use later with the meta.yaml file for conda-recipes
     - name: publish-to-conda
-      uses: paskino/conda-package-publish-action@v1.4.4
+      uses: TomographicImaging/conda-package-publish-action@v2
       with:
         subDir: 'Wrappers/Python/conda-recipe'
         channels: '-c conda-forge -c ccpi'
