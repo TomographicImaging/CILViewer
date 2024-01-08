@@ -2,7 +2,7 @@ name: cilviewer_dev
 channels:
   - ccpi
   - conda-forge
-dependencies:
+dependencies: 
     - python
     - numpy
     - vtk=9.0.3
