@@ -63,22 +63,28 @@ ori.InteractiveOff()
 
 # DATA DISPLAY
 
-# ImageSlice
-# download the image from https://github.com/TomographicImaging/CIL-Data/raw/main/head.mha
-# or from VTKData https://github.com/open-cv/VTKData/tree/master/Data/headsq
-reader = vtk.vtkMetaImageReader()
-reader.SetFileName("head.mha")
-reader.Update()
+# Create an image
+img = vtk.vtkImageData()
+img.SetExtent(0, 63, 0, 63, 0, 92)
+img.SetSpacing(3.2, 3.2, 1.5)
+img.SetOrigin(0.0, 0.0, 0.0)
+img.AllocateScalars(vtk.VTK_UNSIGNED_CHAR, 1)
+
+for i in range(63+1):
+    for j in range(63+1):
+        for k in range(92+1):
+            img.SetScalarComponentFromDouble(i, j, k, 0, k)
 
 voi = vtk.vtkExtractVOI()
-voi.SetInputConnection(reader.GetOutputPort())
-extent = reader.GetOutput().GetExtent()
-spacing = reader.GetOutput().GetSpacing()
+voi.SetInputData(img)
+extent = img.GetExtent()
+spacing = img.GetSpacing()
+
 h = (extent[5] + extent[4]) // 2
 logging.info("extent {}".format(extent))
 logging.info("h {}".format(h))
-logging.info("spacing {}".format(reader.GetOutput().GetSpacing()))
-logging.info("origin {}".format(reader.GetOutput().GetOrigin()))
+logging.info("spacing {}".format(spacing))
+logging.info("origin {}".format(extent))
 
 voi.SetVOI(extent[0], extent[1], extent[2], extent[3], h, h+1)
 voi.Update()
@@ -99,11 +105,11 @@ cube.SetZLength(20)
 sphere = vtk.vtkSphereSource()
 sphere.SetRadius(10)
 
-shape = cube
+shape = sphere
 
 centre = [0, 0, 0]
 for i in range(3):
-    centre[i] = (extent[2*i+1] + extent[2*i]) / 2.0 * spacing[i] + reader.GetOutput().GetOrigin()[i]
+    centre[i] = (extent[2*i+1] + extent[2*i]) / 2.0 * spacing[i] + img.GetOrigin()[i]
 
 logging.info("centre {}".format(centre))
 shape.SetCenter(*centre)
@@ -136,7 +142,7 @@ planeClipper[1].InsideOutOn()
 planeClipper[0].SetInputData(shape.GetOutput())
 
 
-lw_world = display2world([0,0,lw], spacing, reader.GetOutput().GetOrigin(), ren)
+lw_world = display2world([0,0,lw], spacing, img.GetOrigin(), ren)
 logging.info("lw_world {}".format(lw_world))
 
 # delta = lw_world[2] 
