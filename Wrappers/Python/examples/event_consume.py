@@ -16,11 +16,13 @@ def updateCameraPosition(ren, interactor, event):
     elif interactor.GetKeyCode() == "w":
         logging.info(f"updateCameraPosition: {interactor.GetKeyCode()}")
 
-def consumeKeyPress(ren, interactor, event):
+def consumeCharEvent(interactor, event):
     # https://vtk.org/pipermail/vtk-developers/2007-September/020213.html
     # https://vtk.org/Wiki/VTK/Python_Wrapper_Enhancement#Wrap_vtkCommand_and_allow_it_to_be_subclassed
-    logging.info(f"consumeKeyPress: {interactor.GetKeyCode()}")
-    if interactor.GetKeyCode() in ["s", "w"]:
+    # https://discourse.vtk.org/t/pass-values-throught-invokeevent-callback/4152/12
+    kc = interactor.GetKeyCode()
+    logging.info(f"consumeKeyPress, KeyCode received: '{kc}'")
+    if kc in ["s", "w"]:
         logging.info("consuming keypress {}".format(interactor.GetKeyCode()))
         interactor.SetKeyCode("")
     
@@ -91,9 +93,14 @@ ren.AddActor(actor)
 
 from functools import partial
 onUpdateCameraPosition = partial(updateCameraPosition, ren)
-iren.AddObserver("KeyPressEvent", onUpdateCameraPosition, 1.0)
-iren.AddObserver("KeyPressEvent", partial(consumeKeyPress, ren), 20)
 
+logging.info(f"iren has observers {iren.HasObserver('KeyPressEvent')}")
+# iren.RemoveObserver(79)
+# iren.RemoveObserver(80)
+# iren.RemoveObserver(81)
+iren.AddObserver("KeyPressEvent", onUpdateCameraPosition, 1.0)
+iren.AddObserver("CharEvent", consumeCharEvent, 10)
+# iren.InvokeEvent("KeyPressEvent", str("s")) 
 # add text with vtk version
 textProperty = vtk.vtkTextProperty()
 textProperty.SetFontSize(20)
