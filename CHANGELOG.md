@@ -1,5 +1,6 @@
 # Changelog
 ## vx.x.x
+- Removed VTK 8 variants from conda recipe
 - Bugfix on resample reader #359. Standalone viewer app defaults to downsample in all dimensions.
 - Fix bug with setInputAsNumpy() using deprecated `numpy2vtkImporter` in `CILViewer2D` - now uses `numpy2vtkImage`
 - Removed the `paskino` channel from the install command as eqt is on `conda-forge`
