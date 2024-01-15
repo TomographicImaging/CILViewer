@@ -35,12 +35,12 @@ requirements:
     - numpy
     - vtk {{ vtk }}
     - pyside2
-    - eqt>=0.7.0
+    - eqt=0.7.0
     - importlib_metadata    # [py<38]
     - h5py
     - schema
     - pyyaml
-    - cil-data >=22.0.0
+    - cil-data =22.0.0
 
 about:
   home: http://www.ccpi.ac.uk
