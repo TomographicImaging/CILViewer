@@ -28,12 +28,12 @@ test:
 requirements:
   build:
     - python {{ python }}
-    - vtk {{ vtk }}
+    - vtk
  
   run:
     - python {{ python }}
     - numpy
-    - vtk {{ vtk }}
+    - vtk
     - pyside2
     - eqt=0.7.1
     - importlib_metadata    # [py<38]
