@@ -18,30 +18,29 @@ build:
 test:
   requires:
     - pillow
+    - pytest
   source_files:
     - ./Wrappers/Python/test
 
   commands:
-    - ls # [not win]
-    - python -c "import os; print ('TESTING IN THIS DIRECTORY' , os.getcwd())" # [not win]
-    - python -m unittest discover -s Wrappers/Python/test -v # [not win]
+    - python -m pytest Wrappers/Python/test # [not win]
   
 requirements:
   build:
     - python {{ python }}
-    - vtk {{ vtk }}
+    - vtk
  
   run:
     - python {{ python }}
     - numpy
-    - vtk {{ vtk }}
+    - vtk
     - pyside2
-    - eqt>=0.7.0
+    - eqt=0.7.1
     - importlib_metadata    # [py<38]
     - h5py
     - schema
     - pyyaml
-    - cil-data >=22.0.0
+    - cil-data =22.0.0
 
 about:
   home: http://www.ccpi.ac.uk
