@@ -7,7 +7,7 @@ from ccpi.viewer.ui.helpers import color_scheme_list
 class VolumeRenderSettingsDialog(FormDialog):
     """Volume render settings dialogue."""
 
-    def __init__(self, parent=None, title=None):
+    def __init__(self, parent=None, title=None, scale_factor=50):
         FormDialog.__init__(self, parent, title=title)
         self.setWindowFlag(QtCore.Qt.WindowStaysOnTopHint, True)
 
@@ -15,15 +15,16 @@ class VolumeRenderSettingsDialog(FormDialog):
         volume_visibility = QtWidgets.QCheckBox("3D Volume Visibility", self.groupBox)
         self.addWidget(volume_visibility, "", "volume_visibility")
 
+        self.scale_factor = scale_factor
         # Windowing min
         windowing_label_min = QtWidgets.QLabel("Windowing min")
-        windowing_slider_min = UISliderWidget.UISliderWidget(windowing_label_min)
+        windowing_slider_min = UISliderWidget.UISliderWidget(windowing_label_min, scale_factor=1/scale_factor)
         self.addWidget(windowing_slider_min, "Windowing min", "windowing_slider_min")
         self.addWidget(windowing_label_min, "", "windowing_label")
 
         # Windowing max
         windowing_label_max = QtWidgets.QLabel("Windowing max")
-        windowing_slider_max = UISliderWidget.UISliderWidget(windowing_label_max)
+        windowing_slider_max = UISliderWidget.UISliderWidget(windowing_label_max, scale_factor=1/scale_factor)
         self.addWidget(windowing_slider_max, "Windowing max", "windowing_slider_max")
         self.addWidget(windowing_label_max, "", "windowing_label_max")
 
@@ -45,13 +46,13 @@ class VolumeRenderSettingsDialog(FormDialog):
 
         # Color range min
         color_range_label_min = QtWidgets.QLabel("Color range min")
-        color_range_slider_min = UISliderWidget.UISliderWidget(color_range_label_min)
+        color_range_slider_min = UISliderWidget.UISliderWidget(color_range_label_min, scale_factor=1/scale_factor)
         self.addWidget(color_range_slider_min, "Color range min", "color_range_slider_min")
         self.addWidget(color_range_label_min, "", "color_range_label_min")
 
         # Color range max
         color_range_label_max = QtWidgets.QLabel("Color range max")
-        color_range_slider_max = UISliderWidget.UISliderWidget(color_range_label_max)
+        color_range_slider_max = UISliderWidget.UISliderWidget(color_range_label_max, scale_factor=1/scale_factor)
         self.addWidget(color_range_slider_max, "Color range max", "color_range_slider_max")
         self.addWidget(color_range_label_max, "", "color_range_label_max")
 
@@ -86,27 +87,27 @@ class VolumeRenderSettingsDialog(FormDialog):
         self.getWidget("volume_clipping_reset").clicked.connect(self.reset_volume_clipping)
 
         # Color range slider min
-        self.getWidget("color_range_slider_min").setRange(0, 100)
-        self.getWidget("color_range_slider_min").setTickInterval(10)
-        self.getWidget("color_range_slider_min").setValue(85)
+        self.getWidget("color_range_slider_min").setRange(0, 100 * self.scale_factor)
+        self.getWidget("color_range_slider_min").setTickInterval(10* self.scale_factor)
+        self.getWidget("color_range_slider_min").setValue(85 * self.scale_factor)
         self.getWidget("color_range_slider_min").valueChanged.connect(self.change_color_range_min)
 
         # Color range slider max
-        self.getWidget("color_range_slider_max").setRange(0, 100)
-        self.getWidget("color_range_slider_max").setTickInterval(10)
-        self.getWidget("color_range_slider_max").setValue(95)
+        self.getWidget("color_range_slider_max").setRange(0, 100 * self.scale_factor)
+        self.getWidget("color_range_slider_max").setTickInterval(10 * self.scale_factor)
+        self.getWidget("color_range_slider_max").setValue(95 * self.scale_factor)
         self.getWidget("color_range_slider_max").valueChanged.connect(self.change_color_range_max)
 
         # Windowing slider min
-        self.getWidget("windowing_slider_min").setRange(0, 100)
-        self.getWidget("windowing_slider_min").setTickInterval(10)
-        self.getWidget("windowing_slider_min").setValue(80)
+        self.getWidget("windowing_slider_min").setRange(0, 100 * self.scale_factor)
+        self.getWidget("windowing_slider_min").setTickInterval(10 * self.scale_factor)
+        self.getWidget("windowing_slider_min").setValue(80 * self.scale_factor)
         self.getWidget("windowing_slider_min").valueChanged.connect(self.change_volume_opacity_min)
 
         # Windowing slider max
-        self.getWidget("windowing_slider_max").setRange(0, 100)
-        self.getWidget("windowing_slider_max").setTickInterval(10)
-        self.getWidget("windowing_slider_max").setValue(99)
+        self.getWidget("windowing_slider_max").setRange(0, 100 * self.scale_factor)
+        self.getWidget("windowing_slider_max").setTickInterval(10 * self.scale_factor)
+        self.getWidget("windowing_slider_max").setValue(99 * self.scale_factor)
         self.getWidget("windowing_slider_max").valueChanged.connect(self.change_volume_opacity_max)
 
     def change_color_range_min(self):
@@ -125,8 +126,8 @@ class VolumeRenderSettingsDialog(FormDialog):
     def change_color_range(self):
         """Change the volume color range."""
         self.viewer.setVolumeColorPercentiles(
-            self.getWidget("color_range_slider_min").value(),
-            self.getWidget("color_range_slider_max").value())
+            self.getWidget("color_range_slider_min").value() / self.scale_factor,
+            self.getWidget("color_range_slider_max").value() / self.scale_factor)
 
     def change_volume_opacity_min(self):
         """Change the volume opacity mapping min value."""
@@ -146,8 +147,8 @@ class VolumeRenderSettingsDialog(FormDialog):
         """Change the volume opacity mapping"""
         opacity = self.getWidget("opacity_mapping").currentText()
         opacity_min, opacity_max = (
-            self.getWidget("windowing_slider_min").value(),
-            self.getWidget("windowing_slider_max").value(),
+            self.getWidget("windowing_slider_min").value() / self.scale_factor,
+            self.getWidget("windowing_slider_max").value() / self.scale_factor,
         )
         if opacity == "Gradient":
             self.viewer.setGradientOpacityPercentiles(opacity_min, opacity_max)
