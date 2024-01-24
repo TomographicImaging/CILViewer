@@ -31,6 +31,7 @@ class QCILViewerWidget(QtWidgets.QFrame):
         dimx, dimy = kwargs.get('shape', (600, 600))
         # self.resize(dimx, dimy)
 
+        
         self.vtkWidget = QCILRenderWindowInteractor(self)
 
         if 'renderer' in kwargs.keys():
@@ -60,6 +61,7 @@ class QCILViewerWidget(QtWidgets.QFrame):
 
         self.vl = QtWidgets.QVBoxLayout()
 
+        self._toolBar = None
         toolBar = self.getToolbar(parent)
         if toolBar is not None:
             self.vl.addWidget(toolBar)
@@ -70,9 +72,12 @@ class QCILViewerWidget(QtWidgets.QFrame):
         self.adjustSize()
 
     def getToolbar(self, parent=None):
+        if self._toolBar is not None:
+            return self._toolBar
         # Adds a toolbar to the QFrame if we have a 3D viewer
         if isinstance(self.viewer, viewer3D):
             toolBar = QCILViewer3DToolBar(viewer=self.viewer, parent=parent)
+            self._toolBar = toolBar
             return toolBar
 
 

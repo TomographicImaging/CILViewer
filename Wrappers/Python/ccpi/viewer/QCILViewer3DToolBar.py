@@ -18,6 +18,8 @@ class QCILViewer3DToolBar(QtWidgets.QToolBar):
         """
         self.parent = parent
         self.viewer = viewer
+        self.scale_factor = kwargs.get('scale_factor', 1.0)
+
         super(QCILViewer3DToolBar, self).__init__(parent=parent, **kwargs)
         self.dialog = {"settings": None, "volume_render_settings": None}
 
@@ -66,7 +68,7 @@ class QCILViewer3DToolBar(QtWidgets.QToolBar):
         # pylint(access-member-before-definition)
         if mode == "settings":
             if self.dialog["settings"] is None:
-                dialog = SettingsDialog(parent=self.parent, title="Settings")
+                dialog = SettingsDialog(parent=self.parent, title="Settings", scale_factor=self.scale_factor)
                 dialog.Ok.clicked.connect(lambda: self.accepted(mode))
                 dialog.Cancel.clicked.connect(lambda: self.rejected(mode))
                 dialog.set_viewer(self.viewer)
@@ -79,7 +81,7 @@ class QCILViewer3DToolBar(QtWidgets.QToolBar):
 
         if mode == "volume_render_settings":
             if self.dialog["volume_render_settings"] is None:
-                dialog = VolumeRenderSettingsDialog(parent=self.parent, title="Volume Render Settings")
+                dialog = VolumeRenderSettingsDialog(parent=self.parent, title="Volume Render Settings", scale_factor=self.scale_factor)
                 dialog.Ok.clicked.connect(lambda: self.accepted(mode))
                 dialog.Cancel.clicked.connect(lambda: self.rejected(mode))
                 dialog.set_viewer(self.viewer)

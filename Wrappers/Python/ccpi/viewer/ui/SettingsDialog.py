@@ -16,7 +16,7 @@ from ccpi.viewer.ui.helpers import background_color_list
 class SettingsDialog(FormDialog):
     """Slice settings dialog."""
 
-    def __init__(self, parent=None, title=None):
+    def __init__(self, parent=None, title=None, scale_factor=1):
         FormDialog.__init__(self, parent, title=title)
         self.setWindowFlag(QtCore.Qt.WindowStaysOnTopHint, True)
         self.file_location = "."
@@ -42,14 +42,15 @@ class SettingsDialog(FormDialog):
         self.addWidget(auto_window_level, "", "auto_window_level")
 
         # Slice window sliders
+        self.scale_factor = scale_factor
         slice_window_label = QtWidgets.QLabel("Slice Window")
-        slice_window_slider = UISliderWidget.UISliderWidget(slice_window_label)
+        slice_window_slider = UISliderWidget.UISliderWidget(slice_window_label, scale_factor=1/scale_factor)
         self.addWidget(slice_window_slider, "Slice Window", "slice_window_slider")
         self.addWidget(slice_window_label, "", "slice_window_label")
 
         # Slice level sliders
         slice_level_label = QtWidgets.QLabel("Slice Level")
-        slice_level_slider = UISliderWidget.UISliderWidget(slice_level_label)
+        slice_level_slider = UISliderWidget.UISliderWidget(slice_level_label, scale_factor=1/scale_factor)
         self.addWidget(slice_level_slider, "Slice Level", "slice_level_slider")
         self.addWidget(slice_level_label, "", "slice_level_label")
 

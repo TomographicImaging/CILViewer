@@ -7,7 +7,7 @@ from ccpi.viewer.ui.helpers import color_scheme_list
 class VolumeRenderSettingsDialog(FormDialog):
     """Volume render settings dialogue."""
 
-    def __init__(self, parent=None, title=None, scale_factor=50):
+    def __init__(self, parent=None, title=None, scale_factor=1):
         FormDialog.__init__(self, parent, title=title)
         self.setWindowFlag(QtCore.Qt.WindowStaysOnTopHint, True)
 
