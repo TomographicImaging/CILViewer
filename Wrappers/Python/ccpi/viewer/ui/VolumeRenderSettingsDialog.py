@@ -90,25 +90,25 @@ class VolumeRenderSettingsDialog(FormDialog):
         self.getWidget("color_range_slider_min").setRange(0, 100 * self.scale_factor)
         self.getWidget("color_range_slider_min").setTickInterval(10 * self.scale_factor)
         self.getWidget("color_range_slider_min").setValue(85 * self.scale_factor)
-        self.getWidget("color_range_slider_min").valueChanged.connect(self.change_color_range_min)
+        self.getWidget("color_range_slider_min").sliderReleased.connect(self.change_color_range_min)
 
         # Color range slider max
         self.getWidget("color_range_slider_max").setRange(0, 100 * self.scale_factor)
         self.getWidget("color_range_slider_max").setTickInterval(10 * self.scale_factor)
         self.getWidget("color_range_slider_max").setValue(95 * self.scale_factor)
-        self.getWidget("color_range_slider_max").valueChanged.connect(self.change_color_range_max)
+        self.getWidget("color_range_slider_max").sliderReleased.connect(self.change_color_range_max)
 
         # Windowing slider min
         self.getWidget("windowing_slider_min").setRange(0, 100 * self.scale_factor)
         self.getWidget("windowing_slider_min").setTickInterval(10 * self.scale_factor)
         self.getWidget("windowing_slider_min").setValue(80 * self.scale_factor)
-        self.getWidget("windowing_slider_min").valueChanged.connect(self.change_volume_opacity_min)
+        self.getWidget("windowing_slider_min").sliderReleased.connect(self.change_volume_opacity_min)
 
         # Windowing slider max
         self.getWidget("windowing_slider_max").setRange(0, 100 * self.scale_factor)
         self.getWidget("windowing_slider_max").setTickInterval(10 * self.scale_factor)
         self.getWidget("windowing_slider_max").setValue(99 * self.scale_factor)
-        self.getWidget("windowing_slider_max").valueChanged.connect(self.change_volume_opacity_max)
+        self.getWidget("windowing_slider_max").sliderReleased.connect(self.change_volume_opacity_max)
 
     def change_color_range_min(self):
         """Change the volume color range min value."""
