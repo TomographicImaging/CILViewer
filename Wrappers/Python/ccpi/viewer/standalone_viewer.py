@@ -29,7 +29,9 @@ class StandaloneViewerMainWindow(TwoViewersMainWindow):
                  settings_name=None,
                  organisation_name=None,
                  viewer1_type='2D',
-                 viewer2_type='3D', scale_factor=1, max_opacity=0.1):
+                 viewer2_type='3D',
+                 scale_factor=1,
+                 max_opacity=0.1):
         super(StandaloneViewerMainWindow, self).__init__(title, app_name, settings_name, organisation_name,
                                                          viewer1_type, viewer2_type)
 
@@ -44,8 +46,6 @@ class StandaloneViewerMainWindow(TwoViewersMainWindow):
         self.frames[1].getToolbar().scale_factor = scale_factor
         logging.debug(f"Setting maximum opacity for volume render to: {max_opacity}")
         self.frames[1].viewer.setMaximumOpacity(max_opacity)
-
-        
 
     def addToMenu(self):
         '''
@@ -173,7 +173,7 @@ def main():
         level = eval(f'logging.{args.debug.upper()}')
         logging.basicConfig(level=level)
         logging.info(f"cilviewer: Setting debugging level to {args.debug.upper()}")
-    
+
     logging.debug(f"scale_factor: {args.scale_factor}")
     logging.debug(f"max_opacity: {args.max_opacity}")
 

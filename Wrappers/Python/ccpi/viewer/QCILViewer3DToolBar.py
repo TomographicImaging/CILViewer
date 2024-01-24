@@ -81,7 +81,9 @@ class QCILViewer3DToolBar(QtWidgets.QToolBar):
 
         if mode == "volume_render_settings":
             if self.dialog["volume_render_settings"] is None:
-                dialog = VolumeRenderSettingsDialog(parent=self.parent, title="Volume Render Settings", scale_factor=self.scale_factor)
+                dialog = VolumeRenderSettingsDialog(parent=self.parent,
+                                                    title="Volume Render Settings",
+                                                    scale_factor=self.scale_factor)
                 dialog.Ok.clicked.connect(lambda: self.accepted(mode))
                 dialog.Cancel.clicked.connect(lambda: self.rejected(mode))
                 dialog.set_viewer(self.viewer)

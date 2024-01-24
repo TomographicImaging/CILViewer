@@ -31,7 +31,6 @@ class QCILViewerWidget(QtWidgets.QFrame):
         dimx, dimy = kwargs.get('shape', (600, 600))
         # self.resize(dimx, dimy)
 
-        
         self.vtkWidget = QCILRenderWindowInteractor(self)
 
         if 'renderer' in kwargs.keys():
