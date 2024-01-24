@@ -7,7 +7,8 @@ from ccpi.viewer.ui.main_windows import TwoViewersMainWindow
 from PySide2 import QtWidgets
 from PySide2.QtWidgets import QAction, QCheckBox
 import logging
-import argparse   
+import argparse
+
 
 class StandaloneViewerMainWindow(TwoViewersMainWindow):
     '''
@@ -148,6 +149,7 @@ class standalone_viewer(object):
     def __del__(self):
         '''destructor'''
         self.app.exit()
+
 
 def main():
 

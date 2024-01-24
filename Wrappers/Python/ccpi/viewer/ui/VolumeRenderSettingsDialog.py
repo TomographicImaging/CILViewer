@@ -18,13 +18,13 @@ class VolumeRenderSettingsDialog(FormDialog):
         self.scale_factor = scale_factor
         # Windowing min
         windowing_label_min = QtWidgets.QLabel("Windowing min")
-        windowing_slider_min = UISliderWidget.UISliderWidget(windowing_label_min, scale_factor=1/scale_factor)
+        windowing_slider_min = UISliderWidget.UISliderWidget(windowing_label_min, scale_factor=1 / scale_factor)
         self.addWidget(windowing_slider_min, "Windowing min", "windowing_slider_min")
         self.addWidget(windowing_label_min, "", "windowing_label")
 
         # Windowing max
         windowing_label_max = QtWidgets.QLabel("Windowing max")
-        windowing_slider_max = UISliderWidget.UISliderWidget(windowing_label_max, scale_factor=1/scale_factor)
+        windowing_slider_max = UISliderWidget.UISliderWidget(windowing_label_max, scale_factor=1 / scale_factor)
         self.addWidget(windowing_slider_max, "Windowing max", "windowing_slider_max")
         self.addWidget(windowing_label_max, "", "windowing_label_max")
 
@@ -46,13 +46,13 @@ class VolumeRenderSettingsDialog(FormDialog):
 
         # Color range min
         color_range_label_min = QtWidgets.QLabel("Color range min")
-        color_range_slider_min = UISliderWidget.UISliderWidget(color_range_label_min, scale_factor=1/scale_factor)
+        color_range_slider_min = UISliderWidget.UISliderWidget(color_range_label_min, scale_factor=1 / scale_factor)
         self.addWidget(color_range_slider_min, "Color range min", "color_range_slider_min")
         self.addWidget(color_range_label_min, "", "color_range_label_min")
 
         # Color range max
         color_range_label_max = QtWidgets.QLabel("Color range max")
-        color_range_slider_max = UISliderWidget.UISliderWidget(color_range_label_max, scale_factor=1/scale_factor)
+        color_range_slider_max = UISliderWidget.UISliderWidget(color_range_label_max, scale_factor=1 / scale_factor)
         self.addWidget(color_range_slider_max, "Color range max", "color_range_slider_max")
         self.addWidget(color_range_label_max, "", "color_range_label_max")
 
@@ -88,7 +88,7 @@ class VolumeRenderSettingsDialog(FormDialog):
 
         # Color range slider min
         self.getWidget("color_range_slider_min").setRange(0, 100 * self.scale_factor)
-        self.getWidget("color_range_slider_min").setTickInterval(10* self.scale_factor)
+        self.getWidget("color_range_slider_min").setTickInterval(10 * self.scale_factor)
         self.getWidget("color_range_slider_min").setValue(85 * self.scale_factor)
         self.getWidget("color_range_slider_min").valueChanged.connect(self.change_color_range_min)
 
