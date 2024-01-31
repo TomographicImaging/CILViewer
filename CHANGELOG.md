@@ -1,9 +1,12 @@
 # Changelog
-## vx.x.x
-- Added preview to RawImportDialog
 
 ## vx.x.x
+- Added preview to RawImportDialog
+- Removed VTK 8 variants from conda recipe.
+- Change Python variants: removed 3.6 and 3.7, added 3.11 and 3.12.
+- Bugfix on resample reader #359. Standalone viewer app defaults to downsample in all dimensions.
 - Fix bug with setInputAsNumpy() using deprecated `numpy2vtkImporter` in `CILViewer2D` - now uses `numpy2vtkImage`
+- Removed the `paskino` channel from the install command as eqt is on `conda-forge`
 
 ## v23.1.0
 - Raise error if try to add multiple widgets with the same name to CILViewer or CILViewer2D.
