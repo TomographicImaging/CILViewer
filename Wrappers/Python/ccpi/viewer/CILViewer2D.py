@@ -22,7 +22,7 @@ from ccpi.viewer import (ALT_KEY, CONTROL_KEY, SHIFT_KEY, CROSSHAIR_ACTOR, CURSO
 from ccpi.viewer.CILViewerBase import CILViewerBase
 from ccpi.viewer.utils import Converter
 
-from ccpi.viewer.widgets import cilviewerBoxWidget
+from ccpi.viewer.widgets import cilviewerBoxWidget, SliderProperties, SliderCallback
 
 
 class CILInteractorStyle(vtk.vtkInteractorStyle):
@@ -991,7 +991,7 @@ class CILViewer2D(CILViewerBase):
     IMAGE_WITH_OVERLAY = 0
     RECTILINEAR_WIPE = 1
 
-    def __init__(self, dimx=600, dimy=600, ren=None, renWin=None, iren=None, debug=True):
+    def __init__(self, dimx=600, dimy=600, ren=None, renWin=None, iren=None, debug=False, enableSliderWidget=True):
         CILViewerBase.__init__(self, dimx=dimx, dimy=dimy, ren=ren, renWin=renWin, iren=iren, debug=debug)
 
         self.setInteractorStyle(CILInteractorStyle(self))
@@ -1140,6 +1140,11 @@ class CILViewer2D(CILViewerBase):
         self.imageTracer.AutoCloseOn()
         self.imageTracer.AddObserver(vtk.vtkWidgetEvent.Select, self.style.OnTracerModifiedEvent, 1.0)
 
+        # Slider widget
+        self.sliderProperty = SliderProperties()
+        self.sliderWidget = None
+        self._sliderWidgetEnabled = enableSliderWidget
+
         self.__vis_mode = CILViewer2D.IMAGE_WITH_OVERLAY
         self.setVisualisationToImageWithOverlay()
 
@@ -1153,6 +1158,7 @@ class CILViewer2D(CILViewerBase):
 
     def setInputData(self, imageData):
         self.log("setInputData")
+        self.reset()
         self.img3D = imageData
         self.installPipeline()
         self.axes_initialised = True
@@ -1310,6 +1316,9 @@ class CILViewer2D(CILViewerBase):
         elif self.vis_mode == CILViewer2D.RECTILINEAR_WIPE:
             self.installRectilinearWipePipeline()
 
+        if self.getSliderWidgetEnabled():
+            self.installSliceSliderWidgetPipeline()
+
         self.ren.ResetCamera()
         self.ren.Render()
 
@@ -1459,6 +1468,58 @@ class CILViewer2D(CILViewerBase):
         self.wipeActor = wipeSlice
 
         self.AddActor(wipeSlice, WIPE_ACTOR)
+
+    def installSliceSliderWidgetPipeline(self):
+
+        if self.sliderWidget is not None:
+            # reset the values to the appropriate ones of the new loaded image
+            self.sliderProperty.value_minimum = 0
+            self.sliderProperty.value_maximum = self.img3D.GetDimensions()[2] - 1
+            self.sliderProperty.value_initial = self.getActiveSlice()
+            
+            # update min and max of the slider
+            self.sliderWidget.GetRepresentation().SetMaximumValue(self.sliderProperty.value_maximum)
+            self.sliderWidget.GetRepresentation().SetValue(self.sliderProperty.value_initial)
+        
+            # update the label text
+            self.sliderCallback.update_from_viewer(self.style, 'reset')
+            return
+
+        self.sliderProperty.value_minimum = 0
+        self.sliderProperty.value_maximum = self.img3D.GetDimensions()[2] - 1
+        
+        self.sliderProperty.value_initial = self.getActiveSlice()
+        
+        sw = self.sliderProperty.get_slider_widget(orientation='horizontal')
+        sw.SetInteractor(self.getInteractor())
+        sw.SetAnimationModeToAnimate()
+        sw.EnabledOn()
+
+        cb = SliderCallback(self, sw)
+        
+        # Add interaction observers
+        sw.AddObserver(vtk.vtkCommand.InteractionEvent, cb)
+
+        self.style.AddObserver("MouseWheelForwardEvent", cb.update_from_viewer, 0.9 )
+        self.style.AddObserver("MouseWheelBackwardEvent", cb.update_from_viewer, 0.9 )
+        self.style.AddObserver("KeyPressEvent", cb.update_orientation, 0.9 )
+
+        # save references
+        self.sliderWidget = sw
+        self.sliderCallback = cb
+
+    def uninstallSliderWidget(self):
+        
+        if self.sliderWidget is not None:
+            sr = self.sliderWidget.GetRepresentation()
+            if sr is not None:
+                sr.RemoveAllObservers()
+                coll = vtk.vtkPropCollection()
+                sr.GetActors(coll)
+                print ("coll", coll)
+                for actor in coll:
+                    print ("actor", actor)
+                    self.ren.RemoveActor(actor)
 
     def AdjustCamera(self, resetcamera=False):
         self.ren.ResetCameraClippingRange()
@@ -1801,3 +1862,18 @@ class CILViewer2D(CILViewerBase):
         elif self.vis_mode == CILViewer2D.RECTILINEAR_WIPE:
             # rectilinear wipe visualises 2 images in the same pipeline
             pass
+
+    def reset(self):
+        self.uninstallPipeline()
+        if self.image2 is not None:
+            self.uninstallPipeline2()
+        if self.getSliderWidgetEnabled():
+            self.uninstallSliderWidget()
+
+    def getSliderWidgetEnabled(self):
+        return self._sliderWidgetEnabled
+    def setSliderWidgetEnabled(self, enable):
+        if enable:
+            self._sliderWidgetEnabled = enable
+        
+           
