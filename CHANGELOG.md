@@ -1,5 +1,8 @@
 # Changelog
 ## vx.x.x
+- Added preview to RawImportDialog
+
+## vx.x.x
 - Removed VTK 8 variants from conda recipe.
 - Change Python variants: removed 3.6 and 3.7, added 3.11 and 3.12.
 - Bugfix on resample reader #359. Standalone viewer app defaults to downsample in all dimensions.

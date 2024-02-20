@@ -4,6 +4,16 @@ from eqt.ui import FormDialog
 from eqt.ui.SessionDialogs import AppSettingsDialog, ErrorDialog
 from PySide2 import QtCore, QtGui, QtWidgets
 from PySide2.QtWidgets import QCheckBox, QDoubleSpinBox, QLabel, QLineEdit, QComboBox
+import numpy as np
+from ccpi.viewer.utils import Converter
+from ccpi.viewer.utils.conversion import cilRawCroppedReader
+from ccpi.viewer.QCILViewerWidget import QCILViewerWidget
+from ccpi.viewer.CILViewer2D import CILViewer2D as viewer2D
+import numpy as np
+import vtk
+from functools import reduce
+import tempfile
+import logging
 
 
 class ViewerSettingsDialog(AppSettingsDialog):
@@ -53,12 +63,26 @@ class RawInputDialog(FormDialog):
     - data type
     - endianness
     - fortran ordering
+
+    The dialog can let the user preview the data and verify that it is correct.
+
+    Example:
+    --------
+
+    One can instantiate this dialog and reduce the supported types by overriding the 
+    default supported_types with setSupportedTypes:
+
+    >>> dialog = RawInputDialog(parent, fname)
+    >>> dialog.setSupportedTypes(['float32', 'float64'])
+
     '''
+
+    supported_types =  [ np.dtype(f) for f in ['int8', 'uint8', 'int16', 'uint16', \
+            'float16', 'float32', 'float64'] ]
 
     def __init__(self, parent, fname):
         super(RawInputDialog, self).__init__(parent, fname)
-        title = "Config for " + os.path.basename(fname)
-        self.setWindowTitle(title)
+        self.setFileName(fname)
         fw = self.formWidget
 
         # dimensionality:
@@ -81,9 +105,10 @@ class RawInputDialog(FormDialog):
         dimensionalityValue.currentIndexChanged.connect(self.enableDisableDimZ)
 
         # Data Type
+        self.supported_types = RawInputDialog.supported_types.copy()
         dtypeLabel = QLabel("Data Type")
         dtypeValue = QComboBox()
-        dtypeValue.addItems(["int8", "uint8", "int16", "uint16"])
+        dtypeValue.addItems([np.dtype(dt).name for dt in self.supported_types])
         dtypeValue.setCurrentIndex(1)
         fw.addWidget(dtypeValue, dtypeLabel, 'dtype')
 
@@ -91,17 +116,45 @@ class RawInputDialog(FormDialog):
         endiannesLabel = QLabel("Byte Ordering")
         endiannes = QComboBox()
         endiannes.addItems(["Big Endian", "Little Endian"])
-        endiannes.setCurrentIndex(1)
+        endiannes.setCurrentIndex(0)
         fw.addWidget(endiannes, endiannesLabel, 'endianness')
 
         # Fortran Ordering
         fortranLabel = QLabel("Fortran Ordering")
         fortranOrder = QComboBox()
         fortranOrder.addItems(["Fortran Order: XYZ", "C Order: ZYX"])
-        fortranOrder.setCurrentIndex(0)
+        fortranOrder.setCurrentIndex(1)
         fw.addWidget(fortranOrder, fortranLabel, "is_fortran")
 
+        # preview button
+        previewButton = QtWidgets.QPushButton("Preview")
+        fw.addWidget(previewButton, "", "preview_button")
+        self.preview_open = False
+        previewButton.clicked.connect(self.preview)
+
+
         self.setLayout(fw.uiElements['verticalLayout'])
+
+        self.Cancel.clicked.connect(self.close)
+
+    def setFileName(self, filename):
+        '''Set the filename used in the dialog'''
+        self.fname = os.path.abspath(filename)
+        title = "Config for " + os.path.basename(filename)
+        self.setWindowTitle(title)
+        
+
+    def setSupportedTypes(self, types):
+        '''Updates the list of supported types
+        
+        Parameters:
+        -----------
+            types: list 
+              list of dtypes accepted by numpy.dtype
+        '''
+        self.supported_types = types
+        self.getWidget('dtype').clear()
+        self.getWidget('dtype').addItems([np.dtype(dt).name for dt in self.supported_types])
 
     def getRawAttrs(self):
         '''
@@ -137,6 +190,144 @@ class RawInputDialog(FormDialog):
             widgets['dim_Z_field'].setEnabled(True)
         else:
             widgets['dim_Z_field'].setEnabled(False)
+    
+    def preview(self):
+        pars = self.getRawAttrs()
+        
+        # retrieve info about image file from interface
+        dimensionality = [3, 2][self.getWidget('dimensionality').currentIndex()]
+        dimX, dimY, dimZ = pars['shape']
+        isFortran = pars['is_fortran']
+        isBigEndian = pars['is_big_endian']
+        # typecode = pars['typecode']
+        typecode = self.getWidget('dtype').currentText()
+
+        
+        if isFortran:
+            shape = (dimX, dimY)
+        else:
+            shape = (dimY, dimX)
+        if dimensionality == 3:
+            if isFortran:
+                shape = (dimX, dimY, dimZ)
+            else:
+                shape = (dimZ, dimY, dimX)
+        
+        # Construct a data type
+        dt = np.dtype(typecode)
+        
+        if isBigEndian:
+            dt_txt = ">" # big endian
+        else:
+            dt_txt = "<"
+        dt = dt.newbyteorder(dt_txt)
+
+        bytes_per_element = dt.itemsize
+
+        # basic sanity check
+        file_size = os.stat(self.fname).st_size
+
+        expected_size = reduce (lambda x,y: x*y, shape, 1) * bytes_per_element        
+        
+        if file_size < expected_size:
+            errors = {"type": "size", 
+                      "file_size": file_size,
+                      "expected_size": expected_size}
+            dmsg = f'The file size is smaller than expected.\nThe file size is {file_size} bytes, while the expected size is {expected_size} bytes'
+            # open a critical dialog
+            msg = QtWidgets.QMessageBox.critical(self, "Error", dmsg, QtWidgets.QMessageBox.Ok, QtWidgets.QMessageBox.Ok)
+            return
+            
+        if file_size > expected_size:
+            dmsg = f'Warning: The file size is larger than expected.\nThis means that parts of the file will be ignored. The file size is {file_size} bytes, while the expected size is {expected_size} bytes'
+            # open a warning dialog
+            msg = QtWidgets.QMessageBox.warning(self, "Warning", dmsg, QtWidgets.QMessageBox.Ok, QtWidgets.QMessageBox.Ok)
+            
+            
+
+        # read centre slice
+        offset = 0
+        slice_size = -1
+        if dimensionality == 3:
+            # read the centre slice
+            slice_size = shape[1]*shape[0]
+            offset = shape[2]*slice_size//2
+
+        # use the cilRawCroppedReader to read the slice
+        reader2 = cilRawCroppedReader()
+        reader2.SetFileName(self.fname)
+        reader2.SetTargetZExtent((shape[2]//2, shape[2]//2))
+        reader2.SetBigEndian(isBigEndian)
+        reader2.SetIsFortran(isFortran)
+        reader2.SetTypeCodeName(dt.name)
+        reader2.SetStoredArrayShape(shape)
+        reader2.Update()
+        # image = reader2.GetOutput()
+
+        # rawfname = os.path.join(tempfile.gettempdir(),"test.raw")
+        
+        # offset = offset * bytes_per_element
+        # slices_to_read = 1
+        # if shape[2] > 1:
+        #     slices_to_read = 2
+        # with open(self.fname, 'br') as f:
+        #     f.seek(offset)
+        #     raw_data = f.read(slice_size*bytes_per_element* slices_to_read)
+        #     with open(rawfname, 'wb') as f2:
+        #         f2.write(raw_data)
+
+        # reader2 = vtk.vtkImageReader2()
+        # reader2.SetFileName(rawfname)
+
+        # vtktype = Converter.dtype_name_to_vtkType[dt.name]
+        # reader2.SetDataScalarType(vtktype)
+
+        # if isBigEndian:
+        #     reader2.SetDataByteOrderToBigEndian()
+        # else:
+        #     reader2.SetDataByteOrderToLittleEndian()
+
+        # reader2.SetFileDimensionality(len(shape))
+        # vtkshape = shape[:]
+        # if not isFortran:
+        #     # need to reverse the shape (again)
+        #     vtkshape = shape[::-1]
+        # # vtkshape = shape[:]
+        # slice_idx = 0
+        # if dimensionality == 3:
+        #     slice_idx = vtkshape[2]//2
+        # reader2.SetDataExtent(0, vtkshape[0]-1, 0, vtkshape[1]-1, slice_idx, slice_idx+slices_to_read-1)
+        # # DataSpacing and DataOrigin should be added to the interface
+        # reader2.SetDataSpacing(1, 1, 1)
+        # reader2.SetDataOrigin(0, 0, 0)
+
+        # print("reading")
+        # reader2.Update()
+        # read one slice in the middle and display it in a viewer in a modal dialog
+        
+        diag = QtWidgets.QDialog(parent=self)
+        diag.setModal(True)
+        # add a layout
+        verticalLayout = QtWidgets.QVBoxLayout(diag)
+        verticalLayout.setContentsMargins(10, 10, 10, 10)
+        
+        # add a CILViewer widget
+        sc = QCILViewerWidget(diag, viewer=viewer2D)
+        sc.viewer.setInputData(reader2.GetOutput())
+
+        # add it to the layout of the dialog
+        verticalLayout.addWidget(sc)
+        # add the layout to the dialog
+        diag.setLayout(verticalLayout)
+
+        # save the dialog and canvas so that it doesn't crash
+        self.preview_dialog = diag
+        self.preview_mpl_canvas = sc
+
+        # the dialog must delete the temp file when it is closed
+        # diag.finished.connect(lambda: os.remove(rawfname))
+        # finally open the dialog
+        diag.open()
 
 
 class HDF5InputDialog(FormDialog):
