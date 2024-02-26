@@ -22,7 +22,7 @@ from ccpi.viewer import (ALT_KEY, CONTROL_KEY, SHIFT_KEY, CROSSHAIR_ACTOR, CURSO
 from ccpi.viewer.CILViewerBase import CILViewerBase
 from ccpi.viewer.utils import Converter
 
-from ccpi.viewer.widgets import cilviewerBoxWidget, SliderProperties, SliderCallback
+from ccpi.viewer.widgets import cilviewerBoxWidget, SliceSliderRepresentation, SliderCallback
 
 
 class CILInteractorStyle(vtk.vtkInteractorStyle):
@@ -1141,7 +1141,6 @@ class CILViewer2D(CILViewerBase):
         self.imageTracer.AddObserver(vtk.vtkWidgetEvent.Select, self.style.OnTracerModifiedEvent, 1.0)
 
         # Slider widget
-        self.sliderProperty = SliderProperties()
         self.sliderWidget = None
         self._sliderWidgetEnabled = enableSliderWidget
 
@@ -1474,28 +1473,44 @@ class CILViewer2D(CILViewerBase):
 
         if self.sliderWidget is not None:
             # reset the values to the appropriate ones of the new loaded image
-            self.sliderProperty.value_minimum = 0
-            self.sliderProperty.value_maximum = self.img3D.GetDimensions()[2] - 1
-            self.sliderProperty.value_initial = self.getActiveSlice()
+            # self.sliderProperty.value_minimum = 0
+            # self.sliderProperty.value_maximum = self.img3D.GetDimensions()[2] - 1
+            # self.sliderProperty.value_initial = self.getActiveSlice()
+            self.sliderWidget.SetValue(self.getActiveSlice())
             
             # update min and max of the slider
-            self.sliderWidget.GetRepresentation().SetMaximumValue(self.sliderProperty.value_maximum)
-            self.sliderWidget.GetRepresentation().SetValue(self.sliderProperty.value_initial)
+            # self.sliderWidget.GetRepresentation().SetMaximumValue(self.sliderProperty.value_maximum)
+            # self.sliderWidget.GetRepresentation().SetValue(self.sliderProperty.value_initial)
+            self.sliderWidget.SetMaximumValue(self.img3D.GetDimensions()[2] - 1)
+            self.sliderWidget.SetMinimumValue(0)
         
             # update the label text
             self.sliderCallback.update_from_viewer(self.style, 'reset')
             return
+        
 
-        self.sliderProperty.value_minimum = 0
-        self.sliderProperty.value_maximum = self.img3D.GetDimensions()[2] - 1
+        # self.sliderProperty.value_minimum = 0
+        # self.sliderProperty.value_maximum = self.img3D.GetDimensions()[2] - 1
         
-        self.sliderProperty.value_initial = self.getActiveSlice()
+        # self.sliderProperty.value_initial = self.getActiveSlice()
         
-        sw = self.sliderProperty.get_slider_widget(orientation='horizontal')
+        sr = SliceSliderRepresentation()
+        sr.SetValue(self.getActiveSlice())    
+        sr.SetMaximumValue(self.img3D.GetDimensions()[2] - 1)
+        sr.SetMinimumValue(0)
+
+        sw = vtk.vtkSliderWidget()
         sw.SetInteractor(self.getInteractor())
+        sw.SetRepresentation(sr)
         sw.SetAnimationModeToAnimate()
         sw.EnabledOn()
 
+        # mtw = self.sliderProperty.get_slider_text_label('min', self.sliderProperty.value_minimum)
+        # Mtw = self.sliderProperty.get_slider_text_label('max', self.sliderProperty.value_maximum)
+
+        # mtw[0].SetInteractor(self.getInteractor())
+        # Mtw[0].SetInteractor(self.getInteractor())
+        
         cb = SliderCallback(self, sw)
         
         # Add interaction observers
@@ -1503,11 +1518,12 @@ class CILViewer2D(CILViewerBase):
 
         self.style.AddObserver("MouseWheelForwardEvent", cb.update_from_viewer, 0.9 )
         self.style.AddObserver("MouseWheelBackwardEvent", cb.update_from_viewer, 0.9 )
-        self.style.AddObserver("KeyPressEvent", cb.update_orientation, 0.9 )
+        self.style.AddObserver("CharEvent", cb.update_orientation, 0.9 )
 
         # save references
         self.sliderWidget = sw
         self.sliderCallback = cb
+        # self.sliderMinMaxLabels = (mtw, Mtw)
 
     def uninstallSliderWidget(self):
         

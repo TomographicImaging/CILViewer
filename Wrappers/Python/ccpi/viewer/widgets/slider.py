@@ -1,7 +1,18 @@
 import vtk
 
-class SliderProperties:
-    def __init__(self):
+class SliceSliderRepresentation(vtk.vtkSliderRepresentation2D):
+    """A slider representation for the slice selector on a 2D CILViewer
+
+    Parameters:
+    -----------
+    orientation: str, optional
+        The orientation of the slider. Can be 'horizontal' or 'vertical'
+    offset: float, optional
+        The offset of the slider from the edge of the window. Default is 0.12
+
+    """
+
+    def __init__(self, orientation='horizontal', offset=0.12):
         self.tube_width = 0.004
         self.slider_length = 0.025
         self.slider_width = 0.015
@@ -10,9 +21,9 @@ class SliderProperties:
         self.title_height = 0.02
         self.label_height = 0.02
 
-        self.value_minimum = 0.0
-        self.value_maximum = 1.0
-        self.value_initial = 1.0
+        # self.value_minimum = 0.0
+        # self.value_maximum = 1.0
+        # self.value_initial = 1.0
 
         self.orientation = 'horizontal'
         self.offset = 0.12
@@ -32,64 +43,84 @@ class SliderProperties:
         self.bar_ends_color = 'Yellow'
 
 
-    def get_slider_widget(self, orientation='horizontal', offset=0.12):
-        """
-        Make the slider widget based on the properties of this class.
-
-        
-        Returns
-        -------
-        A configured vtkSliderWidget with its vtkSliderRepresentation2D.
-
-        """
 
         if orientation == 'vertical':
             self.offset = offset
             self.p1 = [self.end_cap_width * 1.1, self.offset]
             self.p2 = [self.end_cap_width * 1.1, 1 - self.offset]
 
-        slider = vtk.vtkSliderRepresentation2D()
+        # super().__init__()
+        # self.SetMinimumValue(self.value_minimum)
+        # self.SetMaximumValue(self.value_maximum)
+        # self.SetValue(self.value_initial)
+        self.SetTitleText(self.title)
 
-        slider.SetMinimumValue(self.value_minimum)
-        slider.SetMaximumValue(self.value_maximum)
-        slider.SetValue(self.value_initial)
-        slider.SetTitleText(self.title)
+        self.GetPoint1Coordinate().SetCoordinateSystemToNormalizedDisplay()
+        self.GetPoint1Coordinate().SetValue(self.p1[0], self.p1[1])
+        self.GetPoint2Coordinate().SetCoordinateSystemToNormalizedDisplay()
+        self.GetPoint2Coordinate().SetValue(self.p2[0], self.p2[1])
 
-        slider.GetPoint1Coordinate().SetCoordinateSystemToNormalizedDisplay()
-        slider.GetPoint1Coordinate().SetValue(self.p1[0], self.p1[1])
-        slider.GetPoint2Coordinate().SetCoordinateSystemToNormalizedDisplay()
-        slider.GetPoint2Coordinate().SetValue(self.p2[0], self.p2[1])
-
-        slider.SetTubeWidth(self.tube_width)
-        slider.SetSliderLength(self.slider_length)
-        slider.SetSliderWidth(self.slider_width)
-        slider.SetEndCapLength(self.end_cap_length)
-        slider.SetEndCapWidth(self.end_cap_width)
-        slider.SetTitleHeight(self.title_height)
-        slider.SetLabelHeight(self.label_height)
+        self.SetTubeWidth(self.tube_width)
+        self.SetSliderLength(self.slider_length)
+        # slider_width = self.tube_width
+        # slider.SetSliderWidth(slider_width)
+        self.SetEndCapLength(self.end_cap_length)
+        self.SetEndCapWidth(self.end_cap_width)
+        self.SetTitleHeight(self.title_height)
+        self.SetLabelHeight(self.label_height)
 
         colors = vtk.vtkNamedColors()
         # Set the colors of the slider components.
         # Change the color of the bar.
-        slider.GetTubeProperty().SetColor(colors.GetColor3d(self.bar_color))
+        self.GetTubeProperty().SetColor(colors.GetColor3d(self.bar_color))
         # Change the color of the ends of the bar.
-        slider.GetCapProperty().SetColor(colors.GetColor3d(self.bar_ends_color))
+        self.GetCapProperty().SetColor(colors.GetColor3d(self.bar_ends_color))
         # Change the color of the knob that slides.
-        slider.GetSliderProperty().SetColor(colors.GetColor3d(self.slider_color))
+        self.GetSliderProperty().SetColor(colors.GetColor3d(self.slider_color))
         # Change the color of the knob when the mouse is held on it.
-        slider.GetSelectedProperty().SetColor(colors.GetColor3d(self.selected_color))
+        self.GetSelectedProperty().SetColor(colors.GetColor3d(self.selected_color))
         # Change the color of the text displaying the value.
-        slider.GetLabelProperty().SetColor(colors.GetColor3d(self.value_color))
-        slider.GetLabelProperty().SetBackgroundColor(colors.GetColor3d(self.value_background_color))
-        slider.GetLabelProperty().ShadowOff()
+        # slider.GetLabelProperty().SetColor(colors.GetColor3d(self.value_color))
+        # slider.GetLabelProperty().SetBackgroundColor(colors.GetColor3d(self.value_background_color))
+        # slider.GetLabelProperty().ShadowOff()
         
-        slider.GetTitleProperty().SetColor(1,1,1)
-        slider.GetTitleProperty().ShadowOff()
+        # slider.GetTitleProperty().SetColor(1,1,1)
+        # slider.GetTitleProperty().ShadowOff()
         
-        slider_widget = vtk.vtkSliderWidget()
-        slider_widget.SetRepresentation(slider)
+        # next 2 lines go in CILViewer2D
+        # slider_widget = vtk.vtkSliderWidget()
+        # slider_widget.SetRepresentation(slider)
 
-        return slider_widget
+        # return slider_widget
+    
+    # def get_slider_text_label(self, position, text):
+    #     colors = vtk.vtkNamedColors()
+    #     # Create the TextActor
+    #     text_actor = vtk.vtkTextActor()
+    #     text_actor.SetInput(f"{text}")
+    #     text_actor.GetTextProperty().SetColor(colors.GetColor3d('Lime'))
+
+    #     # Create the text representation. Used for positioning the text_actor
+    #     text_representation = vtk.vtkTextRepresentation()
+    #     if position == 'min':
+    #         p0 = [self.p1[0], self.p1[1] + 0.05]
+    #     else:
+    #         p0 = [self.p2[0], self.p2[1] + 0.05]
+    #     text_representation.GetPositionCoordinate().SetValue(0.15, 0.15)
+    #     text_representation.GetPosition2Coordinate().SetValue(0.7, 0.2)
+    #     # text_representation.GetPositionCoordinate().SetValue(*p0)
+    #     # text_representation.GetPosition2Coordinate().SetValue(*[el + 0.1 for el in p0])
+
+    #     # Create the TextWidget
+    #     # Note that the SelectableOff method MUST be invoked!
+        
+    #     text_widget = vtk.vtkTextWidget()
+    #     text_widget.SetRepresentation(text_representation)
+
+    #     text_widget.SetTextActor(text_actor)
+    #     text_widget.SelectableOff()
+
+    #     return text_widget, text_actor
 
 class SliderCallback:
     '''
@@ -130,4 +161,6 @@ class SliderCallback:
         dims = caller._viewer.img3D.GetDimensions()
         maxslice = dims[caller.GetSliceOrientation()] -1
         self.slider_widget.GetRepresentation().SetMaximumValue(maxslice)
+        # self.viewer.sliderMinMaxLabels[1][1].SetInput("{}".format(maxslice))
+        # self.viewer.sliderMinMaxLabels[1][1].SetInput("{}".format(0))
         self.update_from_viewer(caller, ev)
