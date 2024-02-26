@@ -1473,26 +1473,8 @@ class CILViewer2D(CILViewerBase):
 
         if self.sliderWidget is not None:
             # reset the values to the appropriate ones of the new loaded image
-            # self.sliderProperty.value_minimum = 0
-            # self.sliderProperty.value_maximum = self.img3D.GetDimensions()[2] - 1
-            # self.sliderProperty.value_initial = self.getActiveSlice()
-            self.sliderWidget.SetValue(self.getActiveSlice())
-            
-            # update min and max of the slider
-            # self.sliderWidget.GetRepresentation().SetMaximumValue(self.sliderProperty.value_maximum)
-            # self.sliderWidget.GetRepresentation().SetValue(self.sliderProperty.value_initial)
-            self.sliderWidget.SetMaximumValue(self.img3D.GetDimensions()[2] - 1)
-            self.sliderWidget.SetMinimumValue(0)
-        
-            # update the label text
             self.sliderCallback.update_from_viewer(self.style, 'reset')
             return
-        
-
-        # self.sliderProperty.value_minimum = 0
-        # self.sliderProperty.value_maximum = self.img3D.GetDimensions()[2] - 1
-        
-        # self.sliderProperty.value_initial = self.getActiveSlice()
         
         sr = SliceSliderRepresentation()
         sr.SetValue(self.getActiveSlice())    
@@ -1505,12 +1487,6 @@ class CILViewer2D(CILViewerBase):
         sw.SetAnimationModeToAnimate()
         sw.EnabledOn()
 
-        # mtw = self.sliderProperty.get_slider_text_label('min', self.sliderProperty.value_minimum)
-        # Mtw = self.sliderProperty.get_slider_text_label('max', self.sliderProperty.value_maximum)
-
-        # mtw[0].SetInteractor(self.getInteractor())
-        # Mtw[0].SetInteractor(self.getInteractor())
-        
         cb = SliderCallback(self, sw)
         
         # Add interaction observers
@@ -1519,6 +1495,9 @@ class CILViewer2D(CILViewerBase):
         self.style.AddObserver("MouseWheelForwardEvent", cb.update_from_viewer, 0.9 )
         self.style.AddObserver("MouseWheelBackwardEvent", cb.update_from_viewer, 0.9 )
         self.style.AddObserver("CharEvent", cb.update_orientation, 0.9 )
+
+        # reset the slider
+        cb.update_from_viewer(self.style, 'reset')
 
         # save references
         self.sliderWidget = sw
