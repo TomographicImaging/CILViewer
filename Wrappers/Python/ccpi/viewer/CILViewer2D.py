@@ -1470,7 +1470,11 @@ class CILViewer2D(CILViewerBase):
         self.AddActor(wipeSlice, WIPE_ACTOR)
 
     def installSliceSliderWidgetPipeline(self):
-
+        '''Create the pipeline for the slice slider widget
+        
+        The slider widget and representation are created if not already present.
+        Currently the slider widget enabled flag is not used.
+        '''
         if self.sliderWidget is not None:
             # reset the values to the appropriate ones of the new loaded image
             self.sliderCallback.update_orientation(self.style, 'reset')
@@ -1490,8 +1494,10 @@ class CILViewer2D(CILViewerBase):
         cb = SliderCallback(self, sw)
         
         # Add interaction observers
+        # propagate events from the slider to the viewer
         sw.AddObserver(vtk.vtkCommand.InteractionEvent, cb)
 
+        # propagate events from the viewer to the slider
         self.style.AddObserver("MouseWheelForwardEvent", cb.update_from_viewer, 0.9 )
         self.style.AddObserver("MouseWheelBackwardEvent", cb.update_from_viewer, 0.9 )
         self.style.AddObserver("CharEvent", cb.update_orientation, 0.9 )
@@ -1502,10 +1508,9 @@ class CILViewer2D(CILViewerBase):
         # save references
         self.sliderWidget = sw
         self.sliderCallback = cb
-        # self.sliderMinMaxLabels = (mtw, Mtw)
-
-    def uninstallSliderWidget(self):
         
+    def uninstallSliderWidget(self):
+        '''remove the slider widget from the viewer'''
         if self.sliderWidget is not None:
             sr = self.sliderWidget.GetRepresentation()
             if sr is not None:

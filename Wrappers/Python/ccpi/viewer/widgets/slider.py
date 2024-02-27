@@ -17,7 +17,7 @@ class SliceSliderRepresentation(vtk.vtkSliderRepresentation2D):
 
     def __init__(self, orientation='horizontal', offset=0.12):
         self.tube_width = 0.004
-        self.slider_length = 0.025
+        self.slider_length = 0.015
         self.slider_width = 0.015
         self.end_cap_length = 0.008
         self.end_cap_width = 0.02
@@ -72,7 +72,7 @@ class SliceSliderRepresentation(vtk.vtkSliderRepresentation2D):
 class SliderCallback:
     '''
     Class to propagate the effects of interaction between the slider widget and the viewer 
-    the slider is embedded into.
+    the slider is embedded into, and viceversa.
     
     Parameters:
     -----------
@@ -85,13 +85,26 @@ class SliderCallback:
         self.slider_widget = slider_widget
 
     def __call__(self, caller, ev):
+        '''Update the slice displayed by the viewer when the slider is moved
+        
+        Parameters:
+        -----------
+        - caller, the slider widget
+        - ev, the event that triggered the update
+        '''
         slider_widget = caller
         value = slider_widget.GetRepresentation().GetValue()
         self.viewer.displaySlice(int(value))
-        self.update_label(slider_widget, value)
+        self.update_label(value)
     
-    def update_label(self, slider_widget, value):
-        rep = slider_widget.GetRepresentation()
+    def update_label(self, value):
+        '''Update the text label on the slider. This is called by update_from_viewer
+        
+        Parameters:
+        -----------
+        - value, the value to be displayed on text label the slider
+        '''
+        rep = self.slider_widget.GetRepresentation()
         maxval = rep.GetMaximumValue()
         txt = "Slice {}/{}".format(int(value), int(maxval))
         rep.SetLabelFormat(txt)
@@ -108,7 +121,7 @@ class SliderCallback:
         logger.info(f"Updating for event {ev}")
         value = caller.GetActiveSlice()
         self.slider_widget.GetRepresentation().SetValue(value)
-        self.update_label(self.slider_widget, value)
+        self.update_label(value)
         caller.GetRenderWindow().Render()
 
     def update_orientation(self, caller, ev):
