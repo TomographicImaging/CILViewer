@@ -1473,7 +1473,7 @@ class CILViewer2D(CILViewerBase):
 
         if self.sliderWidget is not None:
             # reset the values to the appropriate ones of the new loaded image
-            self.sliderCallback.update_from_viewer(self.style, 'reset')
+            self.sliderCallback.update_orientation(self.style, 'reset')
             return
         
         sr = SliceSliderRepresentation()
