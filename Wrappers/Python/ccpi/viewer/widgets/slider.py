@@ -23,7 +23,7 @@ class SliceSliderRepresentation(vtk.vtkSliderRepresentation2D):
         self.end_cap_width = 0.02
         self.title_height = 0.02
         self.label_height = 0.02
-
+        self.bar_color = 'Gray'
         cil_pink = [ [ el / 0xff for el in  [0xe5, 0x06, 0x95] ],
                      [ el / 0xff for el in  [0xc9, 0x2c, 0x99] ],
                      [ el / 0xff for el in  [0x99, 0x3d, 0xbb] ],
@@ -61,7 +61,7 @@ class SliceSliderRepresentation(vtk.vtkSliderRepresentation2D):
 
         # Set the colors of the slider components.
         # Change the color of the bar.
-        self.GetTubeProperty().SetColor(cil_pink[3])
+        self.GetTubeProperty().SetColor(vtk.vtkNamedColors().GetColor3d(self.bar_color))
         # Change the color of the ends of the bar.
         self.GetCapProperty().SetColor(cil_pink[2])
         # Change the color of the knob that slides.
