@@ -6,7 +6,7 @@ logger = logging.getLogger(__name__)
 class SliceSliderRepresentation(vtk.vtkSliderRepresentation2D):
     """A slider representation for the slice selector slider on a 2D CILViewer
 
-    Parameters:
+    Parameters
     -----------
     orientation: str, optional
         The orientation of the slider. Can be 'horizontal' or 'vertical'
@@ -74,11 +74,10 @@ class SliderCallback:
     Class to propagate the effects of interaction between the slider widget and the viewer 
     the slider is embedded into, and viceversa.
     
-    Parameters:
+    Parameters
     -----------
-
-    - viewer, CILViewer2D the slider is embedded into
-    - slider_widget, the vtkSliderWidget that is embedded in the viewer
+    viewer : CILViewer2D the slider is embedded into
+    slider_widget : the vtkSliderWidget that is embedded in the viewer
     '''
     def __init__(self, viewer, slider_widget):
         self.viewer = viewer
@@ -87,10 +86,10 @@ class SliderCallback:
     def __call__(self, caller, ev):
         '''Update the slice displayed by the viewer when the slider is moved
         
-        Parameters:
+        Parameters
         -----------
-        - caller, the slider widget
-        - ev, the event that triggered the update
+        caller : the slider widget
+        ev : the event that triggered the update
         '''
         slider_widget = caller
         value = slider_widget.GetRepresentation().GetValue()
@@ -100,9 +99,9 @@ class SliderCallback:
     def update_label(self, value):
         '''Update the text label on the slider. This is called by update_from_viewer
         
-        Parameters:
+        Parameters
         -----------
-        - value, the value to be displayed on text label the slider
+        value : the value to be displayed on text label the slider
         '''
         rep = self.slider_widget.GetRepresentation()
         maxval = rep.GetMaximumValue()
@@ -112,10 +111,10 @@ class SliderCallback:
     def update_from_viewer(self, caller, ev):
         '''Update the slider widget from the viewer. This is called when the viewer changes the slice
         
-        Parameters:
+        Parameters
         -----------
-        - caller, the interactor style
-        - ev, the event that triggered the update
+        caller : the interactor style
+        ev : the event that triggered the update
         '''
         # The caller is the interactor style
         logger.info(f"Updating for event {ev}")
@@ -127,10 +126,10 @@ class SliderCallback:
     def update_orientation(self, caller, ev):
         '''Update the slider widget when the orientation is changed
 
-        Parameters:
+        Parameters
         -----------
-        - caller, the interactor style
-        - ev, the event that triggered the update
+        caller : the interactor style
+        ev : the event that triggered the update
         '''
         logger.info(f"Updating orientation {ev}")
         value = caller.GetActiveSlice()
