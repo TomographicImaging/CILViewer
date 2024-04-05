@@ -22,7 +22,7 @@ from ccpi.viewer import (ALT_KEY, CONTROL_KEY, SHIFT_KEY, CROSSHAIR_ACTOR, CURSO
 from ccpi.viewer.CILViewerBase import CILViewerBase
 from ccpi.viewer.utils import Converter
 
-from ccpi.viewer.widgets import cilviewerBoxWidget, SliderProperties, SliderCallback
+from ccpi.viewer.widgets import cilviewerBoxWidget, SliceSliderRepresentation, SliderCallback
 
 
 class CILInteractorStyle(vtk.vtkInteractorStyle):
@@ -1141,7 +1141,6 @@ class CILViewer2D(CILViewerBase):
         self.imageTracer.AddObserver(vtk.vtkWidgetEvent.Select, self.style.OnTracerModifiedEvent, 1.0)
 
         # Slider widget
-        self.sliderProperty = SliderProperties()
         self.sliderWidget = None
         self._sliderWidgetEnabled = enableSliderWidget
 
@@ -1470,46 +1469,47 @@ class CILViewer2D(CILViewerBase):
         self.AddActor(wipeSlice, WIPE_ACTOR)
 
     def installSliceSliderWidgetPipeline(self):
-
+        '''Create the pipeline for the slice slider widget
+        
+        The slider widget and representation are created if not already present.
+        Currently the slider widget enabled flag is not used.
+        '''
         if self.sliderWidget is not None:
             # reset the values to the appropriate ones of the new loaded image
-            self.sliderProperty.value_minimum = 0
-            self.sliderProperty.value_maximum = self.img3D.GetDimensions()[2] - 1
-            self.sliderProperty.value_initial = self.getActiveSlice()
-            
-            # update min and max of the slider
-            self.sliderWidget.GetRepresentation().SetMaximumValue(self.sliderProperty.value_maximum)
-            self.sliderWidget.GetRepresentation().SetValue(self.sliderProperty.value_initial)
-        
-            # update the label text
-            self.sliderCallback.update_from_viewer(self.style, 'reset')
+            self.sliderCallback.update_orientation(self.style, 'reset')
             return
+        
+        sr = SliceSliderRepresentation()
+        sr.SetValue(self.getActiveSlice())    
+        sr.SetMaximumValue(self.img3D.GetDimensions()[2] - 1)
+        sr.SetMinimumValue(0)
 
-        self.sliderProperty.value_minimum = 0
-        self.sliderProperty.value_maximum = self.img3D.GetDimensions()[2] - 1
-        
-        self.sliderProperty.value_initial = self.getActiveSlice()
-        
-        sw = self.sliderProperty.get_slider_widget(orientation='horizontal')
+        sw = vtk.vtkSliderWidget()
         sw.SetInteractor(self.getInteractor())
+        sw.SetRepresentation(sr)
         sw.SetAnimationModeToAnimate()
         sw.EnabledOn()
 
         cb = SliderCallback(self, sw)
         
         # Add interaction observers
+        # propagate events from the slider to the viewer
         sw.AddObserver(vtk.vtkCommand.InteractionEvent, cb)
 
+        # propagate events from the viewer to the slider
         self.style.AddObserver("MouseWheelForwardEvent", cb.update_from_viewer, 0.9 )
         self.style.AddObserver("MouseWheelBackwardEvent", cb.update_from_viewer, 0.9 )
-        self.style.AddObserver("KeyPressEvent", cb.update_orientation, 0.9 )
+        self.style.AddObserver("CharEvent", cb.update_orientation, 0.9 )
+
+        # reset the slider
+        cb.update_from_viewer(self.style, 'reset')
 
         # save references
         self.sliderWidget = sw
         self.sliderCallback = cb
-
-    def uninstallSliderWidget(self):
         
+    def uninstallSliderWidget(self):
+        '''remove the slider widget from the viewer'''
         if self.sliderWidget is not None:
             sr = self.sliderWidget.GetRepresentation()
             if sr is not None:
