@@ -76,9 +76,7 @@ class RawInputDialog(FormDialog):
     >>> dialog.setSupportedTypes(['float32', 'float64'])
 
     '''
-
-    supported_types =  [ np.dtype(f) for f in ['int8', 'uint8', 'int16', 'uint16', \
-            'float16', 'float32', 'float64'] ]
+    supported_types = [np.dtype(f) for f in Converter.dtype_name_to_vtkType.keys()]
 
     def __init__(self, parent, fname):
         super(RawInputDialog, self).__init__(parent, fname)
