@@ -313,6 +313,7 @@ class RawInputDialog(FormDialog):
         else:
             diag.setWindowTitle(f'Preview data')
         diag.setWindowFlag(QtCore.Qt.WindowContextHelpButtonHint, False)
+        diag.setWindowFlag(QtCore.Qt.WindowMaximizeButtonHint)
 
         # add a layout
         verticalLayout = QtWidgets.QVBoxLayout(diag)
