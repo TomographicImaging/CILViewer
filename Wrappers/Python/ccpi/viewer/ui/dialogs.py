@@ -81,6 +81,7 @@ class RawInputDialog(FormDialog):
     def __init__(self, parent, fname):
         super(RawInputDialog, self).__init__(parent, fname)
         self.setFileName(fname)
+        self.setWindowFlag(QtCore.Qt.WindowContextHelpButtonHint, False)
         fw = self.formWidget
 
         # dimensionality:
@@ -136,7 +137,7 @@ class RawInputDialog(FormDialog):
         self.Cancel.clicked.connect(self.close)
 
     def setFileName(self, filename):
-        '''Set the filename used in the dialog'''
+        '''Set the filename used in the dialog and the dialog title.'''
         self.fname = os.path.abspath(filename)
         title = "Config for " + os.path.basename(filename)
         self.setWindowTitle(title)
@@ -311,6 +312,7 @@ class RawInputDialog(FormDialog):
             diag.setWindowTitle(f'Preview slice {central_slice} = {shape[2]//2}')
         else:
             diag.setWindowTitle(f'Preview data')
+        diag.setWindowFlag(QtCore.Qt.WindowContextHelpButtonHint, False)
 
         # add a layout
         verticalLayout = QtWidgets.QVBoxLayout(diag)
