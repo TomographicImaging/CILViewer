@@ -208,8 +208,10 @@ class RawInputDialog(FormDialog):
         if dimensionality == 3:
             if isFortran:
                 shape = (dimX, dimY, dimZ)
+                central_slice = 'z'
             else:
                 shape = (dimZ, dimY, dimX)
+                central_slice = 'x'
         
         # Construct a data type
         dt = np.dtype(typecode)
@@ -305,6 +307,11 @@ class RawInputDialog(FormDialog):
         
         diag = QtWidgets.QDialog(parent=self)
         diag.setModal(True)
+        if dimensionality == 3:
+            diag.setWindowTitle(f'Preview slice {central_slice} = {shape[2]//2}')
+        else:
+            diag.setWindowTitle(f'Preview data')
+
         # add a layout
         verticalLayout = QtWidgets.QVBoxLayout(diag)
         verticalLayout.setContentsMargins(10, 10, 10, 10)
