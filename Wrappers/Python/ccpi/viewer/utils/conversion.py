@@ -32,6 +32,9 @@ from ccpi.viewer.utils.hdf5_io import HDF5Reader, HDF5SubsetReader
 
 import shutil
 
+import logging
+logger = logging.getLogger(__name__)
+
 
 # Converter class
 class Converter(object):
@@ -1448,7 +1451,7 @@ class cilBaseCroppedReader(cilReaderInterface):
         VTKPythonAlgorithmBase.__init__(self, nInputPorts=0, nOutputPorts=1)
         super(cilBaseCroppedReader, self).__init__()
         self._TargetZExtent = (0, 0)
-
+        
     def SetTargetZExtent(self, value):
         ''' 
         Set the target extent to crop to on the z axis.
@@ -1478,113 +1481,91 @@ class cilBaseCroppedReader(cilReaderInterface):
 
         # get basic info
         big_endian = self.GetBigEndian()
+        isBigEndian = big_endian
+
         readshape = self.GetStoredArrayShape()
         file_header_length = self.GetFileHeaderLength()
         is_fortran = self.GetIsFortran()
-
+        bytes_per_element = Converter.vtkType_to_bytes[self.GetOutputVTKType()]
+        
         if is_fortran:
             shape = list(readshape)
         else:
             shape = list(readshape)[::-1]
 
-        tmpdir = tempfile.mkdtemp()
-        header_filename = os.path.join(tmpdir, "header.mhd")
-        reader = vtk.vtkMetaImageReader()
-        reader.SetFileName(header_filename)
+        offset = 0
+        slice_size = -1
+        
+        dimensionality = len(shape)
 
-        slice_length = self._GetSliceLengthInFile()
+        if dimensionality == 3:
+            # read the centre slice
+            slice_size = shape[1]*shape[0]
+            offset = shape[2]*slice_size//2
 
+        rawfname = os.path.join(tempfile.gettempdir(),"test.raw")
+            
+        offset = offset * bytes_per_element
+        slices_to_read = 1
+        if shape[2] > 1:
+            slices_to_read = 2
         try:
-            if self.GetTargetZExtent()[1] >= shape[2] and self.GetTargetZExtent()[0] <= 0:
-                # in this case we don't need to crop, so we read the whole dataset
-                # print("Don't crop")
+            with open(self.GetFileName(), 'br') as f:
+                f.seek(offset)
+                raw_data = f.read(slice_size*bytes_per_element* slices_to_read)
+                with open(rawfname, 'wb') as f2:
+                    f2.write(raw_data)
 
-                chunk_file_name = os.path.join(tmpdir, "chunk.raw")
+            reader = vtk.vtkImageReader2()
+            reader.SetFileName(rawfname)
 
-                # Creates a metaimageheader which will be used to read a file containing the
-                # data - chunk_file_name which we will fill below.
+            vtktype = self.GetOutputVTKType()
+            reader.SetDataScalarType(vtktype)
 
-                cilNumpyMETAImageWriter.WriteMETAImageHeader(chunk_file_name,
-                                                             header_filename,
-                                                             self.GetMetaImageTypeCode(),
-                                                             big_endian,
-                                                             0,
-                                                             tuple(shape),
-                                                             spacing=tuple(self.GetElementSpacing()),
-                                                             origin=self.GetOrigin())
+            if isBigEndian:
+                reader.SetDataByteOrderToBigEndian()
+            else:
+                reader.SetDataByteOrderToLittleEndian()
 
-                image_file = self.GetFileName()
-                # Writes the entire dataset to chunk_file_name
-                with open(image_file, "rb") as image_file_object:
-                    end_slice = shape[2]
-                    chunk_location = file_header_length
-                    with open(chunk_file_name, "wb") as chunk_file_object:
-                        image_file_object.seek(chunk_location)
-                        chunk_length = slice_length * end_slice
-                        chunk = image_file_object.read(chunk_length)
-                        chunk_file_object.write(chunk)
+            reader.SetFileDimensionality(len(shape))
+            vtkshape = shape[:]
+            if not is_fortran:
+                # need to reverse the shape (again)
+                vtkshape = shape[::-1]
+            # vtkshape = shape[:]
+            slice_idx = 0
+            if dimensionality == 3:
+                slice_idx = vtkshape[2]//2
+            extent = (0, vtkshape[0]-1, 0, vtkshape[1]-1, slice_idx, slice_idx+slices_to_read-1)
+            reader.SetDataExtent(extent)
+            # DataSpacing and DataOrigin should be added to the interface
+            reader.SetDataSpacing(1, 1, 1)
+            reader.SetDataOrigin(0, 0, 0)
 
-                reader.Modified()
-                reader.Update()
-                # print(reader.GetOutput().GetScalarComponentAsDouble(0, 0, 0, 0))
-                outData.ShallowCopy(reader.GetOutput())
-
-                return 1
-
-            # In the case we do need to crop: ---------------------------------------------
-
-            shape[2] = self.GetTargetZExtent()[1] - self.GetTargetZExtent()[0] + 1
-
-            chunk_file_name = os.path.join(tmpdir, "chunk.raw")
-
-            # Creates a metaimageheader which will be used to read a file just containing the cropped
-            # data - chunk_file_name which we will fill below.
-            cilNumpyMETAImageWriter.WriteMETAImageHeader(chunk_file_name,
-                                                         header_filename,
-                                                         self.GetMetaImageTypeCode(),
-                                                         big_endian,
-                                                         0,
-                                                         tuple(shape),
-                                                         spacing=tuple(self.GetElementSpacing()),
-                                                         origin=self.GetOrigin())
-            image_file = self.GetFileName()
-            chunk_location = file_header_length + \
-                (self.GetTargetZExtent()[0]) * slice_length
-
-            # Reads the data as a single chunk.
-            # Copies the chunk from the original file to chunk_file_name:
-            with open(chunk_file_name, "wb") as chunk_file_object:
-                with open(image_file, "rb") as image_file_object:
-                    image_file_object.seek(chunk_location)
-                    chunk_length = (self.GetTargetZExtent()[1] - self.GetTargetZExtent()[0] + 1) * slice_length
-                    chunk = image_file_object.read(chunk_length)
-                    chunk_file_object.write(chunk)
-
-            reader.Modified()
+            logger.info("reading")
             reader.Update()
 
             # Once we have read the data, update the extent to reflect where
             # we have cut the cropped dataset out of the original image
             Data = vtk.vtkImageData()
-            extent = (0, shape[0] - 1, 0, shape[1] - 1, self.GetTargetZExtent()[0], self.GetTargetZExtent()[1])
             Data.SetExtent(extent)
             Data.SetSpacing(self.GetElementSpacing())
             Data.SetOrigin(self.GetOrigin())
             Data.AllocateScalars(self.GetOutputVTKType(), 1)
 
             read_data = reader.GetOutput()
-            read_data.SetExtent(extent)
-
+            
             Data.CopyAndCastFrom(read_data, extent)
             outData.ShallowCopy(Data)
 
+            return 1
         except Exception as e:
-            print("Exception", e)
-            raise Exception(e)
+            logger.error(e)
         finally:
-            if os.path.exists(tmpdir):
-                shutil.rmtree(tmpdir)
-        return 1
+            if os.path.exists(rawfname):
+                del reader
+                logger.info("Removing temporary file: {}".format(rawfname))
+                os.remove(rawfname)
 
 
 class cilRawCroppedReader(cilBaseCroppedReader, cilRawReaderInterface):
