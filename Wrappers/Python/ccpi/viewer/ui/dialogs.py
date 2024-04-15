@@ -15,6 +15,7 @@ from functools import reduce
 import tempfile
 import logging
 
+logger = logging.getLogger(__name__)
 
 class ViewerSettingsDialog(AppSettingsDialog):
     ''' This is a dialog window which allows the user to set:
@@ -76,13 +77,12 @@ class RawInputDialog(FormDialog):
     >>> dialog.setSupportedTypes(['float32', 'float64'])
 
     '''
-
-    supported_types =  [ np.dtype(f) for f in ['int8', 'uint8', 'int16', 'uint16', \
-            'float16', 'float32', 'float64'] ]
+    supported_types = [np.dtype(f) for f in Converter.dtype_name_to_vtkType.keys()]
 
     def __init__(self, parent, fname):
         super(RawInputDialog, self).__init__(parent, fname)
         self.setFileName(fname)
+        self.setWindowFlag(QtCore.Qt.WindowContextHelpButtonHint, False)
         fw = self.formWidget
 
         # dimensionality:
@@ -108,7 +108,7 @@ class RawInputDialog(FormDialog):
         self.supported_types = RawInputDialog.supported_types.copy()
         dtypeLabel = QLabel("Data Type")
         dtypeValue = QComboBox()
-        dtypeValue.addItems([np.dtype(dt).name for dt in self.supported_types])
+        dtypeValue.addItems([dt.name for dt in self.supported_types])
         dtypeValue.setCurrentIndex(1)
         fw.addWidget(dtypeValue, dtypeLabel, 'dtype')
 
@@ -138,7 +138,7 @@ class RawInputDialog(FormDialog):
         self.Cancel.clicked.connect(self.close)
 
     def setFileName(self, filename):
-        '''Set the filename used in the dialog'''
+        '''Set the filename used in the dialog and the dialog title.'''
         self.fname = os.path.abspath(filename)
         title = "Config for " + os.path.basename(filename)
         self.setWindowTitle(title)
@@ -154,7 +154,7 @@ class RawInputDialog(FormDialog):
         '''
         self.supported_types = types
         self.getWidget('dtype').clear()
-        self.getWidget('dtype').addItems([np.dtype(dt).name for dt in self.supported_types])
+        self.getWidget('dtype').addItems([dt.name for dt in self.supported_types])
 
     def getRawAttrs(self):
         '''
@@ -210,8 +210,10 @@ class RawInputDialog(FormDialog):
         if dimensionality == 3:
             if isFortran:
                 shape = (dimX, dimY, dimZ)
+                central_slice = 'z'
             else:
                 shape = (dimZ, dimY, dimX)
+                central_slice = 'x'
         
         # Construct a data type
         dt = np.dtype(typecode)
@@ -253,60 +255,68 @@ class RawInputDialog(FormDialog):
             slice_size = shape[1]*shape[0]
             offset = shape[2]*slice_size//2
 
-        # use the cilRawCroppedReader to read the slice
-        reader2 = cilRawCroppedReader()
-        reader2.SetFileName(self.fname)
-        reader2.SetTargetZExtent((shape[2]//2, shape[2]//2))
-        reader2.SetBigEndian(isBigEndian)
-        reader2.SetIsFortran(isFortran)
-        reader2.SetTypeCodeName(dt.name)
-        reader2.SetStoredArrayShape(shape)
-        reader2.Update()
-        # image = reader2.GetOutput()
+        if True:
+            # use the cilRawCroppedReader to read the slice
+            reader2 = cilRawCroppedReader()
+            reader2.SetFileName(self.fname)
+            reader2.SetTargetZExtent((shape[2]//2-5, shape[2]//2+5))
+            reader2.SetBigEndian(isBigEndian)
+            reader2.SetIsFortran(isFortran)
+            reader2.SetTypeCodeName(dt.name)
+            reader2.SetStoredArrayShape(shape)
+            reader2.Update()
+        else:
+            
+            rawfname = os.path.join(tempfile.gettempdir(),"test.raw")
+            
+            offset = offset * bytes_per_element
+            slices_to_read = 1
+            if shape[2] > 1:
+                slices_to_read = 2
+            with open(self.fname, 'br') as f:
+                f.seek(offset)
+                raw_data = f.read(slice_size*bytes_per_element* slices_to_read)
+                with open(rawfname, 'wb') as f2:
+                    f2.write(raw_data)
 
-        # rawfname = os.path.join(tempfile.gettempdir(),"test.raw")
-        
-        # offset = offset * bytes_per_element
-        # slices_to_read = 1
-        # if shape[2] > 1:
-        #     slices_to_read = 2
-        # with open(self.fname, 'br') as f:
-        #     f.seek(offset)
-        #     raw_data = f.read(slice_size*bytes_per_element* slices_to_read)
-        #     with open(rawfname, 'wb') as f2:
-        #         f2.write(raw_data)
+            reader2 = vtk.vtkImageReader2()
+            reader2.SetFileName(rawfname)
 
-        # reader2 = vtk.vtkImageReader2()
-        # reader2.SetFileName(rawfname)
+            vtktype = Converter.dtype_name_to_vtkType[dt.name]
+            reader2.SetDataScalarType(vtktype)
 
-        # vtktype = Converter.dtype_name_to_vtkType[dt.name]
-        # reader2.SetDataScalarType(vtktype)
+            if isBigEndian:
+                reader2.SetDataByteOrderToBigEndian()
+            else:
+                reader2.SetDataByteOrderToLittleEndian()
 
-        # if isBigEndian:
-        #     reader2.SetDataByteOrderToBigEndian()
-        # else:
-        #     reader2.SetDataByteOrderToLittleEndian()
+            reader2.SetFileDimensionality(len(shape))
+            vtkshape = shape[:]
+            if not isFortran:
+                # need to reverse the shape (again)
+                vtkshape = shape[::-1]
+            # vtkshape = shape[:]
+            slice_idx = 0
+            if dimensionality == 3:
+                slice_idx = vtkshape[2]//2
+            reader2.SetDataExtent(0, vtkshape[0]-1, 0, vtkshape[1]-1, slice_idx, slice_idx+slices_to_read-1)
+            # DataSpacing and DataOrigin should be added to the interface
+            reader2.SetDataSpacing(1, 1, 1)
+            reader2.SetDataOrigin(0, 0, 0)
 
-        # reader2.SetFileDimensionality(len(shape))
-        # vtkshape = shape[:]
-        # if not isFortran:
-        #     # need to reverse the shape (again)
-        #     vtkshape = shape[::-1]
-        # # vtkshape = shape[:]
-        # slice_idx = 0
-        # if dimensionality == 3:
-        #     slice_idx = vtkshape[2]//2
-        # reader2.SetDataExtent(0, vtkshape[0]-1, 0, vtkshape[1]-1, slice_idx, slice_idx+slices_to_read-1)
-        # # DataSpacing and DataOrigin should be added to the interface
-        # reader2.SetDataSpacing(1, 1, 1)
-        # reader2.SetDataOrigin(0, 0, 0)
-
-        # print("reading")
-        # reader2.Update()
+            logger.info("reading")
+            reader2.Update()
         # read one slice in the middle and display it in a viewer in a modal dialog
         
         diag = QtWidgets.QDialog(parent=self)
         diag.setModal(True)
+        if dimensionality == 3:
+            diag.setWindowTitle(f'Preview slice {central_slice} = {shape[2]//2}')
+        else:
+            diag.setWindowTitle(f'Preview data')
+        diag.setWindowFlag(QtCore.Qt.WindowContextHelpButtonHint, False)
+        diag.setWindowFlag(QtCore.Qt.WindowMaximizeButtonHint)
+
         # add a layout
         verticalLayout = QtWidgets.QVBoxLayout(diag)
         verticalLayout.setContentsMargins(10, 10, 10, 10)
@@ -314,6 +324,17 @@ class RawInputDialog(FormDialog):
         # add a CILViewer widget
         sc = QCILViewerWidget(diag, viewer=viewer2D)
         sc.viewer.setInputData(reader2.GetOutput())
+
+        # swap the labels of the orientation marker if the 3D data is not in fortran order
+        if dimensionality == 3:
+            if not isFortran:
+                logger.info("Swapping orientation marker XZ labels")
+                # sc.viewer.orientation_marker.GetOrientationMarker().RotateWXYZ(90, 0, 1, 0)
+                om = sc.viewer.orientation_marker
+                xlabel = om.GetXAxisLabelText()
+                zlabel = om.GetZAxisLabelText()
+                om.SetZAxisLabelText(xlabel)
+                om.SetXAxisLabelText(zlabel)
 
         # add it to the layout of the dialog
         verticalLayout.addWidget(sc)
