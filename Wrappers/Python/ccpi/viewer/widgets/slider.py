@@ -105,7 +105,7 @@ class SliderCallback:
         '''
         rep = self.slider_widget.GetRepresentation()
         maxval = rep.GetMaximumValue()
-        txt = "Slice {}/{}".format(int(value), int(maxval))
+        txt = "{}/{}".format(int(value), int(maxval))
         rep.SetLabelFormat(txt)
 
     def update_from_viewer(self, caller, ev):
