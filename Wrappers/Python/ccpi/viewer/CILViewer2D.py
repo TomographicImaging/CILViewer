@@ -1478,9 +1478,9 @@ class CILViewer2D(CILViewerBase):
             # reset the values to the appropriate ones of the new loaded image
             self.sliderCallback.update_orientation(self.style, 'reset')
             return
-        
+
         sr = SliceSliderRepresentation()
-        sr.SetValue(self.getActiveSlice())    
+        sr.SetValue(self.getActiveSlice())
         sr.SetMaximumValue(self.img3D.GetDimensions()[2] - 1)
         sr.SetMinimumValue(0)
 
@@ -1491,15 +1491,15 @@ class CILViewer2D(CILViewerBase):
         sw.EnabledOn()
 
         cb = SliderCallback(self, sw)
-        
+
         # Add interaction observers
         # propagate events from the slider to the viewer
         sw.AddObserver(vtk.vtkCommand.InteractionEvent, cb)
 
         # propagate events from the viewer to the slider
-        self.style.AddObserver("MouseWheelForwardEvent", cb.update_from_viewer, 0.9 )
-        self.style.AddObserver("MouseWheelBackwardEvent", cb.update_from_viewer, 0.9 )
-        self.style.AddObserver("CharEvent", cb.update_orientation, 0.9 )
+        self.style.AddObserver("MouseWheelForwardEvent", cb.update_from_viewer, 0.9)
+        self.style.AddObserver("MouseWheelBackwardEvent", cb.update_from_viewer, 0.9)
+        self.style.AddObserver("CharEvent", cb.update_orientation, 0.9)
 
         # reset the slider
         cb.update_from_viewer(self.style, 'reset')
@@ -1507,7 +1507,7 @@ class CILViewer2D(CILViewerBase):
         # save references
         self.sliderWidget = sw
         self.sliderCallback = cb
-        
+
     def uninstallSliderWidget(self):
         '''remove the slider widget from the viewer'''
         if self.sliderWidget is not None:
@@ -1516,9 +1516,9 @@ class CILViewer2D(CILViewerBase):
                 sr.RemoveAllObservers()
                 coll = vtk.vtkPropCollection()
                 sr.GetActors(coll)
-                print ("coll", coll)
+                print("coll", coll)
                 for actor in coll:
-                    print ("actor", actor)
+                    print("actor", actor)
                     self.ren.RemoveActor(actor)
 
     def AdjustCamera(self, resetcamera=False):
@@ -1872,8 +1872,7 @@ class CILViewer2D(CILViewerBase):
 
     def getSliderWidgetEnabled(self):
         return self._sliderWidgetEnabled
+
     def setSliderWidgetEnabled(self, enable):
         if enable:
             self._sliderWidgetEnabled = enable
-        
-           

@@ -3,6 +3,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
 class SliceSliderRepresentation(vtk.vtkSliderRepresentation2D):
     """A slider representation for the slice selector slider on a 2D CILViewer
 
@@ -24,12 +25,9 @@ class SliceSliderRepresentation(vtk.vtkSliderRepresentation2D):
         self.title_height = 0.02
         self.label_height = 0.02
         self.bar_color = 'Gray'
-        cil_pink = [ [ el / 0xff for el in  [0xe5, 0x06, 0x95] ],
-                     [ el / 0xff for el in  [0xc9, 0x2c, 0x99] ],
-                     [ el / 0xff for el in  [0x99, 0x3d, 0xbb] ],
-                     [ el / 0xff for el in  [0x51, 0x0c, 0x76] ]
-        ]
-        
+        cil_pink = [[el / 0xff for el in [0xe5, 0x06, 0x95]], [el / 0xff for el in [0xc9, 0x2c, 0x99]],
+                    [el / 0xff for el in [0x99, 0x3d, 0xbb]], [el / 0xff for el in [0x51, 0x0c, 0x76]]]
+
         self.orientation = 'horizontal'
         self.offset = 0.12
 
@@ -68,7 +66,8 @@ class SliceSliderRepresentation(vtk.vtkSliderRepresentation2D):
         self.GetSliderProperty().SetColor(cil_pink[1])
         # Change the color of the knob when the mouse is held on it.
         self.GetSelectedProperty().SetColor(cil_pink[0])
-        
+
+
 class SliderCallback:
     '''
     Class to propagate the effects of interaction between the slider widget and the viewer 
@@ -79,6 +78,7 @@ class SliderCallback:
     viewer : CILViewer2D the slider is embedded into
     slider_widget : the vtkSliderWidget that is embedded in the viewer
     '''
+
     def __init__(self, viewer, slider_widget):
         self.viewer = viewer
         self.slider_widget = slider_widget
@@ -95,7 +95,7 @@ class SliderCallback:
         value = slider_widget.GetRepresentation().GetValue()
         self.viewer.displaySlice(int(value))
         self.update_label(value)
-    
+
     def update_label(self, value):
         '''Update the text label on the slider. This is called by update_from_viewer
         
@@ -134,6 +134,6 @@ class SliderCallback:
         logger.info(f"Updating orientation {ev}")
         value = caller.GetActiveSlice()
         dims = caller._viewer.img3D.GetDimensions()
-        maxslice = dims[caller.GetSliceOrientation()] -1
+        maxslice = dims[caller.GetSliceOrientation()] - 1
         self.slider_widget.GetRepresentation().SetMaximumValue(maxslice)
         self.update_from_viewer(caller, ev)
