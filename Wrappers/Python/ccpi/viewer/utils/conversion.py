@@ -933,7 +933,7 @@ def calculate_target_downsample_magnification(max_size, total_size, acq=False):
 
 
 def calculate_target_downsample_shape(max_size, total_size, shape, acq=False):
-    '''calculate the magnification of each axis and the number of slices per chunk
+    '''calculate the shape of the resampled image
     
     Parameters
     ----------
