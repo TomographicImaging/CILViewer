@@ -42,11 +42,12 @@ class QCILViewerWidget(QtWidgets.QFrame):
         self.iren = self.vtkWidget.GetRenderWindow().GetInteractor()
 
         try:
-            self.viewer = viewer(renWin=self.vtkWidget.GetRenderWindow(),
-                                 iren=self.iren,
-                                 ren=self.ren,
-                                 dimx=dimx,
+            
+            self.viewer = viewer(dimx=dimx,
                                  dimy=dimy,
+                                 ren=self.ren,
+                                 renWin=self.vtkWidget.GetRenderWindow(),
+                                 iren=self.iren,
                                  debug=debug)
         except KeyError:
             raise KeyError("Viewer class not provided. Submit an uninstantiated viewer class object"
