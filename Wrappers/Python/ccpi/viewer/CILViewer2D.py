@@ -1876,3 +1876,15 @@ class CILViewer2D(CILViewerBase):
     def setSliderWidgetEnabled(self, enable):
         if enable:
             self._sliderWidgetEnabled = enable
+
+   def setAxisLabels(self, labels):
+        if type(labels) != list:
+            raise TypeError("Labels must be a list of strings")
+        ax = self.orientation_marker.GetOrientationMarker()
+        try:
+            ax.SetXAxisLabelText(labels[0])
+            ax.SetYAxisLabelText(labels[1])
+            ax.SetZAxisLabelText(labels[2])
+        except IndexError:
+            print("Warning: Not all axis labels were specified so only some were modified.")
+    
