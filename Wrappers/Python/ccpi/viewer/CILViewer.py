@@ -1074,7 +1074,6 @@ class CILViewer(CILViewerBase):
             self.getRenderer().Render()
             self.updatePipeline()
 
-
     def setAxisLabels(self, labels):
         if type(labels) != list:
             raise TypeError("Labels must be a list of strings")
@@ -1085,4 +1084,3 @@ class CILViewer(CILViewerBase):
             ax.SetZAxisLabelText(labels[2])
         except IndexError:
             print("Warning: Not all axis labels were specified so only some were modified.")
- 

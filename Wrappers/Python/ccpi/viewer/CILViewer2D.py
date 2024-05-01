@@ -1887,4 +1887,3 @@ class CILViewer2D(CILViewerBase):
             ax.SetZAxisLabelText(labels[2])
         except IndexError:
             print("Warning: Not all axis labels were specified so only some were modified.")
-    

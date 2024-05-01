@@ -593,7 +593,7 @@ class TwoViewersMainWindowMixin(object):
 
         dock = QCILDockableWidget(viewer=viewer, shape=(600, 600), interactorStyle=interactor_style, title=dock_title)
         dock.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.MinimumExpanding)
-        dock.viewer.setAxisLabels(['a','b','c'])
+        dock.viewer.setAxisLabels(['a', 'b', 'c'])
 
         if len(self.viewers) == 0:
             self.central_widget.addDockWidget(Qt.LeftDockWidgetArea, dock)
