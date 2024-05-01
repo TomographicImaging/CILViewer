@@ -14,7 +14,8 @@ class QCILViewerWidget(QtWidgets.QFrame):
     :param viewer: The viewer you want to embed in Qt: CILViewer2D or CILViewer
     :param interactorStyle: The interactor style for the Viewer. 
     '''
-    def __init__(self, parent, viewer, shape = (600, 600), debug = False, renderer = None, interactorStyle = None):
+
+    def __init__(self, parent, viewer, shape=(600, 600), debug=False, renderer=None, interactorStyle=None):
         '''Creator. Creates an instance of a QFrame and of a CILViewer
         
         The viewer is placed in the QFrame inside a QVBoxLayout. 
@@ -35,18 +36,18 @@ class QCILViewerWidget(QtWidgets.QFrame):
             self.ren = vtk.vtkRenderer()
         else:
             self.ren = renderer
-            
+
         self.vtkWidget.GetRenderWindow().AddRenderer(self.ren)
         # https://discourse.vtk.org/t/qvtkwidget-render-window-is-outside-main-qt-app-window/1539/8?u=edoardo_pasca
         self.iren = self.vtkWidget.GetRenderWindow().GetInteractor()
 
         try:
             self.viewer = viewer(renWin=self.vtkWidget.GetRenderWindow(),
-                                           iren=self.iren,
-                                           ren=self.ren,
-                                           dimx=dimx,
-                                           dimy=dimy,
-                                           debug=debug)
+                                 iren=self.iren,
+                                 ren=self.ren,
+                                 dimx=dimx,
+                                 dimy=dimy,
+                                 debug=debug)
         except KeyError:
             raise KeyError("Viewer class not provided. Submit an uninstantiated viewer class object"
                            "using 'viewer' keyword")
@@ -63,11 +64,11 @@ class QCILViewerWidget(QtWidgets.QFrame):
 
 class QCILDockableWidget(QtWidgets.QDockWidget):
 
-    def __init__(self, parent=None, viewer = viewer2D, shape=(600, 600), interactorStyle=None, title=""):
+    def __init__(self, parent=None, viewer=viewer2D, shape=(600, 600), interactorStyle=None, title=""):
 
         super(QCILDockableWidget, self).__init__(parent)
 
-        self.frame = QCILViewerWidget(parent, viewer, shape = shape, interactorStyle=interactorStyle)
+        self.frame = QCILViewerWidget(parent, viewer, shape=shape, interactorStyle=interactorStyle)
         self.viewer = self.frame.viewer
 
         self.setWindowTitle(title)
