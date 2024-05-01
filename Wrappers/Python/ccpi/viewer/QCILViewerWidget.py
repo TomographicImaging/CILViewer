@@ -64,9 +64,10 @@ class QCILViewerWidget(QtWidgets.QFrame):
 
 
 class QCILDockableWidget(QtWidgets.QDockWidget):
-
+    '''Inserts a vtk viewer in a dock widget.'''
     def __init__(self, parent=None, viewer=viewer2D, shape=(600, 600), interactorStyle=None, title=""):
-
+        '''Creates an instance of a `QCILDockableWidget` and inserts it in a `QDockWidget`. 
+        Sets the title of the dock widget.'''
         super(QCILDockableWidget, self).__init__(parent)
 
         self.frame = QCILViewerWidget(parent, viewer, shape=shape, interactorStyle=interactorStyle)
