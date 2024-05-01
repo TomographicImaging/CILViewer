@@ -14,8 +14,7 @@ class QCILViewerWidget(QtWidgets.QFrame):
     :param viewer: The viewer you want to embed in Qt: CILViewer2D or CILViewer
     :param interactorStyle: The interactor style for the Viewer. 
     '''
-
-    def __init__(self, parent=None, **kwargs):
+    def __init__(self, parent, viewer, shape = (600, 600), debug = False, renderer = None, interactorStyle = None):
         '''Creator. Creates an instance of a QFrame and of a CILViewer
         
         The viewer is placed in the QFrame inside a QVBoxLayout. 
@@ -27,34 +26,33 @@ class QCILViewerWidget(QtWidgets.QFrame):
         # area in the main window. A resize of the MainWindow triggers a resize of
         # the QFrame to occupy the whole area available.
 
-        dimx, dimy = kwargs.get('shape', (600, 600))
+        dimx, dimy = shape
         # self.resize(dimx, dimy)
 
         self.vtkWidget = QCILRenderWindowInteractor(self)
 
-        if 'renderer' in kwargs.keys():
-            self.ren = kwargs['renderer']
-        else:
+        if renderer is None:
             self.ren = vtk.vtkRenderer()
+        else:
+            self.ren = renderer
+            
         self.vtkWidget.GetRenderWindow().AddRenderer(self.ren)
         # https://discourse.vtk.org/t/qvtkwidget-render-window-is-outside-main-qt-app-window/1539/8?u=edoardo_pasca
         self.iren = self.vtkWidget.GetRenderWindow().GetInteractor()
 
         try:
-
-            # print ("provided viewer class ", kwargs['viewer'])
-            self.viewer = kwargs['viewer'](renWin=self.vtkWidget.GetRenderWindow(),
+            self.viewer = viewer(renWin=self.vtkWidget.GetRenderWindow(),
                                            iren=self.iren,
                                            ren=self.ren,
                                            dimx=dimx,
                                            dimy=dimy,
-                                           debug=kwargs.get('debug', False))
+                                           debug=debug)
         except KeyError:
             raise KeyError("Viewer class not provided. Submit an uninstantiated viewer class object"
                            "using 'viewer' keyword")
 
-        if 'interactorStyle' in kwargs.keys():
-            self.viewer.style = kwargs['interactorStyle'](self.viewer)
+        if interactorStyle is not None:
+            self.viewer.style = interactorStyle(self.viewer)
             self.viewer.iren.SetInteractorStyle(self.viewer.style)
 
         self.vl = QtWidgets.QVBoxLayout()
@@ -65,14 +63,11 @@ class QCILViewerWidget(QtWidgets.QFrame):
 
 class QCILDockableWidget(QtWidgets.QDockWidget):
 
-    def __init__(self, parent=None, **kwargs):
-        viewer = kwargs.get('viewer', viewer2D)
-        shape = kwargs.get('shape', (600, 600))
-        title = kwargs.get('title', "3D View")
+    def __init__(self, parent=None, viewer = viewer2D, shape=(600, 600), interactorStyle=None, title=""):
 
         super(QCILDockableWidget, self).__init__(parent)
 
-        self.frame = QCILViewerWidget(parent, **kwargs)
+        self.frame = QCILViewerWidget(parent, viewer, shape = shape, interactorStyle=interactorStyle)
         self.viewer = self.frame.viewer
 
         self.setWindowTitle(title)
