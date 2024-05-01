@@ -42,7 +42,7 @@ class QCILViewerWidget(QtWidgets.QFrame):
         self.iren = self.vtkWidget.GetRenderWindow().GetInteractor()
 
         try:
-            
+
             self.viewer = viewer(dimx=dimx,
                                  dimy=dimy,
                                  ren=self.ren,
