@@ -1151,8 +1151,7 @@ class CILViewer2D(CILViewerBase):
         self.__vis_mode = CILViewer2D.IMAGE_WITH_OVERLAY
         self.setVisualisationToImageWithOverlay()
 
-        # axes labels
-        self.axisLabelsText = ['','','']
+
         
     def log(self, msg):
         if self.debug:
@@ -1884,12 +1883,3 @@ class CILViewer2D(CILViewerBase):
         if enable:
             self._sliderWidgetEnabled = enable
 
-    def setAxisLabels(self, labels = ['x','y','z'], overwrite_flag = True):
-        if type(labels) != list:
-            raise TypeError("Labels must be a list of strings")
-        if overwrite_flag is True:
-            self.axisLabelsText = labels
-        om = self.orientation_marker.GetOrientationMarker()
-        om.SetXAxisLabelText(labels[0])
-        om.SetYAxisLabelText(labels[1])
-        om.SetZAxisLabelText(labels[2])
