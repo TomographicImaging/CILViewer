@@ -398,6 +398,13 @@ class CILViewerBase():
         return self.visualisation_downsampling
 
     def setAxisLabels(self, labels = ['x','y','z'], overwrite_flag = True):
+        '''Sets the axes widget labels.
+        
+        Parameters
+        ----------
+        labels : list of str
+        overwrite_flag : bool
+            If True the attribute 'axisLabelText' is overwritten, if False it is not overwritten'''
         if type(labels) != list:
             raise TypeError("Labels must be a list of strings")
         if overwrite_flag is True:
