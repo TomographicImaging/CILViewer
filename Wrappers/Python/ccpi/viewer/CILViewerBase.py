@@ -107,7 +107,7 @@ class CILViewerBase():
         ori.InteractiveOff()
         self.orientation_marker = ori
         # axes labels
-        self.axisLabelsText = [om.GetXAxisLabelText(),om.GetZAxisLabelText(),om.GetZAxisLabelText()]
+        self.axisLabelsText = [om.GetXAxisLabelText(), om.GetZAxisLabelText(), om.GetZAxisLabelText()]
 
         # holder for list of actors and widgets
         self.actors = {}
@@ -397,7 +397,7 @@ class CILViewerBase():
     def getVisualisationDownsampling(self):
         return self.visualisation_downsampling
 
-    def setAxisLabels(self, labels = ['x','y','z'], overwrite_flag = True):
+    def setAxisLabels(self, labels=['x', 'y', 'z'], overwrite_flag=True):
         '''Sets the axes widget labels.
         
         Parameters
