@@ -394,3 +394,4 @@ class CILViewerBase():
 
     def getVisualisationDownsampling(self):
         return self.visualisation_downsampling
+

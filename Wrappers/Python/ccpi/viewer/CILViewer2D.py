@@ -329,13 +329,17 @@ class CILInteractorStyle(vtk.vtkInteractorStyle):
         self.UpdatePipeline(True)
 
     def OnKeyPress(self, interactor, event):
+        al=self._viewer.axisLabelsText
         if self.GetInputData() is None:
             return
         if self.reslicing_enabled and interactor.GetKeyCode() == "x":
+            self._viewer.setAxisLabels(['',al[1],al[2]], False)
             self.ChangeOrientation(SLICE_ORIENTATION_YZ)
         elif self.reslicing_enabled and interactor.GetKeyCode() == "y":
+            self._viewer.setAxisLabels([al[0],'',al[2]], False)
             self.ChangeOrientation(SLICE_ORIENTATION_XZ)
         elif self.reslicing_enabled and interactor.GetKeyCode() == "z":
+            self._viewer.setAxisLabels([al[0],al[1],''], False)
             self.ChangeOrientation(SLICE_ORIENTATION_XY)
         elif interactor.GetKeyCode() == "a":
             self._viewer.autoWindowLevelOnSliceRange()
@@ -1147,6 +1151,9 @@ class CILViewer2D(CILViewerBase):
         self.__vis_mode = CILViewer2D.IMAGE_WITH_OVERLAY
         self.setVisualisationToImageWithOverlay()
 
+        # axes labels
+        self.axisLabelsText = ['','','']
+        
     def log(self, msg):
         if self.debug:
             print(msg)
@@ -1877,13 +1884,12 @@ class CILViewer2D(CILViewerBase):
         if enable:
             self._sliderWidgetEnabled = enable
 
-    def setAxisLabels(self, labels):
+    def setAxisLabels(self, labels = ['x','y','z'], overwrite_flag = True):
         if type(labels) != list:
             raise TypeError("Labels must be a list of strings")
-        ax = self.orientation_marker.GetOrientationMarker()
-        try:
-            ax.SetXAxisLabelText(labels[0])
-            ax.SetYAxisLabelText(labels[1])
-            ax.SetZAxisLabelText(labels[2])
-        except IndexError:
-            print("Warning: Not all axis labels were specified so only some were modified.")
+        if overwrite_flag is True:
+            self.axisLabelsText = labels
+        om = self.orientation_marker.GetOrientationMarker()
+        om.SetXAxisLabelText(labels[0])
+        om.SetYAxisLabelText(labels[1])
+        om.SetZAxisLabelText(labels[2])
