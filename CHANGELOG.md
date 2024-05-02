@@ -1,5 +1,6 @@
 # Changelog
 ## vx.x.x
+- Add method to edit axes label text, hide one label on 2D viewer #389
 - Add slider widget #365
 - Removed VTK 8 variants from conda recipe.
 - Change Python variants: removed 3.6 and 3.7, added 3.11 and 3.12.
