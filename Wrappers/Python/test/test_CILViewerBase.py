@@ -28,24 +28,26 @@ else:
 
 print("skip_test is set to ", skip_test)
 
+
 @unittest.skipIf(skip_test, "Skipping tests on GitHub Actions")
 class CILViewerBaseTest(unittest.TestCase):
+
     def setUp(self):
         '''Creates an instance of the CIL viewer base class.'''
         self.CILViewerBase_instance = CILViewerBase()
 
-    def test_setAxisLabels(self):  
+    def test_setAxisLabels(self):
         '''Edits the labels in the axes widget and checks they have been set correctly.
         The test is performed with overwrite flag set to default, True, or False.'''
-        labels = ['a','b','c']
+        labels = ['a', 'b', 'c']
         self.CILViewerBase_instance.setAxisLabels(labels)
-        new_labels = self.CILViewerBase_instance.getCurrentAxisLabelsText()   
+        new_labels = self.CILViewerBase_instance.getCurrentAxisLabelsText()
         self.assertEqual(new_labels, labels)
         self.assertEqual(self.CILViewerBase_instance.axisLabelsText, labels)
 
-        labels_2 = ['c','d','e']
-        self.CILViewerBase_instance.setAxisLabels(labels_2,False)
-        new_labels = self.CILViewerBase_instance.getCurrentAxisLabelsText()   
+        labels_2 = ['c', 'd', 'e']
+        self.CILViewerBase_instance.setAxisLabels(labels_2, False)
+        new_labels = self.CILViewerBase_instance.getCurrentAxisLabelsText()
         self.assertEqual(new_labels, labels_2)
         self.assertEqual(self.CILViewerBase_instance.axisLabelsText, labels)
 
@@ -77,7 +79,6 @@ class CILViewer3DTest(unittest.TestCase):
         self.cil_viewer.addWidgetReference(widget1, widget_name)
         with self.assertRaises(ValueError):
             self.cil_viewer.addWidgetReference(widget2, widget_name)
-
 
 
 if __name__ == '__main__':

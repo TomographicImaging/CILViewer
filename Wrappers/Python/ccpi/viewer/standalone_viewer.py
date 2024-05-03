@@ -113,7 +113,6 @@ class standalone_viewer(object):
         self.app = app
 
         self.set_up(title, viewer1_type, viewer2_type, *args, **kwargs)
-        
 
     def set_up(self, title, viewer1_type, viewer2_type=None, *args, **kwargs):
         '''

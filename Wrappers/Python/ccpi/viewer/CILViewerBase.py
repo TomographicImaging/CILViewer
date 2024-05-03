@@ -399,7 +399,7 @@ class CILViewerBase():
 
     def getCurrentAxisLabelsText(self):
         '''Returns the current labels on the axis widget.'''
-        om=self.orientation_marker.GetOrientationMarker()
+        om = self.orientation_marker.GetOrientationMarker()
         return [om.GetXAxisLabelText(), om.GetYAxisLabelText(), om.GetZAxisLabelText()]
 
     def setAxisLabels(self, labels=['x', 'y', 'z'], overwrite_flag=True):
