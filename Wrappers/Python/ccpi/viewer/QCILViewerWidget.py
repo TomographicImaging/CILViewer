@@ -3,7 +3,7 @@ import sys
 import vtk
 from PySide2 import QtCore, QtWidgets
 from ccpi.viewer.QCILRenderWindowInteractor import QCILRenderWindowInteractor
-from ccpi.viewer import viewer2D
+from ccpi.viewer import viewer2D, viewer3D
 
 
 class QCILViewerWidget(QtWidgets.QFrame):
@@ -15,7 +15,7 @@ class QCILViewerWidget(QtWidgets.QFrame):
     :param interactorStyle: The interactor style for the Viewer. 
     '''
 
-    def __init__(self, parent, viewer, shape=(600, 600), debug=False, renderer=None, interactorStyle=None):
+    def __init__(self, parent, viewer, shape=(600, 600), debug=False, renderer=None, interactorStyle=None, enableSliderWidget=True):
         '''Creator. Creates an instance of a QFrame and of a CILViewer
         
         The viewer is placed in the QFrame inside a QVBoxLayout. 
@@ -41,17 +41,24 @@ class QCILViewerWidget(QtWidgets.QFrame):
         # https://discourse.vtk.org/t/qvtkwidget-render-window-is-outside-main-qt-app-window/1539/8?u=edoardo_pasca
         self.iren = self.vtkWidget.GetRenderWindow().GetInteractor()
 
-        try:
-
+        if viewer is viewer2D:
             self.viewer = viewer(dimx=dimx,
-                                 dimy=dimy,
-                                 ren=self.ren,
-                                 renWin=self.vtkWidget.GetRenderWindow(),
-                                 iren=self.iren,
-                                 debug=debug)
-        except KeyError:
+                                dimy=dimy,
+                                ren=self.ren,
+                                renWin=self.vtkWidget.GetRenderWindow(),
+                                iren=self.iren,
+                                debug=debug,
+                                enableSliderWidget = enableSliderWidget)
+        elif viewer is viewer3D:
+            self.viewer = viewer(dimx=dimx,
+                                dimy=dimy,
+                                ren=self.ren,
+                                renWin=self.vtkWidget.GetRenderWindow(),
+                                iren=self.iren,
+                                debug=debug)
+        else:
             raise KeyError("Viewer class not provided. Submit an uninstantiated viewer class object"
-                           "using 'viewer' keyword")
+                        "using 'viewer' keyword")
 
         if interactorStyle is not None:
             self.viewer.style = interactorStyle(self.viewer)
