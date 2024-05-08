@@ -15,7 +15,14 @@ class QCILViewerWidget(QtWidgets.QFrame):
     :param interactorStyle: The interactor style for the Viewer. 
     '''
 
-    def __init__(self, parent, viewer, shape=(600, 600), debug=False, renderer=None, interactorStyle=None, enableSliderWidget=True):
+    def __init__(self,
+                 parent,
+                 viewer,
+                 shape=(600, 600),
+                 debug=False,
+                 renderer=None,
+                 interactorStyle=None,
+                 enableSliderWidget=True):
         '''Creator. Creates an instance of a QFrame and of a CILViewer
         
         The viewer is placed in the QFrame inside a QVBoxLayout. 
@@ -43,22 +50,22 @@ class QCILViewerWidget(QtWidgets.QFrame):
 
         if viewer is viewer2D:
             self.viewer = viewer(dimx=dimx,
-                                dimy=dimy,
-                                ren=self.ren,
-                                renWin=self.vtkWidget.GetRenderWindow(),
-                                iren=self.iren,
-                                debug=debug,
-                                enableSliderWidget = enableSliderWidget)
+                                 dimy=dimy,
+                                 ren=self.ren,
+                                 renWin=self.vtkWidget.GetRenderWindow(),
+                                 iren=self.iren,
+                                 debug=debug,
+                                 enableSliderWidget=enableSliderWidget)
         elif viewer is viewer3D:
             self.viewer = viewer(dimx=dimx,
-                                dimy=dimy,
-                                ren=self.ren,
-                                renWin=self.vtkWidget.GetRenderWindow(),
-                                iren=self.iren,
-                                debug=debug)
+                                 dimy=dimy,
+                                 ren=self.ren,
+                                 renWin=self.vtkWidget.GetRenderWindow(),
+                                 iren=self.iren,
+                                 debug=debug)
         else:
             raise KeyError("Viewer class not provided. Submit an uninstantiated viewer class object"
-                        "using 'viewer' keyword")
+                           "using 'viewer' keyword")
 
         if interactorStyle is not None:
             self.viewer.style = interactorStyle(self.viewer)
