@@ -7,7 +7,7 @@ dependencies:
     - numpy
     - vtk
     - pyside2
-    - eqt=1.0.0
+    - eqt>=1.0.0
     - importlib_metadata    # [py<38]
     - h5py
     - pillow

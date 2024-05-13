@@ -1,6 +1,6 @@
 # Changelog
 ## vx.x.x
-- Update eqt requirements to v1.0.0 and update yml recipe #385
+- Update eqt requirements to >=1.0.0 and update yml recipe #385
 - Fix failing unit test #394
 - Add slider widget #365
 - Removed VTK 8 variants from conda recipe.
