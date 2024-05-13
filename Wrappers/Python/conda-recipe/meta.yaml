@@ -35,11 +35,11 @@ requirements:
     - numpy
     - vtk
     - pyside2
-    - eqt>=0.7.1
+    - eqt=1.0.0
     - importlib_metadata    # [py<38]
     - h5py
-    - schema
     - pyyaml
+    - schema
     - cil-data =22.0.0
 
 about:
