@@ -1,6 +1,6 @@
 # Changelog
 ## vx.x.x
-- Update eqt requirements to >=0.7.1 #385
+- Update eqt requirements to >=0.7.1 and update yml recipe #385
 - Add slider widget #365
 - Removed VTK 8 variants from conda recipe.
 - Change Python variants: removed 3.6 and 3.7, added 3.11 and 3.12.
