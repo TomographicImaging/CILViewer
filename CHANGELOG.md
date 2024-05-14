@@ -1,6 +1,11 @@
 # Changelog
-## vx.x.x
+
+## v24.0.0
 - Add slider widget #365 and option to not install it #386
+- Edit web-viewer readme #401
+- Add method to edit axes label text & tests, hide one label on 2D viewer #389
+- Fix failing unit test #394
+- Add slider widget #365
 - Removed VTK 8 variants from conda recipe.
 - Change Python variants: removed 3.6 and 3.7, added 3.11 and 3.12.
 - Bugfix on resample reader #359. Standalone viewer app defaults to downsample in all dimensions.
