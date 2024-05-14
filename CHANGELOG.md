@@ -1,6 +1,7 @@
 # Changelog
 
 ## v24.0.0
+- Update eqt requirements to >=1.0.0 and update yml recipe #385
 - Add slider widget #365 and option to not install it #386
 - Edit web-viewer readme #401
 - Add method to edit axes label text & tests, hide one label on 2D viewer #389
