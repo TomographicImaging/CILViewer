@@ -1,6 +1,6 @@
 # Changelog
 ## v24.0.0
-- Edit web-viewer readme #400
+- Edit web-viewer readme #401
 - Add method to edit axes label text & tests, hide one label on 2D viewer #389
 - Fix failing unit test #394
 - Add slider widget #365
