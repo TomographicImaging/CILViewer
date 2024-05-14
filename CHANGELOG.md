@@ -13,13 +13,14 @@ Bugfixes:
 
 CI:
 - Update eqt requirements to >=1.0.0 and update yml recipe #385
-- Removed VTK 8 variants from conda recipe.
+- Remove VTK 8 variants from conda recipe.
 - Change Python variants: removed 3.6 and 3.7, added 3.11 
  (not Python 3.12 for incompatibility with EQT #399)
 - Removed the `paskino` channel from the install command as eqt is on `conda-forge`
 
 Documentation
 - Edit web-viewer readme #401
+- Transfer repository to "TomographicImaging" #402
 
 ## v23.1.0
 - Raise error if try to add multiple widgets with the same name to CILViewer or CILViewer2D.
