@@ -1,5 +1,6 @@
 # Changelog
-## vx.x.x
+## v24.0.0
+- Edit web-viewer readme #400
 - Fix failing unit test #394
 - Add slider widget #365
 - Removed VTK 8 variants from conda recipe.
