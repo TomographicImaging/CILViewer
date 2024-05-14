@@ -1,5 +1,6 @@
 # Changelog
 ## vx.x.x
+- Add method to edit axes label text & tests, hide one label on 2D viewer #389
 - Fix failing unit test #394
 - Add slider widget #365
 - Removed VTK 8 variants from conda recipe.
