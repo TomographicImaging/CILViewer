@@ -5,7 +5,7 @@ Follow these steps:
 - Create the conda environment:
     - `mamba env create -f dev-environment.yml`
 - Activate the environment
-    - `conda activate cilviewer_webapp` or `mamba activate cilviewer_webapp`
+    - `mamba activate cilviewer_webapp`
 - Install the app in the environment from the `CILViewer` directory
     - `pip install ./Wrappers/Python`
 - Start the web application
