@@ -329,13 +329,17 @@ class CILInteractorStyle(vtk.vtkInteractorStyle):
         self.UpdatePipeline(True)
 
     def OnKeyPress(self, interactor, event):
+        al = self._viewer.axisLabelsText
         if self.GetInputData() is None:
             return
         if self.reslicing_enabled and interactor.GetKeyCode() == "x":
+            self._viewer.setAxisLabels(['', al[1], al[2]], False)
             self.ChangeOrientation(SLICE_ORIENTATION_YZ)
         elif self.reslicing_enabled and interactor.GetKeyCode() == "y":
+            self._viewer.setAxisLabels([al[0], '', al[2]], False)
             self.ChangeOrientation(SLICE_ORIENTATION_XZ)
         elif self.reslicing_enabled and interactor.GetKeyCode() == "z":
+            self._viewer.setAxisLabels([al[0], al[1], ''], False)
             self.ChangeOrientation(SLICE_ORIENTATION_XY)
         elif interactor.GetKeyCode() == "a":
             self._viewer.autoWindowLevelOnSliceRange()
