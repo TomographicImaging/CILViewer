@@ -36,4 +36,4 @@ The changelog file needs to be updated manually every time a pull request (PR) i
 - Mention the relevant PR.
 
 ###### Example:
-- Adds title to FormDockWidget and update tests/examples #102
+- Add CONTRIBUTING.md #403
