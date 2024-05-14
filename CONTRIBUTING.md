@@ -16,8 +16,7 @@ pip install ./Wrappers/Python
 Before merging a pull request, all tests must pass. 
 Install the required packages:
 ```sh
-pip install pytest
-pip install pillow
+pip install pytest pillow
 ```
 Tests can be run locally from the repository folder
 ```sh
