@@ -19,6 +19,7 @@ CI:
 - Removed the `paskino` channel from the install command as eqt is on `conda-forge`
 
 Documentation
+- Add CONTRIBUTING.md #403
 - Edit web-viewer readme #401
 - Transfer repository to "TomographicImaging" #402
 

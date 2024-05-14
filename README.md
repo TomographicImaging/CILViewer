@@ -98,6 +98,9 @@ Jakob Sauer Jørgensen, Martin Skovgaard Andersen, & Carsten Gundlach. (2021). H
 
 The head dataset is avaiable in [CIL-Data as 'head.mha'](https://github.com/TomographicImaging/CIL-Data) along with its license.
 
+## Developer Contribution Guide
+See [CONTRIBUTING.md](./CONTRIBUTING.md).
+
 ## Notice
 The CIL Viewer code took initial inspiration from a previous project of Edoardo Pasca and Lukas Batteau [PyVE](https://sourceforge.net/p/pyve/code/ci/master/tree/PyVE/), the license of which we report here:
 
