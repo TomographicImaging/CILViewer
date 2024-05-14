@@ -1,17 +1,25 @@
 # Changelog
 
 ## v24.0.0
-- Update eqt requirements to >=1.0.0 and update yml recipe #385
-- Add slider widget #365 and option to not install it #386
-- Edit web-viewer readme #401
+
+New functionality:
 - Add method to edit axes label text & tests, hide one label on 2D viewer #389
+- Add slider widget #365 and option to not install it #386
+
+Bugfixes:
 - Fix failing unit test #394
-- Add slider widget #365
-- Removed VTK 8 variants from conda recipe.
-- Change Python variants: removed 3.6 and 3.7, added 3.11 and 3.12.
 - Bugfix on resample reader #359. Standalone viewer app defaults to downsample in all dimensions.
 - Fix bug with setInputAsNumpy() using deprecated `numpy2vtkImporter` in `CILViewer2D` - now uses `numpy2vtkImage`
+
+CI:
+- Update eqt requirements to >=1.0.0 and update yml recipe #385
+- Removed VTK 8 variants from conda recipe.
+- Change Python variants: removed 3.6 and 3.7, added 3.11 
+ (not Python 3.12 for incompatibility with EQT #399)
 - Removed the `paskino` channel from the install command as eqt is on `conda-forge`
+
+Documentation
+- Edit web-viewer readme #401
 
 ## v23.1.0
 - Raise error if try to add multiple widgets with the same name to CILViewer or CILViewer2D.
