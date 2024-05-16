@@ -105,9 +105,8 @@ class CILViewerBase():
         ori.SetViewport(0.0, 0.0, 0.4, 0.4)
         ori.SetEnabled(1)
         ori.InteractiveOff()
-        self.orientation_marker = ori
-        # axes labels
-        self.axisLabelsText = self.getCurrentAxisLabelsText()
+        self.orientation_marker_widget = ori
+        self.orientation_marker = om
 
         # holder for list of actors and widgets
         self.actors = {}
