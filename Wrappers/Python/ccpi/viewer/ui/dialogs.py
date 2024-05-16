@@ -330,7 +330,7 @@ class RawInputDialog(FormDialog):
             if not isFortran:
                 logger.info("Swapping orientation marker XZ labels")
                 # sc.viewer.orientation_marker.GetOrientationMarker().RotateWXYZ(90, 0, 1, 0)
-                om = sc.viewer.orientation_marker
+                om = sc.viewer.orientation_marker.GetOrientationMarker()
                 xlabel = om.GetXAxisLabelText()
                 zlabel = om.GetZAxisLabelText()
                 om.SetZAxisLabelText(xlabel)
