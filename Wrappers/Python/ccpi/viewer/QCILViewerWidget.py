@@ -56,6 +56,8 @@ class QCILViewerWidget(QtWidgets.QFrame):
                                  iren=self.iren,
                                  debug=debug,
                                  enableSliderWidget=enableSliderWidget)
+            al = self.viewer.axisLabelsText
+            self.viewer.setAxisLabels([al[0], al[1], ''], False)
         elif viewer is viewer3D:
             self.viewer = viewer(dimx=dimx,
                                  dimy=dimy,
