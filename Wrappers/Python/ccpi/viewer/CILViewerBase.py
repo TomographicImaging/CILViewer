@@ -108,7 +108,6 @@ class CILViewerBase():
         self.orientation_marker = ori
         # axes labels
         self.axisLabelsText = self.getCurrentAxisLabelsText()
-        self.orientation_marker = ori
 
         # holder for list of actors and widgets
         self.actors = {}
