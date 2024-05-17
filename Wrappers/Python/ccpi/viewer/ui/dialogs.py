@@ -322,7 +322,7 @@ class RawInputDialog(FormDialog):
         verticalLayout.setContentsMargins(10, 10, 10, 10)
         
         # add a CILViewer widget
-        sc = QCILViewerWidget(diag, viewer=viewer2D)
+        sc = QCILViewerWidget(diag, viewer=viewer2D, enableSliderWidget=False)
         sc.viewer.setInputData(reader2.GetOutput())
 
         # swap the labels of the orientation marker if the 3D data is not in fortran order
