@@ -275,7 +275,8 @@ class ImageReader(object):
             'shape': Or(list, np.ndarray, tuple),
             'is_fortran': bool,
             'is_big_endian': bool,
-            'typecode': str
+            'typecode': str,
+            'preview_slice': int,
         })
         raw_attrs_schema.validate(raw_attrs)
         return raw_attrs

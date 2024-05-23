@@ -93,13 +93,13 @@ class RawInputDialog(FormDialog):
         fw.addWidget(dimensionalityValue, dimensionalityLabel, "dimensionality")
 
         validator = QtGui.QIntValidator()
-
+        validator.setBottom(0)
         # Entry for size of dimensions:
-        for dim in ['X', 'Y', 'Z']:
+        for dim in ['Width', 'Height', 'Slices']:
             ValueEntry = QLineEdit()
             ValueEntry.setValidator(validator)
             ValueEntry.setText("0")
-            Label = QLabel("Size {}".format(dim))
+            Label = QLabel("{}".format(dim))
             fw.addWidget(ValueEntry, Label, 'dim_{}'.format(dim))
 
         dimensionalityValue.currentIndexChanged.connect(self.enableDisableDimZ)
@@ -120,11 +120,12 @@ class RawInputDialog(FormDialog):
         fw.addWidget(endiannes, endiannesLabel, 'endianness')
 
         # Fortran Ordering
-        fortranLabel = QLabel("Fortran Ordering")
-        fortranOrder = QComboBox()
-        fortranOrder.addItems(["Fortran Order: XYZ", "C Order: ZYX"])
-        fortranOrder.setCurrentIndex(1)
-        fw.addWidget(fortranOrder, fortranLabel, "is_fortran")
+        previewSliceLabel = QLabel("Preview Slice:")
+        previewSliceEntry = QLineEdit()
+        previewSliceEntry.setValidator(validator)
+        previewSliceEntry.setText("0")
+        
+        fw.addWidget(previewSliceEntry, previewSliceLabel, "preview_slice")
 
         # preview button
         previewButton = QtWidgets.QPushButton("Preview")
@@ -168,16 +169,17 @@ class RawInputDialog(FormDialog):
         widgets = self.formWidget.widgets
         dimensionality = [3, 2][widgets['dimensionality_field'].currentIndex()]
         dims = []
-        dims.append(int(widgets['dim_X_field'].text()))
-        dims.append(int(widgets['dim_Y_field'].text()))
+        dims.append(int(widgets['dim_Width_field'].text()))
+        dims.append(int(widgets['dim_Height_field'].text()))
         if dimensionality == 3:
-            dims.append(int(widgets['dim_Z_field'].text()))
+            dims.append(int(widgets['dim_Slices_field'].text()))
 
         raw_attrs['shape'] = dims
-        raw_attrs['is_fortran'] = not bool(widgets['is_fortran_field'].currentIndex())
+        # raw_attrs['is_fortran'] = not bool(widgets['is_fortran_field'].currentIndex())
         raw_attrs['is_big_endian'] = not bool(widgets['endianness_field'].currentIndex())
         raw_attrs['typecode'] = widgets['dtype_field'].currentText()
-
+        raw_attrs['preview_slice'] = int(widgets['preview_slice_field'].text())
+        raw_attrs['is_fortran'] = False
         return raw_attrs
 
     def enableDisableDimZ(self):
@@ -197,21 +199,15 @@ class RawInputDialog(FormDialog):
         # retrieve info about image file from interface
         dimensionality = [3, 2][self.getWidget('dimensionality').currentIndex()]
         dimX, dimY, dimZ = pars['shape']
-        isFortran = pars['is_fortran']
+        # isFortran = pars['is_fortran']
         isBigEndian = pars['is_big_endian']
         # typecode = pars['typecode']
         typecode = self.getWidget('dtype').currentText()
 
         
-        if isFortran:
-            shape = (dimX, dimY)
-        else:
-            shape = (dimY, dimX)
+        shape = (dimX, dimY)
         if dimensionality == 3:
-            if isFortran:
-                shape = (dimX, dimY, dimZ)
-            else:
-                shape = (dimZ, dimY, dimX)
+            shape = (dimX, dimY, dimZ)
         
         # Construct a data type
         dt = np.dtype(typecode)
@@ -249,16 +245,16 @@ class RawInputDialog(FormDialog):
         offset = 0
         slice_size = -1
         if dimensionality == 3:
-            # read the centre slice
+            # read the slice indicated by the user
             slice_size = shape[1]*shape[0]
-            offset = shape[2]*slice_size//2
+            offset = pars['preview_slice'] * slice_size
 
         # use the cilRawCroppedReader to read the slice
         reader2 = cilRawCroppedReader()
         reader2.SetFileName(self.fname)
-        reader2.SetTargetZExtent((shape[2]//2, shape[2]//2))
+        reader2.SetTargetZExtent((pars['preview_slice'], pars['preview_slice']))
         reader2.SetBigEndian(isBigEndian)
-        reader2.SetIsFortran(isFortran)
+        # reader2.SetIsFortran(isFortran)
         reader2.SetTypeCodeName(dt.name)
         reader2.SetStoredArrayShape(shape)
         reader2.Update()
@@ -312,7 +308,7 @@ class RawInputDialog(FormDialog):
         verticalLayout.setContentsMargins(10, 10, 10, 10)
         
         # add a CILViewer widget
-        sc = QCILViewerWidget(diag, viewer=viewer2D)
+        sc = QCILViewerWidget(diag, viewer=viewer2D, enableSliderWidget=False)
         sc.viewer.setInputData(reader2.GetOutput())
 
         # add it to the layout of the dialog
