@@ -3,7 +3,7 @@ import sys
 import vtk
 from PySide2 import QtCore, QtWidgets
 from ccpi.viewer.QCILRenderWindowInteractor import QCILRenderWindowInteractor
-from ccpi.viewer import viewer2D
+from ccpi.viewer import viewer2D, viewer3D
 
 
 class QCILViewerWidget(QtWidgets.QFrame):
@@ -15,7 +15,14 @@ class QCILViewerWidget(QtWidgets.QFrame):
     :param interactorStyle: The interactor style for the Viewer. 
     '''
 
-    def __init__(self, parent=None, **kwargs):
+    def __init__(self,
+                 parent,
+                 viewer,
+                 shape=(600, 600),
+                 debug=False,
+                 renderer=None,
+                 interactorStyle=None,
+                 enableSliderWidget=True):
         '''Creator. Creates an instance of a QFrame and of a CILViewer
         
         The viewer is placed in the QFrame inside a QVBoxLayout. 
@@ -27,34 +34,43 @@ class QCILViewerWidget(QtWidgets.QFrame):
         # area in the main window. A resize of the MainWindow triggers a resize of
         # the QFrame to occupy the whole area available.
 
-        dimx, dimy = kwargs.get('shape', (600, 600))
+        dimx, dimy = shape
         # self.resize(dimx, dimy)
 
         self.vtkWidget = QCILRenderWindowInteractor(self)
 
-        if 'renderer' in kwargs.keys():
-            self.ren = kwargs['renderer']
-        else:
+        if renderer is None:
             self.ren = vtk.vtkRenderer()
+        else:
+            self.ren = renderer
+
         self.vtkWidget.GetRenderWindow().AddRenderer(self.ren)
         # https://discourse.vtk.org/t/qvtkwidget-render-window-is-outside-main-qt-app-window/1539/8?u=edoardo_pasca
         self.iren = self.vtkWidget.GetRenderWindow().GetInteractor()
 
-        try:
-
-            # print ("provided viewer class ", kwargs['viewer'])
-            self.viewer = kwargs['viewer'](renWin=self.vtkWidget.GetRenderWindow(),
-                                           iren=self.iren,
-                                           ren=self.ren,
-                                           dimx=dimx,
-                                           dimy=dimy,
-                                           debug=kwargs.get('debug', False))
-        except KeyError:
+        if viewer is viewer2D:
+            self.viewer = viewer(dimx=dimx,
+                                 dimy=dimy,
+                                 ren=self.ren,
+                                 renWin=self.vtkWidget.GetRenderWindow(),
+                                 iren=self.iren,
+                                 debug=debug,
+                                 enableSliderWidget=enableSliderWidget)
+            al = self.viewer.axisLabelsText
+            self.viewer.setAxisLabels([al[0], al[1], ''], False)
+        elif viewer is viewer3D:
+            self.viewer = viewer(dimx=dimx,
+                                 dimy=dimy,
+                                 ren=self.ren,
+                                 renWin=self.vtkWidget.GetRenderWindow(),
+                                 iren=self.iren,
+                                 debug=debug)
+        else:
             raise KeyError("Viewer class not provided. Submit an uninstantiated viewer class object"
                            "using 'viewer' keyword")
 
-        if 'interactorStyle' in kwargs.keys():
-            self.viewer.style = kwargs['interactorStyle'](self.viewer)
+        if interactorStyle is not None:
+            self.viewer.style = interactorStyle(self.viewer)
             self.viewer.iren.SetInteractorStyle(self.viewer.style)
 
         self.vl = QtWidgets.QVBoxLayout()
@@ -64,15 +80,14 @@ class QCILViewerWidget(QtWidgets.QFrame):
 
 
 class QCILDockableWidget(QtWidgets.QDockWidget):
+    '''Inserts a vtk viewer in a dock widget.'''
 
-    def __init__(self, parent=None, **kwargs):
-        viewer = kwargs.get('viewer', viewer2D)
-        shape = kwargs.get('shape', (600, 600))
-        title = kwargs.get('title', "3D View")
-
+    def __init__(self, parent=None, viewer=viewer2D, shape=(600, 600), interactorStyle=None, title=""):
+        '''Creates an instance of a `QCILDockableWidget` and inserts it in a `QDockWidget`. 
+        Sets the title of the dock widget.'''
         super(QCILDockableWidget, self).__init__(parent)
 
-        self.frame = QCILViewerWidget(parent, **kwargs)
+        self.frame = QCILViewerWidget(parent, viewer, shape=shape, interactorStyle=interactorStyle)
         self.viewer = self.frame.viewer
 
         self.setWindowTitle(title)
