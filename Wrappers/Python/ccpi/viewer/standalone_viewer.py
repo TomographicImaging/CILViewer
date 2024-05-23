@@ -124,7 +124,6 @@ class standalone_viewer(object):
         self.app = app
 
         self.set_up(title, viewer1_type, viewer2_type, *args, **kwargs)
-        self.show()
 
     def set_up(self, title, viewer1_type, viewer2_type=None, *args, **kwargs):
         '''
@@ -184,7 +183,6 @@ def main():
     standalone_viewer("Standalone Viewer", viewer1_type='2D', viewer2_type='3D', \
         scale_factor=args.scale_factor, max_opacity=args.max_opacity
     )
-
     return 0
 
 

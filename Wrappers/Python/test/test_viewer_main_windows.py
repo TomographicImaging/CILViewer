@@ -17,8 +17,6 @@ else:
 
 print("skip_as_conda_build is set to ", skip_as_conda_build)
 
-_instance = None
-
 
 @unittest.skipIf(skip_as_conda_build, "On conda builds do not do any test with interfaces")
 class TestViewerMainWindow(unittest.TestCase):
@@ -37,10 +35,6 @@ class TestViewerMainWindow(unittest.TestCase):
         pass
 
     def test_all(self):
-        global _instance
-        if _instance is None:
-            _instance = QApplication(sys.argv)
-
         # https://stackoverflow.com/questions/5387299/python-unittest-testcase-execution-order
         # https://stackoverflow.com/questions/11145583/unit-and-functional-testing-a-pyside-based-application
         self._test_init()
@@ -56,8 +50,6 @@ class TestViewerMainWindow(unittest.TestCase):
         self._test_updateViewerCoords_with_display_downsampled_coords_selected()
         self._test_updateViewerCoords_with_3D_viewer()
         self._test_updateViewerCoords_with_no_img3D()
-
-        del _instance
 
     def _test_init(self):
         vmw = ViewerMainWindow(title="Testing Title", app_name="testing app name")
