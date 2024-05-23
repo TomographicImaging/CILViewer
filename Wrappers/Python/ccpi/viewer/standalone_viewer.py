@@ -180,7 +180,11 @@ def main():
     err = vtk.vtkFileOutputWindow()
     err.SetFileName("viewer.log")
     vtk.vtkOutputWindow.SetInstance(err)
-    standalone_viewer_instance = standalone_viewer("Standalone Viewer", viewer1_type='2D', viewer2_type='3D', scale_factor=args.scale_factor, max_opacity=args.max_opacity)
+    standalone_viewer_instance = standalone_viewer("Standalone Viewer",
+                                                   viewer1_type='2D',
+                                                   viewer2_type='3D',
+                                                   scale_factor=args.scale_factor,
+                                                   max_opacity=args.max_opacity)
     standalone_viewer_instance.show()
     return 0
 
