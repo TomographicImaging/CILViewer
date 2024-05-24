@@ -271,6 +271,8 @@ class ImageReader(object):
         if raw_image_attrs is None:
             return
         raw_attrs = raw_image_attrs.copy()
+        if raw_attrs.get('preview_slice', None) is None:
+            raw_attrs['preview_slice'] = 0
         raw_attrs_schema = Schema({
             'shape': Or(list, np.ndarray, tuple),
             'is_fortran': bool,
