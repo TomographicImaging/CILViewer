@@ -302,6 +302,10 @@ class RawInputDialog(FormDialog):
         
         diag = QtWidgets.QDialog(parent=self)
         diag.setModal(True)
+        if dimensionality == 3:
+            diag.setWindowTitle(f"Preview Slice: {pars['preview_slice']}")
+        else:
+            diag.setWindowTitle(f'Preview Data')
         # add a layout
         verticalLayout = QtWidgets.QVBoxLayout(diag)
         verticalLayout.setContentsMargins(10, 10, 10, 10)
