@@ -108,7 +108,7 @@ class RawInputDialog(FormDialog):
         self.supported_types = RawInputDialog.supported_types.copy()
         dtypeLabel = QLabel("Data Type")
         dtypeValue = QComboBox()
-        dtypeValue.addItems([np.dtype(dt).name for dt in self.supported_types])
+        dtypeValue.addItems([dt.name for dt in self.supported_types])
         dtypeValue.setCurrentIndex(1)
         fw.addWidget(dtypeValue, dtypeLabel, 'dtype')
 
@@ -155,7 +155,7 @@ class RawInputDialog(FormDialog):
         '''
         self.supported_types = types
         self.getWidget('dtype').clear()
-        self.getWidget('dtype').addItems([np.dtype(dt).name for dt in self.supported_types])
+        self.getWidget('dtype').addItems([dt.name for dt in self.supported_types])
 
     def getRawAttrs(self):
         '''
