@@ -95,7 +95,7 @@ class RawInputDialog(FormDialog):
         validator = QtGui.QIntValidator()
         validator.setBottom(0)
         # Entry for size of dimensions:
-        for dim in ['Width', 'Height', 'Slices']:
+        for dim in ['Width', 'Height', 'Images']:
             ValueEntry = QLineEdit()
             ValueEntry.setValidator(validator)
             ValueEntry.setText("0")
@@ -120,13 +120,13 @@ class RawInputDialog(FormDialog):
         fw.addWidget(endiannes, endiannesLabel, 'endianness')
 
         # Fortran Ordering
-        fortranLabel = QLabel("Fortran Ordering")
+        fortranLabel = QLabel("Data Ordering")
         fortranOrder = QComboBox()
-        fortranOrder.addItems(["Fortran Order: XYZ", "C Order: ZYX"])
+        fortranOrder.addItems(["Width-Height-Images", "Images-Height-Width"])
         fortranOrder.setCurrentIndex(0)
         fw.addWidget(fortranOrder, fortranLabel, "is_fortran")
 
-        previewSliceLabel = QLabel("Preview Slice:")
+        previewSliceLabel = QLabel("Preview image:")
         previewSliceEntry = QLineEdit()
         previewSliceEntry.setValidator(validator)
         previewSliceEntry.setText("0")
@@ -178,7 +178,7 @@ class RawInputDialog(FormDialog):
         dims.append(int(widgets['dim_Width_field'].text()))
         dims.append(int(widgets['dim_Height_field'].text()))
         if dimensionality == 3:
-            dims.append(int(widgets['dim_Slices_field'].text()))
+            dims.append(int(widgets['dim_Images_field'].text()))
 
         raw_attrs['shape'] = dims
         raw_attrs['is_fortran'] = not bool(widgets['is_fortran_field'].currentIndex())
@@ -196,9 +196,9 @@ class RawInputDialog(FormDialog):
         widgets = self.formWidget.widgets
         dimensionality = [3, 2][widgets['dimensionality_field'].currentIndex()]
         if dimensionality == 3:
-            widgets['dim_Z_field'].setEnabled(True)
+            widgets['dim_Images_field'].setEnabled(True)
         else:
-            widgets['dim_Z_field'].setEnabled(False)
+            widgets['dim_Images_field'].setEnabled(False)
     
     def preview(self):
         pars = self.getRawAttrs()
@@ -311,7 +311,7 @@ class RawInputDialog(FormDialog):
         diag = QtWidgets.QDialog(parent=self)
         diag.setModal(True)
         if dimensionality == 3:
-            diag.setWindowTitle(f"Preview Slice: {pars['preview_slice']}")
+            diag.setWindowTitle(f"Preview Image: {pars['preview_slice']}")
         else:
             diag.setWindowTitle(f'Preview Data')
         diag.setWindowFlag(QtCore.Qt.WindowContextHelpButtonHint, False)
