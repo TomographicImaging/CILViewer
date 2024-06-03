@@ -190,6 +190,7 @@ class TestRawInputDialog(unittest.TestCase):
         rdi.getWidget('dtype', 'field').setCurrentText('uint16')
         rdi.getWidget('endianness', 'field').setCurrentText('Big Endian')
         rdi.getWidget('preview_slice', 'field').setText("0")
+        rdi.getWidget('is_fortran', 'field').setCurrentText("C Order: ZYX")
         assert rdi.getRawAttrs() == {
             'shape': [1, 2, 3],
             'typecode': 'uint16',

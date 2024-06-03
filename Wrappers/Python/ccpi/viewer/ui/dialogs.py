@@ -120,6 +120,12 @@ class RawInputDialog(FormDialog):
         fw.addWidget(endiannes, endiannesLabel, 'endianness')
 
         # Fortran Ordering
+        fortranLabel = QLabel("Fortran Ordering")
+        fortranOrder = QComboBox()
+        fortranOrder.addItems(["Fortran Order: XYZ", "C Order: ZYX"])
+        fortranOrder.setCurrentIndex(0)
+        fw.addWidget(fortranOrder, fortranLabel, "is_fortran")
+
         previewSliceLabel = QLabel("Preview Slice:")
         previewSliceEntry = QLineEdit()
         previewSliceEntry.setValidator(validator)
@@ -175,11 +181,12 @@ class RawInputDialog(FormDialog):
             dims.append(int(widgets['dim_Slices_field'].text()))
 
         raw_attrs['shape'] = dims
-        # raw_attrs['is_fortran'] = not bool(widgets['is_fortran_field'].currentIndex())
+        raw_attrs['is_fortran'] = not bool(widgets['is_fortran_field'].currentIndex())
+        # raw_attrs['is_fortran'] = False
         raw_attrs['is_big_endian'] = not bool(widgets['endianness_field'].currentIndex())
         raw_attrs['typecode'] = widgets['dtype_field'].currentText()
         raw_attrs['preview_slice'] = int(widgets['preview_slice_field'].text())
-        raw_attrs['is_fortran'] = False
+        
         return raw_attrs
 
     def enableDisableDimZ(self):
@@ -199,7 +206,7 @@ class RawInputDialog(FormDialog):
         # retrieve info about image file from interface
         dimensionality = [3, 2][self.getWidget('dimensionality').currentIndex()]
         dimX, dimY, dimZ = pars['shape']
-        # isFortran = pars['is_fortran']
+        isFortran = pars['is_fortran']
         isBigEndian = pars['is_big_endian']
         # typecode = pars['typecode']
         typecode = self.getWidget('dtype').currentText()
@@ -254,7 +261,7 @@ class RawInputDialog(FormDialog):
         reader2.SetFileName(self.fname)
         reader2.SetTargetZExtent((pars['preview_slice'], pars['preview_slice']))
         reader2.SetBigEndian(isBigEndian)
-        # reader2.SetIsFortran(isFortran)
+        reader2.SetIsFortran(isFortran)
         reader2.SetTypeCodeName(dt.name)
         reader2.SetStoredArrayShape(shape)
         reader2.Update()
