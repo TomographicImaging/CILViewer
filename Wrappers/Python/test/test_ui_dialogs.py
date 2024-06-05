@@ -180,7 +180,9 @@ class TestRawInputDialog(unittest.TestCase):
     def test_getRawAttrs(self):
         rdi = RawInputDialog(self.parent, self.fname)
         got_raw_attrs = rdi.getRawAttrs()
-        expected_raw_attrs = {'shape': [0, 0, 0], 'typecode': 'uint8', 'is_big_endian': False, 'is_fortran': True}
+        expected_raw_attrs = {'shape': [0, 0, 0], 'typecode': 'uint8', 
+                              'is_big_endian': False, 'is_fortran': True,
+                               'preview_slice': 0}
         assert got_raw_attrs == expected_raw_attrs
         rdi.getWidget('dim_X', 'field').setText('1')
         rdi.getWidget('dim_Y', 'field').setText('2')

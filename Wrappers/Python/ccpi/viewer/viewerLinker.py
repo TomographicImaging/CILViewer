@@ -3,6 +3,7 @@
 from ccpi.viewer.CILViewer import CILInteractorStyle as CIL3DInteractorStyle
 from ccpi.viewer.CILViewer2D import CILInteractorStyle as CIL2DInteractorStyle
 
+from ccpi.viewer.widgets.slider import SLIDER_EVENT
 
 class Linked3DInteractorStyle(CIL3DInteractorStyle):
     """
@@ -310,6 +311,19 @@ class ViewerLinkObserver():
                 # Linked, check if orientation is the same
                 if (self.sourceVtkViewer.getSliceOrientation() != self.targetVtkViewer.getSliceOrientation()):
                     shouldPassEvent = False
+
+        # Slice from the slider
+        if event == "NoEvent" and self.linkSlice:
+            # print (f"Event: {event} SLIDER_EVENT: {SLIDER_EVENT}")
+            # guessing that it is a slider event
+            if (not self.linkSlice):
+                shouldPassEvent = False
+            else:
+                # Set current slice
+                sliceno = self.sourceViewer.getActiveSlice()
+                print (f"SliderEvent : {sliceno}")
+                self.targetInteractor.GetInteractorStyle().SetActiveSlice(sliceno)
+                self.targetInteractor.GetInteractorStyle().UpdatePipeline(True)
 
         # KeyPress and orientation
         if (event == "KeyPressEvent" or state == 1026):
