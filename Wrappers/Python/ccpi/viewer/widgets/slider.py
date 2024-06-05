@@ -5,6 +5,7 @@ logger = logging.getLogger(__name__)
 # Define a new event type
 SLIDER_EVENT = vtk.vtkCommand.UserEvent + 1
 
+
 class SliceSliderRepresentation(vtk.vtkSliderRepresentation2D):
     """A slider representation for the slice selector slider on a 2D CILViewer
 

@@ -5,6 +5,7 @@ from ccpi.viewer.CILViewer2D import CILInteractorStyle as CIL2DInteractorStyle
 
 from ccpi.viewer.widgets.slider import SLIDER_EVENT
 
+
 class Linked3DInteractorStyle(CIL3DInteractorStyle):
     """
     Add attributes and methods needed to link two viewer together to the interactor style
@@ -321,7 +322,7 @@ class ViewerLinkObserver():
             else:
                 # Set current slice
                 sliceno = self.sourceViewer.getActiveSlice()
-                print (f"SliderEvent : {sliceno}")
+                print(f"SliderEvent : {sliceno}")
                 self.targetInteractor.GetInteractorStyle().SetActiveSlice(sliceno)
                 self.targetInteractor.GetInteractorStyle().UpdatePipeline(True)
 
