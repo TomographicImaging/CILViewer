@@ -315,8 +315,9 @@ class ViewerLinkObserver():
 
         # Slice from the slider
         if event == "NoEvent" and self.linkSlice:
-            # print (f"Event: {event} SLIDER_EVENT: {SLIDER_EVENT}")
-            # guessing that it is a slider event
+            # Although I invoked a SLIDER_EVENT in widgets/slider.py, I noticed that a 
+            # NoEvent is actually emitted/received. Therefore, we will link the slice in case of a 
+            # NoEvent and self.linkSlice=True
             if (not self.linkSlice):
                 shouldPassEvent = False
             else:
