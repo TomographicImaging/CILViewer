@@ -130,7 +130,7 @@ class RawInputDialog(FormDialog):
         previewSliceEntry = QLineEdit()
         previewSliceEntry.setValidator(validator)
         previewSliceEntry.setText("0")
-        
+
         fw.addWidget(previewSliceEntry, previewSliceLabel, "preview_slice")
 
         # preview button
@@ -138,7 +138,6 @@ class RawInputDialog(FormDialog):
         fw.addWidget(previewButton, "", "preview_button")
         self.preview_open = False
         previewButton.clicked.connect(self.preview)
-
 
         self.setLayout(fw.uiElements['verticalLayout'])
 
@@ -149,7 +148,6 @@ class RawInputDialog(FormDialog):
         self.fname = os.path.abspath(filename)
         title = "Config for " + os.path.basename(filename)
         self.setWindowTitle(title)
-        
 
     def setSupportedTypes(self, types):
         '''Updates the list of supported types
@@ -186,7 +184,7 @@ class RawInputDialog(FormDialog):
         raw_attrs['is_big_endian'] = not bool(widgets['endianness_field'].currentIndex())
         raw_attrs['typecode'] = widgets['dtype_field'].currentText()
         raw_attrs['preview_slice'] = int(widgets['preview_slice_field'].text())
-        
+
         return raw_attrs
 
     def enableDisableDimZ(self):
@@ -199,10 +197,10 @@ class RawInputDialog(FormDialog):
             widgets['dim_Images_field'].setEnabled(True)
         else:
             widgets['dim_Images_field'].setEnabled(False)
-    
+
     def preview(self):
         pars = self.getRawAttrs()
-        
+
         # retrieve info about image file from interface
         dimensionality = [3, 2][self.getWidget('dimensionality').currentIndex()]
         dimX, dimY, dimZ = pars['shape']
@@ -211,16 +209,15 @@ class RawInputDialog(FormDialog):
         # typecode = pars['typecode']
         typecode = self.getWidget('dtype').currentText()
 
-        
         shape = (dimX, dimY)
         if dimensionality == 3:
             shape = (dimX, dimY, dimZ)
-        
+
         # Construct a data type
         dt = np.dtype(typecode)
-        
+
         if isBigEndian:
-            dt_txt = ">" # big endian
+            dt_txt = ">"  # big endian
         else:
             dt_txt = "<"
         dt = dt.newbyteorder(dt_txt)
@@ -230,30 +227,28 @@ class RawInputDialog(FormDialog):
         # basic sanity check
         file_size = os.stat(self.fname).st_size
 
-        expected_size = reduce (lambda x,y: x*y, shape, 1) * bytes_per_element        
-        
+        expected_size = reduce(lambda x, y: x * y, shape, 1) * bytes_per_element
+
         if file_size < expected_size:
-            errors = {"type": "size", 
-                      "file_size": file_size,
-                      "expected_size": expected_size}
+            errors = {"type": "size", "file_size": file_size, "expected_size": expected_size}
             dmsg = f'The file size is smaller than expected.\nThe file size is {file_size} bytes, while the expected size is {expected_size} bytes'
             # open a critical dialog
-            msg = QtWidgets.QMessageBox.critical(self, "Error", dmsg, QtWidgets.QMessageBox.Ok, QtWidgets.QMessageBox.Ok)
+            msg = QtWidgets.QMessageBox.critical(self, "Error", dmsg, QtWidgets.QMessageBox.Ok,
+                                                 QtWidgets.QMessageBox.Ok)
             return
-            
+
         if file_size > expected_size:
             dmsg = f'Warning: The file size is larger than expected.\nThis means that parts of the file will be ignored. The file size is {file_size} bytes, while the expected size is {expected_size} bytes'
             # open a warning dialog
-            msg = QtWidgets.QMessageBox.warning(self, "Warning", dmsg, QtWidgets.QMessageBox.Ok, QtWidgets.QMessageBox.Ok)
-            
-            
+            msg = QtWidgets.QMessageBox.warning(self, "Warning", dmsg, QtWidgets.QMessageBox.Ok,
+                                                QtWidgets.QMessageBox.Ok)
 
         # read centre slice
         offset = 0
         slice_size = -1
         if dimensionality == 3:
             # read the slice indicated by the user
-            slice_size = shape[1]*shape[0]
+            slice_size = shape[1] * shape[0]
             offset = pars['preview_slice'] * slice_size
 
         # use the cilRawCroppedReader to read the slice
@@ -268,7 +263,7 @@ class RawInputDialog(FormDialog):
         # image = reader2.GetOutput()
 
         # rawfname = os.path.join(tempfile.gettempdir(),"test.raw")
-        
+
         # offset = offset * bytes_per_element
         # slices_to_read = 1
         # if shape[2] > 1:
@@ -307,14 +302,14 @@ class RawInputDialog(FormDialog):
         # print("reading")
         # reader2.Update()
         # read one slice in the middle and display it in a viewer in a modal dialog
-        
+
         diag = QtWidgets.QDialog(parent=self)
         diag.setModal(True)
         if dimensionality == 3:
             if pars['is_fortran'] is True:
                 slicing = 'image'
             else:
-                slicing = 'width' 
+                slicing = 'width'
             diag.setWindowTitle(f"Preview: {slicing} = {pars['preview_slice']}")
         else:
             diag.setWindowTitle(f'Preview Image')
@@ -323,7 +318,7 @@ class RawInputDialog(FormDialog):
         # add a layout
         verticalLayout = QtWidgets.QVBoxLayout(diag)
         verticalLayout.setContentsMargins(10, 10, 10, 10)
-        
+
         # add a CILViewer widget
         sc = QCILViewerWidget(diag, viewer=viewer2D, enableSliderWidget=False)
         sc.viewer.setInputData(reader2.GetOutput())

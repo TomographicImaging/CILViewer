@@ -202,7 +202,6 @@ class ViewerMainWindow(MainWindowWithProgressDialogs):
         if label is not None:
             label.setText(os.path.basename(files[0]))
 
-        
         return self.input_dataset_file
 
     def getRawAttrsFromDialog(self, dialog):
