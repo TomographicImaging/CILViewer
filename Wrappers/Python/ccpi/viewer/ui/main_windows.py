@@ -176,8 +176,12 @@ class ViewerMainWindow(MainWindowWithProgressDialogs):
             file = files[0]
             file_extension = Path(file).suffix.lower()
             if 'raw' in file_extension:
-                raw_dialog = RawInputDialog(self, file)
-                raw_dialog.Ok.clicked.connect(lambda: self.getRawAttrsFromDialog(raw_dialog))
+                if hasattr(self, 'raw_dialog'):
+                    self.raw_dialog.restoreAllSavedWidgetStates()
+                else:
+                    raw_dialog = RawInputDialog(self, file)
+                    raw_dialog.Ok.clicked.connect(lambda: self.getRawAttrsFromDialog(raw_dialog))
+                    self.raw_dialog = raw_dialog
                 # See https://doc.qt.io/qt-6/qdialog.html#exec
                 # Shows a modal dialog, blocking until the user closes it.
                 raw_dialog.exec()
@@ -198,6 +202,7 @@ class ViewerMainWindow(MainWindowWithProgressDialogs):
         if label is not None:
             label.setText(os.path.basename(files[0]))
 
+        
         return self.input_dataset_file
 
     def getRawAttrsFromDialog(self, dialog):
@@ -210,6 +215,7 @@ class ViewerMainWindow(MainWindowWithProgressDialogs):
         dialog : RawInputDialog
             The dialog to get the attributes from.
         '''
+        dialog.saveAllWidgetStates()
         self.raw_attrs = dialog.getRawAttrs()
         dialog.close()
 

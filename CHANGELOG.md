@@ -3,6 +3,7 @@
 ## v24.0.0
 
 New functionality:
+- Added preview to RawImportDialog #410
 - Add method to edit axes label text & tests, hide one label on 2D viewer #389 #408
 - Add slider widget #365 and option to not install it #386. Link slider events #413
 
