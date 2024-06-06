@@ -323,7 +323,6 @@ class ViewerLinkObserver():
             else:
                 # Set current slice
                 sliceno = self.sourceViewer.getActiveSlice()
-                print(f"SliderEvent : {sliceno}")
                 self.targetInteractor.GetInteractorStyle().SetActiveSlice(sliceno)
                 self.targetInteractor.GetInteractorStyle().UpdatePipeline(True)
 
