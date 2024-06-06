@@ -126,7 +126,7 @@ class RawInputDialog(FormDialog):
         fortranOrder.setCurrentIndex(0)
         fw.addWidget(fortranOrder, fortranLabel, "is_fortran")
 
-        previewSliceLabel = QLabel("Preview image:")
+        previewSliceLabel = QLabel("Preview:")
         previewSliceEntry = QLineEdit()
         previewSliceEntry.setValidator(validator)
         previewSliceEntry.setText("0")
@@ -311,9 +311,13 @@ class RawInputDialog(FormDialog):
         diag = QtWidgets.QDialog(parent=self)
         diag.setModal(True)
         if dimensionality == 3:
-            diag.setWindowTitle(f"Preview Image: {pars['preview_slice']}")
+            if pars['is_fortran'] is True:
+                slicing = 'image'
+            else:
+                slicing = 'width' 
+            diag.setWindowTitle(f"Preview: {slicing} = {pars['preview_slice']}")
         else:
-            diag.setWindowTitle(f'Preview Data')
+            diag.setWindowTitle(f'Preview Image')
         diag.setWindowFlag(QtCore.Qt.WindowContextHelpButtonHint, False)
         diag.setWindowFlag(QtCore.Qt.WindowMaximizeButtonHint)
         # add a layout
