@@ -1497,7 +1497,7 @@ class CILViewer2D(CILViewerBase):
         cb = SliderCallback(self, sw)
 
         # Add interaction observers
-        # propagate events from the slider to the viewer
+        # to propagate events from the slider to the viewer
         sw.AddObserver(vtk.vtkCommand.InteractionEvent, cb)
 
         # propagate events from the viewer to the slider

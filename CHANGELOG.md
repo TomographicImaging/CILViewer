@@ -4,7 +4,7 @@
 
 New functionality:
 - Add method to edit axes label text & tests, hide one label on 2D viewer #389 #408
-- Add slider widget #365 and option to not install it #386
+- Add slider widget #365 and option to not install it #386. Link slider events #413
 
 Bugfixes:
 - Fix failing unit test #394
