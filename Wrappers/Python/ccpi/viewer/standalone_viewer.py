@@ -124,7 +124,6 @@ class standalone_viewer(object):
         self.app = app
 
         self.set_up(title, viewer1_type, viewer2_type, *args, **kwargs)
-        self.show()
 
     def set_up(self, title, viewer1_type, viewer2_type=None, *args, **kwargs):
         '''
@@ -181,10 +180,12 @@ def main():
     err = vtk.vtkFileOutputWindow()
     err.SetFileName("viewer.log")
     vtk.vtkOutputWindow.SetInstance(err)
-    standalone_viewer("Standalone Viewer", viewer1_type='2D', viewer2_type='3D', \
-        scale_factor=args.scale_factor, max_opacity=args.max_opacity
-    )
-
+    standalone_viewer_instance = standalone_viewer("Standalone Viewer",
+                                                   viewer1_type='2D',
+                                                   viewer2_type='3D',
+                                                   scale_factor=args.scale_factor,
+                                                   max_opacity=args.max_opacity)
+    standalone_viewer_instance.show()
     return 0
 
 

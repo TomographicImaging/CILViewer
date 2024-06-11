@@ -5,11 +5,12 @@ channels:
 dependencies: 
     - python
     - numpy
-    - vtk=9.0.3
+    - vtk
     - pyside2
-    - eqt=0.7.1
+    - eqt>=1.0.0
     - importlib_metadata    # [py<38]
     - h5py
-    - cil-data=22.0.0
     - pillow
+    - pyyaml
     - schema
+    - cil-data=22.0.0
