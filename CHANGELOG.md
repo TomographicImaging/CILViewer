@@ -9,20 +9,25 @@ New functionality:
 
 Bugfixes:
 - Fix failing unit test #394
-- Bugfix on resample reader #359. Standalone viewer app defaults to downsample in all dimensions.
-- Fix bug with setInputAsNumpy() using deprecated `numpy2vtkImporter` in `CILViewer2D` - now uses `numpy2vtkImage`
+- Bugfix on resample reader. Standalone viewer app defaults to downsample in all dimensions. #362
+- Fix bug with setInputAsNumpy() using deprecated `numpy2vtkImporter` in `CILViewer2D` - now uses `numpy2vtkImage` #346
 
 CI:
 - Update eqt requirements to >=1.0.0 and update yml recipe #385
-- Remove VTK 8 variants from conda recipe.
-- Change Python variants: removed 3.6 and 3.7, added 3.11 
+- Remove VTK 8 variants from conda recipe #375
+- Change Python variants: removed 3.6 and 3.7, added 3.11 #375
  (not Python 3.12 for incompatibility with EQT #399)
-- Removed the `paskino` channel from the install command as eqt is on `conda-forge`
+- Removed the `paskino` channel from the install command as eqt is on `conda-forge` #368
+- Edit conda build and publish #371
+- Fix dependencies in recipe #369
+
 
 Documentation
 - Add CONTRIBUTING.md #403
 - Edit web-viewer readme #401
 - Transfer repository to "TomographicImaging" #402
+- Add PR template #244 #373
+- Edit README.md #344
 
 ## v23.1.0
 - Raise error if try to add multiple widgets with the same name to CILViewer or CILViewer2D.
