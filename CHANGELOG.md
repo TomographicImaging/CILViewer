@@ -1,5 +1,12 @@
 # Changelog
 
+## v24.0.1
+
+Build and CI:
+  - removed python pinning from conda recipe
+Bugfix:
+  - removed deprecated code by numpy v2.0
+
 ## v24.0.0
 
 New functionality:
