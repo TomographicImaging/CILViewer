@@ -766,7 +766,7 @@ class cilviewerHDF5Writer(ImageWriterInterface):
             f.attrs['file_name'] = self._FileName
             #f.attrs['viewer_version'] = version
             f.attrs['file_time'] = str(datetime.datetime.utcnow())
-            f.attrs['creator'] = np.string_('io.py')
+            f.attrs['creator'] = np.bytes_('io.py')
             f.attrs['HDF5_Version'] = h5py.version.hdf5_version
             f.attrs['h5py_version'] = h5py.version.version
 
