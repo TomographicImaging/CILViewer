@@ -37,6 +37,14 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
         #self.AddObserver('RightButtonPressEvent', self.OnRightMousePress, -0.5)
         #self.AddObserver('RightButtonReleaseEvent', self.OnRightMouseRelease, -0.5)
 
+        self._volume_render_pars = {
+            'color_percentiles' : (5., 95.),
+            'scalar_opacity_percentiles' : (80., 99.),
+            'gradient_opacity_percentiles' : (80., 99.),
+            'max_opacity' : 0.1
+        }
+
+
     def GetSliceOrientation(self):
         return self._viewer.sliceOrientation
 
@@ -423,6 +431,11 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
 
     def GetInputData(self):
         return self._viewer.img3D
+    
+    def GetVolumeRenderParameters(self):
+        # set defaults for opacity and colour mapping:
+        return self._volume_render_pars 
+        
 
 
 class CILViewer(CILViewerBase):
@@ -456,7 +469,8 @@ class CILViewer(CILViewerBase):
 
         self.volume_render_initialised = False
         self.clipping_plane_initialised = False
-
+        
+        
     def createPolyDataActor(self, polydata):
         '''returns an actor for a given polydata'''
 
@@ -657,10 +671,11 @@ class CILViewer(CILViewerBase):
         self.volume = volume
 
         # set defaults for opacity and colour mapping:
-        color_percentiles = (5., 95.)
-        scalar_opacity_percentiles = (80., 99.)
-        gradient_opacity_percentiles = (80., 99.)
-        max_opacity = 0.1
+        color_percentiles = self.style.GetVolumeRenderParameters()['color_percentiles']
+        scalar_opacity_percentiles = self.style.GetVolumeRenderParameters()['scalar_opacity_percentiles']
+        gradient_opacity_percentiles = self.style.GetVolumeRenderParameters()['gradient_opacity_percentiles']
+        max_opacity = self.style.GetVolumeRenderParameters()['max_opacity']
+
 
         self.setVolumeColorPercentiles(*color_percentiles, update_pipeline=False)
         self.setScalarOpacityPercentiles(*scalar_opacity_percentiles, update_pipeline=False)
