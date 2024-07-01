@@ -112,8 +112,8 @@ if __name__ == '__main__':
     # data = reader.Read()
 
     pokemon = 'Picachu'
-    subdir = 'PicachuFull'
-    # subdir = 'Not_Angled'
+    # subdir = 'PicachuFull'
+    subdir = 'Not_Angled'
 
     
     dirname = os.path.abspath("C:/Users/ofn77899/Data\HOW/{}/{}/".format(pokemon, subdir))
@@ -174,8 +174,8 @@ if __name__ == '__main__':
 
     # default background
     # self.ren.SetBackground(.1, .2, .4)
-    v.ren.SetBackground(0, 0, 0)
-    # v.ren.SetBackground(1,1,1)
+    # v.ren.SetBackground(0, 0, 0)
+    v.ren.SetBackground(1,1,1)
     
     
     createAnimation(v, FrameCount=100, 

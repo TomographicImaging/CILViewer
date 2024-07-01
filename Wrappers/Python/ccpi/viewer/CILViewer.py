@@ -273,7 +273,13 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
         else:
             print("Unhandled event %s" % interactor.GetKeyCode())
 
-    def CreateClippingPlane(self):
+    def CreateClippingPlane(self, proj=None, foc=None):
+        '''Create a clipping plane for the volume render
+        
+        foc: Focal Point. If None this is the active camera focal point
+        proj: Normal to the clipping plane. If None this is calculated from the active camera direction of projection
+        
+        '''
         viewer = self._viewer
         planew = vtk.vtkImplicitPlaneWidget2()
 
@@ -288,9 +294,10 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
         rep.SetOutlineTranslation(False)  # this means user can't move bounding box
 
         plane = vtk.vtkPlane()
+        if foc is None:
         # should be in the focal point
-        cam = self.GetActiveCamera()
-        foc = cam.GetFocalPoint()
+            cam = self.GetActiveCamera()
+            foc = cam.GetFocalPoint()
         plane.SetOrigin(*foc)
 
         proj = cam.GetDirectionOfProjection()
