@@ -1,5 +1,10 @@
 # Changelog
 
+## v24.0.2
+
+Bugfix:
+  - Edit slider min value #420
+
 ## v24.0.1
 
 Build and CI:

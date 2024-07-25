@@ -1484,9 +1484,9 @@ class CILViewer2D(CILViewerBase):
             return
 
         sr = SliceSliderRepresentation()
-        sr.SetValue(self.getActiveSlice())
-        sr.SetMaximumValue(self.img3D.GetDimensions()[2] - 1)
         sr.SetMinimumValue(0)
+        sr.SetMaximumValue(self.img3D.GetDimensions()[2] - 1)
+        sr.SetValue(self.getActiveSlice())
 
         sw = vtk.vtkSliderWidget()
         sw.SetInteractor(self.getInteractor())
