@@ -138,5 +138,7 @@ class SliderCallback:
         value = caller.GetActiveSlice()
         dims = caller._viewer.img3D.GetDimensions()
         maxslice = dims[caller.GetSliceOrientation()] - 1
-        self.slider_widget.GetRepresentation().SetMaximumValue(maxslice)
+        sr = self.slider_widget.GetRepresentation()
+        sr.SetMinimumValue(0)
+        sr.SetMaximumValue(maxslice)
         self.update_from_viewer(caller, ev)
