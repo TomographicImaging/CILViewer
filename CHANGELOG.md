@@ -1,5 +1,10 @@
 # Changelog
 
+## v24.0.2
+
+Enhancements:
+  - Add title to ViewerCoordsDockWidget #422
+  
 ## v24.0.1
 
 Build and CI:
@@ -27,7 +32,6 @@ CI:
 - Removed the `paskino` channel from the install command as eqt is on `conda-forge` #368
 - Edit conda build and publish #371
 - Fix dependencies in recipe #369
-
 
 Documentation
 - Add CONTRIBUTING.md #403
