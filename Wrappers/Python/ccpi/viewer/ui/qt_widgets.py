@@ -10,7 +10,7 @@ class ViewerCoordsDockWidget(FormDockWidget):
     size and the user can select whether coordinates
     are displayed in system of original or downsampled image'''
 
-    def __init__(self, parent, viewers=None):
+    def __init__(self, parent,  title = "Viewer Information", viewers=None):
         '''
         Parameters
         ----------
@@ -19,7 +19,7 @@ class ViewerCoordsDockWidget(FormDockWidget):
         viewers : list of CILViewer2D and/or CILViewer instances, default = None
             The viewers which this dock widget will display information for.
         '''
-        super(ViewerCoordsDockWidget, self).__init__(parent)
+        super(ViewerCoordsDockWidget, self).__init__(parent, title)
 
         self.setViewers(viewers)
 
