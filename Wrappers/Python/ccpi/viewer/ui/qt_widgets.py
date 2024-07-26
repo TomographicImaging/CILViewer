@@ -10,7 +10,7 @@ class ViewerCoordsDockWidget(FormDockWidget):
     size and the user can select whether coordinates
     are displayed in system of original or downsampled image'''
 
-    def __init__(self, parent,  title = "Viewer Information", viewers=None):
+    def __init__(self, parent, title="Viewer Information", viewers=None):
         '''
         Parameters
         ----------
