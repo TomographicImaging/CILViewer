@@ -2,6 +2,9 @@
 
 ## v24.0.2
 
+Enhancements:
+  - Add title to ViewerCoordsDockWidget #422
+  
 Bugfix:
   - Edit slider min value #420
 
@@ -32,7 +35,6 @@ CI:
 - Removed the `paskino` channel from the install command as eqt is on `conda-forge` #368
 - Edit conda build and publish #371
 - Fix dependencies in recipe #369
-
 
 Documentation
 - Add CONTRIBUTING.md #403
