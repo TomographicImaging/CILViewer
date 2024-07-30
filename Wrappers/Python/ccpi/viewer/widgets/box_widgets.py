@@ -2,6 +2,7 @@ import vtk
 from ccpi.viewer import SLICE_ORIENTATION_XY, SLICE_ORIENTATION_XZ, SLICE_ORIENTATION_YZ
 from eqt.ui.SessionDialogs import WarningDialog
 
+
 class cilviewerBoxWidget():
 
     @staticmethod
@@ -197,28 +198,28 @@ class cilviewerBoxWidget():
             Factor for scaling the size of the box
         '''
         box_pos = [0, 0, 0, 0, 0, 0]
-        
+
         # Current render orientation
         orientation = viewer.style.GetSliceOrientation()
 
         # Translate the mouse click display coordinates into world coordinates
         coord = vtk.vtkCoordinate()
-        print("coord is ",coord)
+        print("coord is ", coord)
         coord.SetCoordinateSystemToDisplay()
         coord.SetValue(position[0], position[1])
         world_mouse_pos = coord.GetComputedWorldValue(viewer.style.GetRenderer())
-        print("world_mouse_pos is",world_mouse_pos)
-        
+        print("world_mouse_pos is", world_mouse_pos)
+
         # Get maximum extents of the image in world coords
         world_image_max = viewer.style.GetImageWorldExtent()
-        print("world_image_max is ",world_image_max)
+        print("world_image_max is ", world_image_max)
         # Set the minimum world value
         world_image_min = (0, 0, 0)
 
         world_extent = [0, world_image_max[0], 0, world_image_max[1], 0, world_image_max[2]]
-        print("world_extent is",world_extent)
+        print("world_extent is", world_extent)
         # Initialise the box position in format [xmin, xmax, ymin, ymax,...]
-        
+
         dialog = WarningDialog(None, message="Click inside the image.", window_title="Viewer Warning")
         # place the mouse click as bottom left in current orientation
         if orientation == SLICE_ORIENTATION_XY:
@@ -238,8 +239,8 @@ class cilviewerBoxWidget():
                 # zmin, zmax
                 box_pos[4] = world_image_min[orientation]
                 box_pos[5] = world_image_max[orientation]
-            else: 
-                dialog.exec()   
+            else:
+                dialog.exec()
 
         elif orientation == SLICE_ORIENTATION_YZ:
             # orientation == 0
@@ -258,8 +259,8 @@ class cilviewerBoxWidget():
                 # xmin, xmax
                 box_pos[0] = world_image_min[orientation]
                 box_pos[1] = world_image_max[orientation]
-            else:  
-                dialog.exec()  
+            else:
+                dialog.exec()
 
         elif orientation == SLICE_ORIENTATION_XZ:
             # Looking along y
@@ -277,8 +278,8 @@ class cilviewerBoxWidget():
                 # ymin, ymax
                 box_pos[2] = world_image_min[orientation]
                 box_pos[3] = world_image_max[orientation]
-            else:  
-                dialog.exec()   
+            else:
+                dialog.exec()
 
         return box_pos
 

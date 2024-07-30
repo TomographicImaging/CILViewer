@@ -428,7 +428,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyle):
         if ctrl and not (alt and shift):
             self.SetEventActive("CREATE_ROI_EVENT")
             position = interactor.GetEventPosition()
-            print("event position is ",position)
+            print("event position is ", position)
             self.InitialiseBox(position)
             self.SetDisplayHistogram(True)
             self.Render()
