@@ -1,6 +1,6 @@
 import vtk
 from ccpi.viewer import SLICE_ORIENTATION_XY, SLICE_ORIENTATION_XZ, SLICE_ORIENTATION_YZ
-
+from eqt.ui.SessionDialogs import WarningDialog
 
 class cilviewerBoxWidget():
 
@@ -184,7 +184,8 @@ class cilviewerBoxWidget():
     @staticmethod
     def GetBoxBoundsFromEventPosition(viewer, position, scale_factor=0.3):
         ''' 
-        Get the coordinates for the bounds of a box from the event position
+        Get the coordinates for the bounds of a box from the event position.
+        Depending on the viewer orientation, opends a warning dialog when the mouse click is outside the image.
 
         Parameters
         ----------
@@ -195,75 +196,89 @@ class cilviewerBoxWidget():
         scale_factor
             Factor for scaling the size of the box
         '''
+        box_pos = [0, 0, 0, 0, 0, 0]
+        
         # Current render orientation
         orientation = viewer.style.GetSliceOrientation()
 
         # Translate the mouse click display coordinates into world coordinates
         coord = vtk.vtkCoordinate()
+        print("coord is ",coord)
         coord.SetCoordinateSystemToDisplay()
         coord.SetValue(position[0], position[1])
         world_mouse_pos = coord.GetComputedWorldValue(viewer.style.GetRenderer())
-
+        print("world_mouse_pos is",world_mouse_pos)
+        
         # Get maximum extents of the image in world coords
         world_image_max = viewer.style.GetImageWorldExtent()
-
+        print("world_image_max is ",world_image_max)
         # Set the minimum world value
         world_image_min = (0, 0, 0)
 
         world_extent = [0, world_image_max[0], 0, world_image_max[1], 0, world_image_max[2]]
-
+        print("world_extent is",world_extent)
         # Initialise the box position in format [xmin, xmax, ymin, ymax,...]
-        box_pos = [0, 0, 0, 0, 0, 0]
-
+        
+        dialog = WarningDialog(None, message="Click inside the image.", window_title="Viewer Warning")
         # place the mouse click as bottom left in current orientation
         if orientation == SLICE_ORIENTATION_XY:
             # Looking along z
-            # Lower left is xmin, ymin
-            box_pos[0] = world_mouse_pos[0]
-            box_pos[2] = world_mouse_pos[1]
+            if 0 <= world_mouse_pos[0] <= world_image_max[0] and 0 <= world_mouse_pos[1] <= world_image_max[1]:
 
-            # Set top right point
-            # Top right is xmax, ymax
-            box_pos[1] = cilviewerBoxWidget.GetTruncatedBoxCoord(box_pos[0], world_extent, "x", scale_factor)
-            box_pos[3] = cilviewerBoxWidget.GetTruncatedBoxCoord(box_pos[2], world_extent, "y", scale_factor)
+                # Lower left is xmin, ymin
+                box_pos[0] = world_mouse_pos[0]
+                box_pos[2] = world_mouse_pos[1]
 
-            # Set the scroll axis to maximum extent eg. min-max
-            # zmin, zmax
-            box_pos[4] = world_image_min[orientation]
-            box_pos[5] = world_extent[orientation]
+                # Set top right point
+                # Top right is xmax, ymax
+                box_pos[1] = cilviewerBoxWidget.GetTruncatedBoxCoord(box_pos[0], world_extent, "x", scale_factor)
+                box_pos[3] = cilviewerBoxWidget.GetTruncatedBoxCoord(box_pos[2], world_extent, "y", scale_factor)
+
+                # Set the scroll axis to maximum extent eg. min-max
+                # zmin, zmax
+                box_pos[4] = world_image_min[orientation]
+                box_pos[5] = world_image_max[orientation]
+            else: 
+                dialog.exec()   
+
+        elif orientation == SLICE_ORIENTATION_YZ:
+            # orientation == 0
+            # Looking along x
+            if 0 <= world_mouse_pos[1] <= world_image_max[1] and 0 <= world_mouse_pos[2] <= world_image_max[2]:
+                # Lower left is ymin, zmin
+                box_pos[2] = world_mouse_pos[1]
+                box_pos[4] = world_mouse_pos[2]
+
+                # Set top right point
+                # Top right is ymax, zmax
+                box_pos[3] = cilviewerBoxWidget.GetTruncatedBoxCoord(box_pos[2], world_extent, "y")
+                box_pos[5] = cilviewerBoxWidget.GetTruncatedBoxCoord(box_pos[4], world_extent, "z")
+
+                # Set the scroll axis to maximum extent eg. min-max
+                # xmin, xmax
+                box_pos[0] = world_image_min[orientation]
+                box_pos[1] = world_image_max[orientation]
+            else:  
+                dialog.exec()  
 
         elif orientation == SLICE_ORIENTATION_XZ:
             # Looking along y
-            # Lower left is xmin, zmin
-            box_pos[0] = world_mouse_pos[0]
-            box_pos[4] = world_mouse_pos[2]
+            if 0 <= world_mouse_pos[2] <= world_image_max[2] and 0 <= world_mouse_pos[0] <= world_image_max[0]:
+                # Lower left is xmin, zmin
+                box_pos[4] = world_mouse_pos[2]
+                box_pos[0] = world_mouse_pos[0]
 
-            # Set top right point.
-            # Top right is xmax, zmax
-            box_pos[1] = cilviewerBoxWidget.GetTruncatedBoxCoord(box_pos[0], world_extent, "x")
-            box_pos[5] = cilviewerBoxWidget.GetTruncatedBoxCoord(box_pos[4], world_extent, "z")
+                # Set top right point.
+                # Top right is xmax, zmax
+                box_pos[5] = cilviewerBoxWidget.GetTruncatedBoxCoord(box_pos[4], world_extent, "z")
+                box_pos[1] = cilviewerBoxWidget.GetTruncatedBoxCoord(box_pos[0], world_extent, "x")
 
-            # Set the scroll axis to maximum extent eg. min-max
-            # ymin, ymax
-            box_pos[2] = world_image_min[orientation]
-            box_pos[3] = world_extent[orientation]
-
-        else:
-            # orientation == 0
-            # Looking along x
-            # Lower left is ymin, zmin
-            box_pos[2] = world_mouse_pos[1]
-            box_pos[4] = world_mouse_pos[2]
-
-            # Set top right point
-            # Top right is ymax, zmax
-            box_pos[3] = cilviewerBoxWidget.GetTruncatedBoxCoord(box_pos[2], world_extent, "y")
-            box_pos[5] = cilviewerBoxWidget.GetTruncatedBoxCoord(box_pos[4], world_extent, "z")
-
-            # Set the scroll axis to maximum extent eg. min-max
-            # xmin, xmax
-            box_pos[0] = world_image_min[orientation]
-            box_pos[1] = world_extent[orientation]
+                # Set the scroll axis to maximum extent eg. min-max
+                # ymin, ymax
+                box_pos[2] = world_image_min[orientation]
+                box_pos[3] = world_image_max[orientation]
+            else:  
+                dialog.exec()   
 
         return box_pos
 

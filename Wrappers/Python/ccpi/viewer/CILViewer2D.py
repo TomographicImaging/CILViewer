@@ -235,7 +235,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyle):
         """
 
         box_pos = cilviewerBoxWidget.GetBoxBoundsFromEventPosition(self._viewer, clickPosition)
-
+        print(box_pos)
         # Set widget placement and make visible
         self._viewer.ROIWidget.PlaceWidget(box_pos)
         self._viewer.ROIWidget.On()
@@ -428,6 +428,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyle):
         if ctrl and not (alt and shift):
             self.SetEventActive("CREATE_ROI_EVENT")
             position = interactor.GetEventPosition()
+            print("event position is ",position)
             self.InitialiseBox(position)
             self.SetDisplayHistogram(True)
             self.Render()
