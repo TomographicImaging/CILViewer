@@ -7,6 +7,7 @@ Enhancements:
   
 Bugfix:
   - Edit slider min value #420
+  - Fix box extent error #425
 
 ## v24.0.1
 
