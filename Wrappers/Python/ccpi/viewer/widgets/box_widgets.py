@@ -186,7 +186,7 @@ class cilviewerBoxWidget():
     def GetBoxBoundsFromEventPosition(viewer, position, scale_factor=0.3):
         ''' 
         Get the coordinates for the bounds of a box from the event position.
-        Depending on the viewer orientation, opends a warning dialog when the mouse click is outside the image.
+        Depending on the viewer orientation, opens a warning dialog when the mouse click is outside the image.
 
         Parameters
         ----------
