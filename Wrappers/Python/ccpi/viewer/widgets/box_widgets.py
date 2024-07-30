@@ -203,20 +203,16 @@ class cilviewerBoxWidget():
 
         # Translate the mouse click display coordinates into world coordinates
         coord = vtk.vtkCoordinate()
-        print("coord is ",coord)
         coord.SetCoordinateSystemToDisplay()
         coord.SetValue(position[0], position[1])
         world_mouse_pos = coord.GetComputedWorldValue(viewer.style.GetRenderer())
-        print("world_mouse_pos is",world_mouse_pos)
         
         # Get maximum extents of the image in world coords
         world_image_max = viewer.style.GetImageWorldExtent()
-        print("world_image_max is ",world_image_max)
         # Set the minimum world value
         world_image_min = (0, 0, 0)
 
         world_extent = [0, world_image_max[0], 0, world_image_max[1], 0, world_image_max[2]]
-        print("world_extent is",world_extent)
         # Initialise the box position in format [xmin, xmax, ymin, ymax,...]
         
         dialog = WarningDialog(None, message="Click inside the image.", window_title="Viewer Warning")
