@@ -207,7 +207,7 @@ class cilviewerBoxWidget():
         coord.SetCoordinateSystemToDisplay()
         coord.SetValue(position[0], position[1])
         world_mouse_pos = coord.GetComputedWorldValue(viewer.style.GetRenderer())
-        
+
         # Get maximum extents of the image in world coords
         world_image_max = viewer.style.GetImageWorldExtent()
         # Set the minimum world value
