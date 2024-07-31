@@ -13,10 +13,12 @@ An example of use of the viewers in another app is the [iDVC app](https://github
 
 ## Install instructions
 To install via `conda`, create a new environment using:
-
+<!-- VERSION_MARKER -->
 ```bash
-conda create --name cilviewer ccpi-viewer=23.1.0 -c ccpi -c conda-forge
+conda create --name cilviewer ccpi-viewer=24.0.1 -c ccpi -c conda-forge
 ```
+<!-- VERSION_MARKER -->
+
 
 ## Running the CILViewer app
 

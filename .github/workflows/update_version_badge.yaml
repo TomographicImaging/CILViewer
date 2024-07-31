@@ -1,0 +1,37 @@
+name: Update Version Badge
+
+on:
+  push:
+    tags:
+      - 'v*' # Triggers when a new tag is pushed
+  workflow_dispatch: # Allows manual triggering
+
+jobs:
+  update-badge:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Extract latest version
+      id: extract_version
+      run: |
+        latest_tag=$(git describe --tags `git rev-list --tags --max-count=1`)
+        echo "latest_version=${latest_tag}" >> $GITHUB_ENV
+
+    - name: Update README with the latest version
+      run: |
+        latest_version=${{ env.latest_version }}
+        # Update the version in README.md between the markers
+        sed -i -e "s/<!-- VERSION_MARKER -->.*<!-- VERSION_MARKER -->/<!-- VERSION_MARKER -->```bash
+conda create --name cilviewer ccpi-viewer=${latest_version} -c ccpi -c conda-forge
+```<!-- VERSION_MARKER -->/" README.md
+
+    - name: Commit changes
+      run: |
+        git config --global user.name 'github-actions[bot]'
+        git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+        git add README.md
+        git commit -m "Update README with the latest version"
+        git push

@@ -1,0 +1,22 @@
+import subprocess
+import re
+
+def get_latest_release():
+    """Runs the Git command to list tags. Defines a regular expression pattern.
+    for semantic versioning. Extracts the tags. Converts versions to tuples of integers
+    for comparison. Finds the latest version. Converts the latest to string."""
+    try:
+        tags = subprocess.check_output(['git', 'tag'], text=True).strip().split('\n')
+    except subprocess.CalledProcessError as e:
+        print(f"Error running git command: {e}")
+        return None
+    
+    version_pattern = re.compile(r'v?(\d+\.\d+\.\d+)')
+    versions = [version_pattern.match(tag).group(1) for tag in tags if version_pattern.match(tag)]
+    if not versions:
+        return None
+    
+    versions = [tuple(map(int, v.split('.'))) for v in versions]
+    latest_version = max(versions)
+    latest_version_str = '.'.join(map(str, latest_version))
+    return latest_version_str
