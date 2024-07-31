@@ -7,7 +7,7 @@ Enhancements:
   
 Bugfix:
   - Edit slider min value #420
-  - Fix box extent error #425
+  - Fix extent error when user clicks in the viewer to create a box by clicking outside of the image #425
 
 ## v24.0.1
 
