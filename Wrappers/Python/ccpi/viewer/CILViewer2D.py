@@ -514,10 +514,29 @@ class CILInteractorStyle(vtk.vtkInteractorStyle):
         pd = vtk.vtkPolyData()
         self.GetROIWidget().GetPolyData(pd)
         bounds = pd.GetBounds()
+        
 
         # Set the values of the ll and ur corners
-        ll = (bounds[0], bounds[2], bounds[4])
-        ur = (bounds[1], bounds[3], bounds[5])
+        ll = list((bounds[0], bounds[2], bounds[4]))
+        ur = list((bounds[1], bounds[3], bounds[5]))
+        print(ll,ur)
+        # Get maximum extents of the image in world coords
+        world_image_max = self.GetImageWorldExtent()
+        print(world_image_max)
+        if self.GetSliceOrientation() == SLICE_ORIENTATION_XY:
+            if ll[0] < 0:
+                ll[0] = 0
+            if ll[1] < 0:
+                ll[1] = 0
+            if ur[0] > world_image_max[0]:
+                ur[0] = world_image_max[0]
+            if ur[1] > world_image_max[1]:
+                ur[1] = world_image_max[1]
+            self._viewer.ROIWidget.PlaceWidget([ll[0],ur[0],ll[1], ur[1],0,world_image_max[2]])
+        print(ll,ur)
+
+        #self._viewer.ROIWidget.On()
+        #self.UpdatePipeline()
         vox1 = self.createVox(ll)
         vox2 = self.createVox(ur)
 
