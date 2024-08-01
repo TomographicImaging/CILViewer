@@ -254,8 +254,12 @@ class CILInteractorStyle(vtk.vtkInteractorStyle):
         v1_image, v2_image = self.GetVoxelsFromExtent(extent)
         v1_world= self.image2world(v1_image)
         v2_world = self.image2world(v2_image)
-        extent_world = (v1_world[0], v2_world[0], v1_world[1], v2_world[1], v1_world[2], v2_world[2])
+        extent_world = self.GetExtentFromVoxels(v1_world, v2_world)
         return extent_world
+    
+    def GetExtentFromVoxels(self, v1, v2):
+        extent = (v1[0], v2[0], v1[1], v2[1], v1[2], v2[2])
+        return extent
 
     def SetCharEvent(self, char):
         self.GetInteractor().SetKeyCode(char)
