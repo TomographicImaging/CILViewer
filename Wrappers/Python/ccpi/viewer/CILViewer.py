@@ -268,8 +268,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
         planew = vtk.vtkImplicitPlaneWidget2()
 
         rep = vtk.vtkImplicitPlaneRepresentation()
-        world_extent = self.GetImageWorldExtent()
-        extent = [0, world_extent[0], 0, world_extent[1], 0, world_extent[2]]
+        extent = self.GetDataExtentInWorld()
         rep.SetWidgetBounds(*extent)
         planew.SetRepresentation(rep)
         planew.SetInteractor(viewer.getInteractor())
@@ -414,10 +413,39 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
         return [(image_coordinates[i]) * spac[i] + orig[i] for i in range(3)]
 
     def GetImageWorldExtent(self):
-        """
-        Compute and return the maximum extent of the image in the rendered world
-        """
+        """Deprecated. Use `GetDataExtentInWorld` and `GetVoxelsFromExtent`."""
         return self.image2world(self.GetInputData().GetExtent()[1::2])
+
+    def GetDataExtentInWorld(self):
+        """
+        Compute and return the extent of the input data in the rendered world.
+        """
+        data_extent_image = self.GetInputData().GetExtent()
+        data_extent_world = self.image2worldExtent(data_extent_image)
+        return data_extent_world
+    
+    def GetVoxelsFromExtent(self, extent):
+        """Given the extent of a box or image, gets the voxels corresponding to the min values in all directions
+        and max values in all directions."""
+        voxel_min = extent[0::2]
+        voxel_max = extent[1::2]
+        return voxel_min, voxel_max
+    
+    def image2worldExtent(self, extent):
+        """Given the extent of a box or image, gets the voxels corresponding to the min values in all directions
+        and max values in all directions. Then, converts their coordinates in the world coordinate system. 
+        Returns the converted extent."""
+        v1_image, v2_image = self.GetVoxelsFromExtent(extent)
+        v1_world = self.image2world(v1_image)
+        v2_world = self.image2world(v2_image)
+        extent_world = self.GetExtentFromVoxels(v1_world, v2_world)
+        return extent_world
+
+    def GetExtentFromVoxels(self, voxel_min, voxel_max):
+        """Given the voxels corresponding to the min values in all directions
+        and max values in all directions, calculates the extent of the box or image they enclose."""
+        extent = (voxel_min[0], voxel_max[0], voxel_min[1], voxel_max[1], voxel_min[2], voxel_max[2])
+        return extent
 
     def GetInputData(self):
         return self._viewer.img3D
