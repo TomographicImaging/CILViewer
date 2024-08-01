@@ -201,7 +201,7 @@ class cilviewerBoxWidget():
         viewer
             The 2D viewer where a projection of the 3D box will be displayed as a rectangle.
         position
-            The event position in display coordinates, i.e., 2D coordinates of a mouse click on the image with a specific orientation. 
+            The event position in display coordinates, i.e., 3D coordinates of a mouse click on the image. 
         scale_factor
             Factor for scaling the size of the box to be smaller than the image shape.
         '''
@@ -218,6 +218,23 @@ class cilviewerBoxWidget():
         voxel_min_world, voxel_max_world = viewer.style.GetVoxelsFromExtent(data_extent_world)
         
         dialog = WarningDialog(None, message="Click inside the image.", window_title="Viewer Warning")
+
+        v1 = []
+        v2 = []
+        i= [orientation, (orientation+1)%3, (orientation+2)%3]
+        print(i)
+        if voxel_min_world[i[1]] <= mouse_pos_world[i[1]]<= voxel_max_world[i[1]] and voxel_min_world[i[2]] <= mouse_pos_world[i[2]] <= voxel_max_world[i[2]]:
+
+            v1[i[0]] = voxel_min_world[i[0]]
+            v1[i[1]] = mouse_pos_world[i[1]]
+            v1[i[2]] = mouse_pos_world[i[2]]
+
+            v2[i[0]] = voxel_max_world[i[0]]
+            v2[i[1]] = cilviewerBoxWidget.GetTruncatedBoxCoord(v1[i[1]], data_extent_world, i[1])
+            v2[i[2]] = cilviewerBoxWidget.GetTruncatedBoxCoord(v1[i[2]], data_extent_world, i[2])
+
+        else:
+            dialog.exec()
 
         if orientation == SLICE_ORIENTATION_XY:
             # Looking along z
@@ -281,7 +298,7 @@ class cilviewerBoxWidget():
         return box_extent_world
 
     @staticmethod
-    def GetTruncatedBoxCoord(start_pos, world_extent, axis, scale_factor=0.3):
+    def GetTruncatedBoxCoord(start_pos, world_extent, axis_int, scale_factor=0.3):
         """
         Returns a coordinate for the edge of the box on axis [axis], scaled
         by factor [scale_factor], and truncated to make sure the box does not
@@ -293,8 +310,11 @@ class cilviewerBoxWidget():
             Lower left corner value on specified axis
         world_extent:
             Array containing the extent of the world
-        slice_orientation: str, {'x', 'y', 'z'}
+        axis_int: int 0, 1, 2
             The axis to truncate on.
+            SLICE_ORIENTATION_XY = 2  # Z
+            SLICE_ORIENTATION_XZ = 1  # Y
+            SLICE_ORIENTATION_YZ = 0  # X
         scale_factor: float
             The factor used to scale the length of the box, compared to the extent
             of the world on the given axis. 
@@ -305,9 +325,6 @@ class cilviewerBoxWidget():
         """
 
         # get index for axis
-        axis_dict = {"x": SLICE_ORIENTATION_YZ, "y": SLICE_ORIENTATION_XZ, "z": SLICE_ORIENTATION_XY}
-        axis_int = axis_dict[axis]
-
         world_length = world_extent[2 * axis_int + 1] - world_extent[2 * axis_int]
         dist = world_length * scale_factor
         value = start_pos + dist
