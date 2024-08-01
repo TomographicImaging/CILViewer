@@ -572,8 +572,8 @@ class CILInteractorStyle(vtk.vtkInteractorStyle):
                 ur[0] = world_image_max[0]
             if ur[1] > world_image_max[1]:
                 ur[1] = world_image_max[1]
-            self._viewer.ROIWidget.PlaceWidget([ll[0],ur[0],ll[1], ur[1],0,world_image_max[2]])
-        print(ll,ur)
+            self._viewer.ROIWidget.PlaceWidget([ll[0], ur[0], ll[1], ur[1], 0, world_image_max[2]])
+        print(ll, ur)
 
         #self._viewer.ROIWidget.On()
         #self.UpdatePipeline()
