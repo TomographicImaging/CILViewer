@@ -550,19 +550,20 @@ class CILInteractorStyle(vtk.vtkInteractorStyle):
         box_voxel_max = list(box_voxel_max)
         # Get maximum extents of the image in world coords
         data_extent = self.GetDataExtentInWorld()
-        world_image_max = self.GetVoxelsFromExtent(data_extent)[1]
-        print(world_image_max)
-        if self.GetSliceOrientation() == SLICE_ORIENTATION_XY:
-            if ll[0] < 0:
-                ll[0] = 0
-            if ll[1] < 0:
-                ll[1] = 0
-            if ur[0] > world_image_max[0]:
-                ur[0] = world_image_max[0]
-            if ur[1] > world_image_max[1]:
-                ur[1] = world_image_max[1]
-            self._viewer.ROIWidget.PlaceWidget([ll[0], ur[0], ll[1], ur[1], 0, world_image_max[2]])
-        print(ll, ur)
+        
+        voxel_min_world, voxel_max_world = self.GetVoxelsFromExtent(data_extent)
+        orientation = self.GetSliceOrientation()
+        i = [orientation, (orientation+1)%3, (orientation+2)%3]
+        if box_voxel_min[i[1]] < voxel_min_world[i[1]]:
+            box_voxel_min[i[1]] = voxel_min_world[i[1]]
+        if box_voxel_min[i[2]] < voxel_min_world[i[2]]:
+            box_voxel_min[i[2]] = voxel_min_world[i[2]]
+        if box_voxel_max[i[1]] > voxel_max_world[i[1]]:
+            box_voxel_max[i[1]] = voxel_max_world[i[1]]
+        if box_voxel_max[i[2]] > voxel_max_world[i[2]]:
+            box_voxel_max[i[2]] = voxel_max_world[i[2]]
+        box_extent_world = self.GetExtentFromVoxels(box_voxel_min, box_voxel_max)
+        self._viewer.ROIWidget.PlaceWidget(box_extent_world)
 
         #self._viewer.ROIWidget.On()
         #self.UpdatePipeline()
