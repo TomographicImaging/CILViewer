@@ -21,8 +21,10 @@ import sys
 
 from trame.app import get_server
 
+from ccpi.viewer import CILViewer, CILViewer2D
 from ccpi.web_viewer.trame_viewer2D import TrameViewer2D
 from ccpi.web_viewer.trame_viewer3D import TrameViewer3D
+import vtk
 
 server = get_server(client_type="vue2")
 state, ctrl = server.state, server.controller
@@ -45,22 +47,26 @@ def arg_parser():
     Parse the passed arguments to the current
     :return:
     """
-    help_string = "web_app.py [optional args: -h, -d] <data_files>\n" \
+    help_string = "web_app.py [optional args: -h, -d, --headless] <data_files>\n" \
                   "Args:\n" \
                   "-h: Show this help and exit the program\n" \
-                  "-d, --2D: Use the 2D viewer instead of the 3D viewer, the default is to just use the 3D viewer."
+                  "-d, --2D: Use the 2D viewer instead of the 3D viewer, the default is to just use the 3D viewer.\n" \
+                  "--headless: Run the program in headless mode, this is useful for remote rendering."
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "hd", ["2D"])
+        opts, args = getopt.getopt(sys.argv[1:], "hd", ["2D", "headless"])
     except getopt.GetoptError:
         print(help_string)
         sys.exit(2)
+    headless = False
     for opt, arg in opts:
         if opt == '-h':
             print(help_string)
         elif opt in ("-d", "--2D"):
             global VIEWER_2D
             VIEWER_2D = True
-    return data_finder()
+        elif opt == '--headless':
+            headless = True
+    return data_finder(), headless
 
 
 def data_finder():
@@ -89,13 +95,24 @@ def main() -> int:
     Create the main class and run the TrameViewer
     :return: int, exit code for the program
     """
-    data_files = arg_parser()
+    data_files, headless = arg_parser()
+    if headless:
+        renderWindow = vtk.vtkRenderWindow()
+        renderWindow.OffScreenRenderingOn()
     global TRAME_VIEWER
     if not VIEWER_2D:
-        TRAME_VIEWER = TrameViewer3D(data_files)
+        if headless:
+            viewer = CILViewer.CILViewer(renWin=renderWindow)
+            TRAME_VIEWER = TrameViewer3D(data_files, viewer=viewer)
+        else:
+            TRAME_VIEWER = TrameViewer3D(data_files)
         TRAME_VIEWER.start()
     else:
-        TRAME_VIEWER = TrameViewer2D(data_files)
+        if headless:
+            viewer = CILViewer2D.CILViewer2D(renWin=renderWindow)
+            TRAME_VIEWER = TrameViewer2D(data_files, viewer=viewer)
+        else:
+            TRAME_VIEWER = TrameViewer2D(data_files)
         TRAME_VIEWER.start()
     return 0
 
