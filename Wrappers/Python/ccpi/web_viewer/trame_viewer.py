@@ -17,9 +17,11 @@
 #
 import inspect
 import os
+import vtk
 
 from trame.app import get_server
-from trame.widgets import vtk, vuetify
+from trame.widgets import vuetify
+from trame.widgets import vtk as vtktrame
 from trame.ui.vuetify import SinglePageWithDrawerLayout
 from vtkmodules.util import colors
 from vtkmodules.vtkIOImage import vtkMetaImageReader
@@ -35,7 +37,6 @@ class TrameViewer:
     """
     This class is intended as a base class and not to be used outside of one of the TrameViewer2D and TrameViewer3D classes.
     """
-
     def __init__(self, viewer, list_of_files: list = None):
         # Load files and setup the CILViewer
         if list_of_files is None:
@@ -52,7 +53,9 @@ class TrameViewer:
 
         # Create the relevant CILViewer
         if inspect.isclass(viewer):
-            self.cil_viewer = viewer()
+            renderWindow = vtk.vtkRenderWindow()
+            renderWindow.OffScreenRenderingOn()
+            self.cil_viewer = viewer(renWin=renderWindow)
         else:
             self.cil_viewer = viewer
         self.load_file(self.default_file)
@@ -75,7 +78,7 @@ class TrameViewer:
 
         # VtkLocalView would allow the user to use their own GPU locally, but requires serialisation of various VTK actors that the
         # framework is not capable of serialisation, hence using RemoteView and being dependent on a web server with a GPU available to it.
-        self.html_view = vtk.VtkRemoteView(self.cil_viewer.renWin, trame_server=server, ref="view")
+        self.html_view = vtktrame.VtkRemoteView(self.cil_viewer.renWin, trame_server=server, ref="view")
         ctrl.view_update = self.html_view.update
         ctrl.view_reset_camera = self.html_view.reset_camera
         ctrl.on_server_ready.add(self.html_view.update)

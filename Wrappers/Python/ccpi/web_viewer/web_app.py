@@ -24,7 +24,7 @@ from trame.app import get_server
 from ccpi.web_viewer.trame_viewer2D import TrameViewer2D
 from ccpi.web_viewer.trame_viewer3D import TrameViewer3D
 
-server = get_server()
+server = get_server(client_type="vue2")
 state, ctrl = server.state, server.controller
 
 TRAME_VIEWER = None
