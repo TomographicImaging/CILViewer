@@ -221,10 +221,10 @@ class CILInteractorStyle(vtk.vtkInteractorStyle):
         """
         extent = self.GetInputData().GetExtent()
         v1, v2 = self.GetVoxelsFromExtent(extent)
-        self.image2worldForTwoVoxels(v1,v2)
+        self.image2worldForTwoVoxels(v1, v2)
         v1 = self.GetInputData().GetExtent()[1::2]
         v2 = self.GetInputData().GetExtent()[1::2]
-        print("extent",)
+        print("extent", )
         print("max", self.GetInputData().GetExtent()[1::2])
         return self.image2world(self.GetInputData().GetExtent()[1::2])
 
@@ -234,7 +234,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyle):
         """
         data_extent_image = self.GetInputData().GetExtent()
         data_extent_world = self.image2worldExtent(data_extent_image)
-        print("extent_world",data_extent_world)
+        print("extent_world", data_extent_world)
         return data_extent_world
 
     def GetVoxelsFromExtent(self, extent):
@@ -242,21 +242,21 @@ class CILInteractorStyle(vtk.vtkInteractorStyle):
         v2 = extent[1::2]
         print("voxels", v1, v2)
         return v1, v2
-    
+
     def GetVoxelsInWorld(self):
         v1, v2 = self.GetVoxelsInImage()
-        return self.image2worldForTwoVoxels(v1,v2)
+        return self.image2worldForTwoVoxels(v1, v2)
 
     def image2worldTwoVoxels(self, v1, v2):
         return self.image2world(v1), self.image2world(v2)
 
     def image2worldExtent(self, extent):
         v1_image, v2_image = self.GetVoxelsFromExtent(extent)
-        v1_world= self.image2world(v1_image)
+        v1_world = self.image2world(v1_image)
         v2_world = self.image2world(v2_image)
         extent_world = self.GetExtentFromVoxels(v1_world, v2_world)
         return extent_world
-    
+
     def GetExtentFromVoxels(self, v1, v2):
         extent = (v1[0], v2[0], v1[1], v2[1], v1[2], v2[2])
         return extent
@@ -554,12 +554,11 @@ class CILInteractorStyle(vtk.vtkInteractorStyle):
         pd = vtk.vtkPolyData()
         self.GetROIWidget().GetPolyData(pd)
         bounds = pd.GetBounds()
-        
 
         # Set the values of the ll and ur corners
         ll = list((bounds[0], bounds[2], bounds[4]))
         ur = list((bounds[1], bounds[3], bounds[5]))
-        print(ll,ur)
+        print(ll, ur)
         # Get maximum extents of the image in world coords
         data_extent = self.GetDataWorldExtent()
         world_image_max = self.GetVoxelsFromExtent(data_extent)[1]
@@ -573,8 +572,8 @@ class CILInteractorStyle(vtk.vtkInteractorStyle):
                 ur[0] = world_image_max[0]
             if ur[1] > world_image_max[1]:
                 ur[1] = world_image_max[1]
-            self._viewer.ROIWidget.PlaceWidget([ll[0],ur[0],ll[1], ur[1],0,world_image_max[2]])
-        print(ll,ur)
+            self._viewer.ROIWidget.PlaceWidget([ll[0], ur[0], ll[1], ur[1], 0, world_image_max[2]])
+        print(ll, ur)
 
         #self._viewer.ROIWidget.On()
         #self.UpdatePipeline()
