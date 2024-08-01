@@ -423,14 +423,14 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
         data_extent_image = self.GetInputData().GetExtent()
         data_extent_world = self.image2worldExtent(data_extent_image)
         return data_extent_world
-    
+
     def GetVoxelsFromExtent(self, extent):
         """Given the extent of a box or image, gets the voxels corresponding to the min values in all directions
         and max values in all directions."""
         voxel_min = extent[0::2]
         voxel_max = extent[1::2]
         return voxel_min, voxel_max
-    
+
     def image2worldExtent(self, extent):
         """Given the extent of a box or image, gets the voxels corresponding to the min values in all directions
         and max values in all directions. Then, converts their coordinates in the world coordinate system. 
