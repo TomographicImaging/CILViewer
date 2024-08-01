@@ -228,14 +228,14 @@ class CILInteractorStyle(vtk.vtkInteractorStyle):
         print("max", self.GetInputData().GetExtent()[1::2])
         return self.image2world(self.GetInputData().GetExtent()[1::2])
 
-    def GetImageWorldExtent(self):
+    def GetDataWorldExtent(self):
         """
-        Compute and return the maximum extent of the image in the rendered world
+        Compute and return the extent of the input data in the rendered world.
         """
-        extent_im = self.GetInputData().GetExtent()
-        extent_world = self.image2worldFromExtent(extent_im)
-        print("extent_world",extent_world)
-        return extent_world
+        data_extent_image = self.GetInputData().GetExtent()
+        data_extent_world = self.image2worldExtent(data_extent_image)
+        print("extent_world",data_extent_world)
+        return data_extent_world
 
     def GetVoxelsFromExtent(self, extent):
         v1 = extent[0::2]
@@ -247,10 +247,10 @@ class CILInteractorStyle(vtk.vtkInteractorStyle):
         v1, v2 = self.GetVoxelsInImage()
         return self.image2worldForTwoVoxels(v1,v2)
 
-    def image2worldForTwoVoxels(self, v1, v2):
+    def image2worldTwoVoxels(self, v1, v2):
         return self.image2world(v1), self.image2world(v2)
 
-    def image2worldFromExtent(self, extent):
+    def image2worldExtent(self, extent):
         v1_image, v2_image = self.GetVoxelsFromExtent(extent)
         v1_world= self.image2world(v1_image)
         v2_world = self.image2world(v2_image)
@@ -557,8 +557,8 @@ class CILInteractorStyle(vtk.vtkInteractorStyle):
         ur = list((bounds[1], bounds[3], bounds[5]))
         print(ll,ur)
         # Get maximum extents of the image in world coords
-        extent = self.GetImageWorldExtent()
-        world_image_max = self.GetVoxelsFromExtent(extent)[1]
+        data_extent = self.GetDataWorldExtent()
+        world_image_max = self.GetVoxelsFromExtent(data_extent)[1]
         print(world_image_max)
         if self.GetSliceOrientation() == SLICE_ORIENTATION_XY:
             if ll[0] < 0:
@@ -1844,8 +1844,8 @@ class CILViewer2D(CILViewerBase):
                 (origin_display[0] - x_min_offset, origin_display[1] - y_min_offset))
 
             # Calculate the far right border
-            extent = self.style.GetImageWorldExtent()
-            top_right_world = self.style.GetVoxelsFromExtent(extent)[1]
+            data_extent = self.style.GetDataWorldExtent()
+            top_right_world = self.style.GetVoxelsFromExtent(data_extent)[1]
             top_right_disp = self.style.world2display(top_right_world)
             top_right_nview = self.style.display2normalisedViewport(
                 (top_right_disp[0] + border + height, top_right_disp[1]))

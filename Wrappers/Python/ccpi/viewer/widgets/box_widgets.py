@@ -135,9 +135,9 @@ class cilviewerBoxWidget():
         spacing = viewer.img3D.GetSpacing()
 
         # Get maximum extents of the image in world coords
-        extent = viewer.style.GetImageWorldExtent()
-        print(viewer.style.GetVoxelsFromExtent(extent))
-        world_image_max = viewer.style.GetVoxelsFromExtent(extent)[1]
+        data_extent = viewer.style.GetDataWorldExtent()
+        print(viewer.style.GetVoxelsFromExtent(data_extent))
+        world_image_max = viewer.style.GetVoxelsFromExtent(data_extent)[1]
 
 
         # Set the minimum world value
@@ -212,10 +212,10 @@ class cilviewerBoxWidget():
         world_mouse_pos = coord.GetComputedWorldValue(viewer.style.GetRenderer())
 
         # Get maximum extents of the image in world coords
-        extent = viewer.style.GetImageWorldExtent()
-        print("box extent",extent)
+        data_extent = viewer.style.GetDataWorldExtent()
+        print("box extent", data_extent)
         
-        world_image_max = viewer.style.GetVoxelsFromExtent(extent)[1]
+        world_image_max = viewer.style.GetVoxelsFromExtent(data_extent)[1]
         print("box max",world_image_max)
         # Set the minimum world value
         world_image_min = (0, 0, 0)
