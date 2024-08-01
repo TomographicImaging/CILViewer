@@ -27,9 +27,9 @@ state, ctrl = server.state, server.controller
 
 class TrameViewer2D(TrameViewer):
 
-    def __init__(self, list_of_files: list = None):
+    def __init__(self, list_of_files: list = None, viewer=CILViewer2D):
         self.first_load = True
-        super().__init__(list_of_files=list_of_files, viewer=CILViewer2D)
+        super().__init__(list_of_files=list_of_files, viewer=viewer)
 
         self.model_choice = None
         self.background_choice = None

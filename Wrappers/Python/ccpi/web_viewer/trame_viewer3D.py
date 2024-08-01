@@ -47,8 +47,8 @@ INITIAL_IMAGE = "head.mha"
 
 class TrameViewer3D(TrameViewer):
 
-    def __init__(self, list_of_files=None):
-        super().__init__(list_of_files=list_of_files, viewer=CILViewer)
+    def __init__(self, list_of_files=None, viewer=CILViewer):
+        super().__init__(list_of_files=list_of_files, viewer=viewer)
 
         # Define attributes that will be constructed in methods outside of __init__
 
