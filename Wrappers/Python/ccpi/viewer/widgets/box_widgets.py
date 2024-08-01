@@ -136,7 +136,6 @@ class cilviewerBoxWidget():
 
         # Get maximum extents of the image in world coords
         data_extent = viewer.style.GetDataExtentInWorld()
-        print(viewer.style.GetVoxelsFromExtent(data_extent))
         voxel_max_world = viewer.style.GetVoxelsFromExtent(data_extent)[1]
 
         # Set the minimum world value
