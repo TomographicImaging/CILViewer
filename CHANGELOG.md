@@ -7,6 +7,7 @@ Enhancements:
   
 Bugfix:
   - Edit slider min value #420
+  - Use headless render window for viewer via trame (#429)
 
 ## v24.0.1
 
