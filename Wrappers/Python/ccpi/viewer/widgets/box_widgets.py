@@ -188,7 +188,7 @@ class cilviewerBoxWidget():
         ''' 
         Given a position of the click, translates it into world coordinates.
         Gets the current render orientation.
-        Gets the extent of the data in world coordiantes and its corresponding voxels. 
+        Gets the extent of the data in world coordinates and its corresponding voxels. 
         Creates a warning dialog.
         Creates a 3D box around the clicked point, where the clicked point is the voxel min (lower value in all axes).
         Returns its extent in world coordinates, i.e., "box bounds". 
