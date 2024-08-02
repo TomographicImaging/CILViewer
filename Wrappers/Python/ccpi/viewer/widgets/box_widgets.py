@@ -158,7 +158,7 @@ class cilviewerBoxWidget():
         return coords
 
     @staticmethod
-    def CreateMoveableAtEventPosition(viewer, position, widget_name, outline_colour=(0, 1, 0), scale_factor=0.3):
+    def CreateMoveableAtEventPosition(viewer, position, widget_name, outline_colour=(0, 1, 0), box_bounds = None, scale_factor = None):
         ''' 
         Place a moveable box widget on the viewer at the event position.
         Parameters
@@ -176,9 +176,13 @@ class cilviewerBoxWidget():
         '''
         # ROI Widget
         widget = cilviewerBoxWidget.CreateMoveable(viewer, outline_colour)
-        coords = cilviewerBoxWidget.GetBoxBoundsFromEventPosition(viewer, position, scale_factor)
+        if box_bounds == None:
+            if scale_factor == None:
+                box_bounds = cilviewerBoxWidget.GetBoxBoundsFromEventPosition(viewer, position)
+            else:
+                box_bounds = cilviewerBoxWidget.GetBoxBoundsFromEventPosition(viewer, position, scale_factor = scale_factor)
         # Set widget placement and make visible
-        widget.PlaceWidget(coords)
+        widget.PlaceWidget(box_bounds)
         widget.On()
         viewer.addWidgetReference(widget, widget_name)
         return widget
