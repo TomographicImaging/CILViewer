@@ -418,7 +418,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
 
     def GetDataExtentInWorld(self):
         """
-        Compute and return the extent of the input data in the rendered world.
+        Compute and return the extent of the input data in world coordinates.
         """
         data_extent_image = self.GetInputData().GetExtent()
         data_extent_world = self.image2worldExtent(data_extent_image)
