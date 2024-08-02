@@ -552,8 +552,8 @@ class CILInteractorStyle(vtk.vtkInteractorStyle):
         data_extent = self.GetDataExtentInWorld()
 
         voxel_min_world, voxel_max_world = self.GetMinMaxVoxelsFromExtent(data_extent)
-        orientation = self.GetSliceOrientation()
-        i = [orientation, (orientation + 1) % 3, (orientation + 2) % 3]
+        i = [self.GetSliceOrientation()]
+        i.extend([(i[0] + 1) % 3, (i[0] + 2) % 3])
         if box_voxel_min[i[1]] < voxel_min_world[i[1]]:
             box_voxel_min[i[1]] = voxel_min_world[i[1]]
         if box_voxel_min[i[2]] < voxel_min_world[i[2]]:
