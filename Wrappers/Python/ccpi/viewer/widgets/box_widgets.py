@@ -280,7 +280,6 @@ class cilviewerBoxWidget():
         else:
             return value
 
-
 class cilviewerLineWidget():
 
     @staticmethod

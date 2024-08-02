@@ -538,20 +538,14 @@ class CILInteractorStyle(vtk.vtkInteractorStyle):
         self.SetEventInactive("ZOOM_EVENT")
         self.SetEventInactive("PAN_EVENT")
 
-    def OnROIModifiedEvent(self, interactor, event):
-        # Get bounds from 3D ROI
-        pd = vtk.vtkPolyData()
-        self.GetROIWidget().GetPolyData(pd)
-        bounds = pd.GetBounds()
-
-        # Set the values of the ll and ur corners
-        box_voxel_min, box_voxel_max = self.GetMinMaxVoxelsFromExtent(bounds)
+    def PlaceWidgetWithExtentCheck(self, box_widget, box_extent_world):
+        box_voxel_min, box_voxel_max = self.GetMinMaxVoxelsFromExtent(box_extent_world)
         box_voxel_min = list(box_voxel_min)
         box_voxel_max = list(box_voxel_max)
         # Get maximum extents of the image in world coords
         data_extent = self.GetDataExtentInWorld()
-
         voxel_min_world, voxel_max_world = self.GetMinMaxVoxelsFromExtent(data_extent)
+
         i = [self.GetSliceOrientation()]
         i.extend([(i[0] + 1) % 3, (i[0] + 2) % 3])
         if box_voxel_min[i[1]] < voxel_min_world[i[1]]:
@@ -563,10 +557,21 @@ class CILInteractorStyle(vtk.vtkInteractorStyle):
         if box_voxel_max[i[2]] > voxel_max_world[i[2]]:
             box_voxel_max[i[2]] = voxel_max_world[i[2]]
         box_extent_world = self.GetExtentFromVoxels(box_voxel_min, box_voxel_max)
-        self._viewer.ROIWidget.PlaceWidget(box_extent_world)
+        box_widget.PlaceWidget(box_extent_world)
 
+    def OnROIModifiedEvent(self, interactor, event):
+        # Get bounds from 3D ROI
+        pd = vtk.vtkPolyData()
+        self.GetROIWidget().GetPolyData(pd)
+        bounds = pd.GetBounds()
+
+        # Get maximum extents of the image in world coords
+        self.PlaceWidgetWithExtentCheck(self._viewer.ROIWidget, bounds)
+
+        data_extent = self.GetDataExtentInWorld()
         #self._viewer.ROIWidget.On()
         #self.UpdatePipeline()
+        voxel_min_world, voxel_max_world = self.GetMinMaxVoxelsFromExtent(data_extent)
         vox1 = self.createVox(voxel_min_world)
         vox2 = self.createVox(voxel_max_world)
 
