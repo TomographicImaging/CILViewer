@@ -575,7 +575,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyle):
         box_extent_world = pd.GetBounds()
         box_voxel_min_world, box_voxel_max_world = self.GetMinMaxVoxelsFromExtent(box_extent_world)
         box_voxel_min_image = self.createVox(box_voxel_min_world)
-        box_voxel_max_image  = self.createVox(box_voxel_max_world)
+        box_voxel_max_image = self.createVox(box_voxel_max_world)
         box_extent_image = self.GetExtentFromVoxels(box_voxel_min_image, box_voxel_max_image)
         return box_extent_image
 
