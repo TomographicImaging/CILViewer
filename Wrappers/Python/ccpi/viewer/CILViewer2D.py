@@ -538,7 +538,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyle):
         self.SetEventInactive("ZOOM_EVENT")
         self.SetEventInactive("PAN_EVENT")
 
-    def PlaceWidgetWithExtentCheck(self, box_widget, box_extent_world):
+    def BoxExtentCheck(self, box_extent_world):
         box_voxel_min, box_voxel_max = self.GetMinMaxVoxelsFromExtent(box_extent_world)
         box_voxel_min = list(box_voxel_min)
         box_voxel_max = list(box_voxel_max)
@@ -557,7 +557,27 @@ class CILInteractorStyle(vtk.vtkInteractorStyle):
         if box_voxel_max[i[2]] > voxel_max_world[i[2]]:
             box_voxel_max[i[2]] = voxel_max_world[i[2]]
         box_extent_world = self.GetExtentFromVoxels(box_voxel_min, box_voxel_max)
-        box_widget.PlaceWidget(box_extent_world)
+        return box_extent_world
+
+    def GetBoxWidgetExtentInWorld(self, box_widget):
+        ''' Returns the extent of a box_widget (vtkBoxWidget)
+        which is present on the viewer, in the image coordinate system.'''
+        pd = vtk.vtkPolyData()
+        box_widget.GetPolyData(pd)
+        box_extent_world = pd.GetBounds()
+        return box_extent_world
+
+    def GetBoxWidgetExtentInImage(self, box_widget):
+        ''' Returns the extent of a box_widget (vtkBoxWidget)
+        which is present on the viewer, in the image coordinate system.'''
+        pd = vtk.vtkPolyData()
+        box_widget.GetPolyData(pd)
+        box_extent_world = pd.GetBounds()
+        box_voxel_min_world, box_voxel_max_world = self.GetMinMaxVoxelsFromExtent(box_extent_world)
+        box_voxel_min_image = self.createVox(box_voxel_min_world)
+        box_voxel_max_image  = self.createVox(box_voxel_max_world)
+        box_extent_image = self.GetExtentFromVoxels(box_voxel_min_image, box_voxel_max_image)
+        return box_extent_image
 
     def OnROIModifiedEvent(self, interactor, event):
         # Get bounds from 3D ROI
@@ -566,7 +586,8 @@ class CILInteractorStyle(vtk.vtkInteractorStyle):
         bounds = pd.GetBounds()
 
         # Get maximum extents of the image in world coords
-        self.PlaceWidgetWithExtentCheck(self._viewer.ROIWidget, bounds)
+        bounds = self.BoxExtentCheck(bounds)
+        self._viewer.ROIWidget.PlaceWidget(bounds)
 
         data_extent = self.GetDataExtentInWorld()
         #self._viewer.ROIWidget.On()
