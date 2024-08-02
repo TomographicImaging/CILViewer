@@ -216,7 +216,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyle):
         return actor, vert, horiz
 
     def GetImageWorldExtent(self):
-        """Deprecated. Use `GetDataExtentInWorld` and `GetVoxelsFromExtent`."""
+        """Deprecated. Use `GetDataExtentInWorld` and `GetMinMaxVoxelsFromExtent`."""
         return self.image2world(self.GetInputData().GetExtent()[1::2])
 
     def GetDataExtentInWorld(self):
@@ -227,7 +227,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyle):
         data_extent_world = self.image2worldExtent(data_extent_image)
         return data_extent_world
 
-    def GetVoxelsFromExtent(self, extent):
+    def GetMinMaxVoxelsFromExtent(self, extent):
         """Given the extent of a box or image, gets the voxels corresponding to the min values in all directions
         and max values in all directions."""
         voxel_min = extent[0::2]
@@ -238,7 +238,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyle):
         """Given the extent of a box or image, gets the voxels corresponding to the min values in all directions
         and max values in all directions. Then, converts their coordinates in the world coordinate system. 
         Returns the converted extent."""
-        v1_image, v2_image = self.GetVoxelsFromExtent(extent)
+        v1_image, v2_image = self.GetMinMaxVoxelsFromExtent(extent)
         v1_world = self.image2world(v1_image)
         v2_world = self.image2world(v2_image)
         extent_world = self.GetExtentFromVoxels(v1_world, v2_world)
@@ -545,13 +545,13 @@ class CILInteractorStyle(vtk.vtkInteractorStyle):
         bounds = pd.GetBounds()
 
         # Set the values of the ll and ur corners
-        box_voxel_min, box_voxel_max = self.GetVoxelsFromExtent(bounds)
+        box_voxel_min, box_voxel_max = self.GetMinMaxVoxelsFromExtent(bounds)
         box_voxel_min = list(box_voxel_min)
         box_voxel_max = list(box_voxel_max)
         # Get maximum extents of the image in world coords
         data_extent = self.GetDataExtentInWorld()
 
-        voxel_min_world, voxel_max_world = self.GetVoxelsFromExtent(data_extent)
+        voxel_min_world, voxel_max_world = self.GetMinMaxVoxelsFromExtent(data_extent)
         orientation = self.GetSliceOrientation()
         i = [orientation, (orientation + 1) % 3, (orientation + 2) % 3]
         if box_voxel_min[i[1]] < voxel_min_world[i[1]]:
@@ -1838,7 +1838,7 @@ class CILViewer2D(CILViewerBase):
 
             # Calculate the far right border
             data_extent = self.style.GetDataExtentInWorld()
-            top_right_world = self.style.GetVoxelsFromExtent(data_extent)[1]
+            top_right_world = self.style.GetMinMaxVoxelsFromExtent(data_extent)[1]
             top_right_disp = self.style.world2display(top_right_world)
             top_right_nview = self.style.display2normalisedViewport(
                 (top_right_disp[0] + border + height, top_right_disp[1]))

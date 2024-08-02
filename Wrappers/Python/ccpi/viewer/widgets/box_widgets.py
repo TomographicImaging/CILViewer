@@ -136,7 +136,7 @@ class cilviewerBoxWidget():
 
         # Get maximum extents of the image in world coords
         data_extent = viewer.style.GetDataExtentInWorld()
-        voxel_max_world = viewer.style.GetVoxelsFromExtent(data_extent)[1]
+        voxel_max_world = viewer.style.GetMinMaxVoxelsFromExtent(data_extent)[1]
 
         # Set the minimum world value
         world_image_min = (0, 0, 0)
@@ -213,7 +213,7 @@ class cilviewerBoxWidget():
         mouse_pos_world = coord.GetComputedWorldValue(viewer.style.GetRenderer())
 
         data_extent_world = viewer.style.GetDataExtentInWorld()
-        voxel_min_world, voxel_max_world = viewer.style.GetVoxelsFromExtent(data_extent_world)
+        voxel_min_world, voxel_max_world = viewer.style.GetMinMaxVoxelsFromExtent(data_extent_world)
 
         dialog = WarningDialog(None, message="Click inside the image.", window_title="Viewer Warning")
 
