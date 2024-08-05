@@ -4,9 +4,13 @@
 
 Enhancements:
   - Add title to ViewerCoordsDockWidget #422
+  - Adds methods to CILviewer and CILviewer2D #425
   
 Bugfix:
   - Edit slider min value #420
+  - Fix extent error when user clicks in the viewer to create a box by clicking outside of the image #425
+  - Fix extent error when user enlarges the box outside the image #425
+  - Deprecates `GetImageWorldExtent` #425
 
 ## v24.0.1
 
