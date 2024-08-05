@@ -224,7 +224,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyle):
         Compute and return the extent of the input data in the rendered world.
         """
         data_extent_image = self.GetInputData().GetExtent()
-        data_extent_world = self.image2worldExtent(data_extent_image)
+        data_extent_world = self.Image2WorldExtent(data_extent_image)
         return data_extent_world
 
     def GetMinMaxVoxelsFromExtent(self, extent):
@@ -238,10 +238,10 @@ class CILInteractorStyle(vtk.vtkInteractorStyle):
         """Given the extent of a box or image, gets the voxels corresponding to the min values in all directions
         and max values in all directions. Then, converts their coordinates in the world coordinate system. 
         Returns the converted extent."""
-        v1_image, v2_image = self.GetMinMaxVoxelsFromExtent(extent_image)
-        v1_world = self.image2world(v1_image)
-        v2_world = self.image2world(v2_image)
-        extent_world = self.GetExtentFromVoxels(v1_world, v2_world)
+        voxel_min_image, voxel_max_image = self.GetMinMaxVoxelsFromExtent(extent_image)
+        voxel_min_world = self.image2world(voxel_min_image)
+        voxel_max_world = self.image2world(voxel_max_image)
+        extent_world = self.GetExtentFromVoxels(voxel_min_world, voxel_max_world)
         return extent_world
 
     def GetExtentFromVoxels(self, voxel_min, voxel_max):

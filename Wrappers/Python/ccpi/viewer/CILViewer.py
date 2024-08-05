@@ -421,7 +421,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
         Compute and return the extent of the input data in world coordinates.
         """
         data_extent_image = self.GetInputData().GetExtent()
-        data_extent_world = self.image2worldExtent(data_extent_image)
+        data_extent_world = self.Image2WorldExtent(data_extent_image)
         return data_extent_world
 
     def GetMinMaxVoxelsFromExtent(self, extent):
