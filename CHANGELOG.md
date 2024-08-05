@@ -4,6 +4,7 @@
 
 Enhancements:
   - Add title to ViewerCoordsDockWidget #422
+  - Adds methods to CILviewer and CILviewer2D #425
   
 Bugfix:
   - Edit slider min value #420
