@@ -1592,10 +1592,9 @@ class CILViewer2D(CILViewerBase):
         # save references
         self.sliderWidget = sw
         self.sliderCallback = cb
-        
+
         # enable slider
         self.sliderWidget.SetEnabled(not slider_hidden)
-
 
     def uninstallSliderWidget(self):
         '''remove the slider widget from the viewer'''
