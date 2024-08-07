@@ -1574,7 +1574,6 @@ class CILViewer2D(CILViewerBase):
         sw.SetRepresentation(sr)
         sw.SetAnimationModeToAnimate()
         sw.EnabledOn()
-        dims = self.img3D.GetDimensions()
         cb = SliderCallback(self, sw)
 
         # Add interaction observers
