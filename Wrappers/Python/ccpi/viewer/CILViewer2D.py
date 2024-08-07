@@ -1682,7 +1682,8 @@ class CILViewer2D(CILViewerBase):
                     slice_coord = self.style.image2world(slice_coord)[self.getSliceOrientation()]
                     axis_length = self.style.image2world(axis_length)[self.getSliceOrientation()] - 1
                     data = (round(slice_coord), round(axis_length))
-                text = "Slice %d/%d" % data
+                axis_label = self.axisLabelsText[self.getSliceOrientation()]
+                text = "%s %d/%d" % (axis_label, data[0], data[1])
 
             else:
                 # In all other cases, we have coordinates, and then we have an extra value
