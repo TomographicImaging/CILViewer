@@ -97,10 +97,10 @@ class Converter(object):
 
             order = "F"
             i = 0
-            k = len(shape)-1
+            k = len(shape) - 1
         else:
             order = "C"
-            i = len(shape)-1
+            i = len(shape) - 1
             k = 0
 
         nparray = nparray.ravel(order)
