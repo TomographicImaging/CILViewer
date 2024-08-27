@@ -1574,6 +1574,8 @@ class CILViewer2D(CILViewerBase):
         sw.SetRepresentation(sr)
         sw.SetAnimationModeToAnimate()
         sw.EnabledOn()
+        # enable slider
+        sw.SetEnabled(not slider_hidden)
         cb = SliderCallback(self, sw)
 
         # Add interaction observers
@@ -1592,8 +1594,7 @@ class CILViewer2D(CILViewerBase):
         self.sliderWidget = sw
         self.sliderCallback = cb
 
-        # enable slider
-        self.sliderWidget.SetEnabled(not slider_hidden)
+
 
     def uninstallSliderWidget(self):
         '''remove the slider widget from the viewer'''
