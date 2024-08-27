@@ -3,11 +3,13 @@
 ## v24.0.2
 
 Enhancements:
+  - Update corner annotation with axis label #433
   - Add title to ViewerCoordsDockWidget #422
   - Adds methods to CILviewer and CILviewer2D #425
   
 Bugfix:
   - Hides the slider when one image dimension is 1 #432
+  - Differentiate 3D and 2D images in the converter `numpy2vtkImage` #437
   - Edit slider min value #420
   - Fix extent error when user clicks in the viewer to create a box by clicking outside of the image #425
   - Fix extent error when user enlarges the box outside the image #425
