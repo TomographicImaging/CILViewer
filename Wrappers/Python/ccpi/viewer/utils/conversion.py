@@ -91,7 +91,7 @@ class Converter(object):
     @staticmethod
     def numpy2vtkImage(nparray, spacing=(1., 1., 1.), origin=(0, 0, 0), deep=0, output=None):
         """The method converts a numpy array to a vtk image.
-        The vtk extend is set and needs to differentiate between 3D and 2D images."""
+        The vtk extent is set and needs to differentiate between 3D and 2D images."""
         shape = numpy.shape(nparray)
         if (nparray.flags["FNC"]):
 
