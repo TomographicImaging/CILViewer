@@ -90,16 +90,17 @@ class Converter(object):
 
     @staticmethod
     def numpy2vtkImage(nparray, spacing=(1., 1., 1.), origin=(0, 0, 0), deep=0, output=None):
-
+        """The method converts a numpy array to a vtk image.
+        The vtk extent is set and needs to differentiate between 3D and 2D images."""
         shape = numpy.shape(nparray)
         if (nparray.flags["FNC"]):
 
             order = "F"
             i = 0
-            k = 2
+            k = len(shape) - 1
         else:
             order = "C"
-            i = 2
+            i = len(shape) - 1
             k = 0
 
         nparray = nparray.ravel(order)
@@ -117,7 +118,10 @@ class Converter(object):
                 img_data = output
 
         img_data.GetPointData().AddArray(vtkarray)
-        img_data.SetExtent(0, shape[i] - 1, 0, shape[1] - 1, 0, shape[k] - 1)
+        if len(shape) == 3:
+            img_data.SetExtent(0, shape[i] - 1, 0, shape[1] - 1, 0, shape[k] - 1)
+        elif len(shape) == 2:
+            img_data.SetExtent(0, shape[i] - 1, 0, shape[k] - 1, 0, 0)
         img_data.GetPointData().SetActiveScalars('vtkarray')
         img_data.SetOrigin(origin)
         img_data.SetSpacing(spacing)
