@@ -2,6 +2,7 @@ import sys
 from functools import partial
 
 import vtk
+import traceback
 from ccpi.viewer import viewer2D, viewer3D
 from ccpi.viewer.ui.main_windows import TwoViewersMainWindow
 from PySide2 import QtWidgets
@@ -159,4 +160,8 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    try:
+        main()
+    except Exception as e:
+        print("Error: ", e)
+        traceback.print_exc()
