@@ -20,6 +20,7 @@ import h5py
 from ccpi.viewer.iviewer import iviewer
 import numpy as np
 import vtk
+
 vtk.vtkObject.GlobalWarningDisplayOn()
 vtk.vtkOutputWindow.GetInstance().SetGlobalWarningDisplay(True)
 

@@ -5,6 +5,7 @@ from pathlib import Path
 
 import ccpi.viewer.viewerLinker as vlink
 import vtk
+
 vtk.vtkObject.GlobalWarningDisplayOn()
 vtk.vtkOutputWindow.GetInstance().SetGlobalWarningDisplay(True)
 from ccpi.viewer import CILViewer2D, CILViewer
