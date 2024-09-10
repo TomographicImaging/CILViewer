@@ -29,6 +29,7 @@ New functionality:
 - Add slider widget #365 and option to not install it #386. Link slider events #413
 
 Bugfixes:
+- Fix error when visualising 2D images #439
 - Fix failing unit test #394
 - Bugfix on resample reader. Standalone viewer app defaults to downsample in all dimensions. #362
 - Fix bug with setInputAsNumpy() using deprecated `numpy2vtkImporter` in `CILViewer2D` - now uses `numpy2vtkImage` #346
