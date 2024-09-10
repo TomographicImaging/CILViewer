@@ -90,11 +90,14 @@ class Converter(object):
 
     @staticmethod
     def numpy2vtkImage(nparray, spacing=(1., 1., 1.), origin=(0, 0, 0), deep=0, output=None):
-        """The method converts a numpy array to a vtk image.
+        """
+        The method converts a numpy array to a vtk image.
+
+        Raises an error if the dimension of the image is not 2 or 3.
+        The array is flattened in the correct order, either fortran or C.
         The vtk extent is set and needs to differentiate between 3D and 2D images.
-        Flatten the array in the correct order.
-        Create vtkImageData if output is None, otherwise use the provided empty output.
-        Add the vtkarray to the image's point data."""
+        Creates a vtkImageData if `output` is None, otherwise uses the provided empty output.
+        Adds the vtkarray to the image's point data. If an array is already present, it removes it."""
 
         shape = numpy.shape(nparray)
         num_dims = len(shape)
@@ -131,17 +134,8 @@ class Converter(object):
             img_data.SetExtent(0, shape[i] - 1, 0, shape[1] - 1, 0, shape[k] - 1)
         elif num_dims == 2:
             img_data.SetExtent(0, shape[i] - 1, 0, shape[k] - 1, 0, 0)
-        #img_data.GetPointData().SetActiveScalars('vtkarray')
         img_data.SetOrigin(origin)
         img_data.SetSpacing(spacing)
-
-        point_data = img_data.GetPointData()
-
-        # Print available scalar arrays
-        for i in range(point_data.GetNumberOfArrays()):
-            array_name = point_data.GetArrayName(i)
-            array = point_data.GetArray(i)
-            print(f"Array {i} name = {array_name}, Number of Tuples = {array.GetNumberOfTuples()}")
 
         return img_data
 
