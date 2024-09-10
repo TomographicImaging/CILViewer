@@ -1434,6 +1434,7 @@ class CILViewer2D(CILViewerBase):
 
         extent[self.sliceOrientation * 2] = self.getActiveSlice()
         extent[self.sliceOrientation * 2 + 1] = self.getActiveSlice()
+        
         self.voi.SetVOI(extent[0], extent[1], extent[2], extent[3], extent[4], extent[5])
 
         self.voi.SetVOI(extent[0], extent[1], extent[2], extent[3], extent[4], extent[5])
@@ -1442,7 +1443,6 @@ class CILViewer2D(CILViewerBase):
 
         # set window/level for slice based on values in entire volume:
         self.ia.SetInputData(self.voi.GetOutput())
-
         self.ia.Update()
         self.style.AutoWindowLevelOnVolumeRange(update_slice=False)
         self.InitialLevel = self.getSliceColorLevel()
