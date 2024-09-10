@@ -96,7 +96,6 @@ class Converter(object):
         Create vtkImageData if output is None, otherwise use the provided empty output.
         Add the vtkarray to the image's point data."""
 
-        print("active numpy2vtkImage")
         shape = numpy.shape(nparray)
         num_dims = len(shape)
         if num_dims not in [2, 3]:
@@ -113,6 +112,7 @@ class Converter(object):
         vtkarray = numpy_support.numpy_to_vtk(num_array=nparray,
                                               deep=deep,
                                               array_type=numpy_support.get_vtk_array_type(nparray.dtype))
+        
 
         if output is None:
             img_data = vtk.vtkImageData()
@@ -122,7 +122,6 @@ class Converter(object):
             else:
                 img_data = output
 
-        print(img_data)
         point_data = img_data.GetPointData()
         while point_data.GetNumberOfArrays() > 0:
             point_data.RemoveArray(0)
@@ -136,12 +135,8 @@ class Converter(object):
         #img_data.GetPointData().SetActiveScalars('vtkarray')
         img_data.SetOrigin(origin)
         img_data.SetSpacing(spacing)
-        print("end of numpy2vtkImage")
-
-        print("Extent: ", img_data.GetExtent())
-        print("Number of Points: ", img_data.GetNumberOfPoints())
-        print("Number of Tuples in Scalars: ", img_data.GetPointData().GetScalars().GetNumberOfTuples())
-
+        
+        
         point_data = img_data.GetPointData()
 
         # Print available scalar arrays
