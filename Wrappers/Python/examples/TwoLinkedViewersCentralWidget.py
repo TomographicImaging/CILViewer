@@ -16,8 +16,14 @@ class TwoLinkedViewersCenterWidget(QtWidgets.QMainWindow):
         QtWidgets.QMainWindow.__init__(self, parent)
         #self.resize(800,600)
 
-        self.frame1 = QCILViewerWidget(parent, viewer=viewer2D, shape=(600, 600), interactorStyle=vlink.Linked2DInteractorStyle)
-        self.frame2 = QCILViewerWidget(parent, viewer=viewer3D, shape=(600, 600), interactorStyle=vlink.Linked3DInteractorStyle)
+        self.frame1 = QCILViewerWidget(parent,
+                                       viewer=viewer2D,
+                                       shape=(600, 600),
+                                       interactorStyle=vlink.Linked2DInteractorStyle)
+        self.frame2 = QCILViewerWidget(parent,
+                                       viewer=viewer3D,
+                                       shape=(600, 600),
+                                       interactorStyle=vlink.Linked3DInteractorStyle)
 
         head = example_data.HEAD.get()
 
