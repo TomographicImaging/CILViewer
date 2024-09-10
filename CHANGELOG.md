@@ -8,6 +8,7 @@ Enhancements:
   - Adds methods to CILviewer and CILviewer2D #425
   
 Bugfix:
+  - Fix error when visualising 2D images #439
   - Differentiate 3D and 2D images in the converter `numpy2vtkImage` #437
   - Edit slider min value #420
   - Fix extent error when user clicks in the viewer to create a box by clicking outside of the image #425
@@ -29,7 +30,6 @@ New functionality:
 - Add slider widget #365 and option to not install it #386. Link slider events #413
 
 Bugfixes:
-- Fix error when visualising 2D images #439
 - Fix failing unit test #394
 - Bugfix on resample reader. Standalone viewer app defaults to downsample in all dimensions. #362
 - Fix bug with setInputAsNumpy() using deprecated `numpy2vtkImporter` in `CILViewer2D` - now uses `numpy2vtkImage` #346
