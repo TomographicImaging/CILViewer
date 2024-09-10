@@ -112,7 +112,6 @@ class Converter(object):
         vtkarray = numpy_support.numpy_to_vtk(num_array=nparray,
                                               deep=deep,
                                               array_type=numpy_support.get_vtk_array_type(nparray.dtype))
-        
 
         if output is None:
             img_data = vtk.vtkImageData()
@@ -135,8 +134,7 @@ class Converter(object):
         #img_data.GetPointData().SetActiveScalars('vtkarray')
         img_data.SetOrigin(origin)
         img_data.SetSpacing(spacing)
-        
-        
+
         point_data = img_data.GetPointData()
 
         # Print available scalar arrays
