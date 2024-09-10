@@ -1434,7 +1434,7 @@ class CILViewer2D(CILViewerBase):
 
         extent[self.sliceOrientation * 2] = self.getActiveSlice()
         extent[self.sliceOrientation * 2 + 1] = self.getActiveSlice()
-        
+
         self.voi.SetVOI(extent[0], extent[1], extent[2], extent[3], extent[4], extent[5])
 
         self.voi.SetVOI(extent[0], extent[1], extent[2], extent[3], extent[4], extent[5])
