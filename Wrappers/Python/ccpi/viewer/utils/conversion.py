@@ -101,7 +101,7 @@ class Converter(object):
         num_dims = len(shape)
         if num_dims not in [2, 3]:
             raise ValueError("Only 2D or 3D numpy arrays are supported.")
-        
+
         if nparray.flags["FNC"]:
             order = "F"
             i, k = 0, num_dims - 1
@@ -113,7 +113,6 @@ class Converter(object):
         vtkarray = numpy_support.numpy_to_vtk(num_array=nparray,
                                               deep=deep,
                                               array_type=numpy_support.get_vtk_array_type(nparray.dtype))
-        
 
         if output is None:
             img_data = vtk.vtkImageData()
@@ -138,9 +137,7 @@ class Converter(object):
         img_data.SetOrigin(origin)
         img_data.SetSpacing(spacing)
         print("end of numpy2vtkImage")
-        
-        
-        
+
         print("Extent: ", img_data.GetExtent())
         print("Number of Points: ", img_data.GetNumberOfPoints())
         print("Number of Tuples in Scalars: ", img_data.GetPointData().GetScalars().GetNumberOfTuples())

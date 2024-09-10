@@ -1484,10 +1484,10 @@ class CILViewer2D(CILViewerBase):
             array_name = point_data.GetArrayName(i)
             array = point_data.GetArray(i)
             print(f"Array {i} name = {array_name}, Number of Tuples = {array.GetNumberOfTuples()}")
-        
+
         #self.voi.GetOutput().GetPointData().SetActiveScalars("vtkarray")
         self.ia.SetInputData(self.voi.GetOutput())
-        
+
         print("411")
         self.ia.Update()
         print("412")
