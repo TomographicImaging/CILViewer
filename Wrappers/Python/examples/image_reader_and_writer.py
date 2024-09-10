@@ -21,12 +21,7 @@ from ccpi.viewer.iviewer import iviewer
 import numpy as np
 import vtk
 
-vtk.vtkObject.GlobalWarningDisplayOn()
-vtk.vtkOutputWindow.GetInstance().SetGlobalWarningDisplay(True)
-
 DATASET_TO_READ = None
-DATASET_TO_READ = r'C:\Users\zvm34551\Coding_environment\DATA\DVC_dataset\TIFF\TIFF\Frame 0\frame_00_f_crop_idx_0000 - Copy.tiff'
-
 TARGET_SIZE = (100)**3
 FILE_TO_WRITE = 'resampled_dataset.hdf5'
 LOG_FILE = 'image_reader_and_writer.log'
