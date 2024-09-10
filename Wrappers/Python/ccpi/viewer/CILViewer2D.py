@@ -1234,11 +1234,17 @@ class CILViewer2D(CILViewerBase):
         return self.setInputData(imageData)
 
     def setInputData(self, imageData):
+        print("start setInputData201")
         self.log("setInputData")
+        print("201")
         self.reset()
+        print("202")
         self.img3D = imageData
+        print("203")
         self.installPipeline()
+        print("204")
         self.axes_initialised = True
+        print("end setInputData")
 
     def setInputData2(self, imageData):
         self.image2 = imageData
@@ -1387,30 +1393,44 @@ class CILViewer2D(CILViewerBase):
     def installPipeline(self):
         if self.vis_mode == CILViewer2D.IMAGE_WITH_OVERLAY:
             if self.img3D is not None:
+                print("300")
                 self.installImageWithOverlayPipeline()
+                print("301")
             if self.image2 is not None:
                 self.installPipeline2()
+                print("302")
         elif self.vis_mode == CILViewer2D.RECTILINEAR_WIPE:
             self.installRectilinearWipePipeline()
+            print("303")
 
         if self.getSliderWidgetEnabled():
             self.installSliceSliderWidgetPipeline()
+            print("304")
 
         self.ren.ResetCamera()
+        print("305")
         self.ren.Render()
+        print("306")
 
         self.camera.SetViewUp(0, -1, 0)
+        print("306")
 
         if not self.axes_initialised:
             self.camera.Azimuth(180)
+            print("307")
 
         self.AdjustCamera()
+        print("308")
 
         self.ren.AddViewProp(self.cursorActor)
+        print("309")
         self.cursorActor.VisibilityOn()
+        print("310")
 
         self.iren.Initialize()
+        print("311")
         self.renWin.Render()
+        print("312")
 
     def installPipeline2(self):
         if self.image2 is not None:
@@ -1423,31 +1443,60 @@ class CILViewer2D(CILViewerBase):
 
     def installImageWithOverlayPipeline(self):
         '''Slices a 3D volume and then creates an actor to be rendered'''
+        print("400")
         self.log("installPipeline")
+        print("401")
         self.ren.AddViewProp(self.cornerAnnotation)
+        print("402")
 
         self.voi.SetInputData(self.img3D)
+        print("403")
         #select one slice in Z
         extent = [i for i in self.img3D.GetExtent()]
+        print("404")
         for i in range(len(self.slicenos)):
             self.slicenos[i] = round((extent[i * 2 + 1] + extent[i * 2]) / 2)
+            print("405")
 
         extent[self.sliceOrientation * 2] = self.getActiveSlice()
+        print("406")
         extent[self.sliceOrientation * 2 + 1] = self.getActiveSlice()
-
+        print("407")
+        print("extent is", extent)
         self.voi.SetVOI(extent[0], extent[1], extent[2], extent[3], extent[4], extent[5])
 
         self.voi.SetVOI(extent[0], extent[1], extent[2], extent[3], extent[4], extent[5])
 
         self.voi.Update()
+        print("410")
 
         # set window/level for slice based on values in entire volume:
+        print(self.voi.GetOutput())
+        output = self.voi.GetOutput()
+        print("Extent: ", output.GetExtent())
+        print("Number of Points: ", output.GetNumberOfPoints())
+        print("Number of Tuples in Scalars: ", output.GetPointData().GetScalars().GetNumberOfTuples())
+
+        point_data = output.GetPointData()
+
+        # Print available scalar arrays
+        for i in range(point_data.GetNumberOfArrays()):
+            array_name = point_data.GetArrayName(i)
+            array = point_data.GetArray(i)
+            print(f"Array {i} name = {array_name}, Number of Tuples = {array.GetNumberOfTuples()}")
+        
+        #self.voi.GetOutput().GetPointData().SetActiveScalars("vtkarray")
         self.ia.SetInputData(self.voi.GetOutput())
+        
+        print("411")
         self.ia.Update()
+        print("412")
         self.style.AutoWindowLevelOnVolumeRange(update_slice=False)
+        print("413")
         self.InitialLevel = self.getSliceColorLevel()
         self.InitialWindow = self.getSliceColorWindow()
         self.log("level {0} window {1}".format(self.InitialLevel, self.InitialWindow))
+        print("416")
 
         self.imageSliceMapper.SetInputConnection(self.voi.GetOutputPort())
 
@@ -1457,12 +1506,14 @@ class CILViewer2D(CILViewerBase):
             self.imageSlice.GetProperty().SetInterpolationTypeToNearest()
 
         self.imageSlice.Update()
+        print("420")
 
         self.imageTracer.SetProjectionPosition(self.style.image2world([0, 0, 0])[self.getSliceOrientation()])
 
         self.AddActor(self.imageSlice, SLICE_ACTOR)
 
         self.imageTracer.SetViewProp(self.imageSlice)
+        print("423")
 
     def installImageWithOverlayPipeline2(self):
         '''Slices a 3D volume and then creates an actor to be rendered'''

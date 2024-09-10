@@ -329,20 +329,25 @@ class ViewerMainWindow(MainWindowWithProgressDialogs):
             The image to display.
 
         '''
+        print("start displayImage")
         if image is None:
             return
         if not isinstance(viewers, list):
             viewers = [viewers]
         for viewer in viewers:
             if input_num == 1:
+                print("101")
                 viewer.setInputData(image)
+                print("102")
             elif input_num == 2:
                 if isinstance(viewer, CILViewer2D):
                     viewer.setInputData2(image)
                 # If input_num=2 we don't want to update the viewer coords dock widget
                 # with the name of the image file, as this is the overlay image.
                 image_name = None
+        print("103")
         self.updateGUIForNewImage(reader, viewer, image_name)
+        print("end displayImage")
 
     def updateGUIForNewImage(self, reader=None, viewer=None, image_name=None):
         '''
@@ -352,8 +357,10 @@ class ViewerMainWindow(MainWindowWithProgressDialogs):
         - Updates the viewer coordinates dock widget with the image file name
         In subclass, may want to add more functionality.
         '''
+        print("start updateGUIForNewImage")
         self.updateViewerCoordsDockWidgetWithCoords(reader)
         self.updateViewerCoordsDockWidgetWithImageFileName(image_name)
+        print("end updateGUIForNewImage")
 
     def updateViewerCoordsDockWidgetWithImageFileName(self, image_name=None):
         '''
@@ -364,6 +371,7 @@ class ViewerMainWindow(MainWindowWithProgressDialogs):
         image_file: str
             The image file name.
         '''
+        print("start updateViewerCoordsDockWidgetWithImageFileName")
         if image_name is None:
             return
 
@@ -371,6 +379,7 @@ class ViewerMainWindow(MainWindowWithProgressDialogs):
         widgets['image_field'].clear()
         widgets['image_field'].addItem(image_name)
         widgets['image_field'].setCurrentIndex(0)
+        print("end updateViewerCoordsDockWidgetWithImageFileName")
 
     def updateViewerCoordsDockWidgetWithCoords(self, reader=None):
         '''
@@ -383,7 +392,7 @@ class ViewerMainWindow(MainWindowWithProgressDialogs):
             The reader used to read the image. This contains some extra info about the
             original image file.
         '''
-
+        print("start updateViewerCoordsDockWidgetWithCoords")
         viewer = self.viewer_coords_dock.viewers[0]
 
         if not isinstance(viewer, (CILViewer2D, CILViewer)):
@@ -437,6 +446,7 @@ class ViewerMainWindow(MainWindowWithProgressDialogs):
 
             widgets['loaded_image_dims_field'].setText(original_image_dims)
             widgets['displayed_image_dims_field'].setText(displayed_image_dims)
+        print("end updateViewerCoordsDockWidgetWithCoords")
 
     def updateViewerCoords(self):
         '''

@@ -91,23 +91,29 @@ class Converter(object):
     @staticmethod
     def numpy2vtkImage(nparray, spacing=(1., 1., 1.), origin=(0, 0, 0), deep=0, output=None):
         """The method converts a numpy array to a vtk image.
-        The vtk extent is set and needs to differentiate between 3D and 2D images."""
-        shape = numpy.shape(nparray)
-        if (nparray.flags["FNC"]):
+        The vtk extent is set and needs to differentiate between 3D and 2D images.
+        Flatten the array in the correct order.
+        Create vtkImageData if output is None, otherwise use the provided empty output.
+        Add the vtkarray to the image's point data."""
 
+        print("active numpy2vtkImage")
+        shape = numpy.shape(nparray)
+        num_dims = len(shape)
+        if num_dims not in [2, 3]:
+            raise ValueError("Only 2D or 3D numpy arrays are supported.")
+        
+        if nparray.flags["FNC"]:
             order = "F"
-            i = 0
-            k = len(shape) - 1
+            i, k = 0, num_dims - 1
         else:
             order = "C"
-            i = len(shape) - 1
-            k = 0
+            i, k = num_dims - 1, 0
 
         nparray = nparray.ravel(order)
         vtkarray = numpy_support.numpy_to_vtk(num_array=nparray,
                                               deep=deep,
                                               array_type=numpy_support.get_vtk_array_type(nparray.dtype))
-        vtkarray.SetName('vtkarray')
+        
 
         if output is None:
             img_data = vtk.vtkImageData()
@@ -117,14 +123,35 @@ class Converter(object):
             else:
                 img_data = output
 
-        img_data.GetPointData().AddArray(vtkarray)
-        if len(shape) == 3:
+        print(img_data)
+        point_data = img_data.GetPointData()
+        while point_data.GetNumberOfArrays() > 0:
+            point_data.RemoveArray(0)
+        vtkarray.SetName('ImageScalars')
+        point_data.AddArray(vtkarray)
+        img_data.GetPointData().SetScalars(vtkarray)
+        if num_dims == 3:
             img_data.SetExtent(0, shape[i] - 1, 0, shape[1] - 1, 0, shape[k] - 1)
-        elif len(shape) == 2:
+        elif num_dims == 2:
             img_data.SetExtent(0, shape[i] - 1, 0, shape[k] - 1, 0, 0)
-        img_data.GetPointData().SetActiveScalars('vtkarray')
+        #img_data.GetPointData().SetActiveScalars('vtkarray')
         img_data.SetOrigin(origin)
         img_data.SetSpacing(spacing)
+        print("end of numpy2vtkImage")
+        
+        
+        
+        print("Extent: ", img_data.GetExtent())
+        print("Number of Points: ", img_data.GetNumberOfPoints())
+        print("Number of Tuples in Scalars: ", img_data.GetPointData().GetScalars().GetNumberOfTuples())
+
+        point_data = img_data.GetPointData()
+
+        # Print available scalar arrays
+        for i in range(point_data.GetNumberOfArrays()):
+            array_name = point_data.GetArrayName(i)
+            array = point_data.GetArray(i)
+            print(f"Array {i} name = {array_name}, Number of Tuples = {array.GetNumberOfTuples()}")
 
         return img_data
 
