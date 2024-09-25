@@ -1,5 +1,6 @@
 import vtk
 from ccpi.viewer import SLICE_ORIENTATION_XY, SLICE_ORIENTATION_XZ, SLICE_ORIENTATION_YZ
+from eqt.ui.SessionDialogs import WarningDialog
 
 
 class cilviewerBoxWidget():
@@ -134,29 +135,35 @@ class cilviewerBoxWidget():
         spacing = viewer.img3D.GetSpacing()
 
         # Get maximum extents of the image in world coords
-        world_image_max = viewer.style.GetImageWorldExtent()
+        data_extent = viewer.style.GetDataExtentInWorld()
+        voxel_max_world = viewer.style.GetMinMaxVoxelsFromExtent(data_extent)[1]
 
         # Set the minimum world value
         world_image_min = (0, 0, 0)
 
-        z_coords = [world_image_min[render_orientation], world_image_max[render_orientation]]
+        z_coords = [world_image_min[render_orientation], voxel_max_world[render_orientation]]
 
         if axis == 'x':
             # Displaying slice at fixed coord in X direction:
             x_coords = [coord, coord + width * spacing[0]]
-            y_coords = [world_image_min[1], world_image_max[1]]
+            y_coords = [world_image_min[1], voxel_max_world[1]]
 
         else:
             # Displaying slice at fixed coord in Y direction:
             y_coords = [coord, coord + width * spacing[1]]
-            x_coords = [world_image_min[0], world_image_max[0]]
+            x_coords = [world_image_min[0], voxel_max_world[0]]
 
         coords = x_coords + y_coords + z_coords
 
         return coords
 
     @staticmethod
-    def CreateMoveableAtEventPosition(viewer, position, widget_name, outline_colour=(0, 1, 0), scale_factor=0.3):
+    def CreateMoveableAtEventPosition(viewer,
+                                      position,
+                                      widget_name,
+                                      outline_colour=(0, 1, 0),
+                                      box_bounds=None,
+                                      scale_factor=None):
         ''' 
         Place a moveable box widget on the viewer at the event position.
         Parameters
@@ -174,9 +181,15 @@ class cilviewerBoxWidget():
         '''
         # ROI Widget
         widget = cilviewerBoxWidget.CreateMoveable(viewer, outline_colour)
-        coords = cilviewerBoxWidget.GetBoxBoundsFromEventPosition(viewer, position, scale_factor)
+        if box_bounds == None:
+            if scale_factor == None:
+                box_bounds = cilviewerBoxWidget.GetBoxBoundsFromEventPosition(viewer, position)
+            else:
+                box_bounds = cilviewerBoxWidget.GetBoxBoundsFromEventPosition(viewer,
+                                                                              position,
+                                                                              scale_factor=scale_factor)
         # Set widget placement and make visible
-        widget.PlaceWidget(coords)
+        widget.PlaceWidget(box_bounds)
         widget.On()
         viewer.addWidgetReference(widget, widget_name)
         return widget
@@ -184,91 +197,60 @@ class cilviewerBoxWidget():
     @staticmethod
     def GetBoxBoundsFromEventPosition(viewer, position, scale_factor=0.3):
         ''' 
-        Get the coordinates for the bounds of a box from the event position
+        Given a position of the click, translates it into world coordinates.
+        Gets the current render orientation.
+        Gets the extent of the data in world coordinates and its corresponding voxels. 
+        Creates a warning dialog.
+        Creates a 3D box around the clicked point, where the clicked point is the voxel min (lower value in all axes).
+        Returns its extent in world coordinates, i.e., "box bounds". 
+        Opens a warning dialog when the mouse click is outside the image.
 
         Parameters
         ----------
         viewer
-            The 2D viewer that the box will be displayed on
+            The 2D viewer where a projection of the 3D box will be displayed as a rectangle.
         position
-            The event position
+            The event position in display coordinates, i.e., 3D coordinates of a mouse click on the image. 
         scale_factor
-            Factor for scaling the size of the box
+            Factor for scaling the size of the box to be smaller than the image shape.
         '''
-        # Current render orientation
+        box_extent_world = [0, 0, 0, 0, 0, 0]
+
         orientation = viewer.style.GetSliceOrientation()
 
-        # Translate the mouse click display coordinates into world coordinates
         coord = vtk.vtkCoordinate()
         coord.SetCoordinateSystemToDisplay()
         coord.SetValue(position[0], position[1])
-        world_mouse_pos = coord.GetComputedWorldValue(viewer.style.GetRenderer())
+        mouse_pos_world = coord.GetComputedWorldValue(viewer.style.GetRenderer())
 
-        # Get maximum extents of the image in world coords
-        world_image_max = viewer.style.GetImageWorldExtent()
+        data_extent_world = viewer.style.GetDataExtentInWorld()
+        voxel_min_world, voxel_max_world = viewer.style.GetMinMaxVoxelsFromExtent(data_extent_world)
 
-        # Set the minimum world value
-        world_image_min = (0, 0, 0)
+        dialog = WarningDialog(None, message="Click inside the image.", window_title="Viewer Warning")
 
-        world_extent = [0, world_image_max[0], 0, world_image_max[1], 0, world_image_max[2]]
+        box_voxel_min = [0, 0, 0]
+        box_voxel_max = [0, 0, 0]
+        i = [orientation, (orientation + 1) % 3, (orientation + 2) % 3]
+        if voxel_min_world[i[1]] <= mouse_pos_world[i[1]] <= voxel_max_world[i[1]] and voxel_min_world[
+                i[2]] <= mouse_pos_world[i[2]] <= voxel_max_world[i[2]]:
 
-        # Initialise the box position in format [xmin, xmax, ymin, ymax,...]
-        box_pos = [0, 0, 0, 0, 0, 0]
+            box_voxel_min[i[0]] = voxel_min_world[i[0]]
+            box_voxel_min[i[1]] = mouse_pos_world[i[1]]
+            box_voxel_min[i[2]] = mouse_pos_world[i[2]]
 
-        # place the mouse click as bottom left in current orientation
-        if orientation == SLICE_ORIENTATION_XY:
-            # Looking along z
-            # Lower left is xmin, ymin
-            box_pos[0] = world_mouse_pos[0]
-            box_pos[2] = world_mouse_pos[1]
+            box_voxel_max[i[0]] = voxel_max_world[i[0]]
+            box_voxel_max[i[1]] = cilviewerBoxWidget.GetTruncatedBoxCoord(box_voxel_min[i[1]], data_extent_world, i[1])
+            box_voxel_max[i[2]] = cilviewerBoxWidget.GetTruncatedBoxCoord(box_voxel_min[i[2]], data_extent_world, i[2])
 
-            # Set top right point
-            # Top right is xmax, ymax
-            box_pos[1] = cilviewerBoxWidget.GetTruncatedBoxCoord(box_pos[0], world_extent, "x", scale_factor)
-            box_pos[3] = cilviewerBoxWidget.GetTruncatedBoxCoord(box_pos[2], world_extent, "y", scale_factor)
-
-            # Set the scroll axis to maximum extent eg. min-max
-            # zmin, zmax
-            box_pos[4] = world_image_min[orientation]
-            box_pos[5] = world_extent[orientation]
-
-        elif orientation == SLICE_ORIENTATION_XZ:
-            # Looking along y
-            # Lower left is xmin, zmin
-            box_pos[0] = world_mouse_pos[0]
-            box_pos[4] = world_mouse_pos[2]
-
-            # Set top right point.
-            # Top right is xmax, zmax
-            box_pos[1] = cilviewerBoxWidget.GetTruncatedBoxCoord(box_pos[0], world_extent, "x")
-            box_pos[5] = cilviewerBoxWidget.GetTruncatedBoxCoord(box_pos[4], world_extent, "z")
-
-            # Set the scroll axis to maximum extent eg. min-max
-            # ymin, ymax
-            box_pos[2] = world_image_min[orientation]
-            box_pos[3] = world_extent[orientation]
+            box_extent_world = viewer.style.GetExtentFromVoxels(box_voxel_min, box_voxel_max)
 
         else:
-            # orientation == 0
-            # Looking along x
-            # Lower left is ymin, zmin
-            box_pos[2] = world_mouse_pos[1]
-            box_pos[4] = world_mouse_pos[2]
+            dialog.exec()
 
-            # Set top right point
-            # Top right is ymax, zmax
-            box_pos[3] = cilviewerBoxWidget.GetTruncatedBoxCoord(box_pos[2], world_extent, "y")
-            box_pos[5] = cilviewerBoxWidget.GetTruncatedBoxCoord(box_pos[4], world_extent, "z")
-
-            # Set the scroll axis to maximum extent eg. min-max
-            # xmin, xmax
-            box_pos[0] = world_image_min[orientation]
-            box_pos[1] = world_extent[orientation]
-
-        return box_pos
+        return box_extent_world
 
     @staticmethod
-    def GetTruncatedBoxCoord(start_pos, world_extent, axis, scale_factor=0.3):
+    def GetTruncatedBoxCoord(start_pos, world_extent, axis_int, scale_factor=0.3):
         """
         Returns a coordinate for the edge of the box on axis [axis], scaled
         by factor [scale_factor], and truncated to make sure the box does not
@@ -280,8 +262,11 @@ class cilviewerBoxWidget():
             Lower left corner value on specified axis
         world_extent:
             Array containing the extent of the world
-        slice_orientation: str, {'x', 'y', 'z'}
+        axis_int: int 0, 1, 2
             The axis to truncate on.
+            SLICE_ORIENTATION_XY = 2  # Z
+            SLICE_ORIENTATION_XZ = 1  # Y
+            SLICE_ORIENTATION_YZ = 0  # X
         scale_factor: float
             The factor used to scale the length of the box, compared to the extent
             of the world on the given axis. 
@@ -292,9 +277,6 @@ class cilviewerBoxWidget():
         """
 
         # get index for axis
-        axis_dict = {"x": SLICE_ORIENTATION_YZ, "y": SLICE_ORIENTATION_XZ, "z": SLICE_ORIENTATION_XY}
-        axis_int = axis_dict[axis]
-
         world_length = world_extent[2 * axis_int + 1] - world_extent[2 * axis_int]
         dist = world_length * scale_factor
         value = start_pos + dist

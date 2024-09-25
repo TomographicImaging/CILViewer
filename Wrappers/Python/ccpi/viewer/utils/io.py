@@ -271,11 +271,14 @@ class ImageReader(object):
         if raw_image_attrs is None:
             return
         raw_attrs = raw_image_attrs.copy()
+        if raw_attrs.get('preview_slice', None) is None:
+            raw_attrs['preview_slice'] = 0
         raw_attrs_schema = Schema({
             'shape': Or(list, np.ndarray, tuple),
             'is_fortran': bool,
             'is_big_endian': bool,
-            'typecode': str
+            'typecode': str,
+            'preview_slice': int,
         })
         raw_attrs_schema.validate(raw_attrs)
         return raw_attrs
@@ -763,7 +766,7 @@ class cilviewerHDF5Writer(ImageWriterInterface):
             f.attrs['file_name'] = self._FileName
             #f.attrs['viewer_version'] = version
             f.attrs['file_time'] = str(datetime.datetime.utcnow())
-            f.attrs['creator'] = np.string_('io.py')
+            f.attrs['creator'] = np.bytes_('io.py')
             f.attrs['HDF5_Version'] = h5py.version.hdf5_version
             f.attrs['h5py_version'] = h5py.version.version
 

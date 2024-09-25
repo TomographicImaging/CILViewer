@@ -216,10 +216,39 @@ class CILInteractorStyle(vtk.vtkInteractorStyle):
         return actor, vert, horiz
 
     def GetImageWorldExtent(self):
-        """
-        Compute and return the maximum extent of the image in the rendered world
-        """
+        """Deprecated. Use `GetDataExtentInWorld` and `GetMinMaxVoxelsFromExtent`."""
         return self.image2world(self.GetInputData().GetExtent()[1::2])
+
+    def GetDataExtentInWorld(self):
+        """
+        Compute and return the extent of the input data in the rendered world.
+        """
+        data_extent_image = self.GetInputData().GetExtent()
+        data_extent_world = self.Image2WorldExtent(data_extent_image)
+        return data_extent_world
+
+    def GetMinMaxVoxelsFromExtent(self, extent):
+        """Given the extent of a box or image, gets the voxels corresponding to the min values in all directions
+        and max values in all directions."""
+        voxel_min = extent[0::2]
+        voxel_max = extent[1::2]
+        return voxel_min, voxel_max
+
+    def Image2WorldExtent(self, extent_image):
+        """Given the extent of a box or image, gets the voxels corresponding to the min values in all directions
+        and max values in all directions. Then, converts their coordinates in the world coordinate system. 
+        Returns the converted extent."""
+        voxel_min_image, voxel_max_image = self.GetMinMaxVoxelsFromExtent(extent_image)
+        voxel_min_world = self.image2world(voxel_min_image)
+        voxel_max_world = self.image2world(voxel_max_image)
+        extent_world = self.GetExtentFromVoxels(voxel_min_world, voxel_max_world)
+        return extent_world
+
+    def GetExtentFromVoxels(self, voxel_min, voxel_max):
+        """Given the voxels corresponding to the min values in all directions
+        and max values in all directions, calculates the extent of the box or image they enclose."""
+        extent = (voxel_min[0], voxel_max[0], voxel_min[1], voxel_max[1], voxel_min[2], voxel_max[2])
+        return extent
 
     def SetCharEvent(self, char):
         self.GetInteractor().SetKeyCode(char)
@@ -235,7 +264,6 @@ class CILInteractorStyle(vtk.vtkInteractorStyle):
         """
 
         box_pos = cilviewerBoxWidget.GetBoxBoundsFromEventPosition(self._viewer, clickPosition)
-
         # Set widget placement and make visible
         self._viewer.ROIWidget.PlaceWidget(box_pos)
         self._viewer.ROIWidget.On()
@@ -510,17 +538,63 @@ class CILInteractorStyle(vtk.vtkInteractorStyle):
         self.SetEventInactive("ZOOM_EVENT")
         self.SetEventInactive("PAN_EVENT")
 
+    def BoxExtentCheck(self, box_extent_world):
+        box_voxel_min, box_voxel_max = self.GetMinMaxVoxelsFromExtent(box_extent_world)
+        box_voxel_min = list(box_voxel_min)
+        box_voxel_max = list(box_voxel_max)
+        # Get maximum extents of the image in world coords
+        data_extent = self.GetDataExtentInWorld()
+        voxel_min_world, voxel_max_world = self.GetMinMaxVoxelsFromExtent(data_extent)
+
+        i = [self.GetSliceOrientation()]
+        i.extend([(i[0] + 1) % 3, (i[0] + 2) % 3])
+        if box_voxel_min[i[1]] < voxel_min_world[i[1]]:
+            box_voxel_min[i[1]] = voxel_min_world[i[1]]
+        if box_voxel_min[i[2]] < voxel_min_world[i[2]]:
+            box_voxel_min[i[2]] = voxel_min_world[i[2]]
+        if box_voxel_max[i[1]] > voxel_max_world[i[1]]:
+            box_voxel_max[i[1]] = voxel_max_world[i[1]]
+        if box_voxel_max[i[2]] > voxel_max_world[i[2]]:
+            box_voxel_max[i[2]] = voxel_max_world[i[2]]
+        box_extent_world = self.GetExtentFromVoxels(box_voxel_min, box_voxel_max)
+        return box_extent_world
+
+    def GetBoxWidgetExtentInWorld(self, box_widget):
+        ''' Returns the extent of a box_widget (vtkBoxWidget)
+        which is present on the viewer, in the image coordinate system.'''
+        pd = vtk.vtkPolyData()
+        box_widget.GetPolyData(pd)
+        box_extent_world = pd.GetBounds()
+        return box_extent_world
+
+    def GetBoxWidgetExtentInImage(self, box_widget):
+        ''' Returns the extent of a box_widget (vtkBoxWidget)
+        which is present on the viewer, in the image coordinate system.'''
+        pd = vtk.vtkPolyData()
+        box_widget.GetPolyData(pd)
+        box_extent_world = pd.GetBounds()
+        box_voxel_min_world, box_voxel_max_world = self.GetMinMaxVoxelsFromExtent(box_extent_world)
+        box_voxel_min_image = self.createVox(box_voxel_min_world)
+        box_voxel_max_image = self.createVox(box_voxel_max_world)
+        box_extent_image = self.GetExtentFromVoxels(box_voxel_min_image, box_voxel_max_image)
+        return box_extent_image
+
     def OnROIModifiedEvent(self, interactor, event):
         # Get bounds from 3D ROI
         pd = vtk.vtkPolyData()
         self.GetROIWidget().GetPolyData(pd)
         bounds = pd.GetBounds()
 
-        # Set the values of the ll and ur corners
-        ll = (bounds[0], bounds[2], bounds[4])
-        ur = (bounds[1], bounds[3], bounds[5])
-        vox1 = self.createVox(ll)
-        vox2 = self.createVox(ur)
+        # Get maximum extents of the image in world coords
+        bounds = self.BoxExtentCheck(bounds)
+        self._viewer.ROIWidget.PlaceWidget(bounds)
+
+        data_extent = self.GetDataExtentInWorld()
+        #self._viewer.ROIWidget.On()
+        #self.UpdatePipeline()
+        voxel_min_world, voxel_max_world = self.GetMinMaxVoxelsFromExtent(data_extent)
+        vox1 = self.createVox(voxel_min_world)
+        vox2 = self.createVox(voxel_max_world)
 
         # Set the ROI using image coordinates
         self.SetROI((vox1, vox2))
@@ -1484,9 +1558,9 @@ class CILViewer2D(CILViewerBase):
             return
 
         sr = SliceSliderRepresentation()
-        sr.SetValue(self.getActiveSlice())
-        sr.SetMaximumValue(self.img3D.GetDimensions()[2] - 1)
         sr.SetMinimumValue(0)
+        sr.SetMaximumValue(self.img3D.GetDimensions()[2] - 1)
+        sr.SetValue(self.getActiveSlice())
 
         sw = vtk.vtkSliderWidget()
         sw.SetInteractor(self.getInteractor())
@@ -1497,7 +1571,7 @@ class CILViewer2D(CILViewerBase):
         cb = SliderCallback(self, sw)
 
         # Add interaction observers
-        # propagate events from the slider to the viewer
+        # to propagate events from the slider to the viewer
         sw.AddObserver(vtk.vtkCommand.InteractionEvent, cb)
 
         # propagate events from the viewer to the slider
@@ -1608,7 +1682,8 @@ class CILViewer2D(CILViewerBase):
                     slice_coord = self.style.image2world(slice_coord)[self.getSliceOrientation()]
                     axis_length = self.style.image2world(axis_length)[self.getSliceOrientation()] - 1
                     data = (round(slice_coord), round(axis_length))
-                text = "Slice %d/%d" % data
+                axis_label = self.axisLabelsText[self.getSliceOrientation()]
+                text = "%s %d/%d" % (axis_label, data[0], data[1])
 
             else:
                 # In all other cases, we have coordinates, and then we have an extra value
@@ -1789,7 +1864,9 @@ class CILViewer2D(CILViewerBase):
                 (origin_display[0] - x_min_offset, origin_display[1] - y_min_offset))
 
             # Calculate the far right border
-            top_right_disp = self.style.world2display(self.style.GetImageWorldExtent())
+            data_extent = self.style.GetDataExtentInWorld()
+            top_right_world = self.style.GetMinMaxVoxelsFromExtent(data_extent)[1]
+            top_right_disp = self.style.world2display(top_right_world)
             top_right_nview = self.style.display2normalisedViewport(
                 (top_right_disp[0] + border + height, top_right_disp[1]))
 

@@ -2,6 +2,8 @@ import vtk
 import logging
 
 logger = logging.getLogger(__name__)
+# Define a new event type
+SLIDER_EVENT = vtk.vtkCommand.UserEvent + 1
 
 
 class SliceSliderRepresentation(vtk.vtkSliderRepresentation2D):
@@ -95,6 +97,7 @@ class SliderCallback:
         value = slider_widget.GetRepresentation().GetValue()
         self.viewer.displaySlice(int(value))
         self.update_label(value)
+        self.viewer.getInteractor().InvokeEvent(SLIDER_EVENT)
 
     def update_label(self, value):
         '''Update the text label on the slider. This is called by update_from_viewer
@@ -135,5 +138,7 @@ class SliderCallback:
         value = caller.GetActiveSlice()
         dims = caller._viewer.img3D.GetDimensions()
         maxslice = dims[caller.GetSliceOrientation()] - 1
-        self.slider_widget.GetRepresentation().SetMaximumValue(maxslice)
+        sr = self.slider_widget.GetRepresentation()
+        sr.SetMinimumValue(0)
+        sr.SetMaximumValue(maxslice)
         self.update_from_viewer(caller, ev)

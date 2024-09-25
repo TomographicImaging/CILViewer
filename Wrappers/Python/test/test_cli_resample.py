@@ -160,6 +160,7 @@ class TestCLIResample(unittest.TestCase):
         shape = list(eval(dict['input']['shape']))
         shape = f"{shape[0]},{shape[1]},{shape[2]}"
         is_fortran = dict['input']['is_fortran']
+        # is_fortran = False
         is_big_endian = dict['input']['is_big_endian']
         typecode = dict['input']['typecode']
 

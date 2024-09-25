@@ -164,35 +164,43 @@ class TestRawInputDialog(unittest.TestCase):
         #Check we have the widgets that we expect:
         assert isinstance(rdi.getWidget('dimensionality', 'label'), QLabel)
         assert isinstance(rdi.getWidget('dimensionality', 'field'), QComboBox)
-        assert isinstance(rdi.getWidget('dim_X', 'label'), QLabel)
-        assert isinstance(rdi.getWidget('dim_X', 'field'), QLineEdit)
-        assert isinstance(rdi.getWidget('dim_Y', 'label'), QLabel)
-        assert isinstance(rdi.getWidget('dim_Y', 'field'), QLineEdit)
-        assert isinstance(rdi.getWidget('dim_Z', 'label'), QLabel)
-        assert isinstance(rdi.getWidget('dim_Z', 'field'), QLineEdit)
+        assert isinstance(rdi.getWidget('dim_Width', 'label'), QLabel)
+        assert isinstance(rdi.getWidget('dim_Width', 'field'), QLineEdit)
+        assert isinstance(rdi.getWidget('dim_Height', 'label'), QLabel)
+        assert isinstance(rdi.getWidget('dim_Height', 'field'), QLineEdit)
+        assert isinstance(rdi.getWidget('dim_Images', 'label'), QLabel)
+        assert isinstance(rdi.getWidget('dim_Images', 'field'), QLineEdit)
         assert isinstance(rdi.getWidget('dtype', 'label'), QLabel)
         assert isinstance(rdi.getWidget('dtype', 'field'), QComboBox)
         assert isinstance(rdi.getWidget('endianness', 'label'), QLabel)
         assert isinstance(rdi.getWidget('endianness', 'field'), QComboBox)
-        assert isinstance(rdi.getWidget('is_fortran', 'label'), QLabel)
-        assert isinstance(rdi.getWidget('is_fortran', 'field'), QComboBox)
+        assert isinstance(rdi.getWidget('preview_slice', 'label'), QLabel)
+        assert isinstance(rdi.getWidget('preview_slice', 'field'), QLineEdit)
 
     def test_getRawAttrs(self):
         rdi = RawInputDialog(self.parent, self.fname)
         got_raw_attrs = rdi.getRawAttrs()
-        expected_raw_attrs = {'shape': [0, 0, 0], 'typecode': 'uint8', 'is_big_endian': False, 'is_fortran': True}
+        expected_raw_attrs = {
+            'shape': [0, 0, 0],
+            'typecode': 'uint8',
+            'is_big_endian': True,
+            'is_fortran': True,
+            'preview_slice': 0
+        }
         assert got_raw_attrs == expected_raw_attrs
-        rdi.getWidget('dim_X', 'field').setText('1')
-        rdi.getWidget('dim_Y', 'field').setText('2')
-        rdi.getWidget('dim_Z', 'field').setText('3')
+        rdi.getWidget('dim_Width', 'field').setText('1')
+        rdi.getWidget('dim_Height', 'field').setText('2')
+        rdi.getWidget('dim_Images', 'field').setText('3')
         rdi.getWidget('dtype', 'field').setCurrentText('uint16')
         rdi.getWidget('endianness', 'field').setCurrentText('Big Endian')
-        rdi.getWidget('is_fortran', 'field').setCurrentText("C Order: ZYX")
+        rdi.getWidget('preview_slice', 'field').setText("0")
+        rdi.getWidget('is_fortran', 'field').setCurrentText("Images-Height-Width")
         assert rdi.getRawAttrs() == {
             'shape': [1, 2, 3],
             'typecode': 'uint16',
             'is_big_endian': True,
-            'is_fortran': False
+            'is_fortran': False,
+            'preview_slice': 0
         }
 
 

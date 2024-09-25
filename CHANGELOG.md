@@ -1,28 +1,54 @@
 # Changelog
 
+## v24.0.2
+
+Enhancements:
+  - Update corner annotation with axis label #433
+  - Add title to ViewerCoordsDockWidget #422
+  - Adds methods to CILviewer and CILviewer2D #425
+  - adds Qt GUI toolbar to control 3D viewer
+  
+Bugfix:
+  - Differentiate 3D and 2D images in the converter `numpy2vtkImage` #437
+  - Edit slider min value #420
+  - Fix extent error when user clicks in the viewer to create a box by clicking outside of the image #425
+  - Fix extent error when user enlarges the box outside the image #425
+  - Deprecates `GetImageWorldExtent` #425
+
+## v24.0.1
+
+Build and CI:
+  - removed python pinning from conda recipe
+Bugfix:
+  - removed deprecated code by numpy v2.0
+
 ## v24.0.0
 
 New functionality:
+- Added preview to RawImportDialog #410
 - Add method to edit axes label text & tests, hide one label on 2D viewer #389 #408
-- Add slider widget #365 and option to not install it #386
-- adds Qt GUI toolbar to control 3D viewer
+- Add slider widget #365 and option to not install it #386. Link slider events #413
 
 Bugfixes:
 - Fix failing unit test #394
-- Bugfix on resample reader #359. Standalone viewer app defaults to downsample in all dimensions.
-- Fix bug with setInputAsNumpy() using deprecated `numpy2vtkImporter` in `CILViewer2D` - now uses `numpy2vtkImage`
+- Bugfix on resample reader. Standalone viewer app defaults to downsample in all dimensions. #362
+- Fix bug with setInputAsNumpy() using deprecated `numpy2vtkImporter` in `CILViewer2D` - now uses `numpy2vtkImage` #346
 
 CI:
 - Update eqt requirements to >=1.0.0 and update yml recipe #385
-- Remove VTK 8 variants from conda recipe.
-- Change Python variants: removed 3.6 and 3.7, added 3.11 
+- Remove VTK 8 variants from conda recipe #375
+- Change Python variants: removed 3.6 and 3.7, added 3.11 #375
  (not Python 3.12 for incompatibility with EQT #399)
-- Removed the `paskino` channel from the install command as eqt is on `conda-forge`
+- Removed the `paskino` channel from the install command as eqt is on `conda-forge` #368
+- Edit conda build and publish #371
+- Fix dependencies in recipe #369
 
 Documentation
 - Add CONTRIBUTING.md #403
 - Edit web-viewer readme #401
 - Transfer repository to "TomographicImaging" #402
+- Add PR template #244 #373
+- Edit README.md #344
 
 
 ## v23.1.0
