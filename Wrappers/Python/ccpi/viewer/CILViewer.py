@@ -38,12 +38,11 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
         #self.AddObserver('RightButtonReleaseEvent', self.OnRightMouseRelease, -0.5)
 
         self._volume_render_pars = {
-            'color_percentiles' : (5., 95.),
-            'scalar_opacity_percentiles' : (80., 99.),
-            'gradient_opacity_percentiles' : (80., 99.),
-            'max_opacity' : 0.1
+            'color_percentiles': (5., 95.),
+            'scalar_opacity_percentiles': (80., 99.),
+            'gradient_opacity_percentiles': (80., 99.),
+            'max_opacity': 0.1
         }
-
 
     def GetSliceOrientation(self):
         return self._viewer.sliceOrientation
@@ -294,7 +293,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
 
         plane = vtk.vtkPlane()
         if foc is None:
-        # should be in the focal point
+            # should be in the focal point
             cam = self.GetActiveCamera()
             foc = cam.GetFocalPoint()
         plane.SetOrigin(*foc)
@@ -466,11 +465,10 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
 
     def GetInputData(self):
         return self._viewer.img3D
-    
+
     def GetVolumeRenderParameters(self):
         # set defaults for opacity and colour mapping:
-        return self._volume_render_pars 
-        
+        return self._volume_render_pars
 
 
 class CILViewer(CILViewerBase):
@@ -504,8 +502,7 @@ class CILViewer(CILViewerBase):
 
         self.volume_render_initialised = False
         self.clipping_plane_initialised = False
-        
-        
+
     def createPolyDataActor(self, polydata):
         '''returns an actor for a given polydata'''
 
@@ -710,7 +707,6 @@ class CILViewer(CILViewerBase):
         scalar_opacity_percentiles = self.style.GetVolumeRenderParameters()['scalar_opacity_percentiles']
         gradient_opacity_percentiles = self.style.GetVolumeRenderParameters()['gradient_opacity_percentiles']
         max_opacity = self.style.GetVolumeRenderParameters()['max_opacity']
-
 
         self.setVolumeColorPercentiles(*color_percentiles, update_pipeline=False)
         self.setScalarOpacityPercentiles(*scalar_opacity_percentiles, update_pipeline=False)
@@ -1126,10 +1122,14 @@ class CILViewer(CILViewerBase):
             self.getRenderer().Render()
             self.updatePipeline()
 
-    def createAnimation(self, FrameCount=20, 
-                        InitialCameraPosition=None, FocalPoint=None, 
-                        ClippingRange=None, AngleRange = 360, ViewUp = None):
-        
+    def createAnimation(self,
+                        FrameCount=20,
+                        InitialCameraPosition=None,
+                        FocalPoint=None,
+                        ClippingRange=None,
+                        AngleRange=360,
+                        ViewUp=None):
+
         viewer = self
 
         if InitialCameraPosition is None:
@@ -1137,9 +1137,9 @@ class CILViewer(CILViewerBase):
         if FocalPoint is None:
             FocalPoint = viewer.getCamera().GetFocalPoint()
         if ClippingRange is None:
-            ClippingRange = (0,2000)
+            ClippingRange = (0, 2000)
         if ViewUp is None:
-            ViewUp = (0,0,1)
+            ViewUp = (0, 0, 1)
         if FrameCount is None:
             FrameCount = 100
         #Setting locked values for camera position
@@ -1152,22 +1152,19 @@ class CILViewer(CILViewerBase):
         viewer.getCamera().SetPosition(InitialCameraPosition)
         viewer.getCamera().SetFocalPoint(FocalPoint)
 
-        #Setting camera viewup 
+        #Setting camera viewup
         viewer.getCamera().SetViewUp(ViewUp)
 
         #Set camera clipping range
         viewer.getCamera().SetClippingRange(ClippingRange)
 
         #Defining distance from camera to focal point
-        r = numpy.sqrt(((InitialCameraPosition[0]-FocalPoint[0])**2)
-        +(InitialCameraPosition[1]-FocalPoint[1])**2)
+        r = numpy.sqrt(((InitialCameraPosition[0] - FocalPoint[0])**2) + (InitialCameraPosition[1] - FocalPoint[1])**2)
         print('Radius (distance from camera to focal point): {}'.format(r))
-       
-
 
         #Animating the camera
         for x in range(FrameCount):
-            angle = (2 * numpy.pi ) * (x/FrameCount)
+            angle = (2 * numpy.pi) * (x / FrameCount)
             NewLocationX = r * numpy.sin(angle) + FocalPoint[0]
             NewLocationY = r * numpy.cos(angle) + FocalPoint[1]
             NewLocation = (NewLocationX, NewLocationY, locZ)
@@ -1177,16 +1174,14 @@ class CILViewer(CILViewerBase):
             camera.SetPosition(*NewLocation)
             viewer.ren.SetActiveCamera(camera)
             viewer.adjustCamera()
-            
+
             import time
             time.sleep(0.05)
             print("render frame {} angle {}".format(x, angle))
             print('Camera Position: {}'.format(NewLocation))
-            rp = numpy.sqrt(((NewLocation[0]-FocalPoint[0])**2)
-                +(NewLocation[1]-FocalPoint[1])**2)
-            print ('Camera trajectory radius {}'.format(rp))
+            rp = numpy.sqrt(((NewLocation[0] - FocalPoint[0])**2) + (NewLocation[1] - FocalPoint[1])**2)
+            print('Camera trajectory radius {}'.format(rp))
             viewer.saveRender('test_{}'.format(x))
             #Rendering and saving the render
             viewer.getRenderer().Render()
             viewer.renWin.Render()
-            

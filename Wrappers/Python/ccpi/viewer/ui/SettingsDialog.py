@@ -117,10 +117,9 @@ class SettingsDialog(FormDialog):
         self.getWidget("slice_window_slider").setRange(0, 100)
         self.getWidget("slice_window_slider").setTickInterval(100 / 10)
         window_default = self.viewer.getSliceColorWindow()
-        self.getWidget("slice_window_slider").setValue((window_default - window_min)/(window_max - window_min) * 100)
-        self.getWidget("slice_window_slider").sliderReleased.connect(
-            lambda: self.viewer.setSliceColorWindow(window_min + self.getWidget("slice_window_slider").value() / 100 * (window_max - window_min))
-            )
+        self.getWidget("slice_window_slider").setValue((window_default - window_min) / (window_max - window_min) * 100)
+        self.getWidget("slice_window_slider").sliderReleased.connect(lambda: self.viewer.setSliceColorWindow(
+            window_min + self.getWidget("slice_window_slider").value() / 100 * (window_max - window_min)))
 
         # Level window sliders
         level_min, level_max = self.viewer.getImageMapRange((0.0, 100.0), "scalar")
@@ -128,11 +127,9 @@ class SettingsDialog(FormDialog):
         self.getWidget("slice_level_slider").setTickInterval(100 / 10)
         level_default = self.viewer.getSliceColorLevel()
 
-        self.getWidget("slice_level_slider").setValue((level_default - level_min)/(level_max - level_min) * 100)
-        self.getWidget("slice_level_slider").sliderReleased.connect(
-            lambda: self.viewer.setSliceColorLevel(
-                level_min + self.getWidget("slice_level_slider").value() / 100 * (level_max - level_min))
-                    )
+        self.getWidget("slice_level_slider").setValue((level_default - level_min) / (level_max - level_min) * 100)
+        self.getWidget("slice_level_slider").sliderReleased.connect(lambda: self.viewer.setSliceColorLevel(
+            level_min + self.getWidget("slice_level_slider").value() / 100 * (level_max - level_min)))
 
         # Background color
         self.getWidget("background_color").currentIndexChanged.connect(self.change_background_color)

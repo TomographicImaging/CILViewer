@@ -116,11 +116,11 @@ class VolumeRenderSettingsDialog(FormDialog):
         self.getWidget("windowing_slider_max").sliderReleased.connect(self.change_volume_opacity_max)
 
         # MaxOpacity slider max
-        self.getWidget("max_opacity_input").setRange(0,1)
+        self.getWidget("max_opacity_input").setRange(0, 1)
         self.getWidget("max_opacity_input").setDecimals(3)
         self.getWidget("max_opacity_input").setValue(viewer.style.GetVolumeRenderParameters()['max_opacity'])
         self.getWidget("max_opacity_input").valueChanged.connect(self.change_volume_max_opacity)
-        
+
     def change_color_range_min(self):
         """Change the volume color range min value."""
         if self.getWidget("color_range_slider_min").value() >= self.getWidget("color_range_slider_max").value():

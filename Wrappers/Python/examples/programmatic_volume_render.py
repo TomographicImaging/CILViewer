@@ -12,11 +12,18 @@ import os, sys
 import argparse
 
 
-def createAnimation(viewer, FrameCount=20, 
-                    InitialCameraPosition=None, FocalPoint=None, 
-                    ClippingRange=None, AngleRange = 360, ViewUp = None, clip_plane=False, 
-                    fname_offset=0, fname_prefix='test', output_dir='.'):
-    
+def createAnimation(viewer,
+                    FrameCount=20,
+                    InitialCameraPosition=None,
+                    FocalPoint=None,
+                    ClippingRange=None,
+                    AngleRange=360,
+                    ViewUp=None,
+                    clip_plane=False,
+                    fname_offset=0,
+                    fname_prefix='test',
+                    output_dir='.'):
+
     viewer
 
     if InitialCameraPosition is None:
@@ -24,9 +31,9 @@ def createAnimation(viewer, FrameCount=20,
     if FocalPoint is None:
         FocalPoint = viewer.getCamera().GetFocalPoint()
     if ClippingRange is None:
-        ClippingRange = (0,2000)
+        ClippingRange = (0, 2000)
     if ViewUp is None:
-        ViewUp = (0,0,1)
+        ViewUp = (0, 0, 1)
     if FrameCount is None:
         FrameCount = 100
     #Setting locked values for camera position
@@ -39,41 +46,38 @@ def createAnimation(viewer, FrameCount=20,
     viewer.getCamera().SetPosition(InitialCameraPosition)
     viewer.getCamera().SetFocalPoint(FocalPoint)
 
-    #Setting camera viewup 
+    #Setting camera viewup
     viewer.getCamera().SetViewUp(ViewUp)
 
     #Set camera clipping range
     viewer.getCamera().SetClippingRange(ClippingRange)
 
     #Defining distance from camera to focal point
-    r = np.sqrt(((InitialCameraPosition[0]-FocalPoint[0])**2)
-    +(InitialCameraPosition[1]-FocalPoint[1])**2)
+    r = np.sqrt(((InitialCameraPosition[0] - FocalPoint[0])**2) + (InitialCameraPosition[1] - FocalPoint[1])**2)
     print('Radius (distance from camera to focal point): {}'.format(r))
 
     if not clip_plane:
         viewer.style.ToggleSliceVisibility()
-        
+
     #Animating the camera
     for x in range(FrameCount):
         if clip_plane:
             # move the slice during rotation
-            new_slice = round(x/FrameCount * viewer.img3D.GetDimensions()[2])
+            new_slice = round(x / FrameCount * viewer.img3D.GetDimensions()[2])
             print('displaying slice {}'.format(new_slice))
             viewer.style.SetActiveSlice(new_slice)
             viewer.updatePipeline(False)
             # plane on the slice plane
             plane = vtk.vtkPlane()
-            plane.SetOrigin(0,0,new_slice * viewer.img3D.GetSpacing()[2])
-            plane.SetNormal(0,0,-1)
+            plane.SetOrigin(0, 0, new_slice * viewer.img3D.GetSpacing()[2])
+            plane.SetNormal(0, 0, -1)
 
             viewer.volume.GetMapper().RemoveAllClippingPlanes()
             viewer.volume.GetMapper().AddClippingPlane(plane)
             viewer.volume.Modified()
             viewer.getRenderer().Render()
-            
 
-        
-        angle = (2 * np.pi ) * (x/FrameCount)
+        angle = (2 * np.pi) * (x / FrameCount)
         NewLocationX = r * np.sin(angle) + FocalPoint[0]
         NewLocationY = r * np.cos(angle) + FocalPoint[1]
         NewLocation = (NewLocationX, NewLocationY, locZ)
@@ -83,25 +87,24 @@ def createAnimation(viewer, FrameCount=20,
         camera.SetPosition(*NewLocation)
         viewer.ren.SetActiveCamera(camera)
         viewer.adjustCamera()
-        
+
         import time
         time.sleep(0.1)
         print("render frame {} angle {}".format(x, angle))
         print('Camera Position: {}'.format(NewLocation))
-        rp = np.sqrt(((NewLocation[0]-FocalPoint[0])**2)
-            +(NewLocation[1]-FocalPoint[1])**2)
-        print ('Camera trajectory radius {}'.format(rp))
+        rp = np.sqrt(((NewLocation[0] - FocalPoint[0])**2) + (NewLocation[1] - FocalPoint[1])**2)
+        print('Camera trajectory radius {}'.format(rp))
         #Rendering and saving the render
         viewer.getRenderer().Render()
         viewer.renWin.Render()
         saveRender(viewer, x + fname_offset, fname_prefix, directory=output_dir)
+
 
 def saveRender(viewer, number, file_prefix, directory='.'):
     w2if = vtk.vtkWindowToImageFilter()
     w2if.SetInput(viewer.renWin)
     w2if.Update()
 
-    
     saveFilename = '{}_{:04d}.png'.format(os.path.join(directory, file_prefix), number)
 
     writer = vtk.vtkPNGWriter()
@@ -109,7 +112,9 @@ def saveRender(viewer, number, file_prefix, directory='.'):
     writer.SetInputConnection(w2if.GetOutputPort())
     writer.Write()
 
+
 class Readers():
+
     @staticmethod
     def get_reader(filename, dimensions=None, data_path=None):
         if os.path.isdir(filename):
@@ -117,7 +122,7 @@ class Readers():
             return Readers._return_tiff_reader(filename)
         else:
             if data_path is not None:
-                
+
                 # HDF5 file
                 import h5py
                 with h5py.File(filename, 'r') as f:
@@ -126,7 +131,7 @@ class Readers():
                 reader.SetFileName(filename)
                 reader.SetDatasetName(data_path)
                 return reader
-            
+
             elif dimensions is not None:
                 reader = cilRawResampleReader()
                 reader.SetFileName(filename)
@@ -144,27 +149,26 @@ class Readers():
                         return ret
                 except Exception as err:
                     pass
-                
+
                 # 3) mha/mhd
                 try:
                     from ccpi.viewer.utils.conversion import cilMetaImageResampleReader
                     reader = cilMetaImageResampleReader()
                     reader.SetFileName(filename)
-                    
+
                     reader.ReadMetaImageHeader()
                     return reader
                 except Exception as err:
-                        pass
-                
-            
+                    pass
+
             # 1) raw file
-            
+
     @staticmethod
-    def _return_tiff_reader(dirname):            
+    def _return_tiff_reader(dirname):
         fnames = [el for el in glob.glob(os.path.join(dirname, "*.tiff"))]
-    
-        print ("#########################") 
-        print (dirname, fnames)
+
+        print("#########################")
+        print(dirname, fnames)
 
         if len(fnames) == 0:
             # try again with .tif extension
@@ -173,9 +177,9 @@ class Readers():
         reader = cilTIFFResampleReader()
         reader.SetFileName(fnames)
         return reader
-    
 
-if __name__ == '__main__':    
+
+if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Create awesome volume render')
 
     parser.add_argument('--verbose', type=int, default=0)
@@ -183,7 +187,7 @@ if __name__ == '__main__':
     parser.add_argument('--max_opacity', type=float, default=0.1)
     parser.add_argument('--spacing', type=float, nargs=3, default=None)
     parser.add_argument('--spacing_multiplier', type=float, nargs=3, default=None)
-    parser.add_argument('--max_size', type=int, nargs=3, default=[1024,1024,1024])
+    parser.add_argument('--max_size', type=int, nargs=3, default=[1024, 1024, 1024])
     parser.add_argument('--resample_z', type=bool, default=True)
     parser.add_argument('--colormap', type=str, default='viridis')
     parser.add_argument('--num_frames', type=int, default=10)
@@ -192,11 +196,11 @@ if __name__ == '__main__':
     parser.add_argument('--dimensions', type=int, nargs=3, default=None)
     parser.add_argument('--data_path', type=str, default=None)
     parser.add_argument('--camera_position', type=float)
-    
+
     parser.add_argument('input', help='File or directory')
     args = parser.parse_args()
 
-    print (args)
+    print(args)
 
     # print ("################### ", len(sys.argv))
     # exit(0)
@@ -205,31 +209,25 @@ if __name__ == '__main__':
     from ccpi.viewer.utils.io import ImageReader, cilHDF5ResampleReader, cilTIFFResampleReader
     import vtk
 
-    v = viewer3D(debug=True if args.verbose >0 else False)
-
-
+    v = viewer3D(debug=True if args.verbose > 0 else False)
 
     # detect the file format and return the appropriate reader
-
 
     # reader = ImageReader(r"C:\Users\ofn77899\Data\dvc/frame_000_f.npy", resample=False)
     # reader = ImageReader(r"{}/head_uncompressed.mha".format(os.path.dirname(__file__)), resample=False)
     # data = reader.Read()
 
-
-
     pokemon = args.output_prefix
-    
+
     # subdir = 'Not_Angled'
 
-    reader = Readers.get_reader(args.input, dimensions=args.dimensions, 
-                                data_path=args.data_path)
-    
+    reader = Readers.get_reader(args.input, dimensions=args.dimensions, data_path=args.data_path)
+
     # dirname = os.path.abspath("C:/Users/ofn77899/Data\HOW/{}/{}/".format(pokemon, subdir))
-    
+
     # fnames = [el for el in glob.glob(os.path.join(dirname, "*.tiff"))]
-    
-    # print ("#########################") 
+
+    # print ("#########################")
     # print (dirname, fnames)
 
     # if len(fnames) == 0:
@@ -237,12 +235,12 @@ if __name__ == '__main__':
 
     # reader = cilTIFFResampleReader()
     # reader.SetFileName(fnames)
-    reader.SetTargetSize(1024*1024*1024)
+    reader.SetTargetSize(1024 * 1024 * 1024)
     reader.Update()
     data = reader.GetOutput()
 
-    print (data.GetSpacing())
-        
+    print(data.GetSpacing())
+
     if args.spacing is not None:
         data.SetSpacing(*args.spacing)
     elif args.spacing_multiplier is not None:
@@ -251,14 +249,13 @@ if __name__ == '__main__':
         # spac[2] = dims[0]/dims[2]
         # spac[2] *= 0.75
         for i in range(3):
-            spac[i] *= args.spacing_multiplier[i] 
+            spac[i] *= args.spacing_multiplier[i]
         data.SetSpacing(*spac)
-    print (data.GetSpacing())
+    print(data.GetSpacing())
 
     v.setInputData(reader.GetOutput())
 
     v.style.ToggleVolumeVisibility()
-    
 
     v.setVolumeColorMapName('viridis')
 
@@ -282,34 +279,29 @@ if __name__ == '__main__':
         v.setVolumeRenderOpacityMethod('scalar')
         v.setScalarOpacityPercentiles(*scalar_opacity_percentiles, update_pipeline=False)
         v.volume_property.SetScalarOpacity(opacity)
-    
+
     v.setVolumeColorPercentiles(*color_percentiles, update_pipeline=False)
     v.setMaximumOpacity(max_opacity)
 
     # default background
     # self.ren.SetBackground(.1, .2, .4)
     # v.ren.SetBackground(0, 0, 0)
-    v.ren.SetBackground(1,1,1)
-    
-    
-    createAnimation(v, FrameCount=args.num_frames, 
-                    InitialCameraPosition=(
-                        (483.8653687626969, -2173.282759469902, 1052.4208133258792)
-                        ), 
-                    AngleRange=360, 
-                    clip_plane=True, 
+    v.ren.SetBackground(1, 1, 1)
+
+    createAnimation(v,
+                    FrameCount=args.num_frames,
+                    InitialCameraPosition=((483.8653687626969, -2173.282759469902, 1052.4208133258792)),
+                    AngleRange=360,
+                    clip_plane=True,
                     fname_offset=0,
                     fname_prefix=pokemon,
                     output_dir="C:/Users/ofn77899/Data/HOW/Picachu/renders")
-    
-    createAnimation(v, FrameCount=args.num_frames, 
-                    InitialCameraPosition=(
-                        (483.8653687626969, -2173.282759469902, 1052.4208133258792)
-                        ), 
-                    AngleRange=360, 
-                    clip_plane=False, 
+
+    createAnimation(v,
+                    FrameCount=args.num_frames,
+                    InitialCameraPosition=((483.8653687626969, -2173.282759469902, 1052.4208133258792)),
+                    AngleRange=360,
+                    clip_plane=False,
                     fname_offset=100,
                     fname_prefix=pokemon,
                     output_dir=r'C:\Users\ofn77899\Data\HOW\Picachu\renders')
-
-    
