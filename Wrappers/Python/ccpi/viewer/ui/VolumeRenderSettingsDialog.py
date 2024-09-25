@@ -1,5 +1,5 @@
 from eqt.ui import FormDialog, UISliderWidget
-from PySide2 import QtCore, QtWidgets
+from PySide2 import QtCore, QtWidgets, QtGui
 
 from ccpi.viewer.ui.helpers import color_scheme_list
 
@@ -56,6 +56,11 @@ class VolumeRenderSettingsDialog(FormDialog):
         self.addWidget(color_range_slider_max, "Color range max", "color_range_slider_max")
         self.addWidget(color_range_label_max, "", "color_range_label_max")
 
+        # Max opacity
+        max_opacity_label = QtWidgets.QLabel("Max opacity")
+        max_opacity_input = QtWidgets.QDoubleSpinBox(self.groupBox)
+        self.addWidget(max_opacity_input, max_opacity_label, "max_opacity_input")
+
         # Disable 3D related widgets if volume visibility is not checked
         volume_visibility_checked = self.getWidget("volume_visibility").isChecked()
         self.getWidget("opacity_mapping").setEnabled(volume_visibility_checked)
@@ -110,6 +115,12 @@ class VolumeRenderSettingsDialog(FormDialog):
         self.getWidget("windowing_slider_max").setValue(99 * self.scale_factor)
         self.getWidget("windowing_slider_max").sliderReleased.connect(self.change_volume_opacity_max)
 
+        # MaxOpacity slider max
+        self.getWidget("max_opacity_input").setRange(0,1)
+        self.getWidget("max_opacity_input").setDecimals(3)
+        self.getWidget("max_opacity_input").setValue(viewer.style.GetVolumeRenderParameters()['max_opacity'])
+        self.getWidget("max_opacity_input").valueChanged.connect(self.change_volume_max_opacity)
+        
     def change_color_range_min(self):
         """Change the volume color range min value."""
         if self.getWidget("color_range_slider_min").value() >= self.getWidget("color_range_slider_max").value():
@@ -154,6 +165,11 @@ class VolumeRenderSettingsDialog(FormDialog):
             self.viewer.setGradientOpacityPercentiles(opacity_min, opacity_max)
         elif opacity == "Scalar":
             self.viewer.setScalarOpacityPercentiles(opacity_min, opacity_max)
+
+    def change_volume_max_opacity(self):
+        """Change the volume opacity mapping max value."""
+        mo = self.getWidget("max_opacity_input").value()
+        self.viewer.setMaximumOpacity(mo)
 
     def reset_volume_clipping(self):
         """Reset the volume clipping to the default state."""
