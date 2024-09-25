@@ -6,6 +6,7 @@ Enhancements:
   - Update corner annotation with axis label #433
   - Add title to ViewerCoordsDockWidget #422
   - Adds methods to CILviewer and CILviewer2D #425
+  - adds Qt GUI toolbar to control 3D viewer
   
 Bugfix:
   - Differentiate 3D and 2D images in the converter `numpy2vtkImage` #437
@@ -48,6 +49,7 @@ Documentation
 - Transfer repository to "TomographicImaging" #402
 - Add PR template #244 #373
 - Edit README.md #344
+
 
 ## v23.1.0
 - Raise error if try to add multiple widgets with the same name to CILViewer or CILViewer2D.
