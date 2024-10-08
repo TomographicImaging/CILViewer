@@ -8,6 +8,7 @@ Enhancements:
   - Adds methods to CILviewer and CILviewer2D #425
   
 Bugfix:
+  - Fix error when visualising 2D images #439
   - Hides the slider when one image dimension is 1 #432
   - Differentiate 3D and 2D images in the converter `numpy2vtkImage` #437
   - Edit slider min value #420
