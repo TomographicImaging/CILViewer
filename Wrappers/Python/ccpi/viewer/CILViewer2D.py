@@ -49,6 +49,8 @@ class CILInteractorStyle(vtk.vtkInteractorStyle):
         self.dy = 0
 
         self._reslicing_enabled = True
+        self.htext = None
+        print("just set attibute to none")
 
     @property
     def reslicing_enabled(self):
@@ -896,7 +898,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyle):
             self.Render()
             return
 
-        font_size = 24
+        font_size = 14
 
         # Create the text mappers and the associated Actor2Ds.
 
@@ -913,33 +915,36 @@ class CILInteractorStyle(vtk.vtkInteractorStyle):
         # The text is on multiple lines and center-justified (both horizontal and
         # vertical).
         textMapperC = vtk.vtkTextMapper()
-        textMapperC.SetInput("Mouse Interactions:\n"
-                             "\n"
-                             "  - Slice: Mouse Scroll\n"
-                             "  - Quick Slice: Shift + Mouse Scroll\n"
-                             "  - Pick: Left Click\n"
-                             "  - Zoom: Shift + Right Mouse + Move Up/Down\n"
-                             "  - Pan: Ctrl + Right Mouse + Move\n"
-                             "  - Adjust Window: Alt+ Right Mouse + Move Up/Down\n"
-                             "  - Adjust Level: Alt + Right Mouse + Move Left/Right\n"
-                             "  Region of Interest (ROI):\n"
-                             "      - Create: Ctrl + Left Click\n"
-                             "      - Delete: Alt + Left Click\n"
-                             "      - Resize: Click + Drag handles\n"
-                             "      - Translate: Middle Mouse + Move within ROI\n"
-                             "\n"
-                             "Keyboard Interactions:\n"
-                             "\n"
-                             "  - a: Whole image Auto Window/Level\n"
-                             "  - w: Region around cursor Auto Window/Level\n"
-                             "  - l: Line Profile at cursor\n"
-                             "  - s: Save Current Image\n"
-                             "  - x: YZ Plane\n"
-                             "  - y: XZ Plane\n"
-                             "  - z: XY Plane\n"
-                             "  - t: Tracing\n"
-                             "  - i: toggle interpolation of slice\n"
-                             "  - h: this help\n")
+        if self.htext == None:
+            print("self.hetext is none")
+            self.htext ="""
+            Mouse Interactions:
+                - Slice: Mouse Scroll
+                - Quick Slice: Shift + Mouse Scroll
+                - Pick: Left Click
+                - Zoom: Shift + Right Mouse + Move Up/Down
+                - Pan: Ctrl + Right Mouse + Move
+                - Adjust Window: Alt+ Right Mouse + Move Up/Down
+                - Adjust Level: Alt + Right Mouse + Move Left/Right
+
+            Region of Interest (ROI):
+                - Create: Ctrl + Left Click
+                - Delete: Alt + Left Click
+                - Resize: Click + Drag handles
+                - Translate: Middle Mouse + Move within ROI
+
+            Keyboard Interactions:
+                - a: Whole image Auto Window/Level
+                - w: Region around cursor Auto Window/Level
+                - l: Line Profile at cursor
+                - s: Save Current Image
+                - x: YZ Plane
+                - y: XZ Plane
+                - z: XY Plane
+                - t: Tracing
+                - i: toggle interpolation of slice
+                - h: this help"""
+        textMapperC.SetInput(self.htext)
         tprop = textMapperC.GetTextProperty()
         tprop.ShallowCopy(multiLineTextProp)
         tprop.SetJustificationToLeft()
