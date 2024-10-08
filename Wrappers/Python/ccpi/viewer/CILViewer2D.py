@@ -1550,11 +1550,18 @@ class CILViewer2D(CILViewerBase):
         '''Create the pipeline for the slice slider widget
         
         The slider widget and representation are created if not already present.
-        Currently the slider widget enabled flag is not used.
+        If present, the slider is updated.
+        The slider is hidden if any of the dimensions of the visualised image is 1,
+        else it is shown.
         '''
+        # set slider_hidden
+        dims = self.img3D.GetDimensions()
+        slider_hidden = any(dim == 1 for dim in dims)
+
         if self.sliderWidget is not None:
             # reset the values to the appropriate ones of the new loaded image
             self.sliderCallback.update_orientation(self.style, 'reset')
+            self.sliderWidget.SetEnabled(not slider_hidden)
             return
 
         sr = SliceSliderRepresentation()
@@ -1567,7 +1574,8 @@ class CILViewer2D(CILViewerBase):
         sw.SetRepresentation(sr)
         sw.SetAnimationModeToAnimate()
         sw.EnabledOn()
-
+        # enable slider
+        sw.SetEnabled(not slider_hidden)
         cb = SliderCallback(self, sw)
 
         # Add interaction observers

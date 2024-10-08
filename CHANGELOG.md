@@ -9,6 +9,7 @@ Enhancements:
   
 Bugfix:
   - Fix error when visualising 2D images #439
+  - Hides the slider when one image dimension is 1 #432
   - Differentiate 3D and 2D images in the converter `numpy2vtkImage` #437
   - Edit slider min value #420
   - Fix extent error when user clicks in the viewer to create a box by clicking outside of the image #425
