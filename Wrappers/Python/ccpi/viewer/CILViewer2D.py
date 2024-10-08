@@ -917,7 +917,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyle):
         textMapperC = vtk.vtkTextMapper()
         if self.htext == None:
             print("self.hetext is none")
-            self.htext ="""
+            self.htext = """
             Mouse Interactions:
                 - Slice: Mouse Scroll
                 - Quick Slice: Shift + Mouse Scroll
