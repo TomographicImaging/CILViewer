@@ -50,7 +50,6 @@ class CILInteractorStyle(vtk.vtkInteractorStyle):
 
         self._reslicing_enabled = True
         self.htext = None
-        print("just set attibute to none")
 
     @property
     def reslicing_enabled(self):
@@ -898,7 +897,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyle):
             self.Render()
             return
 
-        font_size = 14
+        font_size = 16
 
         # Create the text mappers and the associated Actor2Ds.
 
@@ -916,7 +915,6 @@ class CILInteractorStyle(vtk.vtkInteractorStyle):
         # vertical).
         textMapperC = vtk.vtkTextMapper()
         if self.htext == None:
-            print("self.hetext is none")
             self.htext ="""
             Mouse Interactions:
                 - Slice: Mouse Scroll
@@ -934,16 +932,17 @@ class CILInteractorStyle(vtk.vtkInteractorStyle):
                 - Translate: Middle Mouse + Move within ROI
 
             Keyboard Interactions:
-                - a: Whole image Auto Window/Level
-                - w: Region around cursor Auto Window/Level
-                - l: Line Profile at cursor
-                - s: Save Current Image
-                - x: YZ Plane
-                - y: XZ Plane
-                - z: XY Plane
-                - t: Tracing
-                - i: toggle interpolation of slice
-                - h: this help"""
+                h: This help
+                x: YZ Plane
+                y: XZ Plane
+                z: XY Plane
+                a: Whole image Auto Window/Level
+                w: Region around cursor Auto Window/Level
+                l: Line Profile at cursor
+                s: Save Current Image
+                t: Tracing
+                i: Toggle interpolation of slice
+                """
         textMapperC.SetInput(self.htext)
         tprop = textMapperC.GetTextProperty()
         tprop.ShallowCopy(multiLineTextProp)
