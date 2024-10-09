@@ -1,8 +1,9 @@
 # Changelog
 
-## v24.0.2
+## v24.1.0
 
 Enhancements:
+  - Add option to edit help text #441
   - Update corner annotation with axis label #433
   - Add title to ViewerCoordsDockWidget #422
   - Adds methods to CILviewer and CILviewer2D #425
