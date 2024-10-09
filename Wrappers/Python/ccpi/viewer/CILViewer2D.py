@@ -915,7 +915,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyle):
         # vertical).
         textMapperC = vtk.vtkTextMapper()
         if self.htext == None:
-            self.htext ="""
+            self.htext = """
             Mouse Interactions:
                 - Slice: Mouse Scroll
                 - Quick Slice: Shift + Mouse Scroll
