@@ -6,6 +6,8 @@ from ccpi.viewer import viewer2D, viewer3D
 from ccpi.viewer.ui.main_windows import TwoViewersMainWindow
 from PySide2 import QtWidgets
 from PySide2.QtWidgets import QAction, QCheckBox
+import logging
+import argparse
 
 
 class StandaloneViewerMainWindow(TwoViewersMainWindow):
@@ -27,7 +29,9 @@ class StandaloneViewerMainWindow(TwoViewersMainWindow):
                  settings_name=None,
                  organisation_name=None,
                  viewer1_type='2D',
-                 viewer2_type='3D'):
+                 viewer2_type='3D',
+                 scale_factor=1,
+                 max_opacity=0.1):
         super(StandaloneViewerMainWindow, self).__init__(title, app_name, settings_name, organisation_name,
                                                          viewer1_type, viewer2_type)
 
@@ -35,6 +39,13 @@ class StandaloneViewerMainWindow(TwoViewersMainWindow):
         self.addToViewerCoordsDockWidget()
 
         self.image_overlay = vtk.vtkImageData()
+
+        # apply scale factor to sliders in the viewer3D dock widget:
+        logging.debug("scale_factor = {}".format(scale_factor))
+        self.scale_factor = scale_factor
+        self.frames[1].getToolbar().scale_factor = scale_factor
+        logging.debug(f"Setting maximum opacity for volume render to: {max_opacity}")
+        self.frames[1].viewer.setMaximumOpacity(max_opacity)
 
     def addToMenu(self):
         '''
@@ -127,7 +138,7 @@ class standalone_viewer(object):
             if None, only one viewer is displayed
         '''
 
-        window = StandaloneViewerMainWindow(title, viewer1_type, viewer2_type)
+        window = StandaloneViewerMainWindow(title, viewer1_type, viewer2_type, *args, **kwargs)
 
         self.window = window
         self.has_run = None
@@ -149,11 +160,31 @@ class standalone_viewer(object):
 
 
 def main():
+
+    parser = argparse.ArgumentParser(description='Standalone CIL Viewer')
+
+    parser.add_argument('--debug', type=str)
+    parser.add_argument('--scale_factor', type=float, default=1)
+    parser.add_argument('--max_opacity', type=float, default=0.1)
+    args = parser.parse_args()
+
+    if args.debug in ['debug', 'info', 'warning', 'error', 'critical']:
+        level = eval(f'logging.{args.debug.upper()}')
+        logging.basicConfig(level=level)
+        logging.info(f"cilviewer: Setting debugging level to {args.debug.upper()}")
+
+    logging.debug(f"scale_factor: {args.scale_factor}")
+    logging.debug(f"max_opacity: {args.max_opacity}")
+
     # Run a standalone viewer with a 2D and a 3D viewer:
     err = vtk.vtkFileOutputWindow()
     err.SetFileName("viewer.log")
     vtk.vtkOutputWindow.SetInstance(err)
-    standalone_viewer_instance = standalone_viewer("Standalone Viewer", viewer1_type='2D', viewer2_type='3D')
+    standalone_viewer_instance = standalone_viewer("Standalone Viewer",
+                                                   viewer1_type='2D',
+                                                   viewer2_type='3D',
+                                                   scale_factor=args.scale_factor,
+                                                   max_opacity=args.max_opacity)
     standalone_viewer_instance.show()
     return 0
 
