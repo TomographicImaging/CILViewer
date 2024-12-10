@@ -3,7 +3,7 @@ import h5py
 from eqt.ui import FormDialog
 from eqt.ui.SessionDialogs import AppSettingsDialog, ErrorDialog
 from PySide2 import QtCore, QtGui, QtWidgets
-from PySide2.QtWidgets import QCheckBox, QDoubleSpinBox, QLabel, QLineEdit, QComboBox
+from PySide2.QtWidgets import QCheckBox, QDoubleSpinBox, QLabel, QLineEdit, QComboBox, QPushButton
 import numpy as np
 from ccpi.viewer.utils import Converter
 from ccpi.viewer.utils.conversion import cilRawCroppedReader
@@ -260,48 +260,6 @@ class RawInputDialog(FormDialog):
         reader2.SetTypeCodeName(dt.name)
         reader2.SetStoredArrayShape(shape)
         reader2.Update()
-        # image = reader2.GetOutput()
-
-        # rawfname = os.path.join(tempfile.gettempdir(),"test.raw")
-
-        # offset = offset * bytes_per_element
-        # slices_to_read = 1
-        # if shape[2] > 1:
-        #     slices_to_read = 2
-        # with open(self.fname, 'br') as f:
-        #     f.seek(offset)
-        #     raw_data = f.read(slice_size*bytes_per_element* slices_to_read)
-        #     with open(rawfname, 'wb') as f2:
-        #         f2.write(raw_data)
-
-        # reader2 = vtk.vtkImageReader2()
-        # reader2.SetFileName(rawfname)
-
-        # vtktype = Converter.dtype_name_to_vtkType[dt.name]
-        # reader2.SetDataScalarType(vtktype)
-
-        # if isBigEndian:
-        #     reader2.SetDataByteOrderToBigEndian()
-        # else:
-        #     reader2.SetDataByteOrderToLittleEndian()
-
-        # reader2.SetFileDimensionality(len(shape))
-        # vtkshape = shape[:]
-        # if not isFortran:
-        #     # need to reverse the shape (again)
-        #     vtkshape = shape[::-1]
-        # # vtkshape = shape[:]
-        # slice_idx = 0
-        # if dimensionality == 3:
-        #     slice_idx = vtkshape[2]//2
-        # reader2.SetDataExtent(0, vtkshape[0]-1, 0, vtkshape[1]-1, slice_idx, slice_idx+slices_to_read-1)
-        # # DataSpacing and DataOrigin should be added to the interface
-        # reader2.SetDataSpacing(1, 1, 1)
-        # reader2.SetDataOrigin(0, 0, 0)
-
-        # print("reading")
-        # reader2.Update()
-        # read one slice in the middle and display it in a viewer in a modal dialog
 
         diag = QtWidgets.QDialog(parent=self)
         diag.setModal(True)
@@ -336,6 +294,99 @@ class RawInputDialog(FormDialog):
         # diag.finished.connect(lambda: os.remove(rawfname))
         # finally open the dialog
         diag.open()
+
+class SaveableRawInputDialog(RawInputDialog):
+    def __init__(self, parent, fname, qsettings):
+        super(SaveableRawInputDialog, self).__init__(parent, fname)
+
+
+        self.settings = qsettings
+
+        self.formWidget.addTitle(QLabel('Load Settings'), 'load_settings_title')
+        load_label = QLabel('Settings Name: ')
+        load_drop_down = QComboBox()
+        load_drop_down.addItems(self._get_settings_names_for_dialog())
+        self.formWidget.addWidget(load_drop_down, load_label, 'load_name')
+
+        load_button = QPushButton('Load Settings')
+        load_button.clicked.connect(self._load_settings)
+        self.formWidget.addSpanningWidget(load_button, 'load')
+
+        self.formWidget.addTitle(QLabel('Save Settings'), 'save_settings_title')
+        save_label = QLabel('Settings Name: ')
+        save_box = QLineEdit()
+        self.formWidget.addWidget(save_box, save_label, 'save_name')
+
+        save_button = QPushButton('Save Settings')
+        save_button.clicked.connect(self._save_settings)
+        self.formWidget.addSpanningWidget(save_button,'save')
+
+
+
+    def _save_settings(self):
+        '''
+        Adds a dictionary to the qsettings 'raw_dialog'
+        dictionary :
+        key: name entred by the user
+        value: the status of all widgets on the form
+        '''      
+        settings_dict = self.settings.value('raw_dialog', {})
+
+        settings_name = self.formWidget.getWidget('save_name').text()
+
+        self.saveAllWidgetStates()
+        current_widget_status = self.getSavedWidgetStates()
+        
+        settings_dict[settings_name] = current_widget_status
+
+        self.settings.setValue('raw_dialog', settings_dict)
+
+        print("Settings successfully saved")
+        # todo make dialog
+
+    def _get_settings_names_for_dialog(self):
+        '''
+        Retrive from self.settings the names of all settings previously saved in the 
+        'raw_dialog' entry
+        '''
+        settings_dict = self.settings.value('raw_dialog', {})
+
+        print(type(self.settings.value('raw_dialog')))
+        print(self.settings.value('raw_dialog'))
+        print("The settings dict: ", settings_dict)
+        return settings_dict.keys()
+
+    def _load_settings(self):
+        '''
+        Load all of the widget states saved in the 'raw_dialog' entry of 
+        self.settings under the name selected by the user from the load_name comobox
+        '''
+        settings_found = False
+        if self.settings.value('raw_dialog'):
+            settings_dict = self.settings.value('raw_dialog', {})
+
+            name_of_state = self.formWidget.getWidget('load_name').currentText()
+            state = settings_dict.get(name_of_state)
+
+            if state is not None:
+
+                # save current stae
+                
+                self.applyWidgetStates(state)
+
+                # load current state of dropdown
+                settings_found = True
+
+
+        if not settings_found:
+            # create error dialog:
+            print("Settings not found")
+
+        # todo make dialog
+        print("Settings loaded")
+
+
+
 
 
 class HDF5InputDialog(FormDialog):

@@ -1,6 +1,6 @@
 import unittest
 from unittest import mock
-from ccpi.viewer.ui.dialogs import ViewerSettingsDialog, HDF5InputDialog, RawInputDialog
+from ccpi.viewer.ui.dialogs import ViewerSettingsDialog, HDF5InputDialog, RawInputDialog, SaveableRawInputDialog
 from eqt.ui.SessionDialogs import AppSettingsDialog
 
 from PySide2.QtWidgets import QMainWindow
@@ -203,6 +203,64 @@ class TestRawInputDialog(unittest.TestCase):
             'preview_slice': 0
         }
 
+@unittest.skipIf(skip_as_conda_build, "On conda builds do not do any test with interfaces")
+class TestSaveableRawInputDialog(unittest.TestCase):
+
+    def setUp(self):
+        global _instance
+        if _instance is None:
+            _instance = QApplication(sys.argv)
+        self.parent = QMainWindow()
+        self.parent.settings = QSettings()
+        self.fname = "test.raw"
+
+    def test_init(self):
+        rdi = SaveableRawInputDialog(self.parent, self.fname, self.parent.settings)
+        assert rdi is not None
+
+    def test_init_creates_widgets(self):
+        rdi = SaveableRawInputDialog(self.parent, self.fname, self.parent.settings)
+        #Check we have the widgets that we expect:
+        assert isinstance(rdi.getWidget('dimensionality', 'label'), QLabel)
+        assert isinstance(rdi.getWidget('dimensionality', 'field'), QComboBox)
+        assert isinstance(rdi.getWidget('dim_Width', 'label'), QLabel)
+        assert isinstance(rdi.getWidget('dim_Width', 'field'), QLineEdit)
+        assert isinstance(rdi.getWidget('dim_Height', 'label'), QLabel)
+        assert isinstance(rdi.getWidget('dim_Height', 'field'), QLineEdit)
+        assert isinstance(rdi.getWidget('dim_Images', 'label'), QLabel)
+        assert isinstance(rdi.getWidget('dim_Images', 'field'), QLineEdit)
+        assert isinstance(rdi.getWidget('dtype', 'label'), QLabel)
+        assert isinstance(rdi.getWidget('dtype', 'field'), QComboBox)
+        assert isinstance(rdi.getWidget('endianness', 'label'), QLabel)
+        assert isinstance(rdi.getWidget('endianness', 'field'), QComboBox)
+        assert isinstance(rdi.getWidget('preview_slice', 'label'), QLabel)
+        assert isinstance(rdi.getWidget('preview_slice', 'field'), QLineEdit)
+
+    def test_getRawAttrs(self):
+        rdi = SaveableRawInputDialog(self.parent, self.fname, self.parent.settings)
+        got_raw_attrs = rdi.getRawAttrs()
+        expected_raw_attrs = {
+            'shape': [0, 0, 0],
+            'typecode': 'uint8',
+            'is_big_endian': True,
+            'is_fortran': True,
+            'preview_slice': 0
+        }
+        assert got_raw_attrs == expected_raw_attrs
+        rdi.getWidget('dim_Width', 'field').setText('1')
+        rdi.getWidget('dim_Height', 'field').setText('2')
+        rdi.getWidget('dim_Images', 'field').setText('3')
+        rdi.getWidget('dtype', 'field').setCurrentText('uint16')
+        rdi.getWidget('endianness', 'field').setCurrentText('Big Endian')
+        rdi.getWidget('preview_slice', 'field').setText("0")
+        rdi.getWidget('is_fortran', 'field').setCurrentText("Images-Height-Width")
+        assert rdi.getRawAttrs() == {
+            'shape': [1, 2, 3],
+            'typecode': 'uint16',
+            'is_big_endian': True,
+            'is_fortran': False,
+            'preview_slice': 0
+        }
 
 if __name__ == '__main__':
     unittest.main()
