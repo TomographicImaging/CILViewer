@@ -2,7 +2,6 @@ import os
 import sys
 from functools import partial
 from pathlib import Path
-
 import ccpi.viewer.viewerLinker as vlink
 import vtk
 from ccpi.viewer import CILViewer2D, CILViewer
@@ -381,7 +380,6 @@ class ViewerMainWindow(MainWindowWithProgressDialogs):
             The reader used to read the image. This contains some extra info about the
             original image file.
         '''
-
         viewer = self.viewer_coords_dock.viewers[0]
 
         if not isinstance(viewer, (CILViewer2D, CILViewer)):
