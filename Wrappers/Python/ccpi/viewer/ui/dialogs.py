@@ -302,6 +302,10 @@ class SaveableRawInputDialog(RawInputDialog):
 
         self.settings = qsettings
 
+        self.formWidget.addSpanningWidget(QCheckBox("Enable editing"), 'enable_edit')
+        self.getWidget('enable_edit').setChecked(True)
+        self.getWidget('enable_edit').stateChanged.connect(self._change_edit_state)
+
         self.formWidget.addTitle(QLabel('Load Settings'), 'load_settings_title')
         load_label = QLabel('Settings Name: ')
         load_drop_down = QComboBox()
@@ -312,16 +316,42 @@ class SaveableRawInputDialog(RawInputDialog):
         load_button.clicked.connect(self._load_settings)
         self.formWidget.addSpanningWidget(load_button, 'load')
 
-        self.formWidget.addTitle(QLabel('Save Settings'), 'save_settings_title')
+
+        self.buttonBox.addButton(QtWidgets.QDialogButtonBox.Save)
+        self.buttonBox.button(QtWidgets.QDialogButtonBox.Save).clicked.connect(self._open_save_dialog)
+
+    def _change_edit_state(self, editable=True):
+        '''Changes the edit state of the form'''
+
+        widgets = self.getWidgets()
+        for widget in widgets.values():
+            widget.setEnabled(editable)
+        
+        if not editable:
+            widgets_to_preserve = ['load_name', 'load', 'enable_edit', 'load_name', 'load_settings_title', 'preview_slice', 'preview_button']
+            for widget in widgets_to_preserve:
+                print("Enabling widgets")
+                self.getWidget(widget, 'field').setEnabled(True)
+                try:
+                    self.getWidget(widget, 'label').setEnabled(True)
+                except:
+                    pass
+
+
+
+
+    def _open_save_dialog(self):
+        '''Opens dialog for specifiying name to save settings under'''
+        dialog = FormDialog(self)
+        dialog.formWidget.addTitle(QLabel('Save Settings'), 'save_settings_title')
         save_label = QLabel('Settings Name: ')
         save_box = QLineEdit()
-        self.formWidget.addWidget(save_box, save_label, 'save_name')
-
-        save_button = QPushButton('Save Settings')
-        save_button.clicked.connect(self._save_settings)
-        self.formWidget.addSpanningWidget(save_button,'save')
-
-
+        dialog.formWidget.addWidget(save_box, save_label, 'save_name')
+        dialog.Cancel.clicked.connect(dialog.close)
+        dialog.Ok.clicked.connect(self._save_settings)
+        dialog.Ok.clicked.connect(dialog.close)
+        dialog.open()
+        self.save_dialog=dialog
 
     def _save_settings(self):
         '''
@@ -332,7 +362,7 @@ class SaveableRawInputDialog(RawInputDialog):
         '''      
         settings_dict = self.settings.value('raw_dialog', {})
 
-        settings_name = self.formWidget.getWidget('save_name').text()
+        settings_name = self.save_dialog.getWidget('save_name').text()
 
         self.saveAllWidgetStates()
         current_widget_status = self.getSavedWidgetStates()
@@ -373,6 +403,7 @@ class SaveableRawInputDialog(RawInputDialog):
                 # save current stae
                 
                 self.applyWidgetStates(state)
+                self.getWidget('enable_edit').setChecked(False)
 
                 # load current state of dropdown
                 settings_found = True
