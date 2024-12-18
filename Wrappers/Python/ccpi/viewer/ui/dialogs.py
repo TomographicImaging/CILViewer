@@ -312,7 +312,6 @@ class SaveableRawInputDialog(RawInputDialog):
     You can reload settings you have saved previously, by selecting their associated name from a dropdown.
     '''
 
-
     def __init__(self, parent, fname, qsettings):
         super(SaveableRawInputDialog, self).__init__(parent, fname)
 
