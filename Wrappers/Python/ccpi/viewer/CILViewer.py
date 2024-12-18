@@ -36,6 +36,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
         self.AddObserver('LeftButtonReleaseEvent', self.OnLeftMouseRelease)
         #self.AddObserver('RightButtonPressEvent', self.OnRightMousePress, -0.5)
         #self.AddObserver('RightButtonReleaseEvent', self.OnRightMouseRelease, -0.5)
+        self.htext = None
 
     def GetSliceOrientation(self):
         return self._viewer.sliceOrientation
@@ -268,8 +269,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
         planew = vtk.vtkImplicitPlaneWidget2()
 
         rep = vtk.vtkImplicitPlaneRepresentation()
-        world_extent = self.GetImageWorldExtent()
-        extent = [0, world_extent[0], 0, world_extent[1], 0, world_extent[2]]
+        extent = self.GetDataExtentInWorld()
         rep.SetWidgetBounds(*extent)
         planew.SetRepresentation(rep)
         planew.SetInteractor(viewer.getInteractor())
@@ -324,7 +324,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
             self.Render()
             return
 
-        font_size = 24
+        font_size = 16
 
         # Create the text mappers and the associated Actor2Ds.
 
@@ -341,25 +341,27 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
         # The text is on multiple lines and center-justified (both horizontal and
         # vertical).
         textMapperC = vtk.vtkTextMapper()
-        textMapperC.SetInput("Mouse Interactions:\n"
-                             "\n"
-                             "  - Slice: Mouse Scroll\n"
-                             "  - Zoom: Right Mouse + Move Up/Down\n"
-                             "  - Pan: Middle Mouse Button + Move or Shift + Left Mouse + Move\n"
-                             "  - Adjust Camera: Left Mouse + Move\n"
-                             "  - Rotate: Ctrl + Left Mouse + Move\n"
-                             "\n"
-                             "Keyboard Interactions:\n"
-                             "\n"
-                             "h: Display this help\n"
-                             "x:  YZ Plane\n"
-                             "y:  XZ Plane\n"
-                             "z:  XY Plane\n"
-                             "r:  Save render to current_render.png\n"
-                             "s:  Toggle visibility of slice\n"
-                             "v:  Toggle visibility of volume render\n"
-                             "c:  Activates volume render clipping plane widget\n"
-                             "a:  Whole image Auto Window/Level\n")
+        if self.htext == None:
+            self.htext = """
+Mouse Interactions:
+    - Slice: Mouse Scroll
+    - Zoom: Right Mouse + Move Up/Down
+    - Pan: Middle Mouse Button + Move or Shift + Left Mouse + Move
+    - Adjust Camera: Left Mouse + Move
+    - Rotate: Ctrl + Left Mouse + Move
+    
+Keyboard Interactions:
+    h: Display this help
+    x:  YZ Plane
+    y:  XZ Plane
+    z:  XY Plane
+    r:  Save render to current_render.png
+    s:  Toggle visibility of slice
+    v:  Toggle visibility of volume render
+    c:  Activates volume render clipping plane widget
+    a:  Whole image Auto Window/Level
+    """
+        textMapperC.SetInput(self.htext)
         tprop = textMapperC.GetTextProperty()
         tprop.ShallowCopy(multiLineTextProp)
         tprop.SetJustificationToLeft()
@@ -414,10 +416,39 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
         return [(image_coordinates[i]) * spac[i] + orig[i] for i in range(3)]
 
     def GetImageWorldExtent(self):
-        """
-        Compute and return the maximum extent of the image in the rendered world
-        """
+        """Deprecated. Use `GetDataExtentInWorld` and `GetMinMaxVoxelsFromExtent`."""
         return self.image2world(self.GetInputData().GetExtent()[1::2])
+
+    def GetDataExtentInWorld(self):
+        """
+        Compute and return the extent of the input data in world coordinates.
+        """
+        data_extent_image = self.GetInputData().GetExtent()
+        data_extent_world = self.Image2WorldExtent(data_extent_image)
+        return data_extent_world
+
+    def GetMinMaxVoxelsFromExtent(self, extent):
+        """Given the extent of a box or image, gets the voxels corresponding to the min values in all directions
+        and max values in all directions."""
+        voxel_min = extent[0::2]
+        voxel_max = extent[1::2]
+        return voxel_min, voxel_max
+
+    def Image2WorldExtent(self, extent_image):
+        """Given the extent of a box or image, gets the voxels corresponding to the min values in all directions
+        and max values in all directions. Then, converts their coordinates in the world coordinate system. 
+        Returns the converted extent."""
+        voxel_min_image, voxel_max_image = self.GetMinMaxVoxelsFromExtent(extent_image)
+        voxel_min_world = self.image2world(voxel_min_image)
+        voxel_max_world = self.image2world(voxel_max_image)
+        extent_world = self.GetExtentFromVoxels(voxel_min_world, voxel_max_world)
+        return extent_world
+
+    def GetExtentFromVoxels(self, voxel_min, voxel_max):
+        """Given the voxels corresponding to the min values in all directions
+        and max values in all directions, calculates the extent of the box or image they enclose."""
+        extent = (voxel_min[0], voxel_max[0], voxel_min[1], voxel_max[1], voxel_min[2], voxel_max[2])
+        return extent
 
     def GetInputData(self):
         return self._viewer.img3D

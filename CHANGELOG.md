@@ -1,13 +1,24 @@
 # Changelog
 
-## v24.0.2
+# vx.x.x
+- Use headless render window for viewer via trame (#429)
+
+## v24.1.0
 
 Enhancements:
+  - Add option to edit help text #441
+  - Update corner annotation with axis label #433
   - Add title to ViewerCoordsDockWidget #422
+  - Adds methods to CILviewer and CILviewer2D #425
   
 Bugfix:
+  - Fix error when visualising 2D images #439
+  - Hides the slider when one image dimension is 1 #432
+  - Differentiate 3D and 2D images in the converter `numpy2vtkImage` #437
   - Edit slider min value #420
-  - Use headless render window for viewer via trame (#429)
+  - Fix extent error when user clicks in the viewer to create a box by clicking outside of the image #425
+  - Fix extent error when user enlarges the box outside the image #425
+  - Deprecates `GetImageWorldExtent` #425
 
 ## v24.0.1
 

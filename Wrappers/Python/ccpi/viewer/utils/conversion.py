@@ -90,23 +90,31 @@ class Converter(object):
 
     @staticmethod
     def numpy2vtkImage(nparray, spacing=(1., 1., 1.), origin=(0, 0, 0), deep=0, output=None):
+        """
+        The method converts a numpy array to a vtk image.
+
+        Raises an error if the dimension of the image is not 2 or 3.
+        The array is flattened in the correct order, either fortran or C.
+        The vtk extent is set and needs to differentiate between 3D and 2D images.
+        Creates a vtkImageData if `output` is None, otherwise uses the provided empty output.
+        Adds the vtkarray to the image's point data. If an array is already present, it removes it."""
 
         shape = numpy.shape(nparray)
-        if (nparray.flags["FNC"]):
+        num_dims = len(shape)
+        if num_dims not in [2, 3]:
+            raise ValueError("Only 2D or 3D numpy arrays are supported.")
 
+        if nparray.flags["FNC"]:
             order = "F"
-            i = 0
-            k = 2
+            i, k = 0, num_dims - 1
         else:
             order = "C"
-            i = 2
-            k = 0
+            i, k = num_dims - 1, 0
 
         nparray = nparray.ravel(order)
         vtkarray = numpy_support.numpy_to_vtk(num_array=nparray,
                                               deep=deep,
                                               array_type=numpy_support.get_vtk_array_type(nparray.dtype))
-        vtkarray.SetName('vtkarray')
 
         if output is None:
             img_data = vtk.vtkImageData()
@@ -116,9 +124,16 @@ class Converter(object):
             else:
                 img_data = output
 
-        img_data.GetPointData().AddArray(vtkarray)
-        img_data.SetExtent(0, shape[i] - 1, 0, shape[1] - 1, 0, shape[k] - 1)
-        img_data.GetPointData().SetActiveScalars('vtkarray')
+        point_data = img_data.GetPointData()
+        while point_data.GetNumberOfArrays() > 0:
+            point_data.RemoveArray(0)
+        vtkarray.SetName('ImageScalars')
+        point_data.AddArray(vtkarray)
+        img_data.GetPointData().SetScalars(vtkarray)
+        if num_dims == 3:
+            img_data.SetExtent(0, shape[i] - 1, 0, shape[1] - 1, 0, shape[k] - 1)
+        elif num_dims == 2:
+            img_data.SetExtent(0, shape[i] - 1, 0, shape[k] - 1, 0, 0)
         img_data.SetOrigin(origin)
         img_data.SetSpacing(spacing)
 
