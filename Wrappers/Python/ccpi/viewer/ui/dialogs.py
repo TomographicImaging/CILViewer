@@ -330,14 +330,11 @@ class SaveableRawInputDialog(RawInputDialog):
         if not editable:
             widgets_to_preserve = ['load_name', 'load', 'enable_edit', 'load_name', 'load_settings_title', 'preview_slice', 'preview_button']
             for widget in widgets_to_preserve:
-                print("Enabling widgets")
                 self.getWidget(widget, 'field').setEnabled(True)
                 try:
                     self.getWidget(widget, 'label').setEnabled(True)
                 except:
                     pass
-
-
 
 
     def _open_save_dialog(self):
@@ -353,16 +350,20 @@ class SaveableRawInputDialog(RawInputDialog):
         dialog.open()
         self.save_dialog=dialog
 
+    def _get_settings_save_name(self):
+        return self.save_dialog.getWidget('save_name').text()
+
+
     def _save_settings(self):
         '''
         Adds a dictionary to the qsettings 'raw_dialog'
         dictionary :
-        key: name entred by the user
+        key: name entered by the user
         value: the status of all widgets on the form
         '''      
         settings_dict = self.settings.value('raw_dialog', {})
 
-        settings_name = self.save_dialog.getWidget('save_name').text()
+        settings_name = self._get_settings_save_name()
 
         self.saveAllWidgetStates()
         current_widget_status = self.getSavedWidgetStates()
@@ -371,20 +372,16 @@ class SaveableRawInputDialog(RawInputDialog):
 
         self.settings.setValue('raw_dialog', settings_dict)
 
-        print("Settings successfully saved")
-        # todo make dialog
-
     def _get_settings_names_for_dialog(self):
         '''
         Retrive from self.settings the names of all settings previously saved in the 
         'raw_dialog' entry
         '''
         settings_dict = self.settings.value('raw_dialog', {})
-
-        print(type(self.settings.value('raw_dialog')))
-        print(self.settings.value('raw_dialog'))
-        print("The settings dict: ", settings_dict)
         return settings_dict.keys()
+
+    def _get_name_of_state_to_load(self):
+        return self.formWidget.getWidget('load_name').currentText()
 
     def _load_settings(self):
         '''
@@ -395,7 +392,7 @@ class SaveableRawInputDialog(RawInputDialog):
         if self.settings.value('raw_dialog'):
             settings_dict = self.settings.value('raw_dialog', {})
 
-            name_of_state = self.formWidget.getWidget('load_name').currentText()
+            name_of_state = self._get_name_of_state_to_load()
             state = settings_dict.get(name_of_state)
 
             if state is not None:
@@ -408,15 +405,9 @@ class SaveableRawInputDialog(RawInputDialog):
                 # load current state of dropdown
                 settings_found = True
 
-
         if not settings_found:
             # create error dialog:
             print("Settings not found")
-
-        # todo make dialog
-        print("Settings loaded")
-
-
 
 
 
