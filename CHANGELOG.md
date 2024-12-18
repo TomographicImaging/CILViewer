@@ -1,5 +1,10 @@
 # Changelog
 
+## vx.x.x
+Enhancements:
+  - Add `SaveableRawInputDialog` #444
+  - Standalone viewer uses `SaveableRawInputDialog` - this allows user to save and reload settings for loading raw data
+
 ## v24.1.0
 
 Enhancements:
