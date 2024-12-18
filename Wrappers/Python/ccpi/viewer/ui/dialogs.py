@@ -297,13 +297,28 @@ class RawInputDialog(FormDialog):
 
 
 class SaveableRawInputDialog(RawInputDialog):
+    '''
+    This is a dialog window which allows the user to set information
+    for a raw file, including:
+    - dimensionality
+    - size of dimensions
+    - data type
+    - endianness
+    - fortran ordering
+
+    The dialog can let the user preview the data and verify that it is correct.
+
+    The dialog allows you to save load settings under a memorable name.
+    You can reload settings you have saved previously, by selecting their associated name from a dropdown.
+    '''
+
 
     def __init__(self, parent, fname, qsettings):
         super(SaveableRawInputDialog, self).__init__(parent, fname)
 
         self.settings = qsettings
 
-        self.formWidget.addSpanningWidget(QCheckBox("Enable editing"), 'enable_edit')
+        self.formWidget.addSpanningWidget(QCheckBox("Edit Parameters"), 'enable_edit')
         self.getWidget('enable_edit').setChecked(True)
         self.getWidget('enable_edit').stateChanged.connect(self._change_edit_state)
 
@@ -388,6 +403,8 @@ class SaveableRawInputDialog(RawInputDialog):
         '''
         Load all of the widget states saved in the 'raw_dialog' entry of 
         self.settings under the name selected by the user from the load_name comobox
+
+        Disable editing of parameters.
         '''
         settings_found = False
         if self.settings.value('raw_dialog'):
