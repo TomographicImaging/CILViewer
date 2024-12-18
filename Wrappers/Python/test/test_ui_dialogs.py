@@ -207,6 +207,7 @@ class TestRawInputDialog(unittest.TestCase):
             'preview_slice': 0
         }
 
+
 @unittest.skipIf(skip_as_conda_build, "On conda builds do not do any test with interfaces")
 class TestSaveableRawInputDialog(unittest.TestCase):
 
@@ -217,7 +218,6 @@ class TestSaveableRawInputDialog(unittest.TestCase):
         self.parent = QMainWindow()
         self.settings = QSettings()
         self.fname = "test.raw"
-
 
     @patch("ccpi.viewer.ui.dialogs.RawInputDialog.__init__")
     def test_init_calls_raw_input_dialog_init(self, mock_init_call):
@@ -239,8 +239,7 @@ class TestSaveableRawInputDialog(unittest.TestCase):
         rdi._save_settings()
         the_dict = empty_settings.value('raw_dialog')
         self.assertEqual(empty_settings.allKeys(), ['raw_dialog'])
-        self.assertEqual( the_dict, {'my_name': rdi.getAllWidgetStates()})
-
+        self.assertEqual(the_dict, {'my_name': rdi.getAllWidgetStates()})
 
     @patch("ccpi.viewer.ui.dialogs.SaveableRawInputDialog._get_settings_save_name")
     def test_save_settings_when_soemthing_in_qsettings(self, mock_get_name):
@@ -250,7 +249,7 @@ class TestSaveableRawInputDialog(unittest.TestCase):
         rdi = SaveableRawInputDialog(self.parent, self.fname, pop_settings)
         rdi._save_settings()
         the_dict = pop_settings.value('raw_dialog')
-        self.assertEqual( the_dict, {'hi': "I'm not empty", 'my_name_2': rdi.getAllWidgetStates()})
+        self.assertEqual(the_dict, {'hi': "I'm not empty", 'my_name_2': rdi.getAllWidgetStates()})
 
     @patch("ccpi.viewer.ui.dialogs.SaveableRawInputDialog._get_name_of_state_to_load")
     def test_load_settings(self, mock_get_name):
@@ -261,13 +260,13 @@ class TestSaveableRawInputDialog(unittest.TestCase):
         example_settings = rdi.getAllWidgetStates()
 
         example_qsettings = QSettings('B', 'B')
-        
+
         example_qsettings.setValue('raw_dialog', {'state': example_settings})
 
         rdi2 = SaveableRawInputDialog(self.parent, self.fname, example_qsettings)
         rdi2._load_settings()
         self.assertEqual(rdi2.getWidget('dim_Images').text(), "10")
-    
+
 
 if __name__ == '__main__':
     unittest.main()

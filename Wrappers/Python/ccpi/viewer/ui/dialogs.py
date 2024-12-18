@@ -295,10 +295,11 @@ class RawInputDialog(FormDialog):
         # finally open the dialog
         diag.open()
 
+
 class SaveableRawInputDialog(RawInputDialog):
+
     def __init__(self, parent, fname, qsettings):
         super(SaveableRawInputDialog, self).__init__(parent, fname)
-
 
         self.settings = qsettings
 
@@ -316,7 +317,6 @@ class SaveableRawInputDialog(RawInputDialog):
         load_button.clicked.connect(self._load_settings)
         self.formWidget.addSpanningWidget(load_button, 'load')
 
-
         self.buttonBox.addButton(QtWidgets.QDialogButtonBox.Save)
         self.buttonBox.button(QtWidgets.QDialogButtonBox.Save).clicked.connect(self._open_save_dialog)
 
@@ -326,16 +326,18 @@ class SaveableRawInputDialog(RawInputDialog):
         widgets = self.getWidgets()
         for widget in widgets.values():
             widget.setEnabled(editable)
-        
+
         if not editable:
-            widgets_to_preserve = ['load_name', 'load', 'enable_edit', 'load_name', 'load_settings_title', 'preview_slice', 'preview_button']
+            widgets_to_preserve = [
+                'load_name', 'load', 'enable_edit', 'load_name', 'load_settings_title', 'preview_slice',
+                'preview_button'
+            ]
             for widget in widgets_to_preserve:
                 self.getWidget(widget, 'field').setEnabled(True)
                 try:
                     self.getWidget(widget, 'label').setEnabled(True)
                 except:
                     pass
-
 
     def _open_save_dialog(self):
         '''Opens dialog for specifiying name to save settings under'''
@@ -348,11 +350,10 @@ class SaveableRawInputDialog(RawInputDialog):
         dialog.Ok.clicked.connect(self._save_settings)
         dialog.Ok.clicked.connect(dialog.close)
         dialog.open()
-        self.save_dialog=dialog
+        self.save_dialog = dialog
 
     def _get_settings_save_name(self):
         return self.save_dialog.getWidget('save_name').text()
-
 
     def _save_settings(self):
         '''
@@ -360,14 +361,14 @@ class SaveableRawInputDialog(RawInputDialog):
         dictionary :
         key: name entered by the user
         value: the status of all widgets on the form
-        '''      
+        '''
         settings_dict = self.settings.value('raw_dialog', {})
 
         settings_name = self._get_settings_save_name()
 
         self.saveAllWidgetStates()
         current_widget_status = self.getSavedWidgetStates()
-        
+
         settings_dict[settings_name] = current_widget_status
 
         self.settings.setValue('raw_dialog', settings_dict)
@@ -398,7 +399,7 @@ class SaveableRawInputDialog(RawInputDialog):
             if state is not None:
 
                 # save current stae
-                
+
                 self.applyWidgetStates(state)
                 self.getWidget('enable_edit').setChecked(False)
 
@@ -408,7 +409,6 @@ class SaveableRawInputDialog(RawInputDialog):
         if not settings_found:
             # create error dialog:
             print("Settings not found")
-
 
 
 class HDF5InputDialog(FormDialog):
