@@ -325,8 +325,8 @@ class SaveableRawInputDialog(RawInputDialog):
         self.formWidget.addTitle(QLabel('Load Settings'), 'load_settings_title')
         load_label = QLabel('Settings Name: ')
         load_drop_down = QComboBox()
-        load_drop_down.addItems(self._get_settings_names_for_dialog())
         self.formWidget.addWidget(load_drop_down, load_label, 'load_name')
+        self._update_load_combobox()
 
         load_button = QPushButton('Load Settings')
         load_button.clicked.connect(self._load_settings)
@@ -334,6 +334,12 @@ class SaveableRawInputDialog(RawInputDialog):
 
         self.buttonBox.addButton(QtWidgets.QDialogButtonBox.Save)
         self.buttonBox.button(QtWidgets.QDialogButtonBox.Save).clicked.connect(self._open_save_dialog)
+
+    def _update_load_combobox(self):
+        load_drop_down = self.getWidget('load_name')
+        load_drop_down.clear()
+        load_drop_down.addItems(self._get_settings_names_for_dialog())
+
 
     def _change_edit_state(self, editable=True):
         '''Changes the edit state of the form'''
@@ -388,6 +394,10 @@ class SaveableRawInputDialog(RawInputDialog):
 
         self.settings.setValue('raw_dialog', settings_dict)
 
+        self._update_load_combobox()
+
+
+
     def _get_settings_names_for_dialog(self):
         '''
         Retrive from self.settings the names of all settings previously saved in the 
@@ -402,7 +412,7 @@ class SaveableRawInputDialog(RawInputDialog):
     def _load_settings(self):
         '''
         Load all of the widget states saved in the 'raw_dialog' entry of 
-        self.settings under the name selected by the user from the load_name comobox
+        self.settings under the name selected by the user from the load_name combobox
 
         Disable editing of parameters.
         '''
@@ -422,6 +432,9 @@ class SaveableRawInputDialog(RawInputDialog):
 
                 # load current state of dropdown
                 settings_found = True
+
+                self.getWidget('load_name').setCurrentText(name_of_state)
+
 
         if not settings_found:
             # create error dialog:
