@@ -1,5 +1,8 @@
 # Changelog
 
+# vx.x.x
+- Use headless render window for viewer via trame (#429)
+
 ## v24.1.0
 
 Enhancements:

@@ -35,7 +35,7 @@ class TrameViewer:
     """
     This class is intended as a base class and not to be used outside of one of the TrameViewer2D and TrameViewer3D classes.
     """
-
+    
     def __init__(self, viewer, list_of_files: list = None):
         # Load files and setup the CILViewer
         if list_of_files is None:
