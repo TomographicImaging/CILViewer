@@ -41,6 +41,7 @@ requirements:
     - pyyaml
     - schema
     - cil-data =22.0.0
+    - setuptools
 
 about:
   home: http://www.ccpi.ac.uk
