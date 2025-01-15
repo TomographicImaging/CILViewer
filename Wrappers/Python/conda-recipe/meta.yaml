@@ -29,6 +29,7 @@ requirements:
   build:
     - python >=3.7
     - vtk
+    - setuptools
  
   run:
     - python >=3.7
@@ -41,7 +42,6 @@ requirements:
     - pyyaml
     - schema
     - cil-data =22.0.0
-    - setuptools
 
 about:
   home: http://www.ccpi.ac.uk
