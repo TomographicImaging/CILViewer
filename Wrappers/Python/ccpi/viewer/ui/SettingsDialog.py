@@ -42,17 +42,12 @@ class SettingsDialog(FormDialog):
         self.addWidget(auto_window_level, "", "auto_window_level")
 
         # Slice window sliders
-        self.scale_factor = scale_factor
-        slice_window_label = QtWidgets.QLabel("Slice Window")
-        slice_window_slider = UISliderWidget.UISliderWidget(slice_window_label, scale_factor=1 / scale_factor)
+        slice_window_slider = UISliderWidget.UISliderWidget(0.0, 100.0)
         self.addWidget(slice_window_slider, "Slice Window", "slice_window_slider")
-        self.addWidget(slice_window_label, "", "slice_window_label")
 
         # Slice level sliders
-        slice_level_label = QtWidgets.QLabel("Slice Level")
-        slice_level_slider = UISliderWidget.UISliderWidget(slice_level_label, scale_factor=1 / scale_factor)
+        slice_level_slider = UISliderWidget.UISliderWidget(0.0, 100.0)
         self.addWidget(slice_level_slider, "Slice Level", "slice_level_slider")
-        self.addWidget(slice_level_label, "", "slice_level_label")
 
         # Render save location
         render_save_location = QtWidgets.QLabel("'render'")
@@ -71,7 +66,7 @@ class SettingsDialog(FormDialog):
             elif isinstance(value, QtWidgets.QComboBox):
                 settings[key] = value.currentIndex()
             elif isinstance(value, UISliderWidget.UISliderWidget):
-                settings[key] = value.value()
+                settings[key] = value.getValue()
 
         return settings
 
@@ -114,22 +109,18 @@ class SettingsDialog(FormDialog):
 
         # Slice window sliders
         window_min, window_max = self.viewer.getImageMapRange((0.0, 100.0), "scalar")
-        self.getWidget("slice_window_slider").setRange(0, 100)
-        self.getWidget("slice_window_slider").setTickInterval(100 / 10)
         window_default = self.viewer.getSliceColorWindow()
         self.getWidget("slice_window_slider").setValue((window_default - window_min) / (window_max - window_min) * 100)
-        self.getWidget("slice_window_slider").sliderReleased.connect(lambda: self.viewer.setSliceColorWindow(
-            window_min + self.getWidget("slice_window_slider").value() / 100 * (window_max - window_min)))
+        self.getWidget("slice_window_slider").slider.sliderReleased.connect(lambda: self.viewer.setSliceColorWindow(
+            window_min + self.getWidget("slice_window_slider").getValue() / 100 * (window_max - window_min)))
 
         # Level window sliders
         level_min, level_max = self.viewer.getImageMapRange((0.0, 100.0), "scalar")
-        self.getWidget("slice_level_slider").setRange(0, 100)
-        self.getWidget("slice_level_slider").setTickInterval(100 / 10)
         level_default = self.viewer.getSliceColorLevel()
 
         self.getWidget("slice_level_slider").setValue((level_default - level_min) / (level_max - level_min) * 100)
-        self.getWidget("slice_level_slider").sliderReleased.connect(lambda: self.viewer.setSliceColorLevel(
-            level_min + self.getWidget("slice_level_slider").value() / 100 * (level_max - level_min)))
+        self.getWidget("slice_level_slider").slider.sliderReleased.connect(lambda: self.viewer.setSliceColorLevel(
+            level_min + self.getWidget("slice_level_slider").getValue() / 100 * (level_max - level_min)))
 
         # Background color
         self.getWidget("background_color").currentIndexChanged.connect(self.change_background_color)
