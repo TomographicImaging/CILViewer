@@ -1,5 +1,12 @@
 # Changelog
 
+## vx.x.x
+
+Build and CI:
+ - Renamed mambaforge to miniforge to fix docker action #446
+ - Use ubuntu v22.04 in the actions #446
+ - Add setuptools as a build requirment #446
+
 ## v24.1.0
 
 Enhancements:
