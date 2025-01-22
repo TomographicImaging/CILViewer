@@ -2,6 +2,7 @@ import vtk
 from ccpi.viewer import SLICE_ORIENTATION_XY, SLICE_ORIENTATION_XZ, SLICE_ORIENTATION_YZ
 import warnings
 
+
 class cilviewerBoxWidget():
 
     @staticmethod
