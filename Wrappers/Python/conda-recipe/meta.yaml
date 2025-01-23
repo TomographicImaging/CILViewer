@@ -19,6 +19,8 @@ test:
   requires:
     - pillow
     - pytest
+    - pyside2
+    - eqt>=1.0.0
   source_files:
     - ./Wrappers/Python/test
 
