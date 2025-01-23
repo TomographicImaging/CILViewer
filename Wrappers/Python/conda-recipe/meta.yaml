@@ -40,7 +40,6 @@ requirements:
     - h5py
     - pyyaml
     - schema
-    - cil-data =22.0.0
 
 about:
   home: http://www.ccpi.ac.uk
