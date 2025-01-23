@@ -33,5 +33,5 @@ jobs:
       - name: Run docker container with tests
         shell: bash -l {0}
         run: |
-          docker run --rm --entrypoint /bin/bash -v /home/runner/work/CILViewer/CILViewer:/root/source_code  cil-viewer -c "source ./mambaforge/etc/profile.d/conda.sh && conda activate cilviewer_webapp && conda install cil-data pytest -c ccpi && python -m pytest /root/source_code/Wrappers/Python -k 'not test_version and not test_cli_resample and not test_CILViewerBase and not test_CILViewer3D and not test_viewer_main_windows and not test_ui_dialogs'"
+          docker run --rm --entrypoint /bin/bash -v /home/runner/work/CILViewer/CILViewer:/root/source_code  cil-viewer -c "source ./mambaforge/etc/profile.d/conda.sh && conda activate cilviewer_webapp && conda install cil-data pytest pyside2 "eqt>=1.0.0" -c ccpi && python -m pytest /root/source_code/Wrappers/Python -k 'not test_version and not test_cli_resample and not test_CILViewerBase and not test_CILViewer3D and not test_viewer_main_windows and not test_ui_dialogs'"
     # TODO: publish to come later
