@@ -1,6 +1,7 @@
 import unittest
 from ccpi.viewer.utils import example_data
 
+
 class TestExampleData(unittest.TestCase):
 
     def test_head_data(self):
