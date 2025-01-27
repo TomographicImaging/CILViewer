@@ -17,6 +17,7 @@ build:
   
 test:
   requires:
+    - cil-data=22.0.0
     - pillow
     - pytest
     - pyside2
