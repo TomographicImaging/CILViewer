@@ -2,6 +2,12 @@
 
 ## vx.x.x
 
+Requirements:
+Reduced the requirements to the basic packages, add extra requirements in `ui_env.yml` file #451
+
+Documentation:
+- Update readme, contributing, documentation #451
+
 Build and CI:
  - Renamed mambaforge to miniforge to fix docker action #446
  - Use ubuntu v22.04 in the actions #446
