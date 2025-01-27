@@ -3,7 +3,7 @@
 ## vx.x.x
 
 Requirements:
-Reduced the requirements to the basic packages, add extra requirements in `ui_env.yml` file #451
+- Reduced the requirements to the basic packages, add extra requirements in `ui_env.yml` file #451
 
 Documentation:
 - Update readme, contributing, documentation #451
