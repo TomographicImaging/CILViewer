@@ -1,4 +1,4 @@
-name: cilviewer_dev
+name: cilviewer
 channels:
   - ccpi
   - conda-forge
