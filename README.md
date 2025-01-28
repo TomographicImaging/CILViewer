@@ -4,23 +4,21 @@
 
 # CILViewer
 A simple interactive viewer based on VTK classes and written in Python.
-- The classes in [`viewer`](Wrappers/Python/ccpi/viewer/) define generic viewers that can be embedded in [QT](https://www.qt.io/) or other user interfaces. [`CILviewer2D`](Wrappers/Python/ccpi/viewer/CILViewer2D) is a 2D viewer and [`CILviewer`](Wrappers/Python/ccpi/viewer/CILViewer) is a 3D viewer. 
-
-Examples of QApplications are the [`iviewer`](Wrappers/Python/ccpi/viewer/iviewer) and the [`standalone viewer`](Wrappers/Python/ccpi/viewer/standalone_viewer). An example of use in an external software is [iDVC](https://github.com/TomographicImaging/iDVC).
-
+- The classes in [`viewer`](Wrappers/Python/ccpi/viewer/) define generic viewers that can be embedded in [Qt](https://www.qt.io/) or other user interfaces. [`CILviewer2D`](Wrappers/Python/ccpi/viewer/CILViewer2D.py) is a 2D viewer and [`CILviewer`](Wrappers/Python/ccpi/viewer/CILViewer.py) is a 3D viewer. 
 - The classes in [`web viewer`](Wrappers/Python/ccpi/web_viewer/) define a viewer embedded in [trame](https://kitware.github.io/trame/).
 
+Examples of QApplications are the [`iviewer`](Wrappers/Python/ccpi/viewer/iviewer.py) and the [`standalone viewer`](Wrappers/Python/ccpi/viewer/standalone_viewer.py). An example of use in an external software is [iDVC](https://github.com/TomographicImaging/iDVC).
 
-## Install instructions
-To install via `conda`, create a new environment using:
+## Installation instructions
+To install via `conda`, create a minimal environment using:
 
 ```bash
 conda create --name cilviewer ccpi-viewer=24.0.1 -c ccpi -c conda-forge
 ```
 ### UI requirements
-To use the extra [UI utilities](Wrappers/Python/ccpi/viewer/ui) and run the [UI examples](Wrappers/Python/examples/ui_examples) the environment needs to be updated to include extra requirements, such as `pyside2`. This can be achieved as follows.
+To use the extra [UI utilities](Wrappers/Python/ccpi/viewer/ui) the environment needs to be updated to include the extra requirements `eqt` and `pyside2`. The [UI examples](Wrappers/Python/examples/ui_examples) require `cil-data` as well. The environment can be updated to include these dependencies as follows:
 ```sh
-mamba env update --name cilviewer --file Wrappers/Python/conda-recipe/ui_env.yml
+conda env update --name cilviewer --file Wrappers/Python/conda-recipe/ui_env.yml
 ```
 
 ## Run the standalone viewer QApplication
@@ -44,6 +42,9 @@ Follow the [instructions](https://github.com/vais-ral/CILViewer/tree/master/Wrap
 <img src="Documentation/readme-images/WebCILViewer3D.PNG" alt="Your image title" width="500"/>
 
 Data shown is [2].
+
+## Documentation
+More information on how to use the viewer can be found in [Documentation.md](./Documentation/documentation.md).
 
 ## Developer Contribution Guide
 We welcome contributions. Please see [CONTRIBUTING.md](./CONTRIBUTING.md) for guidance.
