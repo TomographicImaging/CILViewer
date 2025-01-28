@@ -28,11 +28,7 @@ pip install ./Wrappers/Python --no-dependencies
 Before merging a pull request, all tests must pass. 
 Install the required packages:
 ```sh
-conda install eqt pyside2 pytest -c ccpi cil-data=22.0.0
-```
-Install additional dependencies using `pip`:
-```sh
-pip install pillow 
+conda install eqt pillow pyside2 pytest -c ccpi cil-data=22.0.0
 ```
 Tests can be run locally from the repository folder
 ```sh
