@@ -2,6 +2,9 @@
 
 ## vx.x.x
 
+Enhancements:
+- Have `hdf5_attrs` as attribute to `HDF5InputDialog` #452
+
 Build and CI:
  - Renamed mambaforge to miniforge to fix docker action #446
  - Use ubuntu v22.04 in the actions #446

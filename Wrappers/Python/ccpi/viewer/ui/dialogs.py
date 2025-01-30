@@ -410,6 +410,7 @@ class HDF5InputDialog(FormDialog):
         self.Ok.clicked.connect(self.onOkClicked)
 
         self.setDefaultDatasetName()
+        self.hdf5_attrs = {}
 
     def setDefaultDatasetName(self):
         '''
@@ -458,13 +459,12 @@ class HDF5InputDialog(FormDialog):
         - dataset_name
         - resample_z
         '''
-        hdf5_attrs = {}
         widgets = self.formWidget.widgets
 
-        hdf5_attrs['dataset_name'] = widgets['dataset_name_field'].text()
-        hdf5_attrs['resample_z'] = bool(widgets['resample_z_field'].currentIndex())
+        self.hdf5_attrs['dataset_name'] = widgets['dataset_name_field'].text()
+        self.hdf5_attrs['resample_z'] = bool(widgets['resample_z_field'].currentIndex())
 
-        return hdf5_attrs
+        return self.hdf5_attrs
 
     def createTableWidget(self):
         '''
