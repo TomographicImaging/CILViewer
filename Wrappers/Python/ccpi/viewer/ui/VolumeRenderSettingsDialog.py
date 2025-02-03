@@ -107,34 +107,34 @@ class VolumeRenderSettingsDialog(FormDialog):
 
     def change_color_range_min(self):
         """Change the volume color range min value."""
-        if self.getWidget("color_range_slider_min").getValue() >= self.getWidget("color_range_slider_max").getValue():
-            self.getWidget("color_range_slider_min").setValue(self.getWidget("color_range_slider_max").getValue() - 1)
+        if self.getWidget("color_range_slider_min").value() >= self.getWidget("color_range_slider_max").value():
+            self.getWidget("color_range_slider_min").setValue(self.getWidget("color_range_slider_max").value() - 1)
 
         self.change_color_range()
 
     def change_color_range_max(self):
         """Change the volume color range max value."""
-        if self.getWidget("color_range_slider_max").getValue() <= self.getWidget("color_range_slider_min").getValue():
-            self.getWidget("color_range_slider_max").setValue(self.getWidget("color_range_slider_min").getValue() + 1)
+        if self.getWidget("color_range_slider_max").value() <= self.getWidget("color_range_slider_min").value():
+            self.getWidget("color_range_slider_max").setValue(self.getWidget("color_range_slider_min").value() + 1)
         self.change_color_range()
 
     def change_color_range(self):
         """Change the volume color range."""
         self.viewer.setVolumeColorPercentiles(
-            self.getWidget("color_range_slider_min").getValue() / self.scale_factor,
-            self.getWidget("color_range_slider_max").getValue() / self.scale_factor)
+            self.getWidget("color_range_slider_min").value() / self.scale_factor,
+            self.getWidget("color_range_slider_max").value() / self.scale_factor)
 
     def change_volume_opacity_min(self):
         """Change the volume opacity mapping min value."""
-        if self.getWidget("windowing_slider_min").getValue() >= self.getWidget("windowing_slider_max").getValue():
-            self.getWidget("windowing_slider_min").setValue(self.getWidget("windowing_slider_max").getValue() - 1)
+        if self.getWidget("windowing_slider_min").value() >= self.getWidget("windowing_slider_max").value():
+            self.getWidget("windowing_slider_min").setValue(self.getWidget("windowing_slider_max").value() - 1)
 
         self.change_volume_opacity()
 
     def change_volume_opacity_max(self):
         """Change the volume opacity mapping."""
-        if self.getWidget("windowing_slider_max").getValue() <= self.getWidget("windowing_slider_min").getValue():
-            self.getWidget("windowing_slider_max").setValue(self.getWidget("windowing_slider_min").getValue() + 1)
+        if self.getWidget("windowing_slider_max").value() <= self.getWidget("windowing_slider_min").value():
+            self.getWidget("windowing_slider_max").setValue(self.getWidget("windowing_slider_min").value() + 1)
 
         self.change_volume_opacity()
 
@@ -142,8 +142,8 @@ class VolumeRenderSettingsDialog(FormDialog):
         """Change the volume opacity mapping"""
         opacity = self.getWidget("opacity_mapping").currentText()
         opacity_min, opacity_max = (
-            self.getWidget("windowing_slider_min").getValue() / self.scale_factor,
-            self.getWidget("windowing_slider_max").getValue() / self.scale_factor,
+            self.getWidget("windowing_slider_min").value() / self.scale_factor,
+            self.getWidget("windowing_slider_max").value() / self.scale_factor,
         )
         if opacity == "Gradient":
             self.viewer.setGradientOpacityPercentiles(opacity_min, opacity_max)

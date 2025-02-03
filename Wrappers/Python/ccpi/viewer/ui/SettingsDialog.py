@@ -66,7 +66,7 @@ class SettingsDialog(FormDialog):
             elif isinstance(value, QtWidgets.QComboBox):
                 settings[key] = value.currentIndex()
             elif isinstance(value, UISliderWidget.UISliderWidget):
-                settings[key] = value.getValue()
+                settings[key] = value.value()
 
         return settings
 
@@ -112,7 +112,7 @@ class SettingsDialog(FormDialog):
         window_default = self.viewer.getSliceColorWindow()
         self.getWidget("slice_window_slider").setValue((window_default - window_min) / (window_max - window_min) * 100)
         self.getWidget("slice_window_slider").slider.sliderReleased.connect(lambda: self.viewer.setSliceColorWindow(
-            window_min + self.getWidget("slice_window_slider").getValue() / 100 * (window_max - window_min)))
+            window_min + self.getWidget("slice_window_slider").value() / 100 * (window_max - window_min)))
 
         # Level window sliders
         level_min, level_max = self.viewer.getImageMapRange((0.0, 100.0), "scalar")
@@ -120,7 +120,7 @@ class SettingsDialog(FormDialog):
 
         self.getWidget("slice_level_slider").setValue((level_default - level_min) / (level_max - level_min) * 100)
         self.getWidget("slice_level_slider").slider.sliderReleased.connect(lambda: self.viewer.setSliceColorLevel(
-            level_min + self.getWidget("slice_level_slider").getValue() / 100 * (level_max - level_min)))
+            level_min + self.getWidget("slice_level_slider").value() / 100 * (level_max - level_min)))
 
         # Background color
         self.getWidget("background_color").currentIndexChanged.connect(self.change_background_color)
