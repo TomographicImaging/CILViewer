@@ -36,7 +36,6 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
         self.AddObserver('LeftButtonReleaseEvent', self.OnLeftMouseRelease)
         #self.AddObserver('RightButtonPressEvent', self.OnRightMousePress, -0.5)
         #self.AddObserver('RightButtonReleaseEvent', self.OnRightMouseRelease, -0.5)
-        self.htext = None
 
         self._volume_render_pars = {
             'color_percentiles': (5., 95.),
@@ -340,7 +339,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
             self.Render()
             return
 
-        font_size = 16
+        font_size = 24
 
         # Create the text mappers and the associated Actor2Ds.
 
