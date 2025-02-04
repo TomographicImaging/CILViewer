@@ -1,6 +1,6 @@
 # Changelog
 
-## vXX.x.x
+## vXX.X.X
 Enhancements:
   - Upgrade eqt to version 2.0.0
   - Add new UISlider support to 3D toolbar settings
