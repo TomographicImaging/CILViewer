@@ -356,27 +356,25 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
         # The text is on multiple lines and center-justified (both horizontal and
         # vertical).
         textMapperC = vtk.vtkTextMapper()
-        if self.htext == None:
-            self.htext = """
-Mouse Interactions:
-    - Slice: Mouse Scroll
-    - Zoom: Right Mouse + Move Up/Down
-    - Pan: Middle Mouse Button + Move or Shift + Left Mouse + Move
-    - Adjust Camera: Left Mouse + Move
-    - Rotate: Ctrl + Left Mouse + Move
-    
-Keyboard Interactions:
-    h: Display this help
-    x:  YZ Plane
-    y:  XZ Plane
-    z:  XY Plane
-    r:  Save render to current_render.png
-    s:  Toggle visibility of slice
-    v:  Toggle visibility of volume render
-    c:  Activates volume render clipping plane widget
-    a:  Whole image Auto Window/Level
-    """
-        textMapperC.SetInput(self.htext)
+        textMapperC.SetInput("Mouse Interactions:\n"
+                             "\n"
+                             "  - Slice: Mouse Scroll\n"
+                             "  - Zoom: Right Mouse + Move Up/Down\n"
+                             "  - Pan: Middle Mouse Button + Move or Shift + Left Mouse + Move\n"
+                             "  - Adjust Camera: Left Mouse + Move\n"
+                             "  - Rotate: Ctrl + Left Mouse + Move\n"
+                             "\n"
+                             "Keyboard Interactions:\n"
+                             "\n"
+                             "h: Display this help\n"
+                             "x:  YZ Plane\n"
+                             "y:  XZ Plane\n"
+                             "z:  XY Plane\n"
+                             "r:  Save render to current_render.png\n"
+                             "s:  Toggle visibility of slice\n"
+                             "v:  Toggle visibility of volume render\n"
+                             "c:  Activates volume render clipping plane widget\n"
+                             "a:  Whole image Auto Window/Level\n")
         tprop = textMapperC.GetTextProperty()
         tprop.ShallowCopy(multiLineTextProp)
         tprop.SetJustificationToLeft()

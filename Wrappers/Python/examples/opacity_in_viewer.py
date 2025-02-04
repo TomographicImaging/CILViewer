@@ -23,7 +23,7 @@ class OpacityViewerWidget(SingleViewerCenterWidget):
     def __init__(self, parent=None, viewer=viewer3D):
         SingleViewerCenterWidget.__init__(self, parent)
 
-        self.frame = QCILViewerWidget(parent, viewer=viewer, shape=(600, 600))
+        self.frame = QCILViewerWidget(viewer=viewer, shape=(600, 600))
 
         self.setCentralWidget(self.frame)
 
