@@ -183,7 +183,7 @@ class ViewerMainWindow(MainWindowWithProgressDialogs):
                     self.raw_dialog = raw_dialog
                 # See https://doc.qt.io/qt-6/qdialog.html#exec
                 # Shows a modal dialog, blocking until the user closes it.
-                raw_dialog.exec()
+                self.raw_dialog.exec()
                 if self.raw_attrs == {}:
                     return None
             elif file_extension in ['.nxs', '.h5', '.hdf5']:

@@ -312,9 +312,11 @@ class SaveableRawInputDialog(RawInputDialog):
     You can reload settings you have saved previously, by selecting their associated name from a dropdown.
     '''
 
-    def __init__(self, parent, fname, qsettings):
+    def __init__(self, parent, fname, qsettings=None):
         super(SaveableRawInputDialog, self).__init__(parent, fname)
 
+        if qsettings is None:
+            qsettings = QtCore.QSettings("CCPi", "CILViewer Raw Dialog")
         self.settings = qsettings
 
         self.formWidget.addSpanningWidget(QCheckBox("Edit Parameters"), 'enable_edit')

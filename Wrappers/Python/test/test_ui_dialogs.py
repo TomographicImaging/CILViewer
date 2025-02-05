@@ -231,6 +231,10 @@ class TestSaveableRawInputDialog(unittest.TestCase):
         rdi = SaveableRawInputDialog(self.parent, self.fname, self.settings)
         assert rdi is not None
 
+    def test_init_no_settings(self):
+        rdi = SaveableRawInputDialog(self.parent, self.fname)
+        assert rdi is not None
+
     @patch("ccpi.viewer.ui.dialogs.SaveableRawInputDialog._get_settings_save_name")
     def test_save_settings_when_nothing_in_qsettings(self, mock_get_name):
         mock_get_name.return_value = "my_name"
@@ -239,6 +243,15 @@ class TestSaveableRawInputDialog(unittest.TestCase):
         rdi._save_settings()
         the_dict = empty_settings.value('raw_dialog')
         self.assertEqual(empty_settings.allKeys(), ['raw_dialog'])
+        self.assertEqual(the_dict, {'my_name': rdi.getAllWidgetStates()})
+
+    @patch("ccpi.viewer.ui.dialogs.SaveableRawInputDialog._get_settings_save_name")
+    def test_save_settings_when_no_qsettings(self, mock_get_name):
+        mock_get_name.return_value = "my_name"
+        rdi = SaveableRawInputDialog(self.parent, self.fname)
+        rdi._save_settings()
+        the_dict = rdi.settings.value('raw_dialog')
+        self.assertEqual(rdi.settings.allKeys(), ['raw_dialog'])
         self.assertEqual(the_dict, {'my_name': rdi.getAllWidgetStates()})
 
     @patch("ccpi.viewer.ui.dialogs.SaveableRawInputDialog._get_settings_save_name")
