@@ -339,7 +339,6 @@ class SaveableRawInputDialog(RawInputDialog):
         load_drop_down.clear()
         load_drop_down.addItems(self._get_settings_names_for_dialog())
 
-
     def _change_edit_state(self, editable=True):
         '''Changes the edit state of the form'''
 
@@ -395,8 +394,6 @@ class SaveableRawInputDialog(RawInputDialog):
 
         self._update_load_combobox()
 
-
-
     def _get_settings_names_for_dialog(self):
         '''
         Retrive from self.settings the names of all settings previously saved in the 
@@ -433,7 +430,6 @@ class SaveableRawInputDialog(RawInputDialog):
                 settings_found = True
 
                 self.getWidget('load_name').setCurrentText(name_of_state)
-
 
         if not settings_found:
             # create error dialog:
