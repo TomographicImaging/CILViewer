@@ -29,6 +29,7 @@ requirements:
   build:
     - python >=3.7
     - vtk
+    - setuptools
  
   run:
     - python >=3.7
