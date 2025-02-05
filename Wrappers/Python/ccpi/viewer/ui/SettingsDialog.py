@@ -21,43 +21,38 @@ class SettingsDialog(FormDialog):
         self.setWindowFlag(QtCore.Qt.WindowStaysOnTopHint, True)
         self.file_location = "."
 
-        # Background color
-        background_color = QtWidgets.QComboBox(self.groupBox)
+        # Background Colour
+        background_colour = QtWidgets.QComboBox(self.groupBox)
         for i in background_color_list():
-            background_color.addItem(i["text"])
-        self.addWidget(background_color, "Background color", "background_color")
+            background_colour.addItem(i["text"])
+        self.addWidget(background_colour, "Background Colour:", "background_colour")
 
-        # Slice orientation
+        # Slice Orientation
         orientation = QtWidgets.QComboBox(self.groupBox)
         orientation.addItems(["YZ", "XZ", "XY"])
         orientation.setCurrentIndex(2)
-        self.addWidget(orientation, "Orientation", "orientation")
+        self.addWidget(orientation, "Orientation:", "orientation")
 
-        # Slice visibility
+        # Slice Visibility
         slice_visibility = QtWidgets.QCheckBox("Slice Visibility", self.groupBox)
         self.addWidget(slice_visibility, "", "slice_visibility")
 
-        # Auto window/level
+        # Auto Window/Level
         auto_window_level = QtWidgets.QPushButton("Auto Window/Level")
         self.addWidget(auto_window_level, "", "auto_window_level")
 
-        # Slice window sliders
-        self.scale_factor = scale_factor
-        slice_window_label = QtWidgets.QLabel("Slice Window")
-        slice_window_slider = UISliderWidget.UISliderWidget(slice_window_label, scale_factor=1 / scale_factor)
-        self.addWidget(slice_window_slider, "Slice Window", "slice_window_slider")
-        self.addWidget(slice_window_label, "", "slice_window_label")
+        # Slice Window Sliders
+        slice_window_slider = UISliderWidget.UISliderWidget(0.0, 100.0)
+        self.addWidget(slice_window_slider, "Slice Window:", "slice_window_slider")
 
-        # Slice level sliders
-        slice_level_label = QtWidgets.QLabel("Slice Level")
-        slice_level_slider = UISliderWidget.UISliderWidget(slice_level_label, scale_factor=1 / scale_factor)
-        self.addWidget(slice_level_slider, "Slice Level", "slice_level_slider")
-        self.addWidget(slice_level_label, "", "slice_level_label")
+        # Slice Level Sliders
+        slice_level_slider = UISliderWidget.UISliderWidget(0.0, 100.0)
+        self.addWidget(slice_level_slider, "Slice Level:", "slice_level_slider")
 
-        # Render save location
+        # Render Save Location
         render_save_location = QtWidgets.QLabel("'render'")
-        open_location_browser = QtWidgets.QPushButton("Open location browser")
-        self.addWidget(render_save_location, "Render save location", "render_save_location")
+        open_location_browser = QtWidgets.QPushButton("Open Location Browser")
+        self.addWidget(render_save_location, "Render Save Location:", "render_save_location")
         self.addWidget(open_location_browser, "", "open_location_browser")
 
     def get_settings(self):
@@ -105,36 +100,33 @@ class SettingsDialog(FormDialog):
         # Orientation
         self.getWidget("orientation").currentIndexChanged.connect(self.change_viewer_orientation)
 
-        # Slice visibility
+        # Slice Visibility
         self.getWidget("slice_visibility").setChecked(True)
         self.getWidget("slice_visibility").stateChanged.connect(self.viewer.style.ToggleSliceVisibility)
 
-        # Auto window/level
+        # Auto Window/Level
         self.getWidget("auto_window_level").clicked.connect(self.auto_window_level)
 
-        # Slice window sliders
+        # Slice Window Sliders
         window_min, window_max = self.viewer.getImageMapRange((0.0, 100.0), "scalar")
-        self.getWidget("slice_window_slider").setRange(0, 100)
-        self.getWidget("slice_window_slider").setTickInterval(100 / 10)
         window_default = self.viewer.getSliceColorWindow()
+
         self.getWidget("slice_window_slider").setValue((window_default - window_min) / (window_max - window_min) * 100)
-        self.getWidget("slice_window_slider").sliderReleased.connect(lambda: self.viewer.setSliceColorWindow(
+        self.getWidget("slice_window_slider").slider.sliderReleased.connect(lambda: self.viewer.setSliceColorWindow(
             window_min + self.getWidget("slice_window_slider").value() / 100 * (window_max - window_min)))
 
-        # Level window sliders
+        # Level Window Sliders
         level_min, level_max = self.viewer.getImageMapRange((0.0, 100.0), "scalar")
-        self.getWidget("slice_level_slider").setRange(0, 100)
-        self.getWidget("slice_level_slider").setTickInterval(100 / 10)
         level_default = self.viewer.getSliceColorLevel()
 
         self.getWidget("slice_level_slider").setValue((level_default - level_min) / (level_max - level_min) * 100)
-        self.getWidget("slice_level_slider").sliderReleased.connect(lambda: self.viewer.setSliceColorLevel(
+        self.getWidget("slice_level_slider").slider.sliderReleased.connect(lambda: self.viewer.setSliceColorLevel(
             level_min + self.getWidget("slice_level_slider").value() / 100 * (level_max - level_min)))
 
-        # Background color
-        self.getWidget("background_color").currentIndexChanged.connect(self.change_background_color)
+        # Background Colour
+        self.getWidget("background_colour").currentIndexChanged.connect(self.change_background_colour)
 
-        # Render save location
+        # Render Save Location
         self.getWidget("open_location_browser").clicked.connect(self.open_file_location_dialog)
 
     def open_file_location_dialog(self):
@@ -150,9 +142,9 @@ class SettingsDialog(FormDialog):
         self.viewer.style.SetSliceOrientation(index)
         self.viewer.style.UpdatePipeline(resetcamera=True)
 
-    def change_background_color(self):
-        """Change the background color."""
-        color = self.getWidget("background_color").currentText().replace(" ", "_").lower()
+    def change_background_colour(self):
+        """Change the background colour."""
+        color = self.getWidget("background_colour").currentText().replace(" ", "_").lower()
         if color == "miles_blue":
             color_data = (0.1, 0.2, 0.4)
         else:

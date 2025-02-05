@@ -14,7 +14,7 @@ class SingleViewerCenterWidget(QtWidgets.QMainWindow):
     def __init__(self, parent=None, viewer=viewer2D):
         QtWidgets.QMainWindow.__init__(self, parent)
 
-        self.frame = QCILViewerWidget(parent, viewer=viewer, shape=(600, 600))
+        self.frame = QCILViewerWidget(viewer=viewer, shape=(600, 600))
 
         if viewer == viewer3D:
             self.frame.viewer.setVolumeRenderOpacityMethod('scalar')
@@ -41,8 +41,8 @@ class TwoLinkedViewersCenterWidget(QtWidgets.QMainWindow):
             elif viewer == '3D':
                 styles.append(vlink.Linked3DInteractorStyle)
             viewers.append(eval('viewer' + viewer))
-        self.frame1 = QCILViewerWidget(parent, viewer=viewers[0], shape=(600, 600), interactorStyle=styles[0])
-        self.frame2 = QCILViewerWidget(parent, viewer=viewers[1], shape=(600, 600), interactorStyle=styles[1])
+        self.frame1 = QCILViewerWidget(viewer=viewers[0], shape=(600, 600), interactorStyle=styles[0])
+        self.frame2 = QCILViewerWidget(viewer=viewers[1], shape=(600, 600), interactorStyle=styles[1])
 
         # Initially link viewers
         self.linkedViewersSetup()

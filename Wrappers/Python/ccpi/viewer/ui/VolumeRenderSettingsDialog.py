@@ -11,134 +11,121 @@ class VolumeRenderSettingsDialog(FormDialog):
         FormDialog.__init__(self, parent, title=title)
         self.setWindowFlag(QtCore.Qt.WindowStaysOnTopHint, True)
 
-        # 3D Volume visibility
+        # 3D Volume Visibility
         volume_visibility = QtWidgets.QCheckBox("3D Volume Visibility", self.groupBox)
         self.addWidget(volume_visibility, "", "volume_visibility")
 
         self.scale_factor = scale_factor
-        # Windowing min
-        windowing_label_min = QtWidgets.QLabel("Windowing min")
-        windowing_slider_min = UISliderWidget.UISliderWidget(windowing_label_min, scale_factor=1 / scale_factor)
-        self.addWidget(windowing_slider_min, "Windowing min", "windowing_slider_min")
-        self.addWidget(windowing_label_min, "", "windowing_label")
+        # Windowing Minimum
+        windowing_slider_min = UISliderWidget.UISliderWidget(0.0, 100.0)
+        self.addWidget(windowing_slider_min, "Windowing Minimum:", "windowing_slider_min")
 
-        # Windowing max
-        windowing_label_max = QtWidgets.QLabel("Windowing max")
-        windowing_slider_max = UISliderWidget.UISliderWidget(windowing_label_max, scale_factor=1 / scale_factor)
-        self.addWidget(windowing_slider_max, "Windowing max", "windowing_slider_max")
-        self.addWidget(windowing_label_max, "", "windowing_label_max")
+        # Windowing Maximum
+        windowing_slider_max = UISliderWidget.UISliderWidget(0.0, 100.0)
+        self.addWidget(windowing_slider_max, "Windowing Maximum:", "windowing_slider_max")
 
-        # Opacity mapping
+        # Opacity Mapping
         opacity_mapping = QtWidgets.QComboBox(self.groupBox)
         opacity_mapping.addItems(["Scalar", "Gradient"])
-        self.addWidget(opacity_mapping, "Opacity mapping", "opacity_mapping")
+        self.addWidget(opacity_mapping, "Opacity Mapping:", "opacity_mapping")
 
-        # Color scheme
-        color_scheme = QtWidgets.QComboBox(self.groupBox)
-        color_scheme.addItems(color_scheme_list())
-        self.addWidget(color_scheme, "Color scheme", "color_scheme")
+        # Colour Scheme
+        colour_scheme = QtWidgets.QComboBox(self.groupBox)
+        colour_scheme.addItems(color_scheme_list())
+        self.addWidget(colour_scheme, "Colour Scheme:", "colour_scheme")
 
-        # Volume clipping
-        volume_clipping = QtWidgets.QCheckBox("Volume clipping", self.groupBox)
+        # Volume Clipping
+        volume_clipping = QtWidgets.QCheckBox("Volume Clipping", self.groupBox)
         self.addWidget(volume_clipping, "", "volume_clipping")
-        volume_clipping_reset = QtWidgets.QPushButton("Reset volume clipping", self.groupBox)
+        volume_clipping_reset = QtWidgets.QPushButton("Reset Volume Clipping", self.groupBox)
         self.addWidget(volume_clipping_reset, "", "volume_clipping_reset")
 
-        # Color range min
-        color_range_label_min = QtWidgets.QLabel("Color range min")
-        color_range_slider_min = UISliderWidget.UISliderWidget(color_range_label_min, scale_factor=1 / scale_factor)
-        self.addWidget(color_range_slider_min, "Color range min", "color_range_slider_min")
-        self.addWidget(color_range_label_min, "", "color_range_label_min")
+        # Colour Range Minimum
+        colour_range_slider_min = UISliderWidget.UISliderWidget(0.0, 100.0)
+        self.addWidget(colour_range_slider_min, "Colour Range Minimum:", "colour_range_slider_min")
 
-        # Color range max
-        color_range_label_max = QtWidgets.QLabel("Color range max")
-        color_range_slider_max = UISliderWidget.UISliderWidget(color_range_label_max, scale_factor=1 / scale_factor)
-        self.addWidget(color_range_slider_max, "Color range max", "color_range_slider_max")
-        self.addWidget(color_range_label_max, "", "color_range_label_max")
+        # Colour Range Maximum
+        colour_range_slider_max = UISliderWidget.UISliderWidget(0.0, 100.0)
+        self.addWidget(colour_range_slider_max, "Colour Range Maximum:", "colour_range_slider_max")
 
-        # Max opacity
-        max_opacity_label = QtWidgets.QLabel("Max opacity")
-        max_opacity_input = QtWidgets.QDoubleSpinBox(self.groupBox)
-        self.addWidget(max_opacity_input, max_opacity_label, "max_opacity_input")
+        # Maximum Opacity
+        max_opacity_input = UISliderWidget.UISliderWidget(0.0, 1.0, decimals=3)
+        self.addWidget(max_opacity_input, "Maximum Opacity:", "max_opacity_input")
 
-        # Disable 3D related widgets if volume visibility is not checked
+        # Disable 3D-related widgets if volume visibility is not checked
         volume_visibility_checked = self.getWidget("volume_visibility").isChecked()
-        self.getWidget("opacity_mapping").setEnabled(volume_visibility_checked)
-        self.getWidget("color_scheme").setEnabled(volume_visibility_checked)
-        self.getWidget("volume_clipping").setEnabled(volume_visibility_checked)
-        self.getWidget("volume_clipping_reset").setEnabled(volume_visibility_checked)
-        self.getWidget("color_range_slider_min").setEnabled(volume_visibility_checked)
-        self.getWidget("color_range_slider_max").setEnabled(volume_visibility_checked)
         self.getWidget("windowing_slider_min").setEnabled(volume_visibility_checked)
         self.getWidget("windowing_slider_max").setEnabled(volume_visibility_checked)
+        self.getWidget("opacity_mapping").setEnabled(volume_visibility_checked)
+        self.getWidget("colour_scheme").setEnabled(volume_visibility_checked)
+        self.getWidget("volume_clipping").setEnabled(volume_visibility_checked)
+        self.getWidget("volume_clipping_reset").setEnabled(volume_visibility_checked)
+        self.getWidget("colour_range_slider_min").setEnabled(volume_visibility_checked)
+        self.getWidget("colour_range_slider_max").setEnabled(volume_visibility_checked)
+        self.getWidget("max_opacity_input").setEnabled(volume_visibility_checked)
 
     def set_viewer(self, viewer):
         """Attach the events to the viewer."""
         self.viewer = viewer
 
-        # Volume visibility
+        # Volume Visibility
         self.getWidget("volume_visibility").stateChanged.connect(self.toggle_volume_visibility)
 
-        # Opacity mapping
+        # Opacity Mapping
         self.getWidget("opacity_mapping").currentIndexChanged.connect(self.change_opacity_mapping)
 
-        # Color scheme
-        self.getWidget("color_scheme").currentIndexChanged.connect(self.change_color_scheme)
+        # Colour Scheme
+        self.getWidget("colour_scheme").currentIndexChanged.connect(self.change_colour_scheme)
 
-        # Volume clipping
+        # Volume Clipping
         self.getWidget("volume_clipping").stateChanged.connect(self.viewer.style.ToggleVolumeClipping)
 
-        # Reset volume clipping
+        # Reset Volume Clipping
         self.getWidget("volume_clipping_reset").clicked.connect(self.reset_volume_clipping)
 
-        # Color range slider min
-        self.getWidget("color_range_slider_min").setRange(0, 100 * self.scale_factor)
-        self.getWidget("color_range_slider_min").setTickInterval(10 * self.scale_factor)
-        self.getWidget("color_range_slider_min").setValue(85 * self.scale_factor)
-        self.getWidget("color_range_slider_min").sliderReleased.connect(self.change_color_range_min)
+        # Colour Range Minimum
+        self.getWidget("colour_range_slider_min").setValue(85)
+        self.getWidget("colour_range_slider_min").slider.valueChanged.connect(self.change_colour_range_min)
+        self.getWidget("colour_range_slider_min").line_edit.editingFinished.connect(self.change_colour_range_min)
 
-        # Color range slider max
-        self.getWidget("color_range_slider_max").setRange(0, 100 * self.scale_factor)
-        self.getWidget("color_range_slider_max").setTickInterval(10 * self.scale_factor)
-        self.getWidget("color_range_slider_max").setValue(95 * self.scale_factor)
-        self.getWidget("color_range_slider_max").sliderReleased.connect(self.change_color_range_max)
+        # Colour Range Maximum
+        self.getWidget("colour_range_slider_max").setValue(95)
+        self.getWidget("colour_range_slider_max").slider.valueChanged.connect(self.change_colour_range_max)
+        self.getWidget("colour_range_slider_max").line_edit.editingFinished.connect(self.change_colour_range_max)
 
-        # Windowing slider min
-        self.getWidget("windowing_slider_min").setRange(0, 100 * self.scale_factor)
-        self.getWidget("windowing_slider_min").setTickInterval(10 * self.scale_factor)
-        self.getWidget("windowing_slider_min").setValue(80 * self.scale_factor)
-        self.getWidget("windowing_slider_min").sliderReleased.connect(self.change_volume_opacity_min)
+        # Windowing Minimum
+        self.getWidget("windowing_slider_min").setValue(80)
+        self.getWidget("windowing_slider_min").slider.valueChanged.connect(self.change_volume_opacity_min)
+        self.getWidget("windowing_slider_min").line_edit.editingFinished.connect(self.change_volume_opacity_min)
 
-        # Windowing slider max
-        self.getWidget("windowing_slider_max").setRange(0, 100 * self.scale_factor)
-        self.getWidget("windowing_slider_max").setTickInterval(10 * self.scale_factor)
-        self.getWidget("windowing_slider_max").setValue(99 * self.scale_factor)
-        self.getWidget("windowing_slider_max").sliderReleased.connect(self.change_volume_opacity_max)
+        # Windowing Maximum
+        self.getWidget("windowing_slider_max").setValue(99)
+        self.getWidget("windowing_slider_max").slider.valueChanged.connect(self.change_volume_opacity_max)
+        self.getWidget("windowing_slider_max").line_edit.editingFinished.connect(self.change_volume_opacity_max)
 
-        # MaxOpacity slider max
-        self.getWidget("max_opacity_input").setRange(0, 1)
-        self.getWidget("max_opacity_input").setDecimals(3)
+        # Maximum Opacity
         self.getWidget("max_opacity_input").setValue(viewer.style.GetVolumeRenderParameters()['max_opacity'])
-        self.getWidget("max_opacity_input").valueChanged.connect(self.change_volume_max_opacity)
+        self.getWidget("max_opacity_input").slider.valueChanged.connect(self.change_volume_max_opacity)
+        self.getWidget("max_opacity_input").line_edit.editingFinished.connect(self.change_volume_max_opacity)
 
-    def change_color_range_min(self):
-        """Change the volume color range min value."""
-        if self.getWidget("color_range_slider_min").value() >= self.getWidget("color_range_slider_max").value():
-            self.getWidget("color_range_slider_min").setValue(self.getWidget("color_range_slider_max").value() - 1)
+    def change_colour_range_min(self):
+        """Change the volume colour range min value."""
+        if self.getWidget("colour_range_slider_min").value() >= self.getWidget("colour_range_slider_max").value():
+            self.getWidget("colour_range_slider_min").setValue(self.getWidget("colour_range_slider_max").value() - 1)
 
-        self.change_color_range()
+        self.change_colour_range()
 
-    def change_color_range_max(self):
-        """Change the volume color range max value."""
-        if self.getWidget("color_range_slider_max").value() <= self.getWidget("color_range_slider_min").value():
-            self.getWidget("color_range_slider_max").setValue(self.getWidget("color_range_slider_min").value() + 1)
-        self.change_color_range()
+    def change_colour_range_max(self):
+        """Change the volume colour range max value."""
+        if self.getWidget("colour_range_slider_max").value() <= self.getWidget("colour_range_slider_min").value():
+            self.getWidget("colour_range_slider_max").setValue(self.getWidget("colour_range_slider_min").value() + 1)
+        self.change_colour_range()
 
-    def change_color_range(self):
-        """Change the volume color range."""
+    def change_colour_range(self):
+        """Change the volume colour range."""
         self.viewer.setVolumeColorPercentiles(
-            self.getWidget("color_range_slider_min").value() / self.scale_factor,
-            self.getWidget("color_range_slider_max").value() / self.scale_factor)
+            self.getWidget("colour_range_slider_min").value() / self.scale_factor,
+            self.getWidget("colour_range_slider_max").value() / self.scale_factor)
 
     def change_volume_opacity_min(self):
         """Change the volume opacity mapping min value."""
@@ -198,6 +185,8 @@ class VolumeRenderSettingsDialog(FormDialog):
                 settings[key] = value.isChecked()
             elif isinstance(value, QtWidgets.QComboBox):
                 settings[key] = value.currentIndex()
+            elif isinstance(value, UISliderWidget.UISliderWidget):
+                settings[key] = value.value()
 
         return settings
 
@@ -211,6 +200,8 @@ class VolumeRenderSettingsDialog(FormDialog):
                 widg.setChecked(value)
             elif isinstance(widg, QtWidgets.QComboBox):
                 widg.setCurrentIndex(value)
+            elif isinstance(widg, UISliderWidget.UISliderWidget):
+                widg.setValue(value)
 
     def toggle_volume_visibility(self):
         """Toggle volume visibility."""
@@ -219,11 +210,12 @@ class VolumeRenderSettingsDialog(FormDialog):
         self.getWidget("windowing_slider_min").setEnabled(volume_visibility_checked)
         self.getWidget("windowing_slider_max").setEnabled(volume_visibility_checked)
         self.getWidget("opacity_mapping").setEnabled(volume_visibility_checked)
-        self.getWidget("color_scheme").setEnabled(volume_visibility_checked)
+        self.getWidget("colour_scheme").setEnabled(volume_visibility_checked)
         self.getWidget("volume_clipping").setEnabled(volume_visibility_checked)
         self.getWidget("volume_clipping_reset").setEnabled(volume_visibility_checked)
-        self.getWidget("color_range_slider_min").setEnabled(volume_visibility_checked)
-        self.getWidget("color_range_slider_max").setEnabled(volume_visibility_checked)
+        self.getWidget("colour_range_slider_min").setEnabled(volume_visibility_checked)
+        self.getWidget("colour_range_slider_max").setEnabled(volume_visibility_checked)
+        self.getWidget("max_opacity_input").setEnabled(volume_visibility_checked)
 
         self.viewer.style.ToggleVolumeVisibility()
 
@@ -246,8 +238,8 @@ class VolumeRenderSettingsDialog(FormDialog):
         self.viewer.setVolumeRenderOpacityMethod(method)
         self.viewer.updateVolumePipeline()
 
-    def change_color_scheme(self):
-        """Change color scheme."""
-        color_scheme = self.getWidget("color_scheme").currentText()
-        self.viewer.setVolumeColorMapName(color_scheme)
+    def change_colour_scheme(self):
+        """Change colour scheme."""
+        colour_scheme = self.getWidget("colour_scheme").currentText()
+        self.viewer.setVolumeColorMapName(colour_scheme)
         self.viewer.updateVolumePipeline()
