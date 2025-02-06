@@ -17,8 +17,11 @@ build:
   
 test:
   requires:
+    - cil-data=22.0.0
     - pillow
     - pytest
+    - pyside2
+    - eqt>=1.0.0
   source_files:
     - ./Wrappers/Python/test
 
@@ -35,13 +38,10 @@ requirements:
     - python >=3.7
     - numpy
     - vtk
-    - pyside2
-    - eqt>=1.0.0
     - importlib_metadata    # [py<38]
     - h5py
     - pyyaml
     - schema
-    - cil-data =22.0.0
 
 about:
   home: http://www.ccpi.ac.uk
