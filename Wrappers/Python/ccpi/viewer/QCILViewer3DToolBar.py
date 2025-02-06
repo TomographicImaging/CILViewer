@@ -1,4 +1,5 @@
-from PySide2 import QtWidgets
+from PySide2 import QtWidgets, QtCore
+
 
 from ccpi.viewer.ui.SettingsDialog import SettingsDialog
 
@@ -18,24 +19,40 @@ class QCILViewer3DToolBar(QtWidgets.QToolBar):
         self.viewer = viewer
 
         super(QCILViewer3DToolBar, self).__init__(parent=parent)
-        self.dialog = {"settings": None}
+        self.dialog = {"viewer_settings": None}
 
         # Settings Menu
-        settings_2d = QtWidgets.QToolButton()
-        settings_2d.setText("Settings ⚙️")
-        self.addWidget(settings_2d)
-        settings_2d.clicked.connect(lambda: self.open_dialog("settings"))
+        settings_menu = QtWidgets.QMenu(self)
+        viewer_settings = QtWidgets.QAction("3D Viewer Settings", self)
+        settings_menu.addAction(viewer_settings)
+
+        settings_button = QtWidgets.QToolButton()
+        settings_button.setText("3D Settings")
+        settings_button.setMenu(settings_menu)
+        settings_button.setStyleSheet("QToolButton::menu-indicator { image: none; }")
+        settings_button.setPopupMode(QtWidgets.QToolButton.InstantPopup)
+
+        viewer_settings.triggered.connect(lambda: self.open_dialog("viewer_settings"))
+
+        self.addWidget(settings_button)
+
+        # Camera Button
+        camera_button = QtWidgets.QToolButton()
+        camera_button.setText("📷")
+
+        self.addWidget(camera_button)
+
 
     def open_dialog(self, mode):
         """Open a dialog box for the settings of the viewer."""
-        if mode == "settings":
-            if self.dialog["settings"] is None:
-                dialog = SettingsDialog(parent=self.parent, title="Settings", scale_factor=self.scale_factor)
+        if mode == "viewer_settings":
+            if self.dialog["viewer_settings"] is None:
+                dialog = SettingsDialog(parent=self.parent, title="viewer_settings", scale_factor=self.scale_factor)
                 dialog.Ok.clicked.connect(lambda: self.accepted(mode))
                 dialog.Cancel.clicked.connect(lambda: self.rejected(mode))
                 dialog.set_viewer(self.viewer)
                 self.dialog[mode] = dialog
-                self.default_settings = self.dialog[mode].get_settings()
+                # self.default_settings = self.dialog[mode].get_settings()
 
             self.settings = self.dialog[mode].get_settings()
             self.dialog[mode].open()
