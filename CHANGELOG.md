@@ -1,6 +1,11 @@
 # Changelog
 
-## v24.0.2
+## vx.x.x
+Enhancements:
+  - Update recipe to require eqt Version 2.0.0
+  - Add new UISlider support to 3D toolbar settings dialogs
+
+## v24.1.0
 
 Enhancements:
   - Update corner annotation with axis label #433
