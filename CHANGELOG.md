@@ -1,16 +1,9 @@
 # Changelog
 
 ## vx.x.x
-
-Build and CI:
- - Renamed mambaforge to miniforge to fix docker action #446
- - Use ubuntu v22.04 in the actions #446
- - Add setuptools as a build requirment #446
-
-## vXX.X.X
 Enhancements:
   - Update recipe to require eqt Version 2.0.0
-  - Add new UISlider support to 3D toolbar settings
+  - Add new UISlider support to 3D toolbar settings dialogs
 
 ## v24.1.0
 

@@ -42,11 +42,11 @@ class SettingsDialog(FormDialog):
         self.addWidget(auto_window_level, "", "auto_window_level")
 
         # Slice Window Sliders
-        slice_window_slider = UISliderWidget.UISliderWidget(0.0, 1.0)
+        slice_window_slider = UISliderWidget.UISliderWidget(0.0, 255.0)
         self.addWidget(slice_window_slider, "Slice Window:", "slice_window_slider")
 
         # Slice Level Sliders
-        slice_level_slider = UISliderWidget.UISliderWidget(0.0, 1.0)
+        slice_level_slider = UISliderWidget.UISliderWidget(0.0, 255.0)
         self.addWidget(slice_level_slider, "Slice Level:", "slice_level_slider")
 
         # Render Save Location
@@ -110,19 +110,21 @@ class SettingsDialog(FormDialog):
         # Slice Window Sliders
         window_min, window_max = self.viewer.getImageMapRange((0.0, 1.0), "scalar")
         window_default = self.viewer.getSliceColorWindow()
-        scaled_window_default = self.getWidget("slice_window_slider")._scaleSliderToLineEdit(window_default)
 
-        self.getWidget("slice_window_slider").setValue(scaled_window_default)
-        self.getWidget("slice_window_slider").slider.sliderReleased.connect(lambda: self.viewer.setSliceColorWindow(
+        self.getWidget("slice_window_slider").setValue(window_default)
+        self.getWidget("slice_window_slider").slider.valueChanged.connect(lambda: self.viewer.setSliceColorWindow(
+            window_min + self.getWidget("slice_window_slider").value() / 100 * (window_max - window_min)))
+        self.getWidget("slice_window_slider").line_edit.editingFinished.connect(lambda: self.viewer.setSliceColorWindow(
             window_min + self.getWidget("slice_window_slider").value() / 100 * (window_max - window_min)))
 
         # Level Window Sliders
         level_min, level_max = self.viewer.getImageMapRange((0.0, 1.0), "scalar")
         level_default = self.viewer.getSliceColorLevel()
-        scaled_window_default = self.getWidget("slice_level_slider")._scaleSliderToLineEdit(level_default)
 
-        self.getWidget("slice_level_slider").setValue(scaled_window_default)
-        self.getWidget("slice_level_slider").slider.sliderReleased.connect(lambda: self.viewer.setSliceColorLevel(
+        self.getWidget("slice_level_slider").setValue(level_default)
+        self.getWidget("slice_level_slider").slider.valueChanged.connect(lambda: self.viewer.setSliceColorLevel(
+            level_min + self.getWidget("slice_level_slider").value() / 100 * (level_max - level_min)))
+        self.getWidget("slice_level_slider").line_edit.editingFinished.connect(lambda: self.viewer.setSliceColorLevel(
             level_min + self.getWidget("slice_level_slider").value() / 100 * (level_max - level_min)))
 
         # Background Colour
