@@ -1,6 +1,6 @@
 import vtk
 from ccpi.viewer import SLICE_ORIENTATION_XY, SLICE_ORIENTATION_XZ, SLICE_ORIENTATION_YZ
-from eqt.ui.SessionDialogs import WarningDialog
+import warnings
 
 
 class cilviewerBoxWidget():
@@ -200,10 +200,9 @@ class cilviewerBoxWidget():
         Given a position of the click, translates it into world coordinates.
         Gets the current render orientation.
         Gets the extent of the data in world coordinates and its corresponding voxels. 
-        Creates a warning dialog.
         Creates a 3D box around the clicked point, where the clicked point is the voxel min (lower value in all axes).
         Returns its extent in world coordinates, i.e., "box bounds". 
-        Opens a warning dialog when the mouse click is outside the image.
+        Displays a warning when the mouse click is outside the image.
 
         Parameters
         ----------
@@ -226,8 +225,6 @@ class cilviewerBoxWidget():
         data_extent_world = viewer.style.GetDataExtentInWorld()
         voxel_min_world, voxel_max_world = viewer.style.GetMinMaxVoxelsFromExtent(data_extent_world)
 
-        dialog = WarningDialog(None, message="Click inside the image.", window_title="Viewer Warning")
-
         box_voxel_min = [0, 0, 0]
         box_voxel_max = [0, 0, 0]
         i = [orientation, (orientation + 1) % 3, (orientation + 2) % 3]
@@ -245,7 +242,7 @@ class cilviewerBoxWidget():
             box_extent_world = viewer.style.GetExtentFromVoxels(box_voxel_min, box_voxel_max)
 
         else:
-            dialog.exec()
+            warnings.warn('To create a box click inside the image.', UserWarning)
 
         return box_extent_world
 
