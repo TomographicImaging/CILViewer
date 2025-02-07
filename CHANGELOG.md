@@ -7,15 +7,15 @@ Enhancements:
 - Standalone viewer uses `SaveableRawInputDialog` - this allows user to save and reload settings for loading raw data #444
 
 Requirements:
-- Reduce the requirements to the basic packages, add extra requirements in `ui_env.yml` file #451
+- Reduced the requirements to the basic packages, add extra requirements in `ui_env.yml` file #451
 
 Documentation:
 - Update readme, contributing, documentation #451
 
 Build and CI:
-- Rename mambaforge to miniforge to fix docker action #446
+- Renamed mambaforge to miniforge to fix docker action #446
 - Use ubuntu v22.04 in the actions #446
-- Add setuptools as a build requirment #446
+- Add setuptools as a build requirement #446
 
 
 ## v24.1.0
