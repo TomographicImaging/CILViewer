@@ -1,4 +1,4 @@
-name: cilviewer_dev
+name: cilviewer
 channels:
   - ccpi
   - conda-forge
@@ -6,12 +6,8 @@ dependencies:
     - python
     - numpy
     - vtk
-    - pyside2
-    - eqt>=1.0.0
     - importlib_metadata    # [py<38]
     - h5py
     - pillow
     - pyyaml
     - schema
-    - cil-data=22.0.0
-    - setuptools
