@@ -2,6 +2,9 @@
 
 ## vx.x.x
 
+Enhancements:
+  - Remove dependencies to allow 3D viewer to function independent of the toolbar 
+
 Build and CI:
  - Renamed mambaforge to miniforge to fix docker action #446
  - Use ubuntu v22.04 in the actions #446
