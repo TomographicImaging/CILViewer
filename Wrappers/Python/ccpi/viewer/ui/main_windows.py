@@ -9,7 +9,7 @@ from ccpi.viewer import CILViewer2D, CILViewer
 from ccpi.viewer.CILViewer2D import CILViewer2D
 from ccpi.viewer.CILViewer import CILViewer
 from ccpi.viewer.QCILViewerWidget import QCILDockableWidget
-from ccpi.viewer.ui.dialogs import HDF5InputDialog, RawInputDialog, ViewerSettingsDialog
+from ccpi.viewer.ui.dialogs import HDF5InputDialog, RawInputDialog, ViewerSettingsDialog, SaveableRawInputDialog
 from ccpi.viewer.ui.qt_widgets import ViewerCoordsDockWidget
 from ccpi.viewer.utils import cilPlaneClipper
 from ccpi.viewer.utils.io import ImageReader
@@ -179,12 +179,12 @@ class ViewerMainWindow(MainWindowWithProgressDialogs):
                 if hasattr(self, 'raw_dialog'):
                     self.raw_dialog.restoreAllSavedWidgetStates()
                 else:
-                    raw_dialog = RawInputDialog(self, file)
+                    raw_dialog = SaveableRawInputDialog(self, file, self.settings)
                     raw_dialog.Ok.clicked.connect(lambda: self.getRawAttrsFromDialog(raw_dialog))
                     self.raw_dialog = raw_dialog
                 # See https://doc.qt.io/qt-6/qdialog.html#exec
                 # Shows a modal dialog, blocking until the user closes it.
-                raw_dialog.exec()
+                self.raw_dialog.exec()
                 if self.raw_attrs == {}:
                     return None
             elif file_extension in ['.nxs', '.h5', '.hdf5']:
@@ -211,7 +211,7 @@ class ViewerMainWindow(MainWindowWithProgressDialogs):
         
         Parameters
         ----------
-        dialog : RawInputDialog
+        dialog : SaveableRawInputDialog
             The dialog to get the attributes from.
         '''
         dialog.saveAllWidgetStates()

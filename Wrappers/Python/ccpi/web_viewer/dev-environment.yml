@@ -8,7 +8,6 @@ dependencies:
 - matplotlib # Optional for more colormaps
 - h5py
 - pip
-- ccpi::cil-data
 - schema
 - pyyaml
 - pip:

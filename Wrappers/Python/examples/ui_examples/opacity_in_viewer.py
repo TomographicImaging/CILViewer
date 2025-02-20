@@ -38,7 +38,7 @@ class OpacityViewerWidget(SingleViewerCenterWidget):
         self.frame.viewer.setInputData(data)
 
     def create_settings_dockwidget(self):
-        form_dock_widget = FormDockWidget()
+        form_dock_widget = FormDockWidget(title='')
         drop_down = QComboBox()
         drop_down.addItems(['gradient', 'scalar'])
         drop_down.currentTextChanged.connect(
