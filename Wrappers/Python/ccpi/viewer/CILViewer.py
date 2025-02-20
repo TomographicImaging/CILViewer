@@ -1119,4 +1119,3 @@ class CILViewer(CILViewerBase):
 
             self.getRenderer().Render()
             self.updatePipeline()
-
