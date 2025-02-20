@@ -36,7 +36,13 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
         self.AddObserver('LeftButtonReleaseEvent', self.OnLeftMouseRelease)
         #self.AddObserver('RightButtonPressEvent', self.OnRightMousePress, -0.5)
         #self.AddObserver('RightButtonReleaseEvent', self.OnRightMouseRelease, -0.5)
-        self.htext = None
+
+        self._volume_render_pars = {
+            'color_percentiles': (5., 95.),
+            'scalar_opacity_percentiles': (80., 99.),
+            'gradient_opacity_percentiles': (80., 99.),
+            'max_opacity': 0.1
+        }
 
     def GetSliceOrientation(self):
         return self._viewer.sliceOrientation
@@ -264,7 +270,13 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
         else:
             print("Unhandled event %s" % interactor.GetKeyCode())
 
-    def CreateClippingPlane(self):
+    def CreateClippingPlane(self, proj=None, foc=None):
+        '''Create a clipping plane for the volume render
+        
+        foc: Focal Point. If None this is the active camera focal point
+        proj: Normal to the clipping plane. If None this is calculated from the active camera direction of projection
+        
+        '''
         viewer = self._viewer
         planew = vtk.vtkImplicitPlaneWidget2()
 
@@ -278,9 +290,10 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
         rep.SetOutlineTranslation(False)  # this means user can't move bounding box
 
         plane = vtk.vtkPlane()
-        # should be in the focal point
-        cam = self.GetActiveCamera()
-        foc = cam.GetFocalPoint()
+        if foc is None:
+            # should be in the focal point
+            cam = self.GetActiveCamera()
+            foc = cam.GetFocalPoint()
         plane.SetOrigin(*foc)
 
         proj = cam.GetDirectionOfProjection()
@@ -324,7 +337,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
             self.Render()
             return
 
-        font_size = 16
+        font_size = 24
 
         # Create the text mappers and the associated Actor2Ds.
 
@@ -341,27 +354,25 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
         # The text is on multiple lines and center-justified (both horizontal and
         # vertical).
         textMapperC = vtk.vtkTextMapper()
-        if self.htext == None:
-            self.htext = """
-Mouse Interactions:
-    - Slice: Mouse Scroll
-    - Zoom: Right Mouse + Move Up/Down
-    - Pan: Middle Mouse Button + Move or Shift + Left Mouse + Move
-    - Adjust Camera: Left Mouse + Move
-    - Rotate: Ctrl + Left Mouse + Move
-    
-Keyboard Interactions:
-    h: Display this help
-    x:  YZ Plane
-    y:  XZ Plane
-    z:  XY Plane
-    r:  Save render to current_render.png
-    s:  Toggle visibility of slice
-    v:  Toggle visibility of volume render
-    c:  Activates volume render clipping plane widget
-    a:  Whole image Auto Window/Level
-    """
-        textMapperC.SetInput(self.htext)
+        textMapperC.SetInput("Mouse Interactions:\n"
+                             "\n"
+                             "  - Slice: Mouse Scroll\n"
+                             "  - Zoom: Right Mouse + Move Up/Down\n"
+                             "  - Pan: Middle Mouse Button + Move or Shift + Left Mouse + Move\n"
+                             "  - Adjust Camera: Left Mouse + Move\n"
+                             "  - Rotate: Ctrl + Left Mouse + Move\n"
+                             "\n"
+                             "Keyboard Interactions:\n"
+                             "\n"
+                             "h: Display this help\n"
+                             "x:  YZ Plane\n"
+                             "y:  XZ Plane\n"
+                             "z:  XY Plane\n"
+                             "r:  Save render to current_render.png\n"
+                             "s:  Toggle visibility of slice\n"
+                             "v:  Toggle visibility of volume render\n"
+                             "c:  Activates volume render clipping plane widget\n"
+                             "a:  Whole image Auto Window/Level\n")
         tprop = textMapperC.GetTextProperty()
         tprop.ShallowCopy(multiLineTextProp)
         tprop.SetJustificationToLeft()
@@ -452,6 +463,10 @@ Keyboard Interactions:
 
     def GetInputData(self):
         return self._viewer.img3D
+
+    def GetVolumeRenderParameters(self):
+        # set defaults for opacity and colour mapping:
+        return self._volume_render_pars
 
 
 class CILViewer(CILViewerBase):
@@ -686,10 +701,10 @@ class CILViewer(CILViewerBase):
         self.volume = volume
 
         # set defaults for opacity and colour mapping:
-        color_percentiles = (5., 95.)
-        scalar_opacity_percentiles = (80., 99.)
-        gradient_opacity_percentiles = (80., 99.)
-        max_opacity = 0.1
+        color_percentiles = self.style.GetVolumeRenderParameters()['color_percentiles']
+        scalar_opacity_percentiles = self.style.GetVolumeRenderParameters()['scalar_opacity_percentiles']
+        gradient_opacity_percentiles = self.style.GetVolumeRenderParameters()['gradient_opacity_percentiles']
+        max_opacity = self.style.GetVolumeRenderParameters()['max_opacity']
 
         self.setVolumeColorPercentiles(*color_percentiles, update_pipeline=False)
         self.setScalarOpacityPercentiles(*scalar_opacity_percentiles, update_pipeline=False)

@@ -3,6 +3,7 @@
 ## vx.x.x
 
 Enhancements:
+- Remove dependencies to allow 3D viewer to function independent of the toolbar #459
 - Add `SaveableRawInputDialog` #444
 - Standalone viewer uses `SaveableRawInputDialog` - this allows user to save and reload settings for loading raw data #444
 
