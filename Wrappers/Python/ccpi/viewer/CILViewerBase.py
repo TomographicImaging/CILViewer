@@ -3,6 +3,7 @@ from ccpi.viewer import (ALT_KEY, CONTROL_KEY, CROSSHAIR_ACTOR, CURSOR_ACTOR, HE
                          LINEPLOT_ACTOR, OVERLAY_ACTOR, SHIFT_KEY, SLICE_ACTOR, SLICE_ORIENTATION_XY,
                          SLICE_ORIENTATION_XZ, SLICE_ORIENTATION_YZ)
 from ccpi.viewer.utils.io import SaveRenderToPNG
+import logging
 
 
 class ViewerEventManager(object):
@@ -216,6 +217,10 @@ class CILViewerBase():
         ia.SetAutoRangePercentiles(*percentiles)
         ia.Update()
         min, max = ia.GetAutoRange()
+        logging.debug(f"getImageMapRange: method{method}")
+        logging.debug(f"getImageMapRange: percentiles {percentiles}")
+        logging.debug(f"getImageMapRange: whole range ({ia.GetMinimum()}, {ia.GetMaximum()})")
+        logging.debug(f"getImageMapRange: percentile range ({min}, {max})")
         return min, max
 
     def getImageMapWholeRange(self, method):

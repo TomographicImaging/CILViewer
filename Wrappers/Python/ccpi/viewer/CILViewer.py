@@ -38,6 +38,13 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
         #self.AddObserver('RightButtonReleaseEvent', self.OnRightMouseRelease, -0.5)
         self.htext = None
 
+        self._volume_render_pars = {
+            'color_percentiles': (5., 95.),
+            'scalar_opacity_percentiles': (80., 99.),
+            'gradient_opacity_percentiles': (80., 99.),
+            'max_opacity': 0.1
+        }
+
     def GetSliceOrientation(self):
         return self._viewer.sliceOrientation
 
@@ -259,12 +266,20 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
             self.ToggleSliceVisibility()
         elif interactor.GetKeyCode() == "i":
             self.ToggleSliceInterpolation()
+        elif interactor.GetKeyCode() == "o":
+            self._viewer.createAnimation()
         elif interactor.GetKeyCode() == "c" and self._viewer.volume_render_initialised:
             self.ToggleVolumeClipping()
         else:
             print("Unhandled event %s" % interactor.GetKeyCode())
 
-    def CreateClippingPlane(self):
+    def CreateClippingPlane(self, proj=None, foc=None):
+        '''Create a clipping plane for the volume render
+        
+        foc: Focal Point. If None this is the active camera focal point
+        proj: Normal to the clipping plane. If None this is calculated from the active camera direction of projection
+        
+        '''
         viewer = self._viewer
         planew = vtk.vtkImplicitPlaneWidget2()
 
@@ -278,9 +293,10 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
         rep.SetOutlineTranslation(False)  # this means user can't move bounding box
 
         plane = vtk.vtkPlane()
-        # should be in the focal point
-        cam = self.GetActiveCamera()
-        foc = cam.GetFocalPoint()
+        if foc is None:
+            # should be in the focal point
+            cam = self.GetActiveCamera()
+            foc = cam.GetFocalPoint()
         plane.SetOrigin(*foc)
 
         proj = cam.GetDirectionOfProjection()
@@ -452,6 +468,10 @@ Keyboard Interactions:
 
     def GetInputData(self):
         return self._viewer.img3D
+
+    def GetVolumeRenderParameters(self):
+        # set defaults for opacity and colour mapping:
+        return self._volume_render_pars
 
 
 class CILViewer(CILViewerBase):
@@ -686,10 +706,10 @@ class CILViewer(CILViewerBase):
         self.volume = volume
 
         # set defaults for opacity and colour mapping:
-        color_percentiles = (5., 95.)
-        scalar_opacity_percentiles = (80., 99.)
-        gradient_opacity_percentiles = (80., 99.)
-        max_opacity = 0.1
+        color_percentiles = self.style.GetVolumeRenderParameters()['color_percentiles']
+        scalar_opacity_percentiles = self.style.GetVolumeRenderParameters()['scalar_opacity_percentiles']
+        gradient_opacity_percentiles = self.style.GetVolumeRenderParameters()['gradient_opacity_percentiles']
+        max_opacity = self.style.GetVolumeRenderParameters()['max_opacity']
 
         self.setVolumeColorPercentiles(*color_percentiles, update_pipeline=False)
         self.setScalarOpacityPercentiles(*scalar_opacity_percentiles, update_pipeline=False)
@@ -1104,3 +1124,67 @@ class CILViewer(CILViewerBase):
 
             self.getRenderer().Render()
             self.updatePipeline()
+
+    def createAnimation(self,
+                        FrameCount=20,
+                        InitialCameraPosition=None,
+                        FocalPoint=None,
+                        ClippingRange=None,
+                        AngleRange=360,
+                        ViewUp=None):
+
+        viewer = self
+
+        if InitialCameraPosition is None:
+            InitialCameraPosition = viewer.getCamera().GetPosition()
+        if FocalPoint is None:
+            FocalPoint = viewer.getCamera().GetFocalPoint()
+        if ClippingRange is None:
+            ClippingRange = (0, 2000)
+        if ViewUp is None:
+            ViewUp = (0, 0, 1)
+        if FrameCount is None:
+            FrameCount = 100
+        #Setting locked values for camera position
+        locX = InitialCameraPosition[0]
+        locY = InitialCameraPosition[1]
+        locZ = InitialCameraPosition[2]
+
+        print('Initial Camera Position: {}'.format(InitialCameraPosition))
+        #Setting camera position
+        viewer.getCamera().SetPosition(InitialCameraPosition)
+        viewer.getCamera().SetFocalPoint(FocalPoint)
+
+        #Setting camera viewup
+        viewer.getCamera().SetViewUp(ViewUp)
+
+        #Set camera clipping range
+        viewer.getCamera().SetClippingRange(ClippingRange)
+
+        #Defining distance from camera to focal point
+        r = numpy.sqrt(((InitialCameraPosition[0] - FocalPoint[0])**2) + (InitialCameraPosition[1] - FocalPoint[1])**2)
+        print('Radius (distance from camera to focal point): {}'.format(r))
+
+        #Animating the camera
+        for x in range(FrameCount):
+            angle = (2 * numpy.pi) * (x / FrameCount)
+            NewLocationX = r * numpy.sin(angle) + FocalPoint[0]
+            NewLocationY = r * numpy.cos(angle) + FocalPoint[1]
+            NewLocation = (NewLocationX, NewLocationY, locZ)
+            camera = vtk.vtkCamera()
+            camera.SetFocalPoint(FocalPoint)
+            camera.SetViewUp(ViewUp)
+            camera.SetPosition(*NewLocation)
+            viewer.ren.SetActiveCamera(camera)
+            viewer.adjustCamera()
+
+            import time
+            time.sleep(0.05)
+            print("render frame {} angle {}".format(x, angle))
+            print('Camera Position: {}'.format(NewLocation))
+            rp = numpy.sqrt(((NewLocation[0] - FocalPoint[0])**2) + (NewLocation[1] - FocalPoint[1])**2)
+            print('Camera trajectory radius {}'.format(rp))
+            viewer.saveRender('test_{}'.format(x))
+            #Rendering and saving the render
+            viewer.getRenderer().Render()
+            viewer.renWin.Render()
