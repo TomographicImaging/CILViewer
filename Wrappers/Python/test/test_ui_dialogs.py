@@ -1,13 +1,17 @@
 import unittest
 from unittest import mock
-from ccpi.viewer.ui.dialogs import ViewerSettingsDialog, HDF5InputDialog, RawInputDialog
+from ccpi.viewer.ui.dialogs import ViewerSettingsDialog, HDF5InputDialog, RawInputDialog, SaveableRawInputDialog
 from eqt.ui.SessionDialogs import AppSettingsDialog
 
 from PySide2.QtWidgets import QMainWindow
 import os
 
 from unittest import mock
+from unittest.mock import patch
 from PySide2.QtWidgets import QApplication, QLabel, QFrame, QDoubleSpinBox, QCheckBox, QPushButton, QLineEdit, QComboBox, QWidget
+from PySide2.QtCore import QSettings
+from eqt.ui import FormDialog
+from functools import partial
 
 import sys
 
@@ -202,6 +206,79 @@ class TestRawInputDialog(unittest.TestCase):
             'is_fortran': False,
             'preview_slice': 0
         }
+
+
+@unittest.skipIf(skip_as_conda_build, "On conda builds do not do any test with interfaces")
+class TestSaveableRawInputDialog(unittest.TestCase):
+
+    def setUp(self):
+        global _instance
+        if _instance is None:
+            _instance = QApplication(sys.argv)
+        self.parent = QMainWindow()
+        self.settings = QSettings()
+        self.fname = "test.raw"
+
+    @patch("ccpi.viewer.ui.dialogs.RawInputDialog.__init__")
+    def test_init_calls_raw_input_dialog_init(self, mock_init_call):
+        mock_init_call.return_value = partial(FormDialog.__init__)
+        # expect attribute error after init call:
+        with self.assertRaises(AttributeError):
+            rdi = SaveableRawInputDialog(self.parent, self.fname, self.settings)
+            mock_init_call.assert_called_once()
+
+    def test_init(self):
+        rdi = SaveableRawInputDialog(self.parent, self.fname, self.settings)
+        assert rdi is not None
+
+    def test_init_no_settings(self):
+        rdi = SaveableRawInputDialog(self.parent, self.fname)
+        assert rdi is not None
+
+    @patch("ccpi.viewer.ui.dialogs.SaveableRawInputDialog._get_settings_save_name")
+    def test_save_settings_when_nothing_in_qsettings(self, mock_get_name):
+        mock_get_name.return_value = "my_name"
+        empty_settings = QSettings('A', 'A')
+        rdi = SaveableRawInputDialog(self.parent, self.fname, empty_settings)
+        rdi._save_settings()
+        the_dict = empty_settings.value('raw_dialog')
+        self.assertEqual(empty_settings.allKeys(), ['raw_dialog'])
+        self.assertEqual(the_dict, {'my_name': rdi.getAllWidgetStates()})
+
+    @patch("ccpi.viewer.ui.dialogs.SaveableRawInputDialog._get_settings_save_name")
+    def test_save_settings_when_no_qsettings(self, mock_get_name):
+        mock_get_name.return_value = "my_name"
+        rdi = SaveableRawInputDialog(self.parent, self.fname)
+        rdi._save_settings()
+        the_dict = rdi.settings.value('raw_dialog')
+        self.assertEqual(rdi.settings.allKeys(), ['raw_dialog'])
+        self.assertEqual(the_dict, {'my_name': rdi.getAllWidgetStates()})
+
+    @patch("ccpi.viewer.ui.dialogs.SaveableRawInputDialog._get_settings_save_name")
+    def test_save_settings_when_soemthing_in_qsettings(self, mock_get_name):
+        mock_get_name.return_value = "my_name_2"
+        pop_settings = QSettings('C', 'D')
+        pop_settings.setValue('raw_dialog', {'hi': "I'm not empty"})
+        rdi = SaveableRawInputDialog(self.parent, self.fname, pop_settings)
+        rdi._save_settings()
+        the_dict = pop_settings.value('raw_dialog')
+        self.assertEqual(the_dict, {'hi': "I'm not empty", 'my_name_2': rdi.getAllWidgetStates()})
+
+    @patch("ccpi.viewer.ui.dialogs.SaveableRawInputDialog._get_name_of_state_to_load")
+    def test_load_settings(self, mock_get_name):
+        mock_get_name.return_value = "state"
+        example_qsettings = QSettings('B', 'B')
+        rdi = SaveableRawInputDialog(self.parent, self.fname, example_qsettings)
+        rdi.getWidget('dim_Images').setText('10')
+        example_settings = rdi.getAllWidgetStates()
+
+        example_qsettings = QSettings('B', 'B')
+
+        example_qsettings.setValue('raw_dialog', {'state': example_settings})
+
+        rdi2 = SaveableRawInputDialog(self.parent, self.fname, example_qsettings)
+        rdi2._load_settings()
+        self.assertEqual(rdi2.getWidget('dim_Images').text(), "10")
 
 
 if __name__ == '__main__':
