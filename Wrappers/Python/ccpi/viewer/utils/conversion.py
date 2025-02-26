@@ -1718,7 +1718,7 @@ class cilHDF5CroppedReader(cilBaseCroppedReader, cilHDF5ReaderInterface):
         # Either the TargetExtent or TargetZExtent should have been set.
         # We prioritise the TargetExtent
         if self.GetTargetExtent() is None:
-            extent = [0, -1, 0, -1, self.GetTargetZExtent[0], self.GetTargetZExtent[1]]
+            extent = [0, -1, 0, -1, self.GetTargetZExtent()[0], self.GetTargetZExtent()[1]]
         else:
             extent = self.GetTargetExtent()
         reader.SetUpdateExtent(extent)
