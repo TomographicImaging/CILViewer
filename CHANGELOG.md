@@ -1,11 +1,23 @@
 # Changelog
 
-## vx.x.x
+## v25.0.0
+
+Enhancements:
+- Have `hdf5_attrs` as attribute to `HDF5InputDialog` #452
+- Add `SaveableRawInputDialog` #444
+- Standalone viewer uses `SaveableRawInputDialog` - this allows user to save and reload settings for loading raw data #444
+
+Requirements:
+- Reduced the requirements to the basic packages, add extra requirements in `ui_env.yml` file #451
+
+Documentation:
+- Update readme, contributing, documentation #451
 
 Build and CI:
- - Renamed mambaforge to miniforge to fix docker action #446
- - Use ubuntu v22.04 in the actions #446
- - Add setuptools as a build requirment #446
+- Renamed mambaforge to miniforge to fix docker action #446
+- Use ubuntu v22.04 in the actions #446
+- Add setuptools as a build requirement #446
+
 
 ## v24.1.0
 

@@ -3,22 +3,25 @@
 | [![Build Status](https://anvil.softeng-support.ac.uk/jenkins/buildStatus/icon?job=CILsingle/CCPi-Viewer)](https://anvil.softeng-support.ac.uk/jenkins/job/CILsingle/job/CCPi-Viewer/) | [![Build Status](https://anvil.softeng-support.ac.uk/jenkins/buildStatus/icon?job=CILsingle/CCPi-Viewer-dev)](https://anvil.softeng-support.ac.uk/jenkins/job/CILsingle/job/CCPi-Viewer-dev/) |![conda version](https://anaconda.org/ccpi/ccpi-viewer/badges/version.svg) ![conda last release](https://anaconda.org/ccpi/ccpi-viewer/badges/latest_release_date.svg) [![conda platforms](https://anaconda.org/ccpi/ccpi-viewer/badges/platforms.svg) ![conda downloads](https://anaconda.org/ccpi/ccpi-viewer/badges/downloads.svg)](https://anaconda.org/ccpi/ccpi-viewer) |
 
 # CILViewer
-A simple Viewer for 3D data built with VTK and Python.
-There are two versions:
-- GUI built with Python Qt
-- Web viewer, built with trame
+A simple interactive viewer based on VTK classes and written in Python.
+- The classes in [`viewer`](Wrappers/Python/ccpi/viewer/) define generic viewers that can be embedded in [Qt](https://www.qt.io/) or other user interfaces. [`CILviewer2D`](Wrappers/Python/ccpi/viewer/CILViewer2D.py) is a 2D viewer and [`CILviewer`](Wrappers/Python/ccpi/viewer/CILViewer.py) is a 3D viewer. 
+- The classes in [`web viewer`](Wrappers/Python/ccpi/web_viewer/) define a viewer embedded in [trame](https://kitware.github.io/trame/).
 
-The viewers can also be embedded into any Qt application.
-An example of use of the viewers in another app is the [iDVC app](https://github.com/TomographicImaging/iDVC)
+Examples of QApplications are the [`iviewer`](Wrappers/Python/ccpi/viewer/iviewer.py) and the [`standalone viewer`](Wrappers/Python/ccpi/viewer/standalone_viewer.py). An example of use in an external software is [iDVC](https://github.com/TomographicImaging/iDVC).
 
-## Install instructions
-To install via `conda`, create a new environment using:
+## Installation instructions
+To install via `conda`, create a minimal environment using:
 
 ```bash
 conda create --name cilviewer ccpi-viewer=24.0.1 -c ccpi -c conda-forge
 ```
+### UI requirements
+To use the extra [UI utilities](Wrappers/Python/ccpi/viewer/ui) the environment needs to be updated to include the extra requirements `eqt` and `pyside2`. The [UI examples](Wrappers/Python/examples/ui_examples) require `cil-data` as well. The environment can be updated to include these dependencies as follows:
+```sh
+conda env update --name cilviewer --file Wrappers/Python/conda-recipe/ui_env.yml
+```
 
-## Running the CILViewer app
+## Run the standalone viewer QApplication
 
 - Activate your environment using: ``conda activate cilviewer``.
 - Launch by typing: `cilviewer`
@@ -31,75 +34,20 @@ conda create --name cilviewer ccpi-viewer=24.0.1 -c ccpi -c conda-forge
 
 <img src="Documentation/readme-images/StandaloneViewerEgg.PNG" alt="Your image title" width="500"/>
 
-## Web viewer
-See [here](https://github.com/vais-ral/CILViewer/tree/master/Wrappers/Python/ccpi/web_viewer) for instructions on how to install and run the web viewer.
+Data shown is [1].
+
+## Install and run the trame web viewer
+Follow the [instructions](https://github.com/vais-ral/CILViewer/tree/master/Wrappers/Python/ccpi/web_viewer) to install and run the web viewer.
 
 <img src="Documentation/readme-images/WebCILViewer3D.PNG" alt="Your image title" width="500"/>
 
-## Using the 2D and 3D Viewers
+Data shown is [2].
 
-### **2D Viewer**
-### Keybindings
-The interactive viewer CILViewer2D provides:
-  - Keyboard Interactions:
-    - 'h' display the help
-    - 'x' slices on the YZ plane
-    - 'y' slices on the XZ plane
-    - 'z' slices on the XY
-    - 'a' auto window/level to accomodate all values
-    - 's' save render to PNG (current_render.png)
-    - 'l' plots horizontal and vertical profiles of the displayed image at the pointer location
-    - 'i' toggles interpolation
-  - slice up/down: mouse scroll (10 x pressing SHIFT)
-  - Window/Level: ALT + Right Mouse Button + drag
-  - Pan: CTRL + Right Mouse Button + drag
-  - Zoom: SHIFT + Right Mouse Button + drag (up: zoom in, down: zoom out)
-  - Pick: Left Mouse Click
-  - ROI (square): 
-    - Create ROI: CTRL + Left Mouse Button 
-    - Resize ROI: Left Mouse Button on outline + drag
-    - Translate ROI: Middle Mouse Button within ROI
-    - Delete ROI: ALT + Left Mouse Button
-
-### Examples
-
-| Head Dataset	| Zoom 	| Slice X + Pick 	|
-|-----	|---	|---	|
-|![Window/Level](pics/windowLevel.png)|![Zoom](pics/zoom.png)|![Slice X + Pick](pics/sliceXPick.png)|
-
-| ROI | Line profiles |
-|---	|---	|
-|![ROI](pics/ROI.png)|![line](pics/line.png)|
-
-### **3D Viewer**
-### Keybindings
-The interactive 3D viewer CILViewer provides:
-  - Keyboard Interactions:
-    - 'h' display the help
-    - 'x' slices on the YZ plane
-    - 'y' slices on the XZ plane
-    - 'z' slices on the XY
-    - 'r' save render to current_render.png
-    - 's' toggle visibility of slice
-    - 'v' toggle visibility of volume render
-    - 'c' activates volume render clipping plane widget, for slicing through a volume.
-    - 'a' whole image Auto Window/Level on the slice.
-    - 'i' interpolation of the slice.
-  - Slice: Mouse Scroll
-  - Zoom: Right Mouse + Move Up/Down
-  - Pan: Middle Mouse Button + Move or Shift + Left Mouse + Move
-  - Adjust Camera: Left Mouse + Move
-  - Rotate: Ctrl + Left Mouse + Move
-
-## References
-The chocolate egg dataset shown in above examples is dataset `egg2`:
-
-Jakob Sauer Jørgensen, Martin Skovgaard Andersen, & Carsten Gundlach. (2021). HDTomo TXRM micro-CT datasets [Data set]. Zenodo. https://doi.org/10.5281/zenodo.4822516
-
-The head dataset is avaiable in [CIL-Data as 'head.mha'](https://github.com/TomographicImaging/CIL-Data) along with its license.
+## Documentation
+More information on how to use the viewer can be found in [Documentation.md](./Documentation/documentation.md).
 
 ## Developer Contribution Guide
-See [CONTRIBUTING.md](./CONTRIBUTING.md).
+We welcome contributions. Please see [CONTRIBUTING.md](./CONTRIBUTING.md) for guidance.
 
 ## Notice
 The CIL Viewer code took initial inspiration from a previous project of Edoardo Pasca and Lukas Batteau [PyVE](https://sourceforge.net/p/pyve/code/ci/master/tree/PyVE/), the license of which we report here:
@@ -133,5 +81,10 @@ CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING 
 ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ```
 
+## References
+[1] The chocolate egg dataset shown in above examples is dataset `egg2`:
 
+Jakob Sauer Jørgensen, Martin Skovgaard Andersen, & Carsten Gundlach. (2021). HDTomo TXRM micro-CT datasets [Data set]. Zenodo. https://doi.org/10.5281/zenodo.4822516
+
+[2] The head dataset is avaiable in [CIL-Data as 'head.mha'](https://github.com/TomographicImaging/CIL-Data) along with its license.
 

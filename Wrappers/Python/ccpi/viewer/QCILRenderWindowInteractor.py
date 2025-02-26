@@ -4,7 +4,13 @@ from PySide2.QtCore import Qt, QEvent
 
 
 class QCILRenderWindowInteractor(QVTKRenderWindowInteractor):
-    '''Extends the QVTKRenderWindowInteractor to accept also ALT modifier'''
+    '''
+    A QVTKRenderWindowInteractor for Python and Qt. Uses a vtkGenericRenderWindowInteractor to handle the interactions.
+    Use GetRenderWindow() to get the vtkRenderWindow. Create with the keyword stereo=1 in order to generate
+    a stereo-capable window. Extends the QVTKRenderWindowInteractor to accept also ALT modifier.
+
+    More info: https://docs.vtk.org/en/latest/api/python/vtkmodules/vtkmodules.qt.QVTKRenderWindowInteractor.html
+    '''
 
     def __init__(self, parent=None, **kw):
         '''Constructor'''
