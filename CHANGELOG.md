@@ -1,8 +1,9 @@
 # Changelog
 
-## vx.x.x
+## v25.0.0
 
 Enhancements:
+- Have `hdf5_attrs` as attribute to `HDF5InputDialog` #452
 - Add `SaveableRawInputDialog` #444
 - Standalone viewer uses `SaveableRawInputDialog` - this allows user to save and reload settings for loading raw data #444
 
