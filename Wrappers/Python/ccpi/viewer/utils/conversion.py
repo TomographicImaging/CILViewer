@@ -1713,12 +1713,13 @@ class cilHDF5CroppedReader(cilBaseCroppedReader, cilHDF5ReaderInterface):
         full_reader = HDF5Reader()
         full_reader.SetFileName(self.GetFileName())
         full_reader.SetDatasetName(self.GetDatasetName())
+        dimensions = full_reader.GetDimensions()
         reader = HDF5SubsetReader()
         reader.SetInputConnection(full_reader.GetOutputPort())
         # Either the TargetExtent or TargetZExtent should have been set.
         # We prioritise the TargetExtent
         if self.GetTargetExtent() is None:
-            extent = [0, -1, 0, -1, self.GetTargetZExtent()[0], self.GetTargetZExtent()[1]]
+            extent = [0, dimensions[0]-1, 0, dimensions[1]-1, self.GetTargetZExtent()[0], self.GetTargetZExtent()[1]]
         else:
             extent = self.GetTargetExtent()
         reader.SetUpdateExtent(extent)
