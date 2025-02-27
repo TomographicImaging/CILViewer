@@ -2,6 +2,9 @@
 
 ## v25.0.0
 
+Bugfix:
+- Fix `cilHDF5CroppedReader` #462
+
 Enhancements:
 - Have `hdf5_attrs` as attribute to `HDF5InputDialog` #452
 - Add `SaveableRawInputDialog` #444
