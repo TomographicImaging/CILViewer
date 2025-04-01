@@ -3,13 +3,13 @@ from unittest import mock
 from ccpi.viewer.ui.dialogs import ViewerSettingsDialog, HDF5InputDialog, RawInputDialog, SaveableRawInputDialog
 from eqt.ui.SessionDialogs import AppSettingsDialog
 
-from PySide2.QtWidgets import QMainWindow
+from qtpy.QtWidgets import QMainWindow
 import os
 
 from unittest import mock
 from unittest.mock import patch
-from PySide2.QtWidgets import QApplication, QLabel, QFrame, QDoubleSpinBox, QCheckBox, QPushButton, QLineEdit, QComboBox, QWidget
-from PySide2.QtCore import QSettings
+from qtpy.QtWidgets import QApplication, QLabel, QFrame, QDoubleSpinBox, QCheckBox, QPushButton, QLineEdit, QComboBox, QWidget
+from qtpy.QtCore import QSettings
 from eqt.ui import FormDialog
 from functools import partial
 

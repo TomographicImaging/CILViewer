@@ -1,6 +1,6 @@
 import sys
 import vtk
-from PySide2 import QtCore, QtWidgets
+from qtpy import QtCore, QtWidgets
 from ccpi.viewer import viewer2D, viewer3D
 from ccpi.viewer.QCILViewerWidget import QCILViewerWidget
 import os
@@ -11,13 +11,20 @@ class SingleViewerCenterWidget(QtWidgets.QMainWindow):
 
     def __init__(self, parent=None, viewer=viewer2D):
         QtWidgets.QMainWindow.__init__(self, parent)
-        self.setGeometry(450, 250, 1000, 1000)
-        self.frame = QCILViewerWidget(parent, viewer=viewer, shape=(2000, 2000))
+        x,y = 0, 0
+        dx, dy = 500, 500
+        self.setGeometry(x,y, x+dx , y+dy)
+        self.frame = QCILViewerWidget(parent, viewer=viewer, shape=(dx, dy), debug=True)
 
-        head = example_data.HEAD.get()
+        # head = example_data.HEAD.get()
+        from ccpi.viewer.utils.conversion import Converter
+        import numpy as np
 
-        self.frame.viewer.setInputData(head)
-        self.frame.viewer.setInputData2(head)
+        ndata = np.load("/Users/edoardo.pasca/Data/DVC_test_images/frame_010_f.npy")
+        data = Converter.numpy2vtkImage(ndata)
+
+        self.frame.viewer.setInputData(data)
+        # self.frame.viewer.setInputData2(head)
 
         self.setCentralWidget(self.frame)
 

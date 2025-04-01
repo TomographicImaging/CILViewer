@@ -7,7 +7,7 @@ import vtk
 from ccpi.viewer.CILViewer import CILViewer
 from ccpi.viewer.CILViewer2D import CILViewer2D
 from ccpi.viewer.ui.main_windows import ViewerMainWindow
-from PySide2.QtWidgets import QApplication
+from qtpy.QtWidgets import QApplication
 
 # skip the tests on GitHub actions
 if os.environ.get('CONDA_BUILD', '0') == '1':

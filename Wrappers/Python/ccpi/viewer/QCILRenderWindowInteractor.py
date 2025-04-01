@@ -1,6 +1,6 @@
 import vtk
 from vtk.qt.QVTKRenderWindowInteractor import QVTKRenderWindowInteractor
-from PySide2.QtCore import Qt, QEvent
+from qtpy.QtCore import Qt, QEvent
 
 
 class QCILRenderWindowInteractor(QVTKRenderWindowInteractor):
@@ -62,6 +62,8 @@ class QCILRenderWindowInteractor(QVTKRenderWindowInteractor):
         repeat = 0
         if ev.type() == QEvent.MouseButtonDblClick:
             repeat = 1
+        print(f"QCILRenderWindowInteractor mousePressEvent {ev.x()}, {ev.y()} size {self._Iren.GetSize()}")
+        print(f"QCILRenderWindowInteractor mousePressEvent {ev.x()}, {ev.y()} pos {self._Iren.GetSize()[1]-ev.y()-1}")
         self._Iren.SetEventInformationFlipY(ev.x(), ev.y(), ctrl, shift, chr(0), repeat, None)
         self._Iren.SetAltKey(alt)
         self._Iren.SetShiftKey(shift)
@@ -76,12 +78,36 @@ class QCILRenderWindowInteractor(QVTKRenderWindowInteractor):
         elif self._ActiveButton == Qt.MidButton:
             self._Iren.MiddleButtonPressEvent()
 
+    def mouseReleaseEvent(self, ev):
+        '''Overload of mousePressEvent from base class to use _GetCtrlShiftAlt'''
+        ctrl, shift, alt = self._GetCtrlShiftAlt(ev)
+        repeat = 0
+        if ev.type() == QEvent.MouseButtonDblClick:
+            repeat = 1
+        # print(f"QCILRenderWindowInteractor mouseReleaseEvent {ev.x()}, {ev.y()} size {self._Iren.GetSize()}")
+        # print(f"QCILRenderWindowInteractor mouseReleaseEvent {ev.x()}, {ev.y()} pos {self._Iren.GetSize()[1]-ev.y()-1}")
+        self._Iren.SetEventInformationFlipY(ev.x(), ev.y(), ctrl, shift, chr(0), repeat, None)
+        self._Iren.SetAltKey(alt)
+        self._Iren.SetShiftKey(shift)
+        self._Iren.SetControlKey(ctrl)
+
+        self._ActiveButton = ev.button()
+
+        if self._ActiveButton == Qt.LeftButton:
+            self._Iren.LeftButtonReleaseEvent()
+        elif self._ActiveButton == Qt.RightButton:
+            self._Iren.RightButtonReleaseEvent()
+        elif self._ActiveButton == Qt.MidButton:
+            self._Iren.MiddleButtonReleaseEvent()
+
     def mouseMoveEvent(self, ev):
         '''Overload of mouseMoveEvent from base class to use _GetCtrlShiftAlt'''
         self.__saveModifiers = ev.modifiers()
         self.__saveButtons = ev.buttons()
         self.__saveX = ev.x()
         self.__saveY = ev.y()
+        # print(f"QCILRenderWindowInteractor mouseMoveEvent {ev.x()}, {ev.y()}")
+        
 
         #ctrl, shift = self._GetCtrlShift(ev)
         ctrl, shift, alt = self._GetCtrlShiftAlt(ev)

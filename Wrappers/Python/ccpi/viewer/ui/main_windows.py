@@ -15,8 +15,8 @@ from ccpi.viewer.utils.io import ImageReader
 from eqt.threading import Worker
 from eqt.ui.SessionDialogs import ErrorDialog
 from eqt.ui.MainWindowWithSessionManagement import MainWindowWithProgressDialogs, MainWindowWithSessionManagement
-from PySide2.QtCore import Qt
-from PySide2.QtWidgets import QApplication, QFileDialog, QMainWindow, QSizePolicy
+from qtpy.QtCore import Qt
+from qtpy.QtWidgets import QApplication, QFileDialog, QMainWindow, QSizePolicy
 
 
 class ViewerMainWindow(MainWindowWithProgressDialogs):
