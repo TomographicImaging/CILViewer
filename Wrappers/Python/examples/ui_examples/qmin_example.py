@@ -24,6 +24,13 @@ from qtpy.QtWidgets import QApplication, QMainWindow
 #     from PySide.QtCore import Qt
 #     from PySide.QtGui import QApplication, QMainWindow
 
+from functools import partial
+
+
+def handleResize(widget, re):
+    print ("ResizeEvent", re.size(), re.oldSize())
+    print (f"widget size: {widget.GetSize()}")
+    print (f"Qwidget size: {widget.size()}")
 
 def QVTKRenderWidgetConeExample(argv):
     """A simple example that uses the QVTKRenderWindowInteractor class."""
@@ -31,9 +38,13 @@ def QVTKRenderWidgetConeExample(argv):
     app = QApplication(['QVTKRenderWindowInteractor'])
 
     window = QMainWindow()
+    
 
     # create the widget
     widget = QVTKRenderWindowInteractor(window)
+    hr = partial(handleResize, widget)
+    window.resizeEvent = hr
+    
     window.setCentralWidget(widget)
     # if you don't want the 'q' key to exit comment this.
     widget.AddObserver("ExitEvent", lambda o, e, a=app: a.quit())
@@ -41,10 +52,10 @@ def QVTKRenderWidgetConeExample(argv):
     ren = vtkRenderer()
     widget.GetRenderWindow().AddRenderer(ren)
 
-    print("##### ", widget.GetRenderWindow().GetSize())
+    print("##### DPI", widget.GetRenderWindow().GetDPI())
 
-    widget.GetRenderWindow().SetSize(500,800)
-
+    # window.resize(500,800)
+    
     cone = vtkConeSource()
     cone.SetResolution(8)
 
@@ -60,8 +71,6 @@ def QVTKRenderWidgetConeExample(argv):
     window.show()
 
     widget.Initialize()
-    widget.GetRenderWindow().SetSize(500,800)
-    print("##### ", widget.GetRenderWindow().GetSize())
 
     widget.Start()
 
