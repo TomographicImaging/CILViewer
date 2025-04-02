@@ -29,8 +29,8 @@ from functools import partial
 
 def handleResize(widget, re):
     print ("ResizeEvent", re.size(), re.oldSize())
-    print (f"widget size: {widget.GetSize()}")
-    print (f"Qwidget size: {widget.size()}")
+    print (f"QVTKRenderWindowInteractor.GetSize(): {widget.GetSize()}")
+    print (f"QVTKRenderWindowInteractor.size(): {widget.size()}")
 
 def QVTKRenderWidgetConeExample(argv):
     """A simple example that uses the QVTKRenderWindowInteractor class."""
