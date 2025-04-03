@@ -42,6 +42,7 @@ requirements:
     - h5py
     - pyyaml
     - schema
+    - qtpy
 
 about:
   home: http://www.ccpi.ac.uk
