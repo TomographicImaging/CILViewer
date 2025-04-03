@@ -11,8 +11,8 @@ class SingleViewerCenterWidget(QtWidgets.QMainWindow):
 
     def __init__(self, parent=None, viewer=viewer2D):
         QtWidgets.QMainWindow.__init__(self, parent)
-        x,y = 0, 0
-        dx, dy = 500, 500
+        x,y = 450, 250
+        dx, dy = 1000, 1000
         self.setGeometry(x,y, x+dx , y+dy)
         self.frame = QCILViewerWidget(parent, viewer=viewer, shape=(dx, dy), debug=True)
 
