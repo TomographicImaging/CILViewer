@@ -6,6 +6,7 @@ Enhancements:
 - Have `hdf5_attrs` as attribute to `HDF5InputDialog` #452
 - Add `SaveableRawInputDialog` #444
 - Standalone viewer uses `SaveableRawInputDialog` - this allows user to save and reload settings for loading raw data #444
+- Use the `qtpy` abstraction layer
 
 Bugfix:
 - Correctly inherit `QCILRenderWindowInteractor` from `QVTKRenderWindowInteractor` to handle the Alt modifier and handle non 1 display pixel ratio. This lead to location of events to be wrong in a Qt application with the viewer.
