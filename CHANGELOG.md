@@ -7,6 +7,9 @@ Enhancements:
 - Add `SaveableRawInputDialog` #444
 - Standalone viewer uses `SaveableRawInputDialog` - this allows user to save and reload settings for loading raw data #444
 
+Bugfix:
+- Correctly inherit `QCILRenderWindowInteractor` from `QVTKRenderWindowInteractor` to handle the Alt modifier and handle non 1 display pixel ratio. This lead to location of events to be wrong in a Qt application with the viewer.
+
 Requirements:
 - Reduced the requirements to the basic packages, add extra requirements in `ui_env.yml` file #451
 
