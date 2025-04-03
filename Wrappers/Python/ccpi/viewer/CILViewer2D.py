@@ -445,12 +445,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyle):
         self.Render()
 
     def OnLeftButtonPressEvent(self, interactor, event):
-        position = interactor.GetEventPosition()
-        self.log(f"interactor : {id(interactor)} pos {interactor.GetEventPosition()}")
-        
         # print ("INTERACTOR", interactor)
-        self.log("\n\nOnLeftButtonPressEvent")
-        
         if self.GetInputData() is None:
             return
         alt = interactor.GetAltKey()
@@ -491,11 +486,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyle):
             self._viewer.displayHistogram = False
 
     def OnLeftButtonReleaseEvent(self, interactor, event):
-        self.log("OnLeftButtonReleaseEvent")
-        # interactor2 = self._viewer.getInteractor()
-        position = interactor.GetEventPosition()
-        self.log(f"interactor : {id(interactor)} pos {interactor.GetEventPosition()}")
-        # self.log(f"interactor2: {   interactor2} pos {interactor2.GetEventPosition()}")
+        interactor = self._viewer.getInteractor()
 
         if self.GetViewerEvent("CREATE_ROI_EVENT"):
             self.OnROIModifiedEvent(interactor, event)
@@ -1059,9 +1050,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyle):
 
     def HandlePickEvent(self, interactor, event):
         position = interactor.GetEventPosition()
-        self.log(f"HandlePickEvent Pick position: {position}")
         vox = self.display2imageCoordinate(position)
-        self.log(f"HandlePickEvent ImagePickPosition {vox}")
         self.last_picked_voxel = vox
         # print ("Pixel %d,%d,%d Value %f" % vox )
         self._viewer.cornerAnnotation.VisibilityOn()
@@ -1084,7 +1073,7 @@ class CILViewer2D(CILViewerBase):
     IMAGE_WITH_OVERLAY = 0
     RECTILINEAR_WIPE = 1
 
-    def __init__(self, dimx=600, dimy=600, ren=None, renWin=None, iren=None, debug=True, enableSliderWidget=True):
+    def __init__(self, dimx=600, dimy=600, ren=None, renWin=None, iren=None, debug=False, enableSliderWidget=True):
         CILViewerBase.__init__(self, dimx=dimx, dimy=dimy, ren=ren, renWin=renWin, iren=iren, debug=debug)
 
         self.setInteractorStyle(CILInteractorStyle(self))
