@@ -22,8 +22,8 @@ class QCILRenderWindowInteractor(QVTKRenderWindowInteractor):
         self.__wheelDelta = self._QVTKRenderWindowInteractor__wheelDelta
         #print ("__saveModifiers  should be defined", self.__saveModifiers)
 
-    def _GetCtrlShiftAlt(self, ev):
-        '''Get CTRL SHIFT ALT key modifiers'''
+    def _GetAlt(self, ev):
+        '''Get ALT key modifiers'''
         ctrl = shift = alt = False
 
         if hasattr(ev, 'modifiers'):
@@ -37,31 +37,31 @@ class QCILRenderWindowInteractor(QVTKRenderWindowInteractor):
 
     def enterEvent(self, ev):
         '''Overload of enterEvent from base class to use _GetCtrlShiftAlt'''
-        alt = self._GetCtrlShiftAlt(ev)
+        alt = self._GetAlt(ev)
         self._Iren.SetAltKey(alt)
         super().enterEvent(ev)
 
     def leaveEvent(self, ev):
         '''Overload of leaveEvent from base class to use _GetCtrlShiftAlt'''
-        alt = self._GetCtrlShiftAlt(ev)
+        alt = self._GetAlt(ev)
         self._Iren.SetAltKey(alt)
         super().leaveEvent(ev)
 
     def mousePressEvent(self, ev):
         '''Overload of mousePressEvent from base class to use _GetCtrlShiftAlt'''
-        alt = self._GetCtrlShiftAlt(ev)
+        alt = self._GetAlt(ev)
         self._Iren.SetAltKey(alt)
         super().mousePressEvent(ev)
 
     def mouseReleaseEvent(self, ev):
         '''Overload of mousePressEvent from base class to use _GetCtrlShiftAlt'''
-        alt = self._GetCtrlShiftAlt(ev)
+        alt = self._GetAlt(ev)
         self._Iren.SetAltKey(alt)
         super().mouseReleaseEvent(ev)
         
     def mouseMoveEvent(self, ev):
         '''Overload of mouseMoveEvent from base class to use _GetCtrlShiftAlt'''
-        alt = self._GetCtrlShiftAlt(ev)
+        alt = self._GetAlt(ev)
         self._Iren.SetAltKey(alt)
         super().mouseMoveEvent(ev)
 
