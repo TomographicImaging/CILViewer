@@ -16,15 +16,9 @@ class SingleViewerCenterWidget(QtWidgets.QMainWindow):
         self.setGeometry(x,y, x+dx , y+dy)
         self.frame = QCILViewerWidget(parent, viewer=viewer, shape=(dx, dy), debug=True)
 
-        # head = example_data.HEAD.get()
-        from ccpi.viewer.utils.conversion import Converter
-        import numpy as np
-
-        ndata = np.load("/Users/edoardo.pasca/Data/DVC_test_images/frame_010_f.npy")
-        data = Converter.numpy2vtkImage(ndata)
-
-        self.frame.viewer.setInputData(data)
-        # self.frame.viewer.setInputData2(head)
+        head = example_data.HEAD.get()
+        
+        self.frame.viewer.setInputData2(head)
 
         self.setCentralWidget(self.frame)
 
