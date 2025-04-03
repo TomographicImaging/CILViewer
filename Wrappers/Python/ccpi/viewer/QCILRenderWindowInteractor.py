@@ -27,90 +27,41 @@ class QCILRenderWindowInteractor(QVTKRenderWindowInteractor):
         ctrl = shift = alt = False
 
         if hasattr(ev, 'modifiers'):
-
-            if ev.modifiers() & Qt.ShiftModifier:
-                shift = True
-            if ev.modifiers() & Qt.ControlModifier:
-                ctrl = True
             if ev.modifiers() & Qt.AltModifier:
                 alt = True
         else:
-            if self.__saveModifiers & Qt.ShiftModifier:
-                shift = True
-            if self.__saveModifiers & Qt.ControlModifier:
-                ctrl = True
             if self.__saveModifiers & Qt.AltModifier:
                 alt = True
 
-        return ctrl, shift, alt
+        return alt
 
     def enterEvent(self, ev):
         '''Overload of enterEvent from base class to use _GetCtrlShiftAlt'''
-        ctrl, shift, alt = self._GetCtrlShiftAlt(ev)
-        self._Iren.SetEventInformationFlipY(self.__saveX, self.__saveY, ctrl, shift, chr(0), 0, None)
-        self._Iren.EnterEvent()
+        alt = self._GetCtrlShiftAlt(ev)
+        self._Iren.SetAltKey(alt)
+        super().enterEvent(ev)
 
     def leaveEvent(self, ev):
         '''Overload of leaveEvent from base class to use _GetCtrlShiftAlt'''
-        ctrl, shift, alt = self._GetCtrlShiftAlt(ev)
-        self._Iren.SetEventInformationFlipY(self.__saveX, self.__saveY, ctrl, shift, chr(0), 0, None)
-        self._Iren.LeaveEvent()
+        alt = self._GetCtrlShiftAlt(ev)
+        self._Iren.SetAltKey(alt)
+        super().leaveEvent(ev)
 
     def mousePressEvent(self, ev):
         '''Overload of mousePressEvent from base class to use _GetCtrlShiftAlt'''
-        ctrl, shift, alt = self._GetCtrlShiftAlt(ev)
-        repeat = 0
-        if ev.type() == QEvent.MouseButtonDblClick:
-            repeat = 1
-        print(f"QCILRenderWindowInteractor mousePressEvent {ev.x()}, {ev.y()} size {self._Iren.GetSize()}")
-        print(f"QCILRenderWindowInteractor mousePressEvent {ev.x()}, {ev.y()} pos {self._Iren.GetSize()[1]-ev.y()-1}")
-        self._Iren.SetEventInformationFlipY(ev.x(), ev.y(), ctrl, shift, chr(0), repeat, None)
+        alt = self._GetCtrlShiftAlt(ev)
         self._Iren.SetAltKey(alt)
-        self._Iren.SetShiftKey(shift)
-        self._Iren.SetControlKey(ctrl)
-
-        self._ActiveButton = ev.button()
-
-        if self._ActiveButton == Qt.LeftButton:
-            self._Iren.LeftButtonPressEvent()
-        elif self._ActiveButton == Qt.RightButton:
-            self._Iren.RightButtonPressEvent()
-        elif self._ActiveButton == Qt.MidButton:
-            self._Iren.MiddleButtonPressEvent()
+        super().mousePressEvent(ev)
 
     def mouseReleaseEvent(self, ev):
         '''Overload of mousePressEvent from base class to use _GetCtrlShiftAlt'''
-        ctrl, shift, alt = self._GetCtrlShiftAlt(ev)
-        repeat = 0
-        if ev.type() == QEvent.MouseButtonDblClick:
-            repeat = 1
-        # print(f"QCILRenderWindowInteractor mouseReleaseEvent {ev.x()}, {ev.y()} size {self._Iren.GetSize()}")
-        # print(f"QCILRenderWindowInteractor mouseReleaseEvent {ev.x()}, {ev.y()} pos {self._Iren.GetSize()[1]-ev.y()-1}")
-        self._Iren.SetEventInformationFlipY(ev.x(), ev.y(), ctrl, shift, chr(0), repeat, None)
+        alt = self._GetCtrlShiftAlt(ev)
         self._Iren.SetAltKey(alt)
-        self._Iren.SetShiftKey(shift)
-        self._Iren.SetControlKey(ctrl)
-
-        self._ActiveButton = ev.button()
-
-        if self._ActiveButton == Qt.LeftButton:
-            self._Iren.LeftButtonReleaseEvent()
-        elif self._ActiveButton == Qt.RightButton:
-            self._Iren.RightButtonReleaseEvent()
-        elif self._ActiveButton == Qt.MidButton:
-            self._Iren.MiddleButtonReleaseEvent()
-
+        super().mouseReleaseEvent(ev)
+        
     def mouseMoveEvent(self, ev):
         '''Overload of mouseMoveEvent from base class to use _GetCtrlShiftAlt'''
-        self.__saveModifiers = ev.modifiers()
-        self.__saveButtons = ev.buttons()
-        self.__saveX = ev.x()
-        self.__saveY = ev.y()
-        # print(f"QCILRenderWindowInteractor mouseMoveEvent {ev.x()}, {ev.y()}")
-        
-
-        #ctrl, shift = self._GetCtrlShift(ev)
-        ctrl, shift, alt = self._GetCtrlShiftAlt(ev)
-        self._Iren.SetEventInformationFlipY(ev.x(), ev.y(), ctrl, shift, chr(0), 0, None)
+        alt = self._GetCtrlShiftAlt(ev)
         self._Iren.SetAltKey(alt)
-        self._Iren.MouseMoveEvent()
+        super().mouseMoveEvent(ev)
+
