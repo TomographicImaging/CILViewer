@@ -29,26 +29,39 @@ class TestViewerMainWindow(unittest.TestCase):
     '''
 
     def setUp(self):
-        pass
+        self.app = QApplication(sys.argv)
 
     def tearDown(self) -> None:
-        pass
+        self.app.quit()
 
     def test_all(self):
         # https://stackoverflow.com/questions/5387299/python-unittest-testcase-execution-order
         # https://stackoverflow.com/questions/11145583/unit-and-functional-testing-a-pyside-based-application
+        print("_test_init")
         self._test_init()
+        print("_test_init_calls_super_init")
         self._test_init_calls_super_init()
+        print("_test_createAppSettingsDialog_calls_setAppSettingsDialogWidgets")
         self._test_createAppSettingsDialog_calls_setAppSettingsDialogWidgets()
+        print("_test_acceptViewerSettings_when_gpu_checked")
         self._test_acceptViewerSettings_when_gpu_checked()
+        print("_test_acceptViewerSettings_when_gpu_unchecked")
         self._test_acceptViewerSettings_when_gpu_unchecked()
+        print("_test_setDefaultDownsampledSize")
         self._test_setDefaultDownsampledSize()
+        print("_test_getDefaultDownsampledSize")
         self._test_getDefaultDownsampledSize()
+        print("_test_getTargetImageSize_when_vis_size_is_None")
         self._test_getTargetImageSize_when_vis_size_is_None()
+        print("_test_getTargetImageSize_when_vis_size_is_not_None")
         self._test_getTargetImageSize_when_vis_size_is_not_None()
+        print("_test_updateViewerCoords_with_display_unsampled_coords_selected")
         self._test_updateViewerCoords_with_display_unsampled_coords_selected()
+        print("_test_updateViewerCoords_with_display_downsampled_coords_selected")
         self._test_updateViewerCoords_with_display_downsampled_coords_selected()
+        print("_test_updateViewerCoords_with_3D_viewer")
         self._test_updateViewerCoords_with_3D_viewer()
+        print("_test_updateViewerCoords_with_no_img3D")
         self._test_updateViewerCoords_with_no_img3D()
 
     def _test_init(self):
