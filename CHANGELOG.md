@@ -4,8 +4,12 @@
 Enhancements:
   - Update recipe to require eqt Version 2.0.0
   - Add new UISlider support to 3D toolbar settings dialogs
-  - Add `SaveableRawInputDialog` #444
-  - Standalone viewer uses `SaveableRawInputDialog` - this allows user to save and reload settings for loading raw data #444
+
+## v25.0.0
+Enhancements:
+- Have `hdf5_attrs` as attribute to `HDF5InputDialog` #452
+- Add `SaveableRawInputDialog` #444
+- Standalone viewer uses `SaveableRawInputDialog` - this allows user to save and reload settings for loading raw data #444
 
 Requirements:
 - Reduced the requirements to the basic packages, add extra requirements in `ui_env.yml` file #451

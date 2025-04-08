@@ -11,7 +11,7 @@ class SingleViewerCenterWidget(QtWidgets.QMainWindow):
     def __init__(self, parent=None, viewer=viewer2D):
         QtWidgets.QMainWindow.__init__(self, parent)
 
-        self.frame = QCILViewerWidget(viewer=viewer, shape=(600, 600))
+        self.frame = QCILViewerWidget(parent, viewer=viewer, shape=(600, 600))
 
         head = example_data.HEAD.get()
 
