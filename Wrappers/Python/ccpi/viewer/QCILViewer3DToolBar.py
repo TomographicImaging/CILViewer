@@ -1,6 +1,5 @@
 from PySide2 import QtWidgets, QtCore
 
-
 from ccpi.viewer.ui.SettingsDialog import SettingsDialog
 from ccpi.viewer.ui.VolumeRenderSettingsDialog import VolumeRenderSettingsDialog
 
@@ -48,12 +47,13 @@ class QCILViewer3DToolBar(QtWidgets.QToolBar):
 
         self.addWidget(camera_button)
 
-
     def open_dialog(self, mode):
         """Open a dialog box for the settings of the viewer."""
         if mode == "settings_2d":
             if self.dialog["settings_2d"] is None:
-                dialog = SettingsDialog(parent=self.parent, title="Slice/Window Settings", scale_factor=self.scale_factor)
+                dialog = SettingsDialog(parent=self.parent,
+                                        title="Slice/Window Settings",
+                                        scale_factor=self.scale_factor)
                 dialog.Ok.clicked.connect(lambda: self.accepted(mode))
                 dialog.Cancel.clicked.connect(lambda: self.rejected(mode))
                 dialog.set_viewer(self.viewer)
@@ -63,7 +63,7 @@ class QCILViewer3DToolBar(QtWidgets.QToolBar):
             self.settings = self.dialog[mode].get_settings()
             self.dialog[mode].open()
             return
-        
+
         if mode == "settings_3d":
             if self.dialog["settings_3d"] is None:
                 dialog = VolumeRenderSettingsDialog(parent=self.parent,
