@@ -50,7 +50,6 @@ class QCILViewer3DToolBar(QtWidgets.QToolBar):
 
         self.addWidget(camera_button)
 
-
     def open_dialog(self, mode):
         """Open a dialog box for the settings of the viewer."""
         if mode == "settings_2d":
@@ -65,7 +64,7 @@ class QCILViewer3DToolBar(QtWidgets.QToolBar):
             self.settings = self.dialog[mode].get_settings()
             self.dialog[mode].open()
             return
-        
+
         if mode == "settings_3d":
             if self.dialog["settings_3d"] is None:
                 dialog = VolumeRenderSettingsDialog(parent=self.parent,
