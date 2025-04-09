@@ -10,50 +10,62 @@ except ImportError:
     import vtk
 from vtk.util import colors
 
+from ccpi.viewer.utils.tooltips import TOOLTIPS_IMAGE_SETTINGS
 from ccpi.viewer.ui.helpers import background_color_list
 
 
 class SettingsDialog(FormDialog):
-    """Slice settings dialog."""
+    """
+    Image settings dialog.
+    """
 
     def __init__(self, parent=None, title=None, scale_factor=1):
         FormDialog.__init__(self, parent, title=title)
         self.setWindowFlag(QtCore.Qt.WindowStaysOnTopHint, True)
         self.file_location = "."
+        self.scale_factor = scale_factor
 
         # Background Colour
         background_colour = QtWidgets.QComboBox(self.groupBox)
         for i in background_color_list():
             background_colour.addItem(i["text"])
         self.addWidget(background_colour, "Background Colour:", "background_colour")
+        self.formWidget.widgets["background_colour_label"].setToolTip(TOOLTIPS_IMAGE_SETTINGS["background_colour"])
 
         # Slice Orientation
         orientation = QtWidgets.QComboBox(self.groupBox)
         orientation.addItems(["YZ", "XZ", "XY"])
         orientation.setCurrentIndex(2)
         self.addWidget(orientation, "Orientation:", "orientation")
+        self.formWidget.widgets["orientation_label"].setToolTip(TOOLTIPS_IMAGE_SETTINGS["orientation"])
 
         # Slice Visibility
         slice_visibility = QtWidgets.QCheckBox("Slice Visibility", self.groupBox)
         self.addWidget(slice_visibility, "", "slice_visibility")
+        self.formWidget.widgets["slice_visibility_field"].setToolTip(TOOLTIPS_IMAGE_SETTINGS["slice_visibility"])
 
         # Auto Window/Level
         auto_window_level = QtWidgets.QPushButton("Auto Window/Level")
         self.addWidget(auto_window_level, "", "auto_window_level")
+        self.formWidget.widgets["auto_window_level_field"].setToolTip(TOOLTIPS_IMAGE_SETTINGS["auto_window_level"])
 
         # Slice Window Sliders
         slice_window_slider = UISliderWidget.UISliderWidget(0.0, 255.0)
         self.addWidget(slice_window_slider, "Slice Window:", "slice_window_slider")
+        self.formWidget.widgets["slice_window_slider_label"].setToolTip(TOOLTIPS_IMAGE_SETTINGS["slice_window_slider"])
 
         # Slice Level Sliders
         slice_level_slider = UISliderWidget.UISliderWidget(0.0, 255.0)
         self.addWidget(slice_level_slider, "Slice Level:", "slice_level_slider")
+        self.formWidget.widgets["slice_level_slider_label"].setToolTip(TOOLTIPS_IMAGE_SETTINGS["slice_level_slider"])
 
         # Render Save Location
         render_save_location = QtWidgets.QLabel("'render'")
         open_location_browser = QtWidgets.QPushButton("Open Location Browser")
         self.addWidget(render_save_location, "Render Save Location:", "render_save_location")
         self.addWidget(open_location_browser, "", "open_location_browser")
+        self.formWidget.widgets["render_save_location_label"].setToolTip(TOOLTIPS_IMAGE_SETTINGS["render_save_location"])
+        self.formWidget.widgets["open_location_browser_field"].setToolTip(TOOLTIPS_IMAGE_SETTINGS["open_location_browser"])
 
     def get_settings(self):
         """Return a dictionary of settings from the dialog."""

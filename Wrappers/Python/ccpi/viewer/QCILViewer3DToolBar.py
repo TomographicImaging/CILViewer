@@ -1,6 +1,6 @@
 from PySide2 import QtWidgets, QtCore
 
-
+from ccpi.viewer.utils.tooltips import TOOLTIPS_3D_TOOLBAR
 from ccpi.viewer.ui.SettingsDialog import SettingsDialog
 from ccpi.viewer.ui.VolumeRenderSettingsDialog import VolumeRenderSettingsDialog
 
@@ -27,12 +27,13 @@ class QCILViewer3DToolBar(QtWidgets.QToolBar):
         settings_menu = QtWidgets.QMenu(self)
 
         settings_button = QtWidgets.QToolButton()
-        settings_button.setText("⚙️")
+        settings_button.setText("3D View Settings")
         settings_button.setMenu(settings_menu)
         settings_button.setStyleSheet("QToolButton::menu-indicator { image: none; }")
         settings_button.setPopupMode(QtWidgets.QToolButton.InstantPopup)
+        settings_button.setToolTip(TOOLTIPS_3D_TOOLBAR["settings_button"])
 
-        settings_2d = QtWidgets.QAction("Slice/Window Settings", self)
+        settings_2d = QtWidgets.QAction("Image Settings", self)
         settings_2d.triggered.connect(lambda: self.open_dialog("settings_2d"))
         settings_menu.addAction(settings_2d)
 
@@ -44,7 +45,8 @@ class QCILViewer3DToolBar(QtWidgets.QToolBar):
 
         # Camera Button
         camera_button = QtWidgets.QToolButton()
-        camera_button.setText("📷")
+        camera_button.setText("Screenshot Settings")
+        camera_button.setToolTip(TOOLTIPS_3D_TOOLBAR["camera_button"])
 
         self.addWidget(camera_button)
 
@@ -53,7 +55,7 @@ class QCILViewer3DToolBar(QtWidgets.QToolBar):
         """Open a dialog box for the settings of the viewer."""
         if mode == "settings_2d":
             if self.dialog["settings_2d"] is None:
-                dialog = SettingsDialog(parent=self.parent, title="Slice/Window Settings", scale_factor=self.scale_factor)
+                dialog = SettingsDialog(parent=self.parent, title="Image Settings", scale_factor=self.scale_factor)
                 dialog.Ok.clicked.connect(lambda: self.accepted(mode))
                 dialog.Cancel.clicked.connect(lambda: self.rejected(mode))
                 dialog.set_viewer(self.viewer)

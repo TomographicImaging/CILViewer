@@ -1,6 +1,7 @@
 from eqt.ui import FormDialog, UISliderWidget
 from PySide2 import QtCore, QtWidgets, QtGui
 
+from ccpi.viewer.utils.tooltips import TOOLTIPS_VOLUME_RENDER_SETTINGS
 from ccpi.viewer.ui.helpers import color_scheme_list
 
 
@@ -10,47 +11,57 @@ class VolumeRenderSettingsDialog(FormDialog):
     def __init__(self, parent=None, title=None, scale_factor=1):
         FormDialog.__init__(self, parent, title=title)
         self.setWindowFlag(QtCore.Qt.WindowStaysOnTopHint, True)
+        self.scale_factor = scale_factor
 
         # 3D Volume Visibility
         volume_visibility = QtWidgets.QCheckBox("3D Volume Visibility", self.groupBox)
         self.addWidget(volume_visibility, "", "volume_visibility")
+        self.formWidget.widgets["volume_visibility_field"].setToolTip(TOOLTIPS_VOLUME_RENDER_SETTINGS["volume_visibility"])
 
-        self.scale_factor = scale_factor
         # Windowing Minimum
         windowing_slider_min = UISliderWidget.UISliderWidget(0.0, 100.0)
         self.addWidget(windowing_slider_min, "Windowing Minimum:", "windowing_slider_min")
+        self.formWidget.widgets["windowing_slider_min_label"].setToolTip(TOOLTIPS_VOLUME_RENDER_SETTINGS["windowing_slider_min"])
 
         # Windowing Maximum
         windowing_slider_max = UISliderWidget.UISliderWidget(0.0, 100.0)
         self.addWidget(windowing_slider_max, "Windowing Maximum:", "windowing_slider_max")
+        self.formWidget.widgets["windowing_slider_max_label"].setToolTip(TOOLTIPS_VOLUME_RENDER_SETTINGS["windowing_slider_max"])
 
         # Opacity Mapping
         opacity_mapping = QtWidgets.QComboBox(self.groupBox)
         opacity_mapping.addItems(["Scalar", "Gradient"])
         self.addWidget(opacity_mapping, "Opacity Mapping:", "opacity_mapping")
+        self.formWidget.widgets["opacity_mapping_label"].setToolTip(TOOLTIPS_VOLUME_RENDER_SETTINGS["opacity_mapping"])
 
         # Colour Scheme
         colour_scheme = QtWidgets.QComboBox(self.groupBox)
         colour_scheme.addItems(color_scheme_list())
         self.addWidget(colour_scheme, "Colour Scheme:", "colour_scheme")
+        self.formWidget.widgets["colour_scheme_label"].setToolTip(TOOLTIPS_VOLUME_RENDER_SETTINGS["colour_scheme"])
 
         # Volume Clipping
         volume_clipping = QtWidgets.QCheckBox("Volume Clipping", self.groupBox)
         self.addWidget(volume_clipping, "", "volume_clipping")
         volume_clipping_reset = QtWidgets.QPushButton("Reset Volume Clipping", self.groupBox)
         self.addWidget(volume_clipping_reset, "", "volume_clipping_reset")
+        self.formWidget.widgets["volume_clipping_field"].setToolTip(TOOLTIPS_VOLUME_RENDER_SETTINGS["volume_clipping"])
+        self.formWidget.widgets["volume_clipping_reset_field"].setToolTip(TOOLTIPS_VOLUME_RENDER_SETTINGS["volume_clipping_reset"])
 
         # Colour Range Minimum
         colour_range_slider_min = UISliderWidget.UISliderWidget(0.0, 100.0)
         self.addWidget(colour_range_slider_min, "Colour Range Minimum:", "colour_range_slider_min")
+        self.formWidget.widgets["colour_range_slider_min_label"].setToolTip(TOOLTIPS_VOLUME_RENDER_SETTINGS["colour_range_slider_min"])
 
         # Colour Range Maximum
         colour_range_slider_max = UISliderWidget.UISliderWidget(0.0, 100.0)
         self.addWidget(colour_range_slider_max, "Colour Range Maximum:", "colour_range_slider_max")
+        self.formWidget.widgets["colour_range_slider_max_label"].setToolTip(TOOLTIPS_VOLUME_RENDER_SETTINGS["colour_range_slider_max"])
 
         # Maximum Opacity
         max_opacity_input = UISliderWidget.UISliderWidget(0.0, 1.0, decimals=3)
         self.addWidget(max_opacity_input, "Maximum Opacity:", "max_opacity_input")
+        self.formWidget.widgets["max_opacity_input_label"].setToolTip(TOOLTIPS_VOLUME_RENDER_SETTINGS["max_opacity_input"])
 
         # Disable 3D-related widgets if volume visibility is not checked
         volume_visibility_checked = self.getWidget("volume_visibility").isChecked()
