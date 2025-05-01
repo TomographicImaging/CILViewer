@@ -20,10 +20,11 @@ class SettingsDialog(FormDialog):
     """
 
     def __init__(self, parent=None, title=None, scale_factor=1):
-        FormDialog.__init__(self, parent, title=title)
+        FormDialog.__init__(self, parent=parent, title=title)
+        print(parent)
         self.setWindowFlag(QtCore.Qt.WindowStaysOnTopHint, True)
-        self.file_location = "."
         self.scale_factor = scale_factor
+        self.file_location = "."
 
         # Background Colour
         background_colour = QtWidgets.QComboBox(self.groupBox)
@@ -32,32 +33,32 @@ class SettingsDialog(FormDialog):
         self.addWidget(background_colour, "Background Colour:", "background_colour")
         self.formWidget.widgets["background_colour_label"].setToolTip(TOOLTIPS_IMAGE_SETTINGS["background_colour"])
 
-        # Slice Orientation
+        # Image Orientation
         orientation = QtWidgets.QComboBox(self.groupBox)
         orientation.addItems(["YZ", "XZ", "XY"])
         orientation.setCurrentIndex(2)
         self.addWidget(orientation, "Orientation:", "orientation")
         self.formWidget.widgets["orientation_label"].setToolTip(TOOLTIPS_IMAGE_SETTINGS["orientation"])
 
-        # Slice Visibility
-        slice_visibility = QtWidgets.QCheckBox("Slice Visibility", self.groupBox)
-        self.addWidget(slice_visibility, "", "slice_visibility")
-        self.formWidget.widgets["slice_visibility_field"].setToolTip(TOOLTIPS_IMAGE_SETTINGS["slice_visibility"])
+        # Image Visibility
+        image_visibility = QtWidgets.QCheckBox("Image Visibility", self.groupBox)
+        self.addWidget(image_visibility, "", "image_visibility")
+        self.formWidget.widgets["image_visibility_field"].setToolTip(TOOLTIPS_IMAGE_SETTINGS["image_visibility"])
 
         # Auto Window/Level
         auto_window_level = QtWidgets.QPushButton("Auto Window/Level")
         self.addWidget(auto_window_level, "", "auto_window_level")
         self.formWidget.widgets["auto_window_level_field"].setToolTip(TOOLTIPS_IMAGE_SETTINGS["auto_window_level"])
 
-        # Slice Window Sliders
-        slice_window_slider = UISliderWidget.UISliderWidget(0.0, 255.0)
-        self.addWidget(slice_window_slider, "Slice Window:", "slice_window_slider")
-        self.formWidget.widgets["slice_window_slider_label"].setToolTip(TOOLTIPS_IMAGE_SETTINGS["slice_window_slider"])
+        # Image Window Sliders
+        image_window_slider = UISliderWidget.UISliderWidget(0.0, 255.0)
+        self.addWidget(image_window_slider, "Image Window:", "image_window_slider")
+        self.formWidget.widgets["image_window_slider_label"].setToolTip(TOOLTIPS_IMAGE_SETTINGS["image_window_slider"])
 
-        # Slice Level Sliders
-        slice_level_slider = UISliderWidget.UISliderWidget(0.0, 255.0)
-        self.addWidget(slice_level_slider, "Slice Level:", "slice_level_slider")
-        self.formWidget.widgets["slice_level_slider_label"].setToolTip(TOOLTIPS_IMAGE_SETTINGS["slice_level_slider"])
+        # Image Level Sliders
+        image_level_slider = UISliderWidget.UISliderWidget(0.0, 255.0)
+        self.addWidget(image_level_slider, "Image Level:", "image_level_slider")
+        self.formWidget.widgets["image_level_slider_label"].setToolTip(TOOLTIPS_IMAGE_SETTINGS["image_level_slider"])
 
         # Render Save Location
         render_save_location = QtWidgets.QLabel("'render'")
@@ -100,10 +101,10 @@ class SettingsDialog(FormDialog):
         self.viewer.autoWindowLevelOnSliceRange()
 
         window_default = self.viewer.getSliceColorWindow()
-        self.getWidget("slice_window_slider").setValue(window_default)
+        self.getWidget("image_window_slider").setValue(window_default)
 
         level_default = self.viewer.getSliceColorLevel()
-        self.getWidget("slice_level_slider").setValue(level_default)
+        self.getWidget("image_level_slider").setValue(level_default)
 
     def set_viewer(self, viewer):
         """Attach the events to the viewer."""
@@ -112,32 +113,32 @@ class SettingsDialog(FormDialog):
         # Orientation
         self.getWidget("orientation").currentIndexChanged.connect(self.change_viewer_orientation)
 
-        # Slice Visibility
-        self.getWidget("slice_visibility").setChecked(True)
-        self.getWidget("slice_visibility").stateChanged.connect(self.viewer.style.ToggleSliceVisibility)
+        # Image Visibility
+        self.getWidget("image_visibility").setChecked(True)
+        self.getWidget("image_visibility").stateChanged.connect(self.viewer.style.ToggleSliceVisibility)
 
         # Auto Window/Level
         self.getWidget("auto_window_level").clicked.connect(self.auto_window_level)
 
-        # Slice Window Sliders
+        # Image Window Sliders
         window_min, window_max = self.viewer.getImageMapRange((0.0, 1.0), "scalar")
         window_default = self.viewer.getSliceColorWindow()
 
-        self.getWidget("slice_window_slider").setValue(window_default)
-        self.getWidget("slice_window_slider").slider.valueChanged.connect(lambda: self.viewer.setSliceColorWindow(
-            window_min + self.getWidget("slice_window_slider").value() / 100 * (window_max - window_min)))
-        self.getWidget("slice_window_slider").line_edit.editingFinished.connect(lambda: self.viewer.setSliceColorWindow(
-            window_min + self.getWidget("slice_window_slider").value() / 100 * (window_max - window_min)))
+        self.getWidget("image_window_slider").setValue(window_default)
+        self.getWidget("image_window_slider").slider.valueChanged.connect(lambda: self.viewer.setSliceColorWindow(
+            window_min + self.getWidget("image_window_slider").value() / 100 * (window_max - window_min)))
+        self.getWidget("image_window_slider").line_edit.editingFinished.connect(lambda: self.viewer.setSliceColorWindow(
+            window_min + self.getWidget("image_window_slider").value() / 100 * (window_max - window_min)))
 
         # Level Window Sliders
         level_min, level_max = self.viewer.getImageMapRange((0.0, 1.0), "scalar")
         level_default = self.viewer.getSliceColorLevel()
 
-        self.getWidget("slice_level_slider").setValue(level_default)
-        self.getWidget("slice_level_slider").slider.valueChanged.connect(lambda: self.viewer.setSliceColorLevel(
-            level_min + self.getWidget("slice_level_slider").value() / 100 * (level_max - level_min)))
-        self.getWidget("slice_level_slider").line_edit.editingFinished.connect(lambda: self.viewer.setSliceColorLevel(
-            level_min + self.getWidget("slice_level_slider").value() / 100 * (level_max - level_min)))
+        self.getWidget("image_level_slider").setValue(level_default)
+        self.getWidget("image_level_slider").slider.valueChanged.connect(lambda: self.viewer.setSliceColorLevel(
+            level_min + self.getWidget("image_level_slider").value() / 100 * (level_max - level_min)))
+        self.getWidget("image_level_slider").line_edit.editingFinished.connect(lambda: self.viewer.setSliceColorLevel(
+            level_min + self.getWidget("image_level_slider").value() / 100 * (level_max - level_min)))
 
         # Background Colour
         self.getWidget("background_colour").currentIndexChanged.connect(self.change_background_colour)

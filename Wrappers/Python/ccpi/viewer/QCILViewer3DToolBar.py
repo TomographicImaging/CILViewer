@@ -15,37 +15,39 @@ class QCILViewer3DToolBar(QtWidgets.QToolBar):
             the viewer which the toolbar is for. The viewer instance
             is passed to allow interactions to be controlled using the
             toolbar.
-
         """
-        self.parent = parent
-        self.viewer = viewer
 
-        super(QCILViewer3DToolBar, self).__init__(parent=parent)
+        self.parent = parent
+        print(parent)
+        self.viewer = viewer
+        print(viewer)
+
+        super(QCILViewer3DToolBar, self).__init__(parent=self.parent)
         self.dialog = {"settings_2d": None, "settings_3d": None}
 
         # Settings Menu
-        settings_menu = QtWidgets.QMenu(self)
+        settings_menu = QtWidgets.QMenu(parent=self)
 
-        settings_button = QtWidgets.QToolButton()
-        settings_button.setText("3D View Settings")
+        settings_button = QtWidgets.QToolButton(parent=self)
+        settings_button.setText("3D View")
         settings_button.setMenu(settings_menu)
         settings_button.setStyleSheet("QToolButton::menu-indicator { image: none; }")
         settings_button.setPopupMode(QtWidgets.QToolButton.InstantPopup)
         settings_button.setToolTip(TOOLTIPS_3D_TOOLBAR["settings_button"])
 
-        settings_2d = QtWidgets.QAction("Image Settings", self)
+        settings_2d = QtWidgets.QAction("Image Settings", parent=self)
         settings_2d.triggered.connect(lambda: self.open_dialog("settings_2d"))
         settings_menu.addAction(settings_2d)
 
-        settings_3d = QtWidgets.QAction("Volume Render Settings", self)
+        settings_3d = QtWidgets.QAction("Volume Render Settings", parent=self)
         settings_3d.triggered.connect(lambda: self.open_dialog("settings_3d"))
         settings_menu.addAction(settings_3d)
 
         self.addWidget(settings_button)
 
         # Camera Button
-        camera_button = QtWidgets.QToolButton()
-        camera_button.setText("Screenshot Settings")
+        camera_button = QtWidgets.QToolButton(parent=self)
+        camera_button.setText("Screenshot")
         camera_button.setToolTip(TOOLTIPS_3D_TOOLBAR["camera_button"])
 
         self.addWidget(camera_button)

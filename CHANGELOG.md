@@ -3,7 +3,9 @@
 ## vx.x.x
 Enhancements:
   - Update recipe to require eqt Version 2.0.0
-  - Add new UISlider support to 3D toolbar settings dialogs
+  - Add a toolbar to the 3D viewer
+  - Add tooltips to relevant widgets
+  - Add eqt UISlider support to 3D toolbar settings dialogs
 
 ## v25.0.0
 Enhancements:

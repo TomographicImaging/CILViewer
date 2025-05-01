@@ -91,7 +91,7 @@ class QCILViewerWidget(QtWidgets.QFrame):
             return self._toolBar
         # Adds a toolbar to the QFrame if we have a 3D viewer
         if isinstance(self.viewer, viewer3D):
-            toolBar = QCILViewer3DToolBar(viewer=self.viewer, parent=parent)
+            toolBar = QCILViewer3DToolBar(parent=parent, viewer=self.viewer)
             self._toolBar = toolBar
             return toolBar
 

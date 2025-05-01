@@ -5,11 +5,12 @@ TOOLTIPS_3D_TOOLBAR = {
 
 TOOLTIPS_IMAGE_SETTINGS = {
     "background_colour": "Change the background colour of the 3D viewer",
-    "orientation": "Select the orientation of the slice plane",
-    "slice_visibility": "Toggle the visibility of the slice",
+    "orientation": "Select the orientation of the image plane",
+    "image_visibility": "Toggle the visibility of the image",
     "auto_window_level": "Automatically detect window/level settings",
-    "slice_window_slider": "Adjust the range of the intensity values",
-    "slice_level_slider": "Adjust the central value of the intensity range",
+    "image_window_slider_min": "Adjust the minimum intensity value in the image window range",
+    "image_window_slider_max": "Adjust the maximum intensity value in the image window range",
+    "image_level_slider": "Adjust the central value of the intensity range",
     "render_save_location": "Location where renders will be saved",
     "open_location_browser": "Select the location where renders will be saved"
 }
