@@ -65,8 +65,10 @@ class SettingsDialog(FormDialog):
         open_location_browser = QtWidgets.QPushButton("Open Location Browser")
         self.addWidget(render_save_location, "Render Save Location:", "render_save_location")
         self.addWidget(open_location_browser, "", "open_location_browser")
-        self.formWidget.widgets["render_save_location_label"].setToolTip(TOOLTIPS_IMAGE_SETTINGS["render_save_location"])
-        self.formWidget.widgets["open_location_browser_field"].setToolTip(TOOLTIPS_IMAGE_SETTINGS["open_location_browser"])
+        self.formWidget.widgets["render_save_location_label"].setToolTip(
+            TOOLTIPS_IMAGE_SETTINGS["render_save_location"])
+        self.formWidget.widgets["open_location_browser_field"].setToolTip(
+            TOOLTIPS_IMAGE_SETTINGS["open_location_browser"])
 
     def get_settings(self):
         """Return a dictionary of settings from the dialog."""
