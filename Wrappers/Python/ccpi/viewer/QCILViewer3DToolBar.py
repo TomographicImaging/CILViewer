@@ -1,6 +1,6 @@
 from PySide2 import QtWidgets, QtCore
 
-from ccpi.viewer.utils.tooltips import TOOLTIPS_3D_TOOLBAR
+from ccpi.viewer.utils.settings_tooltips import TOOLTIPS_3D_TOOLBAR
 from ccpi.viewer.ui.SettingsDialog import SettingsDialog
 from ccpi.viewer.ui.VolumeRenderSettingsDialog import VolumeRenderSettingsDialog
 
@@ -18,9 +18,9 @@ class QCILViewer3DToolBar(QtWidgets.QToolBar):
         """
 
         self.parent = parent
-        print(parent)
+        print(f"Parent:{parent}")
         self.viewer = viewer
-        print(viewer)
+        print(f"Viewer:{viewer}")
 
         super(QCILViewer3DToolBar, self).__init__(parent=self.parent)
         self.dialog = {"settings_2d": None, "settings_3d": None}
@@ -29,7 +29,7 @@ class QCILViewer3DToolBar(QtWidgets.QToolBar):
         settings_menu = QtWidgets.QMenu(parent=self)
 
         settings_button = QtWidgets.QToolButton(parent=self)
-        settings_button.setText("3D View")
+        settings_button.setText("3D Viewer")
         settings_button.setMenu(settings_menu)
         settings_button.setStyleSheet("QToolButton::menu-indicator { image: none; }")
         settings_button.setPopupMode(QtWidgets.QToolButton.InstantPopup)

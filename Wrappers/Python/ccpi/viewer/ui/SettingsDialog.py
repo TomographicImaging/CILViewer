@@ -10,7 +10,7 @@ except ImportError:
     import vtk
 from vtk.util import colors
 
-from ccpi.viewer.utils.tooltips import TOOLTIPS_IMAGE_SETTINGS
+from ccpi.viewer.utils.settings_tooltips import TOOLTIPS_IMAGE_SETTINGS
 from ccpi.viewer.ui.helpers import background_color_list
 
 
@@ -50,12 +50,22 @@ class SettingsDialog(FormDialog):
         self.addWidget(auto_window_level, "", "auto_window_level")
         self.formWidget.widgets["auto_window_level_field"].setToolTip(TOOLTIPS_IMAGE_SETTINGS["auto_window_level"])
 
-        # Image Window Sliders
+        # Image Window
         image_window_slider = UISliderWidget.UISliderWidget(0.0, 255.0)
         self.addWidget(image_window_slider, "Image Window:", "image_window_slider")
         self.formWidget.widgets["image_window_slider_label"].setToolTip(TOOLTIPS_IMAGE_SETTINGS["image_window_slider"])
 
-        # Image Level Sliders
+        # Image Window Minimum
+        image_window_slider_min = UISliderWidget.UISliderWidget(0.0, 255.0)
+        self.addWidget(image_window_slider_min, "Image Window Minimum:", "image_window_slider_min")
+        self.formWidget.widgets["image_window_slider_min_label"].setToolTip(TOOLTIPS_IMAGE_SETTINGS["image_window_slider_min"])
+
+        # Image Window Maximum
+        image_window_slider_max = UISliderWidget.UISliderWidget(0.0, 255.0)
+        self.addWidget(image_window_slider_max, "Image Window Maximum:", "image_window_slider_max")
+        self.formWidget.widgets["image_window_slider_max_label"].setToolTip(TOOLTIPS_IMAGE_SETTINGS["image_window_slider_max"])
+
+        # Image Level
         image_level_slider = UISliderWidget.UISliderWidget(0.0, 255.0)
         self.addWidget(image_level_slider, "Image Level:", "image_level_slider")
         self.formWidget.widgets["image_level_slider_label"].setToolTip(TOOLTIPS_IMAGE_SETTINGS["image_level_slider"])
@@ -69,6 +79,11 @@ class SettingsDialog(FormDialog):
             TOOLTIPS_IMAGE_SETTINGS["render_save_location"])
         self.formWidget.widgets["open_location_browser_field"].setToolTip(
             TOOLTIPS_IMAGE_SETTINGS["open_location_browser"])
+        
+        # Reset Settings
+        reset_settings = QtWidgets.QPushButton("Reset Settings")
+        self.addWidget(reset_settings, "", "reset_settings")
+        self.formWidget.widgets["reset_settings_field"].setToolTip(TOOLTIPS_IMAGE_SETTINGS["reset_settings"])
 
     def get_settings(self):
         """Return a dictionary of settings from the dialog."""
@@ -97,6 +112,10 @@ class SettingsDialog(FormDialog):
                 widg.setCurrentIndex(value)
             elif isinstance(widg, UISliderWidget.UISliderWidget):
                 widg.setValue(value)
+
+    def reset_settings(self):
+        """Reset the changes made to the dialog's settings."""
+        self.formWidget.restoreAllSavedWidgetStates()
 
     def auto_window_level(self):
         """Set the window and level to the default values."""
@@ -147,6 +166,9 @@ class SettingsDialog(FormDialog):
 
         # Render Save Location
         self.getWidget("open_location_browser").clicked.connect(self.open_file_location_dialog)
+
+        # Reset Settings
+        self.getWidget("reset_settings").clicked.connect(self.reset_settings)
 
     def open_file_location_dialog(self):
         """Open file location dialog."""

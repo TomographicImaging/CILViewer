@@ -8,11 +8,13 @@ TOOLTIPS_IMAGE_SETTINGS = {
     "orientation": "Select the orientation of the image plane",
     "image_visibility": "Toggle the visibility of the image",
     "auto_window_level": "Automatically detect window/level settings",
+    "image_window_slider": "Adjust the intensity values in the image window range",
     "image_window_slider_min": "Adjust the minimum intensity value in the image window range",
     "image_window_slider_max": "Adjust the maximum intensity value in the image window range",
     "image_level_slider": "Adjust the central value of the intensity range",
     "render_save_location": "Location where renders will be saved",
-    "open_location_browser": "Select the location where renders will be saved"
+    "open_location_browser": "Select the location where renders will be saved",
+    "reset_settings": "Resets the image settings using default values"
 }
 
 TOOLTIPS_VOLUME_RENDER_SETTINGS = {
@@ -25,5 +27,6 @@ TOOLTIPS_VOLUME_RENDER_SETTINGS = {
     "volume_clipping_reset": "Reset the render to an unclipped state",
     "colour_range_slider_min": "Adjust the minimum intensity of the colour range",
     "colour_range_slider_max": "Adjust the maximum intensity of the colour range",
-    "max_opacity_input": "Adjust the maximum opacity of the render"
+    "max_opacity_input": "Adjust the maximum opacity of the render",
+    "reset_settings": "Resets the volume render settings using default values"
 }
