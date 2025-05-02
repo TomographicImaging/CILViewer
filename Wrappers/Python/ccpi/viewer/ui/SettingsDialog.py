@@ -21,7 +21,6 @@ class SettingsDialog(FormDialog):
 
     def __init__(self, parent=None, title=None, scale_factor=1):
         FormDialog.__init__(self, parent=parent, title=title)
-        print(parent)
         self.setWindowFlag(QtCore.Qt.WindowStaysOnTopHint, True)
         self.scale_factor = scale_factor
         self.file_location = "."

@@ -40,10 +40,8 @@ def background_color_list():
     initial_list.insert(1, initial_list.pop(initial_list.index("black")))
 
     for color in initial_list:
-        if "__" in color:
-            continue
         if "_" in color:
-            filtered_color = color.replace("_", " ")
+            continue
         else:
             filtered_color = color
         filtered_color = filtered_color.capitalize()

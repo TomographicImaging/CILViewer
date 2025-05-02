@@ -231,7 +231,10 @@ class VolumeRenderSettingsDialog(FormDialog):
 
     def reset_settings(self):
         """Reset the changes made to the dialog's settings."""
-        self.formWidget.restoreAllSavedWidgetStates()
+        volume_visibility_checked = self.getWidget("volume_visibility").isChecked()
+
+        if volume_visibility_checked:
+            self.formWidget.restoreAllSavedWidgetStates()
 
     def toggle_volume_visibility(self):
         """Toggle volume visibility."""
@@ -252,7 +255,6 @@ class VolumeRenderSettingsDialog(FormDialog):
         if volume_visibility_checked:
             self.change_opacity_mapping()
             if self.getWidget("volume_clipping").isChecked() and hasattr(self.viewer, "planew"):
-                print("Volume visibility on")
                 self.viewer.planew.On()
                 self.viewer.updatePipeline()
         elif hasattr(self.viewer, "planew"):
