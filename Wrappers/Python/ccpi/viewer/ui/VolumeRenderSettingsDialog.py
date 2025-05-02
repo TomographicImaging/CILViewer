@@ -69,7 +69,7 @@ class VolumeRenderSettingsDialog(FormDialog):
         self.addWidget(max_opacity_input, "Maximum Opacity:", "max_opacity_input")
         self.formWidget.widgets["max_opacity_input_label"].setToolTip(
             TOOLTIPS_VOLUME_RENDER_SETTINGS["max_opacity_input"])
-        
+
         # Reset Settings
         reset_settings = QtWidgets.QPushButton("Reset Settings")
         self.addWidget(reset_settings, "", "reset_settings")

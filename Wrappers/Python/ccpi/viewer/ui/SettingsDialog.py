@@ -57,12 +57,14 @@ class SettingsDialog(FormDialog):
         # Image Window Minimum
         image_window_slider_min = UISliderWidget.UISliderWidget(0.0, 255.0)
         self.addWidget(image_window_slider_min, "Image Window Minimum:", "image_window_slider_min")
-        self.formWidget.widgets["image_window_slider_min_label"].setToolTip(TOOLTIPS_IMAGE_SETTINGS["image_window_slider_min"])
+        self.formWidget.widgets["image_window_slider_min_label"].setToolTip(
+            TOOLTIPS_IMAGE_SETTINGS["image_window_slider_min"])
 
         # Image Window Maximum
         image_window_slider_max = UISliderWidget.UISliderWidget(0.0, 255.0)
         self.addWidget(image_window_slider_max, "Image Window Maximum:", "image_window_slider_max")
-        self.formWidget.widgets["image_window_slider_max_label"].setToolTip(TOOLTIPS_IMAGE_SETTINGS["image_window_slider_max"])
+        self.formWidget.widgets["image_window_slider_max_label"].setToolTip(
+            TOOLTIPS_IMAGE_SETTINGS["image_window_slider_max"])
 
         # Image Level
         image_level_slider = UISliderWidget.UISliderWidget(0.0, 255.0)
@@ -78,7 +80,7 @@ class SettingsDialog(FormDialog):
             TOOLTIPS_IMAGE_SETTINGS["render_save_location"])
         self.formWidget.widgets["open_location_browser_field"].setToolTip(
             TOOLTIPS_IMAGE_SETTINGS["open_location_browser"])
-        
+
         # Reset Settings
         reset_settings = QtWidgets.QPushButton("Reset Settings")
         self.addWidget(reset_settings, "", "reset_settings")
