@@ -8,6 +8,7 @@ try:
     # from vtkmodules.util import colors
 except ImportError:
     import vtk
+from ccpi.viewer import (SLICE_ORIENTATION_XY, SLICE_ORIENTATION_XZ, SLICE_ORIENTATION_YZ)
 from vtk.util import colors
 
 from ccpi.viewer.utils.settings_tooltips import TOOLTIPS_IMAGE_SETTINGS
@@ -34,7 +35,7 @@ class SettingsDialog(FormDialog):
 
         # Image Orientation
         orientation = QtWidgets.QComboBox(self.groupBox)
-        orientation.addItems(["YZ", "XZ", "XY"])
+        orientation.addItems(["Y-Z", "X-Z", "X-Y"])
         orientation.setCurrentIndex(2)
         self.addWidget(orientation, "Orientation:", "orientation")
         self.formWidget.widgets["orientation_label"].setToolTip(TOOLTIPS_IMAGE_SETTINGS["orientation"])
@@ -181,8 +182,22 @@ class SettingsDialog(FormDialog):
     def change_viewer_orientation(self):
         """Change the viewer orientation."""
         index = self.getWidget("orientation").currentIndex()
-        self.viewer.style.SetSliceOrientation(index)
-        self.viewer.style.UpdatePipeline(resetcamera=True)
+        al = self.viewer.style._viewer.axisLabelsText
+
+        if index == 0:
+            self.viewer.style._viewer.setAxisLabels(['', al[1], al[2]], False)
+            self.viewer.style.SetSliceOrientation(SLICE_ORIENTATION_YZ)
+        elif index == 1:
+            self.viewer.style._viewer.setAxisLabels([al[0], '', al[2]], False)
+            self.viewer.style.SetSliceOrientation(SLICE_ORIENTATION_XZ)
+        elif index == 2:
+            self.viewer.style._viewer.setAxisLabels([al[0], al[1], ''], False)
+            self.viewer.style.SetSliceOrientation(SLICE_ORIENTATION_XY)
+
+        if self.viewer.img3D is None:
+            return
+        else:
+            self.viewer.style.UpdatePipeline(resetcamera=True)
 
     def change_background_colour(self):
         """Change the background colour."""
