@@ -17,13 +17,12 @@ from ccpi.viewer.ui.helpers import background_color_list
 
 class SettingsDialog(FormDialog):
     """
-    Image settings dialog.
+    Slice settings dialog.
     """
 
-    def __init__(self, parent=None, title=None, scale_factor=1):
+    def __init__(self, parent=None, title=None):
         FormDialog.__init__(self, parent=parent, title=title)
         self.setWindowFlag(QtCore.Qt.WindowStaysOnTopHint, True)
-        self.scale_factor = scale_factor
         self.file_location = "."
 
         # Background Colour
@@ -33,59 +32,40 @@ class SettingsDialog(FormDialog):
         self.addWidget(background_colour, "Background Colour:", "background_colour")
         self.formWidget.widgets["background_colour_label"].setToolTip(TOOLTIPS_IMAGE_SETTINGS["background_colour"])
 
-        # Image Orientation
+        # Slice Visibility
+        slice_visibility = QtWidgets.QCheckBox("Slice Visibility", self.groupBox)
+        slice_visibility.setChecked(True)
+        self.addWidget(slice_visibility, "", "slice_visibility")
+        self.formWidget.widgets["slice_visibility_field"].setToolTip(TOOLTIPS_IMAGE_SETTINGS["slice_visibility"])
+
+        # Slice Orientation
         orientation = QtWidgets.QComboBox(self.groupBox)
         orientation.addItems(["Y-Z", "X-Z", "X-Y"])
         orientation.setCurrentIndex(2)
         self.addWidget(orientation, "Orientation:", "orientation")
         self.formWidget.widgets["orientation_label"].setToolTip(TOOLTIPS_IMAGE_SETTINGS["orientation"])
 
-        # Image Visibility
-        image_visibility = QtWidgets.QCheckBox("Image Visibility", self.groupBox)
-        self.addWidget(image_visibility, "", "image_visibility")
-        self.formWidget.widgets["image_visibility_field"].setToolTip(TOOLTIPS_IMAGE_SETTINGS["image_visibility"])
-
         # Auto Window/Level
         auto_window_level = QtWidgets.QPushButton("Auto Window/Level")
         self.addWidget(auto_window_level, "", "auto_window_level")
         self.formWidget.widgets["auto_window_level_field"].setToolTip(TOOLTIPS_IMAGE_SETTINGS["auto_window_level"])
 
-        # Image Window
-        image_window_slider = UISliderWidget.UISliderWidget(0.0, 255.0)
-        self.addWidget(image_window_slider, "Image Window:", "image_window_slider")
-        self.formWidget.widgets["image_window_slider_label"].setToolTip(TOOLTIPS_IMAGE_SETTINGS["image_window_slider"])
+        # Slice Window
+        slice_window_slider = UISliderWidget.UISliderWidget(0.0, 100.0)
+        self.addWidget(slice_window_slider, "Slice Window:", "slice_window_slider")
+        self.formWidget.widgets["slice_window_slider_label"].setToolTip(TOOLTIPS_IMAGE_SETTINGS["slice_window_slider"])
 
-        # Image Window Minimum
-        image_window_slider_min = UISliderWidget.UISliderWidget(0.0, 255.0)
-        self.addWidget(image_window_slider_min, "Image Window Minimum:", "image_window_slider_min")
-        self.formWidget.widgets["image_window_slider_min_label"].setToolTip(
-            TOOLTIPS_IMAGE_SETTINGS["image_window_slider_min"])
-
-        # Image Window Maximum
-        image_window_slider_max = UISliderWidget.UISliderWidget(0.0, 255.0)
-        self.addWidget(image_window_slider_max, "Image Window Maximum:", "image_window_slider_max")
-        self.formWidget.widgets["image_window_slider_max_label"].setToolTip(
-            TOOLTIPS_IMAGE_SETTINGS["image_window_slider_max"])
-
-        # Image Level
-        image_level_slider = UISliderWidget.UISliderWidget(0.0, 255.0)
-        self.addWidget(image_level_slider, "Image Level:", "image_level_slider")
-        self.formWidget.widgets["image_level_slider_label"].setToolTip(TOOLTIPS_IMAGE_SETTINGS["image_level_slider"])
-
-        # Render Save Location
-        render_save_location = QtWidgets.QLabel("'render'")
-        open_location_browser = QtWidgets.QPushButton("Open Location Browser")
-        self.addWidget(render_save_location, "Render Save Location:", "render_save_location")
-        self.addWidget(open_location_browser, "", "open_location_browser")
-        self.formWidget.widgets["render_save_location_label"].setToolTip(
-            TOOLTIPS_IMAGE_SETTINGS["render_save_location"])
-        self.formWidget.widgets["open_location_browser_field"].setToolTip(
-            TOOLTIPS_IMAGE_SETTINGS["open_location_browser"])
-
-        # Reset Settings
-        reset_settings = QtWidgets.QPushButton("Reset Settings")
-        self.addWidget(reset_settings, "", "reset_settings")
-        self.formWidget.widgets["reset_settings_field"].setToolTip(TOOLTIPS_IMAGE_SETTINGS["reset_settings"])
+        # Slice Level
+        slice_level_slider = UISliderWidget.UISliderWidget(0.0, 100.0)
+        self.addWidget(slice_level_slider, "Slice Level:", "slice_level_slider")
+        self.formWidget.widgets["slice_level_slider_label"].setToolTip(TOOLTIPS_IMAGE_SETTINGS["slice_level_slider"])
+        
+        # Disable slice-related widgets if slice visibility is not checked
+        slice_visibility_checked = self.getWidget("slice_visibility").isChecked()
+        self.getWidget("orientation").setEnabled(slice_visibility_checked)
+        self.getWidget("auto_window_level").setEnabled(slice_visibility_checked)
+        self.getWidget("slice_window_slider").setEnabled(slice_visibility_checked)
+        self.getWidget("slice_level_slider").setEnabled(slice_visibility_checked)
 
     def get_settings(self):
         """Return a dictionary of settings from the dialog."""
@@ -115,69 +95,50 @@ class SettingsDialog(FormDialog):
             elif isinstance(widg, UISliderWidget.UISliderWidget):
                 widg.setValue(value)
 
-    def reset_settings(self):
-        """Reset the changes made to the dialog's settings."""
-        self.formWidget.restoreAllSavedWidgetStates()
-
     def auto_window_level(self):
         """Set the window and level to the default values."""
         self.viewer.autoWindowLevelOnSliceRange()
 
         window_default = self.viewer.getSliceColorWindow()
-        self.getWidget("image_window_slider").setValue(window_default)
+        self.getWidget("slice_window_slider").setValue(window_default)
 
         level_default = self.viewer.getSliceColorLevel()
-        self.getWidget("image_level_slider").setValue(level_default)
+        self.getWidget("slice_level_slider").setValue(level_default)
 
     def set_viewer(self, viewer):
         """Attach the events to the viewer."""
         self.viewer = viewer
 
+        # Background Colour
+        self.getWidget("background_colour").currentIndexChanged.connect(self.change_background_colour)
+
+        # Slice Visibility
+        self.getWidget("slice_visibility").setChecked(True)
+        self.getWidget("slice_visibility").stateChanged.connect(self.toggle_slice_visibility)
+
         # Orientation
         self.getWidget("orientation").currentIndexChanged.connect(self.change_viewer_orientation)
-
-        # Image Visibility
-        self.getWidget("image_visibility").setChecked(True)
-        self.getWidget("image_visibility").stateChanged.connect(self.viewer.style.ToggleSliceVisibility)
 
         # Auto Window/Level
         self.getWidget("auto_window_level").clicked.connect(self.auto_window_level)
 
-        # Image Window Sliders
-        window_min, window_max = self.viewer.getImageMapRange((0.0, 1.0), "scalar")
+        # Slice Window Slider
+        window_min, window_max = self.viewer.getSliceMapRange((0.0, 100.0), "scalar")
         window_default = self.viewer.getSliceColorWindow()
 
-        self.getWidget("image_window_slider").setValue(window_default)
-        self.getWidget("image_window_slider").slider.valueChanged.connect(lambda: self.viewer.setSliceColorWindow(
-            window_min + self.getWidget("image_window_slider").value() / 100 * (window_max - window_min)))
-        self.getWidget("image_window_slider").line_edit.editingFinished.connect(lambda: self.viewer.setSliceColorWindow(
-            window_min + self.getWidget("image_window_slider").value() / 100 * (window_max - window_min)))
+        # self.formWidget.widgets["slice_window_slider_field"] = UISliderWidget.UISliderWidget(minimum=0.0, maximum=1.0)
+        self.getWidget("slice_window_slider").setValue(window_default)
+        self.getWidget("slice_window_slider").slider.valueChanged.connect(lambda: self.viewer.setSliceColorWindow(self.getWidget("slice_window_slider").value()))
+        self.getWidget("slice_window_slider").line_edit.editingFinished.connect(lambda: self.viewer.setSliceColorWindow(self.getWidget("slice_window_slider").value()))
 
-        # Level Window Sliders
-        level_min, level_max = self.viewer.getImageMapRange((0.0, 1.0), "scalar")
+        # Level Window Slider
+        level_min, level_max = self.viewer.getSliceMapRange((0.0, 100.0), "scalar")
         level_default = self.viewer.getSliceColorLevel()
 
-        self.getWidget("image_level_slider").setValue(level_default)
-        self.getWidget("image_level_slider").slider.valueChanged.connect(lambda: self.viewer.setSliceColorLevel(
-            level_min + self.getWidget("image_level_slider").value() / 100 * (level_max - level_min)))
-        self.getWidget("image_level_slider").line_edit.editingFinished.connect(lambda: self.viewer.setSliceColorLevel(
-            level_min + self.getWidget("image_level_slider").value() / 100 * (level_max - level_min)))
-
-        # Background Colour
-        self.getWidget("background_colour").currentIndexChanged.connect(self.change_background_colour)
-
-        # Render Save Location
-        self.getWidget("open_location_browser").clicked.connect(self.open_file_location_dialog)
-
-        # Reset Settings
-        self.getWidget("reset_settings").clicked.connect(self.reset_settings)
-
-    def open_file_location_dialog(self):
-        """Open file location dialog."""
-        dialog = QtWidgets.QFileDialog()
-        self.file_location = dialog.getSaveFileName(self, "Select File")[0]
-
-        self.getWidget("render_save_location").setText(f"'{os.path.relpath(self.file_location, os.getcwd())}'")
+        # self.formWidget.widgets["slice_level_slider_field"] = UISliderWidget.UISliderWidget(minimum=level_min, maximum=level_max)
+        self.getWidget("slice_level_slider").setValue(level_default)
+        self.getWidget("slice_level_slider").slider.valueChanged.connect(lambda: self.viewer.setSliceColorLevel(self.getWidget("slice_level_slider").value()))
+        self.getWidget("slice_level_slider").line_edit.editingFinished.connect(lambda: self.viewer.setSliceColorLevel(self.getWidget("slice_level_slider").value()))
 
     def change_viewer_orientation(self):
         """Change the viewer orientation."""
@@ -209,5 +170,13 @@ class SettingsDialog(FormDialog):
         self.viewer.ren.SetBackground(color_data)
         self.viewer.updatePipeline()
 
-    def adjust_slider(self, value):
-        pass
+    def toggle_slice_visibility(self):
+        """Toggle slice visibility."""
+        # Set 3D widgets enabled/disabled depending on slice visibility checkbox
+        slice_visibility_checked = self.getWidget("slice_visibility").isChecked()
+        self.getWidget("orientation").setEnabled(slice_visibility_checked)
+        self.getWidget("auto_window_level").setEnabled(slice_visibility_checked)
+        self.getWidget("slice_window_slider").setEnabled(slice_visibility_checked)
+        self.getWidget("slice_level_slider").setEnabled(slice_visibility_checked)
+
+        self.viewer.style.ToggleSliceVisibility()

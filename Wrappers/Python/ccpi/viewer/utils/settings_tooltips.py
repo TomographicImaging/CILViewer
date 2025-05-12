@@ -1,20 +1,15 @@
 TOOLTIPS_3D_TOOLBAR = {
-    "settings_button": "Access the viewer's image and volume render settings",
-    "camera_button": "Access the viewer's screenshot settings"
+    "viewer_menu_button": "Access the viewer's slice and volume render settings",
+    "camera_menu_button": "Access the viewer's camera settings"
 }
 
 TOOLTIPS_IMAGE_SETTINGS = {
     "background_colour": "Change the background colour of the 3D viewer",
-    "orientation": "Select the orientation of the image plane",
-    "image_visibility": "Toggle the visibility of the image",
+    "slice_visibility": "Toggle the visibility of the slice",
+    "orientation": "Select the orientation of the slice plane",
     "auto_window_level": "Automatically detect window/level settings",
-    "image_window_slider": "Adjust the intensity values in the image window range",
-    "image_window_slider_min": "Adjust the minimum intensity value in the image window range",
-    "image_window_slider_max": "Adjust the maximum intensity value in the image window range",
-    "image_level_slider": "Adjust the central value of the intensity range",
-    "render_save_location": "Location where renders will be saved",
-    "open_location_browser": "Select the location where renders will be saved",
-    "reset_settings": "Resets the image settings using default values"
+    "slice_window_slider": "Adjust the range of grey scale values the slice will display",
+    "slice_level_slider": "Adjust the central point of the grey scale value range",
 }
 
 TOOLTIPS_VOLUME_RENDER_SETTINGS = {
@@ -28,5 +23,11 @@ TOOLTIPS_VOLUME_RENDER_SETTINGS = {
     "colour_range_slider_min": "Adjust the minimum intensity of the colour range",
     "colour_range_slider_max": "Adjust the maximum intensity of the colour range",
     "max_opacity_input": "Adjust the maximum opacity of the render",
-    "reset_settings": "Resets the volume render settings using default values"
+}
+
+TOOLTIPS_CAMERA_SETTINGS = {
+    "render_save_location": "Location where renders will be saved",
+    "open_location_browser": "Select the location and filename for saved renders",
+    "save_render": "Save the displayed render to a file",
+    "reset_camera": "Reset the camera to its default position"
 }

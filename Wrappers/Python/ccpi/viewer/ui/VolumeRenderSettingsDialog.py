@@ -1,6 +1,7 @@
 from eqt.ui import FormDialog, UISliderWidget
 from PySide2 import QtCore, QtWidgets, QtGui
 
+
 from ccpi.viewer.utils.settings_tooltips import TOOLTIPS_VOLUME_RENDER_SETTINGS
 from ccpi.viewer.ui.helpers import color_scheme_list
 
@@ -8,10 +9,9 @@ from ccpi.viewer.ui.helpers import color_scheme_list
 class VolumeRenderSettingsDialog(FormDialog):
     """Volume render settings dialogue."""
 
-    def __init__(self, parent=None, title=None, scale_factor=1):
+    def __init__(self, parent=None, title=None):
         FormDialog.__init__(self, parent, title=title)
         self.setWindowFlag(QtCore.Qt.WindowStaysOnTopHint, True)
-        self.scale_factor = scale_factor
 
         # 3D Volume Visibility
         volume_visibility = QtWidgets.QCheckBox("Render 3D Volume", self.groupBox)
@@ -70,11 +70,6 @@ class VolumeRenderSettingsDialog(FormDialog):
         self.formWidget.widgets["max_opacity_input_label"].setToolTip(
             TOOLTIPS_VOLUME_RENDER_SETTINGS["max_opacity_input"])
 
-        # Reset Settings
-        reset_settings = QtWidgets.QPushButton("Reset Settings")
-        self.addWidget(reset_settings, "", "reset_settings")
-        self.formWidget.widgets["reset_settings_field"].setToolTip(TOOLTIPS_VOLUME_RENDER_SETTINGS["reset_settings"])
-
         # Disable 3D-related widgets if volume visibility is not checked
         volume_visibility_checked = self.getWidget("volume_visibility").isChecked()
         self.getWidget("windowing_slider_min").setEnabled(volume_visibility_checked)
@@ -131,9 +126,6 @@ class VolumeRenderSettingsDialog(FormDialog):
         self.getWidget("max_opacity_input").slider.valueChanged.connect(self.change_volume_max_opacity)
         self.getWidget("max_opacity_input").line_edit.editingFinished.connect(self.change_volume_max_opacity)
 
-        # Reset Settings
-        self.getWidget("reset_settings").clicked.connect(self.reset_settings)
-
     def change_colour_range_min(self):
         """Change the volume colour range min value."""
         if self.getWidget("colour_range_slider_min").value() >= self.getWidget("colour_range_slider_max").value():
@@ -150,8 +142,9 @@ class VolumeRenderSettingsDialog(FormDialog):
     def change_colour_range(self):
         """Change the volume colour range."""
         self.viewer.setVolumeColorPercentiles(
-            self.getWidget("colour_range_slider_min").value() / self.scale_factor,
-            self.getWidget("colour_range_slider_max").value() / self.scale_factor)
+            self.getWidget("colour_range_slider_min").value(),
+            self.getWidget("colour_range_slider_max").value()
+        )
 
     def change_volume_opacity_min(self):
         """Change the volume opacity mapping min value."""
@@ -171,8 +164,8 @@ class VolumeRenderSettingsDialog(FormDialog):
         """Change the volume opacity mapping"""
         opacity = self.getWidget("opacity_mapping").currentText()
         opacity_min, opacity_max = (
-            self.getWidget("windowing_slider_min").value() / self.scale_factor,
-            self.getWidget("windowing_slider_max").value() / self.scale_factor,
+            self.getWidget("windowing_slider_min").value(),
+            self.getWidget("windowing_slider_max").value()
         )
         if opacity == "Gradient":
             self.viewer.setGradientOpacityPercentiles(opacity_min, opacity_max)
@@ -228,13 +221,6 @@ class VolumeRenderSettingsDialog(FormDialog):
                 widg.setCurrentIndex(value)
             elif isinstance(widg, UISliderWidget.UISliderWidget):
                 widg.setValue(value)
-
-    def reset_settings(self):
-        """Reset the changes made to the dialog's settings."""
-        volume_visibility_checked = self.getWidget("volume_visibility").isChecked()
-
-        if volume_visibility_checked:
-            self.formWidget.restoreAllSavedWidgetStates()
 
     def toggle_volume_visibility(self):
         """Toggle volume visibility."""
