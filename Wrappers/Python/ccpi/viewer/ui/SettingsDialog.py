@@ -59,7 +59,7 @@ class SettingsDialog(FormDialog):
         slice_level_slider = UISliderWidget.UISliderWidget(0.0, 100.0)
         self.addWidget(slice_level_slider, "Slice Level:", "slice_level_slider")
         self.formWidget.widgets["slice_level_slider_label"].setToolTip(TOOLTIPS_IMAGE_SETTINGS["slice_level_slider"])
-        
+
         # Disable slice-related widgets if slice visibility is not checked
         slice_visibility_checked = self.getWidget("slice_visibility").isChecked()
         self.getWidget("orientation").setEnabled(slice_visibility_checked)
@@ -128,8 +128,10 @@ class SettingsDialog(FormDialog):
 
         # self.formWidget.widgets["slice_window_slider_field"] = UISliderWidget.UISliderWidget(minimum=0.0, maximum=1.0)
         self.getWidget("slice_window_slider").setValue(window_default)
-        self.getWidget("slice_window_slider").slider.valueChanged.connect(lambda: self.viewer.setSliceColorWindow(self.getWidget("slice_window_slider").value()))
-        self.getWidget("slice_window_slider").line_edit.editingFinished.connect(lambda: self.viewer.setSliceColorWindow(self.getWidget("slice_window_slider").value()))
+        self.getWidget("slice_window_slider").slider.valueChanged.connect(
+            lambda: self.viewer.setSliceColorWindow(self.getWidget("slice_window_slider").value()))
+        self.getWidget("slice_window_slider").line_edit.editingFinished.connect(
+            lambda: self.viewer.setSliceColorWindow(self.getWidget("slice_window_slider").value()))
 
         # Level Window Slider
         level_min, level_max = self.viewer.getSliceMapRange((0.0, 100.0), "scalar")
@@ -137,8 +139,10 @@ class SettingsDialog(FormDialog):
 
         # self.formWidget.widgets["slice_level_slider_field"] = UISliderWidget.UISliderWidget(minimum=level_min, maximum=level_max)
         self.getWidget("slice_level_slider").setValue(level_default)
-        self.getWidget("slice_level_slider").slider.valueChanged.connect(lambda: self.viewer.setSliceColorLevel(self.getWidget("slice_level_slider").value()))
-        self.getWidget("slice_level_slider").line_edit.editingFinished.connect(lambda: self.viewer.setSliceColorLevel(self.getWidget("slice_level_slider").value()))
+        self.getWidget("slice_level_slider").slider.valueChanged.connect(
+            lambda: self.viewer.setSliceColorLevel(self.getWidget("slice_level_slider").value()))
+        self.getWidget("slice_level_slider").line_edit.editingFinished.connect(
+            lambda: self.viewer.setSliceColorLevel(self.getWidget("slice_level_slider").value()))
 
     def change_viewer_orientation(self):
         """Change the viewer orientation."""
