@@ -30,7 +30,7 @@ class CameraSettingsDialog(FormDialog):
             TOOLTIPS_CAMERA_SETTINGS["render_save_location"])
         self.formWidget.widgets["open_location_browser_field"].setToolTip(
             TOOLTIPS_CAMERA_SETTINGS["open_location_browser"])
-        
+
         # Save Render
         save_render = QtWidgets.QPushButton("Save Render")
         self.addWidget(save_render, "", "save_render")
@@ -87,8 +87,7 @@ class CameraSettingsDialog(FormDialog):
         dialog = QtWidgets.QFileDialog()
         dialog.setFileMode(QtWidgets.QFileDialog.Directory)
         dialog.setOption(QtWidgets.QFileDialog.ShowDirsOnly, True)
-        self.file_location = dialog.getSaveFileName(self, 
-                                                    caption="Select File")[0]
+        self.file_location = dialog.getSaveFileName(self, caption="Select File")[0]
 
         self.getWidget("render_save_location").setText(f"'{os.path.relpath(self.file_location, os.getcwd())}'")
 

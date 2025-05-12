@@ -75,8 +75,7 @@ class QCILViewer3DToolBar(QtWidgets.QToolBar):
 
         if mode == "settings_3d":
             if self.dialog["settings_3d"] is None:
-                dialog = VolumeRenderSettingsDialog(parent=self.parent,
-                                                    title="Volume Render Settings")
+                dialog = VolumeRenderSettingsDialog(parent=self.parent, title="Volume Render Settings")
                 dialog.Ok.clicked.connect(lambda: self.accepted(mode))
                 dialog.Cancel.clicked.connect(lambda: self.rejected(mode))
                 dialog.set_viewer(self.viewer)
@@ -84,11 +83,10 @@ class QCILViewer3DToolBar(QtWidgets.QToolBar):
             self.settings = self.dialog[mode].get_settings()
             self.dialog[mode].open()
             return
-        
+
         if mode == "settings_camera":
             if self.dialog["settings_camera"] is None:
-                dialog = CameraSettingsDialog(parent=self.parent,
-                                                    title="Camera Settings")
+                dialog = CameraSettingsDialog(parent=self.parent, title="Camera Settings")
                 dialog.Ok.clicked.connect(lambda: self.accepted(mode))
                 dialog.Cancel.clicked.connect(lambda: self.rejected(mode))
                 dialog.set_viewer(self.viewer)
@@ -107,4 +105,3 @@ class QCILViewer3DToolBar(QtWidgets.QToolBar):
 
     def update_dialog(self):
         pass
-

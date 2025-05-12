@@ -1,7 +1,6 @@
 from eqt.ui import FormDialog, UISliderWidget
 from PySide2 import QtCore, QtWidgets, QtGui
 
-
 from ccpi.viewer.utils.settings_tooltips import TOOLTIPS_VOLUME_RENDER_SETTINGS
 from ccpi.viewer.ui.helpers import color_scheme_list
 
@@ -143,8 +142,7 @@ class VolumeRenderSettingsDialog(FormDialog):
         """Change the volume colour range."""
         self.viewer.setVolumeColorPercentiles(
             self.getWidget("colour_range_slider_min").value(),
-            self.getWidget("colour_range_slider_max").value()
-        )
+            self.getWidget("colour_range_slider_max").value())
 
     def change_volume_opacity_min(self):
         """Change the volume opacity mapping min value."""
@@ -163,10 +161,8 @@ class VolumeRenderSettingsDialog(FormDialog):
     def change_volume_opacity(self):
         """Change the volume opacity mapping"""
         opacity = self.getWidget("opacity_mapping").currentText()
-        opacity_min, opacity_max = (
-            self.getWidget("windowing_slider_min").value(),
-            self.getWidget("windowing_slider_max").value()
-        )
+        opacity_min, opacity_max = (self.getWidget("windowing_slider_min").value(),
+                                    self.getWidget("windowing_slider_max").value())
         if opacity == "Gradient":
             self.viewer.setGradientOpacityPercentiles(opacity_min, opacity_max)
         elif opacity == "Scalar":
