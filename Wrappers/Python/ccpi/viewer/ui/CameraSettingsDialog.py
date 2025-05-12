@@ -95,11 +95,9 @@ class CameraSettingsDialog(FormDialog):
     def save_render(self):
         """Save the render to a file."""
         if self.file_location is None:
-            print(self.file_location)
             self.viewer.saveRender(os.get_cwd())
             print(f"Render saved: {os.get_cwd()}")
         else:
-            print(self.file_location)
             self.viewer.saveRender(os.path.relpath(self.file_location, os.getcwd()))
             print(f"Render saved: {os.path.relpath(self.file_location, os.getcwd())}")
 
