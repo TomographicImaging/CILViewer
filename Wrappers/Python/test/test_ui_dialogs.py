@@ -27,7 +27,7 @@ _instance = None
 
 
 @unittest.skipIf(skip_as_conda_build, "On conda builds do not do any test with interfaces")
-class TestViewerSettingsDialog(unittest.TestCase): #TODO: Add window/level tests using numpy arrays
+class TestViewerSettingsDialog(unittest.TestCase):  #TODO: Add window/level tests using numpy arrays
 
     def setUp(self):
         global _instance

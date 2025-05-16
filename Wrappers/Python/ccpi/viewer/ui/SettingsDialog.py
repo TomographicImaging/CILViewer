@@ -25,7 +25,7 @@ class SettingsDialog(FormDialog):
         self._setUpSliceWindow()
         self._setUpSliceLevel()
 
-        self.toggleSliceVisibility(is_init=True)        
+        self.toggleSliceVisibility(is_init=True)
 
     def _setUpBackgroundColour(self):
         background_colour = QtWidgets.QComboBox(self.groupBox)
@@ -50,9 +50,10 @@ class SettingsDialog(FormDialog):
     def _setUpSliceOrientation(self):
         orientation = QtWidgets.QComboBox(self.groupBox)
         axis_labels = self.viewer.getCurrentAxisLabelsText()
-        orientation_items = [f"{axis_labels[1]}-{axis_labels[2]}",
-                             f"{axis_labels[0]}-{axis_labels[2]}",
-                             f"{axis_labels[0]}-{axis_labels[1]}"]
+        orientation_items = [
+            f"{axis_labels[1]}-{axis_labels[2]}", f"{axis_labels[0]}-{axis_labels[2]}",
+            f"{axis_labels[0]}-{axis_labels[1]}"
+        ]
         orientation.addItems(orientation_items)
         orientation.setCurrentIndex(2)
 
@@ -72,7 +73,7 @@ class SettingsDialog(FormDialog):
     def _setUpSliceWindow(self):
         window_min, window_max = self.viewer.getImageMapRange((0.0, 100.0), "scalar")
         window_default = self.viewer.getSliceColorWindow()
-        
+
         if self.viewer.img3D is None:
             slice_window_slider = UISliderWidget.UISliderWidget(0.0, 255.0)
         else:
@@ -95,7 +96,7 @@ class SettingsDialog(FormDialog):
             slice_level_slider = UISliderWidget.UISliderWidget(0.0, 255.0)
         else:
             slice_level_slider = UISliderWidget.UISliderWidget(level_min, level_max)
-        
+
         self.addWidget(slice_level_slider, "Slice Level:", "slice_level_slider")
         self.formWidget.widgets["slice_level_slider_label"].setToolTip(TOOLTIPS_IMAGE_SETTINGS["slice_level_slider"])
 
@@ -177,7 +178,7 @@ class SettingsDialog(FormDialog):
         self.getWidget("auto_window_level").setEnabled(slice_visibility_checked)
         self.getWidget("slice_window_slider").setEnabled(slice_visibility_checked)
         self.getWidget("slice_level_slider").setEnabled(slice_visibility_checked)
-        
+
         if is_init == True:
             return
         else:

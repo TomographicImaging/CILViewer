@@ -43,7 +43,7 @@ class ScreenshotSettingsDialog(FormDialog):
         self.addWidget(open_location_browser, "", "open_location_browser")
         self.formWidget.widgets["open_location_browser_field"].setToolTip(
             TOOLTIPS_CAMERA_SETTINGS["open_location_browser"])
-        
+
         self.getWidget("open_location_browser").clicked.connect(self.openFileLocationDialog)
 
     def _setUpRenderSaveFilename(self):
@@ -60,7 +60,8 @@ class ScreenshotSettingsDialog(FormDialog):
         render_save_filename.setPlaceholderText(self.default_filename)
 
         self.addWidget(render_save_filename, "Render Save Filename:", "render_save_filename")
-        self.formWidget.widgets["render_save_filename_label"].setToolTip(TOOLTIPS_CAMERA_SETTINGS["render_save_filename"])
+        self.formWidget.widgets["render_save_filename_label"].setToolTip(
+            TOOLTIPS_CAMERA_SETTINGS["render_save_filename"])
 
     def _setUpSaveRender(self):
         save_render = QtWidgets.QPushButton("Save Render")
