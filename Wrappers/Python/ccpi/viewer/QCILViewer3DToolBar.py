@@ -3,7 +3,7 @@ from PySide2 import QtWidgets, QtCore
 from ccpi.viewer.utils.settings_tooltips import TOOLTIPS_3D_TOOLBAR
 from ccpi.viewer.ui.SettingsDialog import SettingsDialog
 from ccpi.viewer.ui.VolumeRenderSettingsDialog import VolumeRenderSettingsDialog
-from ccpi.viewer.ui.CameraSettingsDialog import CameraSettingsDialog
+from ccpi.viewer.ui.ScreenshotSettingsDialog import ScreenshotSettingsDialog
 
 
 class QCILViewer3DToolBar(QtWidgets.QToolBar):
@@ -21,10 +21,18 @@ class QCILViewer3DToolBar(QtWidgets.QToolBar):
         self.parent = parent
         self.viewer = viewer
 
-        super(QCILViewer3DToolBar, self).__init__(parent=self.parent)
-        self.dialog = {"settings_2d": None, "settings_3d": None, "settings_camera": None}
+        if self.viewer.img3D is None:
+            self.data = None
+        else:
+            self.data = viewer.img3D
 
-        # Settings Menu
+        super(QCILViewer3DToolBar, self).__init__(parent=self.parent)
+        self.dialog = {"settings_2d": None, "settings_3d": None, "settings_screenshot": None}
+
+        self._setUpSettingsMenu()
+        self._setUpCameraMenu()
+
+    def _setUpSettingsMenu(self):
         viewer_menu = QtWidgets.QMenu(parent=self)
 
         viewer_menu_button = QtWidgets.QToolButton(parent=self)
@@ -35,16 +43,16 @@ class QCILViewer3DToolBar(QtWidgets.QToolBar):
         viewer_menu_button.setToolTip(TOOLTIPS_3D_TOOLBAR["viewer_menu_button"])
 
         settings_2d = QtWidgets.QAction("Slice Settings", parent=self)
-        settings_2d.triggered.connect(lambda: self.open_dialog("settings_2d"))
+        settings_2d.triggered.connect(lambda: self.openDialog("settings_2d"))
         viewer_menu.addAction(settings_2d)
 
         settings_3d = QtWidgets.QAction("Volume Render Settings", parent=self)
-        settings_3d.triggered.connect(lambda: self.open_dialog("settings_3d"))
+        settings_3d.triggered.connect(lambda: self.openDialog("settings_3d"))
         viewer_menu.addAction(settings_3d)
 
         self.addWidget(viewer_menu_button)
 
-        # camera Menu
+    def _setUpCameraMenu(self):
         camera_menu = QtWidgets.QMenu(parent=self)
 
         camera_menu_button = QtWidgets.QToolButton(parent=self)
@@ -54,45 +62,75 @@ class QCILViewer3DToolBar(QtWidgets.QToolBar):
         camera_menu_button.setPopupMode(QtWidgets.QToolButton.InstantPopup)
         camera_menu_button.setToolTip(TOOLTIPS_3D_TOOLBAR["camera_menu_button"])
 
-        settings_camera = QtWidgets.QAction("Camera Settings", parent=self)
-        settings_camera.triggered.connect(lambda: self.open_dialog("settings_camera"))
-        camera_menu.addAction(settings_camera)
+        resetCamera = QtWidgets.QAction("Reset Camera", parent=self)
+        resetCamera.triggered.connect(self.resetCamera)
+        camera_menu.addAction(resetCamera)
+
+        settings_screenshot = QtWidgets.QAction("Screenshot Settings", parent=self)
+        settings_screenshot.triggered.connect(lambda: self.openDialog("settings_screenshot"))
+        camera_menu.addAction(settings_screenshot)
 
         self.addWidget(camera_menu_button)
 
-    def open_dialog(self, mode):
+    def openDialog(self, mode):
         """Open a dialog box for the settings of the viewer."""
         if mode == "settings_2d":
-            if self.dialog["settings_2d"] is None:
-                dialog = SettingsDialog(parent=self.parent, title="Slice Settings")
-                dialog.Ok.clicked.connect(lambda: self.accepted(mode))
-                dialog.Cancel.clicked.connect(lambda: self.rejected(mode))
-                dialog.set_viewer(self.viewer)
-                self.dialog[mode] = dialog
-            self.settings = self.dialog[mode].get_settings()
+            if self.dialog["settings_2d"] is None or self._isNewData(self.viewer.img3D):
+                self._createSettingsDialog()  # Check whether the old Dialog still exists in memory
+            self.settings = self.dialog[mode].getSettings()
             self.dialog[mode].open()
             return
 
         if mode == "settings_3d":
-            if self.dialog["settings_3d"] is None:
-                dialog = VolumeRenderSettingsDialog(parent=self.parent, title="Volume Render Settings")
-                dialog.Ok.clicked.connect(lambda: self.accepted(mode))
-                dialog.Cancel.clicked.connect(lambda: self.rejected(mode))
-                dialog.set_viewer(self.viewer)
-                self.dialog[mode] = dialog
-            self.settings = self.dialog[mode].get_settings()
+            if self.dialog["settings_3d"] is None or self._isNewData(self.viewer.img3D):
+                self._createVolumeRenderSettingsDialog()
+            self.settings = self.dialog[mode].getSettings()
             self.dialog[mode].open()
             return
 
-        if mode == "settings_camera":
-            if self.dialog["settings_camera"] is None:
-                dialog = CameraSettingsDialog(parent=self.parent, title="Camera Settings")
-                dialog.Ok.clicked.connect(lambda: self.accepted(mode))
-                dialog.Cancel.clicked.connect(lambda: self.rejected(mode))
-                dialog.set_viewer(self.viewer)
-                self.dialog[mode] = dialog
-            self.settings = self.dialog[mode].get_settings()
+        if mode == "settings_screenshot":
+            if self.dialog["settings_screenshot"] is None:
+                self._createScreenshotSettingsDialog()
+            self.settings = self.dialog[mode].getSettings()
             self.dialog[mode].open()
+
+    def _createSettingsDialog(self):
+        mode = "settings_2d"
+        dialog = SettingsDialog(parent=self.parent, viewer=self.viewer, title="Slice Settings")
+        dialog.Ok.clicked.connect(lambda: self.accepted(mode))
+        dialog.Cancel.clicked.connect(lambda: self.rejected(mode))
+        self.dialog[mode] = dialog
+
+    def _createVolumeRenderSettingsDialog(self):
+        mode = "settings_3d"
+        dialog = VolumeRenderSettingsDialog(parent=self.parent, viewer=self.viewer, title="Volume Render Settings")
+        dialog.Ok.clicked.connect(lambda: self.accepted(mode))
+        dialog.Cancel.clicked.connect(lambda: self.rejected(mode))
+        self.dialog[mode] = dialog
+
+    def _createScreenshotSettingsDialog(self):
+        mode = "settings_screenshot"
+        dialog = ScreenshotSettingsDialog(parent=self.parent, viewer=self.viewer, title="Screenshot Settings")
+        dialog.Ok.clicked.connect(lambda: self.accepted(mode))
+        dialog.Cancel.clicked.connect(lambda: self.rejected(mode))
+        self.dialog[mode] = dialog
+
+    def _isNewData(self, data):
+        """Checks whether the """
+        if data != self.data:
+            self.data = data
+            return True
+        else:
+            return False
+
+    def resetCamera(self):
+        """Reset camera to default position."""
+        self.viewer.resetCameraToDefault()
+
+        if self.viewer.img3D is None:
+            return
+        else:
+            self.viewer.updatePipeline()
 
     def accepted(self, mode):
         """Extract settings and apply them."""
@@ -100,8 +138,5 @@ class QCILViewer3DToolBar(QtWidgets.QToolBar):
 
     def rejected(self, mode):
         """Reapply previous settings."""
-        self.dialog[mode].apply_settings(self.settings)
+        self.dialog[mode].applySettings(self.settings)
         self.dialog[mode].close()
-
-    def update_dialog(self):
-        pass
