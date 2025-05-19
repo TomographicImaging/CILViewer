@@ -39,25 +39,25 @@ class VolumeRenderSettingsDialog(FormDialog):
             self.getWidget("volume_visibility").setChecked(False)
         
         self.getWidget("volume_visibility").stateChanged.connect(self.toggleVolumeVisibility)
-        
+
     def _setUpWindowingMin(self):
         windowing_slider_min = UISliderWidget.UISliderWidget(0.0, 100.0)
 
         self.addWidget(windowing_slider_min, "Windowing Minimum (%):", "windowing_slider_min")
         self.formWidget.widgets["windowing_slider_min_label"].setToolTip(
             TOOLTIPS_VOLUME_RENDER_SETTINGS["windowing_slider_min"])
-        
+
         self.getWidget("windowing_slider_min").setValue(80)
         self.getWidget("windowing_slider_min").slider.valueChanged.connect(self.changeVolumeOpacityMin)
         self.getWidget("windowing_slider_min").line_edit.editingFinished.connect(self.changeVolumeOpacityMin)
-        
+
     def _setUpWindowingMax(self):
         windowing_slider_max = UISliderWidget.UISliderWidget(0.0, 100.0)
 
         self.addWidget(windowing_slider_max, "Windowing Maximum (%):", "windowing_slider_max")
         self.formWidget.widgets["windowing_slider_max_label"].setToolTip(
             TOOLTIPS_VOLUME_RENDER_SETTINGS["windowing_slider_max"])
-        
+
         self.getWidget("windowing_slider_max").setValue(99)
         self.getWidget("windowing_slider_max").slider.valueChanged.connect(self.changeVolumeOpacityMax)
         self.getWidget("windowing_slider_max").line_edit.editingFinished.connect(self.changeVolumeOpacityMax)
@@ -89,39 +89,39 @@ class VolumeRenderSettingsDialog(FormDialog):
         self.formWidget.widgets["volume_clipping_field"].setToolTip(TOOLTIPS_VOLUME_RENDER_SETTINGS["volume_clipping"])
         self.formWidget.widgets["volume_clipping_reset_field"].setToolTip(
             TOOLTIPS_VOLUME_RENDER_SETTINGS["volume_clipping_reset"])
-        
+
         self.getWidget("volume_clipping").stateChanged.connect(self.viewer.style.ToggleVolumeClipping)
         self.getWidget("volume_clipping_reset").clicked.connect(self.resetVolumeClipping)
-        
+
     def _setUpColourRangeMin(self):
         colour_range_slider_min = UISliderWidget.UISliderWidget(0.0, 100.0)
 
         self.addWidget(colour_range_slider_min, "Colour Range Minimum (%):", "colour_range_slider_min")
         self.formWidget.widgets["colour_range_slider_min_label"].setToolTip(
             TOOLTIPS_VOLUME_RENDER_SETTINGS["colour_range_slider_min"])
-        
+
         self.getWidget("colour_range_slider_min").setValue(85)
         self.getWidget("colour_range_slider_min").slider.valueChanged.connect(self.changeColourRangeMin)
         self.getWidget("colour_range_slider_min").line_edit.editingFinished.connect(self.changeColourRangeMin)
-        
+
     def _setUpColourRangeMax(self):
         colour_range_slider_max = UISliderWidget.UISliderWidget(0.0, 100.0)
 
         self.addWidget(colour_range_slider_max, "Colour Range Maximum (%):", "colour_range_slider_max")
         self.formWidget.widgets["colour_range_slider_max_label"].setToolTip(
             TOOLTIPS_VOLUME_RENDER_SETTINGS["colour_range_slider_max"])
-        
+
         self.getWidget("colour_range_slider_max").setValue(95)
         self.getWidget("colour_range_slider_max").slider.valueChanged.connect(self.changeColourRangeMax)
         self.getWidget("colour_range_slider_max").line_edit.editingFinished.connect(self.changeColourRangeMax)
-        
+
     def _setUpMaxOpacity(self):
         max_opacity_input = UISliderWidget.UISliderWidget(0.0, 100.0, decimals=3)
 
         self.addWidget(max_opacity_input, "Maximum Opacity (%):", "max_opacity_input")
         self.formWidget.widgets["max_opacity_input_label"].setToolTip(
             TOOLTIPS_VOLUME_RENDER_SETTINGS["max_opacity_input"])
-        
+
         self.getWidget("max_opacity_input").setValue(self.viewer.style.GetVolumeRenderParameters()['max_opacity'] * 100)
         self.getWidget("max_opacity_input").slider.valueChanged.connect(self.changeVolumeMaxOpacity)
         self.getWidget("max_opacity_input").line_edit.editingFinished.connect(self.changeVolumeMaxOpacity)
