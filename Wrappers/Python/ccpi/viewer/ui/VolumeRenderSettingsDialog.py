@@ -32,6 +32,12 @@ class VolumeRenderSettingsDialog(FormDialog):
         self.formWidget.widgets["volume_visibility_field"].setToolTip(
             TOOLTIPS_VOLUME_RENDER_SETTINGS["volume_visibility"])
         
+        if self.viewer.img3D is None:
+            self.getWidget("volume_visibility").setChecked(False)
+            self.getWidget("volume_visibility").setEnabled(False)
+        else:
+            self.getWidget("volume_visibility").setChecked(False)
+        
         self.getWidget("volume_visibility").stateChanged.connect(self.toggleVolumeVisibility)
         
     def _setUpWindowingMin(self):
@@ -223,7 +229,7 @@ class VolumeRenderSettingsDialog(FormDialog):
         self.getWidget("colour_range_slider_max").setEnabled(volume_visibility_checked)
         self.getWidget("max_opacity_input").setEnabled(volume_visibility_checked)
 
-        if is_init == True:
+        if is_init is True:
             return
         else:
             self.viewer.style.ToggleVolumeVisibility()

@@ -25,7 +25,7 @@ class SettingsDialog(FormDialog):
         self._setUpSliceWindow()
         self._setUpSliceLevel()
 
-        self.toggleSliceVisibility(is_init=True)        
+        self.toggleSliceVisibility(is_init=True)
 
     def _setUpBackgroundColour(self):
         background_colour = QtWidgets.QComboBox(self.groupBox)
@@ -39,12 +39,16 @@ class SettingsDialog(FormDialog):
 
     def _setUpSliceVisibility(self):
         slice_visibility = QtWidgets.QCheckBox("Slice Visibility", self.groupBox)
-        slice_visibility.setChecked(True)
 
         self.addWidget(slice_visibility, "", "slice_visibility")
         self.formWidget.widgets["slice_visibility_field"].setToolTip(TOOLTIPS_IMAGE_SETTINGS["slice_visibility"])
 
-        self.getWidget("slice_visibility").setChecked(True)
+        if self.viewer.img3D is None:
+            self.getWidget("slice_visibility").setChecked(False)
+            self.getWidget("slice_visibility").setEnabled(False)
+        else:
+            self.getWidget("slice_visibility").setChecked(True)
+    
         self.getWidget("slice_visibility").stateChanged.connect(self.toggleSliceVisibility)
 
     def _setUpSliceOrientation(self):
@@ -178,7 +182,7 @@ class SettingsDialog(FormDialog):
         self.getWidget("slice_window_slider").setEnabled(slice_visibility_checked)
         self.getWidget("slice_level_slider").setEnabled(slice_visibility_checked)
         
-        if is_init == True:
+        if is_init is True:
             return
         else:
             self.viewer.style.ToggleSliceVisibility()

@@ -1,19 +1,26 @@
 import unittest
-from unittest import mock
-from ccpi.viewer.ui.dialogs import ViewerSettingsDialog, HDF5InputDialog, RawInputDialog, SaveableRawInputDialog
-from eqt.ui.SessionDialogs import AppSettingsDialog
-
-from PySide2.QtWidgets import QMainWindow
 import os
+import sys
+
+import numpy as np
 
 from unittest import mock
 from unittest.mock import patch
+
+from eqt.ui.SessionDialogs import AppSettingsDialog
+from ccpi.viewer.ui.dialogs import ViewerSettingsDialog, HDF5InputDialog, RawInputDialog, SaveableRawInputDialog
+from ccpi.viewer.ui.SettingsDialog import SettingsDialog
+from ccpi.viewer.ui.VolumeRenderSettingsDialog import VolumeRenderSettingsDialog
+from ccpi.viewer.ui.CaptureRenderDialog import CaptureRenderDialog
+from ccpi.viewer.CILViewer import CILViewer
+
+from PySide2.QtWidgets import QMainWindow
 from PySide2.QtWidgets import QApplication, QLabel, QFrame, QDoubleSpinBox, QCheckBox, QPushButton, QLineEdit, QComboBox, QWidget
 from PySide2.QtCore import QSettings
+
 from eqt.ui import FormDialog
 from functools import partial
 
-import sys
 
 # skip the tests on GitHub actions
 if os.environ.get('CONDA_BUILD', '0') == '1':
@@ -281,5 +288,48 @@ class TestSaveableRawInputDialog(unittest.TestCase):
         self.assertEqual(rdi2.getWidget('dim_Images').text(), "10")
 
 
-if __name__ == '__main__':
-    unittest.main()
+@unittest.skipIf(skip_as_conda_build, "On conda builds do not do any test with interfaces")
+class TestSettingsDialog(unittest.TestCase):
+
+    def setUp(self):
+        global _instance
+        if _instance is None:
+            _instance = QApplication(sys.argv)
+        self.parent = QMainWindow()
+        self.viewer = CILViewer()
+        self.settings = QSettings()
+
+    def test_init(self):
+        settings_dialog = SettingsDialog(self.parent, self.viewer)
+        assert settings_dialog is not None
+
+    def test_auto_slice_level(self):
+        pass
+
+    def test_slice_window(self):
+        pass
+
+    def test_slice_level(self):
+        pass
+
+
+@unittest.skipIf(skip_as_conda_build, "On conda builds do not do any test with interfaces")
+class TestVolumeRenderSettingsDialog(unittest.TestCase):
+
+    def setUp(self):
+        global _instance
+        if _instance is None:
+            _instance = QApplication(sys.argv)
+        self.parent = QMainWindow()
+        self.viewer = CILViewer()
+        self.settings = QSettings()
+
+    def test_init(self):
+        vr_settings_dialog = VolumeRenderSettingsDialog(self.parent, self.viewer)
+        assert vr_settings_dialog is not None
+
+    def test_windowing_min(self):
+        pass
+
+    def test_windowing_max(self):
+        pass
