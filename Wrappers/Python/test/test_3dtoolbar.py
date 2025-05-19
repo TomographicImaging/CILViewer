@@ -15,7 +15,6 @@ from PySide2.QtCore import QSettings
 from eqt.ui import FormDialog
 from functools import partial
 
-
 # skip the tests on GitHub actions
 if os.environ.get('CONDA_BUILD', '0') == '1':
     skip_as_conda_build = True
@@ -25,6 +24,7 @@ else:
 print("skip_as_conda_build is set to ", skip_as_conda_build)
 
 _instance = None
+
 
 @unittest.skipIf(skip_as_conda_build, "On conda builds do not do any test with interfaces")
 class TestQCILViewer3DToolBar(unittest.TestCase):
@@ -40,6 +40,3 @@ class TestQCILViewer3DToolBar(unittest.TestCase):
     def test_init(self):
         toolbar = QCILViewer3DToolBar(self.parent, self.viewer)
         assert toolbar is not None
-
-
-

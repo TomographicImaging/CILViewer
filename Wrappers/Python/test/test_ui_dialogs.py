@@ -21,7 +21,6 @@ from PySide2.QtCore import QSettings
 from eqt.ui import FormDialog
 from functools import partial
 
-
 # skip the tests on GitHub actions
 if os.environ.get('CONDA_BUILD', '0') == '1':
     skip_as_conda_build = True

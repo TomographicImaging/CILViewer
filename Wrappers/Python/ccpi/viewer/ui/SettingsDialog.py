@@ -48,7 +48,7 @@ class SettingsDialog(FormDialog):
             self.getWidget("slice_visibility").setEnabled(False)
         else:
             self.getWidget("slice_visibility").setChecked(True)
-    
+
         self.getWidget("slice_visibility").stateChanged.connect(self.toggleSliceVisibility)
 
     def _setUpSliceOrientation(self):
@@ -182,7 +182,7 @@ class SettingsDialog(FormDialog):
         self.getWidget("auto_window_level").setEnabled(slice_visibility_checked)
         self.getWidget("slice_window_slider").setEnabled(slice_visibility_checked)
         self.getWidget("slice_level_slider").setEnabled(slice_visibility_checked)
-        
+
         if is_init is True:
             return
         else:
