@@ -306,7 +306,6 @@ class TestSettingsDialog(unittest.TestCase):
         data = np.zeros((10, 10, 10))
         print(data)
 
-
     def test_slice_window(self):
         pass
 
