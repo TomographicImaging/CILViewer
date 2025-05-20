@@ -52,10 +52,8 @@ class CaptureRenderDialog(FormDialog):
         save_location = QtWidgets.QLabel(f"\\{os.path.basename(self.file_location)}")
 
         self.addWidget(save_location, "Save Location:", "save_location")
-        self.formWidget.widgets["save_location_label"].setToolTip(
-            TOOLTIPS_CAPTURE_RENDER["save_location"])
-        self.formWidget.widgets["save_location_field"].setToolTip(
-            save_location.text())
+        self.formWidget.widgets["save_location_label"].setToolTip(TOOLTIPS_CAPTURE_RENDER["save_location"])
+        self.formWidget.widgets["save_location_field"].setToolTip(save_location.text())
 
     def _setUpOpenLocationBrowser(self):
         """
@@ -66,7 +64,7 @@ class CaptureRenderDialog(FormDialog):
         self.addWidget(open_location_browser, "", "open_location_browser")
         self.formWidget.widgets["open_location_browser_field"].setToolTip(
             TOOLTIPS_CAPTURE_RENDER["open_location_browser"])
-        
+
         self.getWidget("open_location_browser").clicked.connect(self.openSaveLocationDialog)
 
     def _setUpSaveFilename(self):
