@@ -188,7 +188,11 @@ class SettingsDialog(FormDialog):
         else:
             color_data = getattr(colors, color.lower())
         self.viewer.ren.SetBackground(color_data)
-        self.viewer.updatePipeline()
+
+        if self.viewer.img3D is None:
+            return
+        else:
+            self.viewer.updatePipeline()
 
     def toggleSliceVisibility(self, is_init=False):
         """
