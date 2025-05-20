@@ -303,7 +303,9 @@ class TestSettingsDialog(unittest.TestCase):
         assert settings_dialog is not None
 
     def test_auto_slice_level(self):
-        pass
+        data = np.zeros((10, 10, 10))
+        print(data)
+
 
     def test_slice_window(self):
         pass

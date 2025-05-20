@@ -29,6 +29,7 @@ class QCILViewer3DToolBar(QtWidgets.QToolBar):
             self.data = None
         else:
             self.data = viewer.img3D
+            print(self.data)
 
         super(QCILViewer3DToolBar, self).__init__(parent=self.parent)
         self.dialog = {"settings_2d": None, "settings_3d": None, "settings_render": None}
