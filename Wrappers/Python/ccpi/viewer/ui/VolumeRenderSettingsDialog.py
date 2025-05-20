@@ -46,13 +46,13 @@ class VolumeRenderSettingsDialog(FormDialog):
         self.addWidget(volume_visibility, "", "volume_visibility")
         self.formWidget.widgets["volume_visibility_field"].setToolTip(
             TOOLTIPS_VOLUME_RENDER_SETTINGS["volume_visibility"])
-        
+
         if self.viewer.img3D is None:
             self.getWidget("volume_visibility").setChecked(False)
             self.getWidget("volume_visibility").setEnabled(False)
         else:
             self.getWidget("volume_visibility").setChecked(False)
-        
+
         self.getWidget("volume_visibility").stateChanged.connect(self.toggleVolumeVisibility)
 
     def _setUpWindowingMin(self):
