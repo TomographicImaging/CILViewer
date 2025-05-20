@@ -7,17 +7,21 @@ from ccpi.viewer.ui.CaptureRenderDialog import CaptureRenderDialog
 
 
 class QCILViewer3DToolBar(QtWidgets.QToolBar):
+    """
+    A custom QToolBar embedded in a CILViewer window. The toolbar features
+    drop-down QMenu widgets that contain QActions - users can interact with
+    these to access various tools and dialogs that control the appearance 
+    of the window contents.
+    """
 
     def __init__(self, parent=None, viewer=None):
         """
-        Parameters
-        -----------
-        viewer: an instance of viewer2D or viewer3D
-            the viewer which the toolbar is for. The viewer instance
-            is passed to allow interactions to be controlled using the
-            toolbar.
-        """
+        Creates the QCILViewer3DToolbar and sets up the associated QMenus and
+        QActions. Checks whether any data has been loaded and is present in
+        the provided viewer instance.
 
+        viewer: The CILViewer instance that the toolbar will be embedded in.
+        """
         self.parent = parent
         self.viewer = viewer
 
@@ -33,6 +37,14 @@ class QCILViewer3DToolBar(QtWidgets.QToolBar):
         self._setUpCameraMenu()
 
     def _setUpSettingsMenu(self):
+        """
+        Configures the 3D Viewer settings drop-down QMenu. 
+        The QMenu is populated with QActions that, when clicked, will
+        open a corresponding settings dialog.
+
+        The Slice Settings QAction opens a dialog controlling the viewer's 2D slice.
+        The Volume Render Settings QAction opens a dialog controlling the viewer's 3D volume.
+        """
         viewer_menu = QtWidgets.QMenu(parent=self)
 
         viewer_menu_button = QtWidgets.QToolButton(parent=self)
@@ -53,6 +65,12 @@ class QCILViewer3DToolBar(QtWidgets.QToolBar):
         self.addWidget(viewer_menu_button)
 
     def _setUpCameraMenu(self):
+        """
+        Configures the Camera settings drop-down QMenu.
+
+        The Reset Camera QAction resets the viewer's camera position.
+        The Capture Render QAction opens a dialog for saving screenshots.
+        """
         camera_menu = QtWidgets.QMenu(parent=self)
 
         camera_menu_button = QtWidgets.QToolButton(parent=self)
@@ -73,7 +91,16 @@ class QCILViewer3DToolBar(QtWidgets.QToolBar):
         self.addWidget(camera_menu_button)
 
     def openDialog(self, mode):
-        """Open a dialog box for the settings of the viewer."""
+        """
+        Creates/opens a dialog. Dialogs are stored in a dictionary, allowing their
+        settings to be loaded if they have been saved. 
+        
+        The method also checks whether new data has been loaded into the toolbar's viewer instance.
+        If so, it will create new instances of the Settings and VolumeRenderSettings dialogs,
+        with updated settings values retrieved from the image data. 
+    
+        mode: The key for the type of settings dialog that will be opened.
+        """
         if self._isNewData(self.viewer.img3D):
             self._createSettingsDialog()
             self._createVolumeRenderSettingsDialog()
@@ -121,7 +148,12 @@ class QCILViewer3DToolBar(QtWidgets.QToolBar):
         self.dialog[mode] = dialog
 
     def _isNewData(self, data):
-        """Checks whether the """
+        """
+        Checks whether new data has been loaded into the viewer instance, by
+        comparing the toolbar's current data with the previously saved data.
+
+        data: The data that will be checked.
+        """
         if data != self.data:
             self.data = data
             return True
@@ -129,7 +161,9 @@ class QCILViewer3DToolBar(QtWidgets.QToolBar):
             return False
 
     def resetCamera(self):
-        """Reset camera to default position."""
+        """
+        Resets the 3D viewer's camera to the default camera position.
+        """
         self.viewer.resetCameraToDefault()
 
         if self.viewer.img3D is None:
@@ -138,10 +172,18 @@ class QCILViewer3DToolBar(QtWidgets.QToolBar):
             self.viewer.updatePipeline()
 
     def accepted(self, mode):
-        """Extract settings and apply them."""
+        """
+        Extracts settings from the dialog and applies them.
+
+        mode: The key for the type of settings dialog.
+        """
         self.dialog[mode].close()
 
     def rejected(self, mode):
-        """Reapply previous settings."""
+        """
+        Reapplies the dialog's previous settings.
+
+        mode: The key for the type of settings dialog.
+        """
         self.dialog[mode].applySettings(self.settings)
         self.dialog[mode].close()

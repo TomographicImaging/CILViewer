@@ -26,9 +26,8 @@ TOOLTIPS_VOLUME_RENDER_SETTINGS = {
 }
 
 TOOLTIPS_CAPTURE_RENDER = {
-    "render_save_location": "Location where renders will be saved",
-    "render_save_filename":
-    "Specify the filename for the saved render - duplicate filenames will be numerically appended",
+    "save_location": "Location where renders will be saved",
+    "save_filename": "Specify the filename for the saved render - a numerical suffix will be appended",
     "open_location_browser": "Select the location and filename for saved renders",
     "capture_render": "Save the displayed render to a PNG file",
     "reset_camera": "Reset the camera to its default position"
