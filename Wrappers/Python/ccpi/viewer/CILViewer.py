@@ -16,6 +16,7 @@
 
 import numpy
 import vtk
+import time
 from ccpi.viewer import (ALT_KEY, CONTROL_KEY, CROSSHAIR_ACTOR, CURSOR_ACTOR, HELP_ACTOR, HISTOGRAM_ACTOR,
                          LINEPLOT_ACTOR, OVERLAY_ACTOR, SHIFT_KEY, SLICE_ACTOR, SLICE_ORIENTATION_XY,
                          SLICE_ORIENTATION_XZ, SLICE_ORIENTATION_YZ)
@@ -266,8 +267,6 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
             self.ToggleSliceVisibility()
         elif interactor.GetKeyCode() == "i":
             self.ToggleSliceInterpolation()
-        elif interactor.GetKeyCode() == "o":
-            self._viewer.createAnimation()
         elif interactor.GetKeyCode() == "c" and self._viewer.volume_render_initialised:
             self.ToggleVolumeClipping()
         else:
@@ -1124,63 +1123,3 @@ class CILViewer(CILViewerBase):
 
             self.getRenderer().Render()
             self.updatePipeline()
-
-    def createAnimation(self,
-                        FrameCount=20,
-                        InitialCameraPosition=None,
-                        FocalPoint=None,
-                        ClippingRange=None,
-                        AngleRange=360,
-                        ViewUp=None):
-
-        viewer = self
-
-        if InitialCameraPosition is None:
-            InitialCameraPosition = viewer.getCamera().GetPosition()
-        if FocalPoint is None:
-            FocalPoint = viewer.getCamera().GetFocalPoint()
-        if ClippingRange is None:
-            ClippingRange = (0, 2000)
-        if ViewUp is None:
-            ViewUp = (0, 0, 1)
-        if FrameCount is None:
-            FrameCount = 100
-        #Setting locked values for camera position
-        locX = InitialCameraPosition[0]
-        locY = InitialCameraPosition[1]
-        locZ = InitialCameraPosition[2]
-
-        #Setting camera position
-        viewer.getCamera().SetPosition(InitialCameraPosition)
-        viewer.getCamera().SetFocalPoint(FocalPoint)
-
-        #Setting camera viewup
-        viewer.getCamera().SetViewUp(ViewUp)
-
-        #Set camera clipping range
-        viewer.getCamera().SetClippingRange(ClippingRange)
-
-        #Defining distance from camera to focal point
-        r = numpy.sqrt(((InitialCameraPosition[0] - FocalPoint[0])**2) + (InitialCameraPosition[1] - FocalPoint[1])**2)
-
-        #Animating the camera
-        for x in range(FrameCount):
-            angle = (2 * numpy.pi) * (x / FrameCount)
-            NewLocationX = r * numpy.sin(angle) + FocalPoint[0]
-            NewLocationY = r * numpy.cos(angle) + FocalPoint[1]
-            NewLocation = (NewLocationX, NewLocationY, locZ)
-            camera = vtk.vtkCamera()
-            camera.SetFocalPoint(FocalPoint)
-            camera.SetViewUp(ViewUp)
-            camera.SetPosition(*NewLocation)
-            viewer.ren.SetActiveCamera(camera)
-            viewer.adjustCamera()
-
-            import time
-            time.sleep(0.05)
-            rp = numpy.sqrt(((NewLocation[0] - FocalPoint[0])**2) + (NewLocation[1] - FocalPoint[1])**2)
-            print('Camera trajectory radius {}'.format(rp))
-            viewer.saveRender('test_{}'.format(x))
-            #Rendering and saving the render
-            viewer.getRenderer().Render()
-            viewer.renWin.Render()
