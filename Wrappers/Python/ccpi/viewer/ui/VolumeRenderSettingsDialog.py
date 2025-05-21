@@ -22,6 +22,13 @@ class VolumeRenderSettingsDialog(FormDialog):
         self.setWindowFlag(QtCore.Qt.WindowStaysOnTopHint, True)
         self.viewer = viewer
 
+        self.default_slider_values = {
+            "windowing_min": 80,
+            "windowing_max": 99,
+            "colour_range_min": 85,
+            "colour_range_max": 95,
+        }
+
         self._setUpVolumeVisibility()
         self._setUpWindowingMin()
         self._setUpWindowingMax()
@@ -62,7 +69,7 @@ class VolumeRenderSettingsDialog(FormDialog):
         self.formWidget.widgets["windowing_slider_min_label"].setToolTip(
             TOOLTIPS_VOLUME_RENDER_SETTINGS["windowing_slider_min"])
 
-        self.getWidget("windowing_slider_min").setValue(80)
+        self.getWidget("windowing_slider_min").setValue(self.default_slider_values["windowing_min"])
         self.getWidget("windowing_slider_min").slider.valueChanged.connect(self.updateVolumeOpacityMin)
         self.getWidget("windowing_slider_min").line_edit.editingFinished.connect(self.updateVolumeOpacityMin)
 
@@ -73,7 +80,7 @@ class VolumeRenderSettingsDialog(FormDialog):
         self.formWidget.widgets["windowing_slider_max_label"].setToolTip(
             TOOLTIPS_VOLUME_RENDER_SETTINGS["windowing_slider_max"])
 
-        self.getWidget("windowing_slider_max").setValue(99)
+        self.getWidget("windowing_slider_max").setValue(self.default_slider_values["windowing_max"])
         self.getWidget("windowing_slider_max").slider.valueChanged.connect(self.updateVolumeOpacityMax)
         self.getWidget("windowing_slider_max").line_edit.editingFinished.connect(self.updateVolumeOpacityMax)
 
@@ -115,7 +122,7 @@ class VolumeRenderSettingsDialog(FormDialog):
         self.formWidget.widgets["colour_range_slider_min_label"].setToolTip(
             TOOLTIPS_VOLUME_RENDER_SETTINGS["colour_range_slider_min"])
 
-        self.getWidget("colour_range_slider_min").setValue(85)
+        self.getWidget("colour_range_slider_min").setValue(self.default_slider_values["colour_range_min"])
         self.getWidget("colour_range_slider_min").slider.valueChanged.connect(self.updateColourRangeMin)
         self.getWidget("colour_range_slider_min").line_edit.editingFinished.connect(self.updateColourRangeMin)
 
@@ -126,7 +133,7 @@ class VolumeRenderSettingsDialog(FormDialog):
         self.formWidget.widgets["colour_range_slider_max_label"].setToolTip(
             TOOLTIPS_VOLUME_RENDER_SETTINGS["colour_range_slider_max"])
 
-        self.getWidget("colour_range_slider_max").setValue(95)
+        self.getWidget("colour_range_slider_max").setValue(self.default_slider_values["colour_range_max"])
         self.getWidget("colour_range_slider_max").slider.valueChanged.connect(self.updateColourRangeMax)
         self.getWidget("colour_range_slider_max").line_edit.editingFinished.connect(self.updateColourRangeMax)
 

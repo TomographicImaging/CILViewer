@@ -76,24 +76,25 @@ class QCILViewerWidget(QtWidgets.QFrame):
 
         self.vl = QtWidgets.QVBoxLayout()
 
-        self._toolBar = None
-        toolBar = self.getToolbar(parent)
-        if toolBar is not None:
-            self.vl.addWidget(toolBar)
+        self._setUpToolBar(parent=parent)
+
+        if self._toolBar is not None:
+            self.vl.addWidget(self._toolBar)
 
         self.vl.addWidget(self.vtkWidget)
 
         self.setLayout(self.vl)
         self.adjustSize()
 
-    def getToolbar(self, parent=None):
-        if self._toolBar is not None:
-            return self._toolBar
-        # Adds a toolbar to the QFrame if we have a 3D viewer
+    def _setUpToolBar(self, parent=None):
+        """
+        Creates a toolbar for the QFrame if the viewer is 3D.
+        """
         if isinstance(self.viewer, viewer3D):
-            toolBar = QCILViewer3DToolBar(parent=parent, viewer=self.viewer)
-            self._toolBar = toolBar
-            return toolBar
+            self._toolBar = QCILViewer3DToolBar(parent=parent, viewer=self.viewer)
+        else:
+            self._toolBar = None
+
 
 
 class QCILDockableWidget(QtWidgets.QDockWidget):

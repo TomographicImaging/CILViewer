@@ -234,7 +234,9 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
         self._viewer.updatePipeline()
 
     def AutoWindowLevelOnVolumeRange(self, update_slice=True):
-        '''Auto-adjusts window-level for the slice, based on the 5 and 95th percentiles of the whole image volume.'''
+        """
+        Auto-adjusts window-level for the slice, based on the 5 and 95th percentiles of the whole image volume.
+        """
         cmin, cmax = self._viewer.getImageMapRange((5., 95.), method="scalar")
         window, level = self._viewer.getSliceWindowLevelFromRange(cmin, cmax)
 
@@ -273,12 +275,12 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
             print("Unhandled event %s" % interactor.GetKeyCode())
 
     def CreateClippingPlane(self, proj=None, foc=None):
-        '''Create a clipping plane for the volume render
+        """
+        Create a clipping plane for the volume render
         
-        foc: Focal Point. If None this is the active camera focal point
-        proj: Normal to the clipping plane. If None this is calculated from the active camera direction of projection
-        
-        '''
+        :param foc: Focal Point. If None this is the active camera focal point
+        :param proj: Normal to the clipping plane. If None this is calculated from the active camera direction of projection
+        """
         viewer = self._viewer
         planew = vtk.vtkImplicitPlaneWidget2()
 
@@ -398,6 +400,7 @@ Keyboard Interactions:
     def world2imageCoordinate(self, world_coordinates):
         """
         Convert from the world or global coordinates to image coordinates
+
         :param world_coordinates: (x,y,z)
         :return: rounded to next integer (x,y,z) in image coorindates eg. slice index
         """
@@ -412,6 +415,7 @@ Keyboard Interactions:
     def world2imageCoordinateFloat(self, world_coordinates):
         """
         Convert from the world or global coordinates to image coordinates
+
         :param world_coordinates: (x,y,z)
         :return: float (x,y,z) in image coorindates eg. slice index
         """
@@ -431,7 +435,9 @@ Keyboard Interactions:
         return [(image_coordinates[i]) * spac[i] + orig[i] for i in range(3)]
 
     def GetImageWorldExtent(self):
-        """Deprecated. Use `GetDataExtentInWorld` and `GetMinMaxVoxelsFromExtent`."""
+        """
+        Deprecated. Use `GetDataExtentInWorld` and `GetMinMaxVoxelsFromExtent`.
+        """
         return self.image2world(self.GetInputData().GetExtent()[1::2])
 
     def GetDataExtentInWorld(self):
@@ -443,16 +449,20 @@ Keyboard Interactions:
         return data_extent_world
 
     def GetMinMaxVoxelsFromExtent(self, extent):
-        """Given the extent of a box or image, gets the voxels corresponding to the min values in all directions
-        and max values in all directions."""
+        """
+        Given the extent of a box or image, gets the voxels corresponding to the min values in all directions
+        and max values in all directions.
+        """
         voxel_min = extent[0::2]
         voxel_max = extent[1::2]
         return voxel_min, voxel_max
 
     def Image2WorldExtent(self, extent_image):
-        """Given the extent of a box or image, gets the voxels corresponding to the min values in all directions
+        """
+        Given the extent of a box or image, gets the voxels corresponding to the min values in all directions
         and max values in all directions. Then, converts their coordinates in the world coordinate system. 
-        Returns the converted extent."""
+        Returns the converted extent.
+        """
         voxel_min_image, voxel_max_image = self.GetMinMaxVoxelsFromExtent(extent_image)
         voxel_min_world = self.image2world(voxel_min_image)
         voxel_max_world = self.image2world(voxel_max_image)
@@ -460,8 +470,10 @@ Keyboard Interactions:
         return extent_world
 
     def GetExtentFromVoxels(self, voxel_min, voxel_max):
-        """Given the voxels corresponding to the min values in all directions
-        and max values in all directions, calculates the extent of the box or image they enclose."""
+        """
+        Given the voxels corresponding to the min values in all directions
+        and max values in all directions, calculates the extent of the box or image they enclose.
+        """
         extent = (voxel_min[0], voxel_max[0], voxel_min[1], voxel_max[1], voxel_min[2], voxel_max[2])
         return extent
 
@@ -469,24 +481,33 @@ Keyboard Interactions:
         return self._viewer.img3D
 
     def GetVolumeRenderParameters(self):
-        # set defaults for opacity and colour mapping:
+        """
+        Returns a dictionary of default values for the viewer's opacity and colour mapping.
+
+        :return: dict of default volume render parameters.
+        """
         return self._volume_render_pars
 
 
 class CILViewer(CILViewerBase):
-    '''Simple 3D Viewer based on VTK classes'''
+    """
+    Simple 3D Viewer based on VTK classes
+    """
 
     def __init__(self, dimx=600, dimy=600, renWin=None, iren=None, ren=None, debug=False):
+        """
+        Creates the rendering pipeline.
+        """
         CILViewerBase.__init__(self, dimx=dimx, dimy=dimy, ren=ren, renWin=renWin, iren=iren, debug=debug)
-        '''creates the rendering pipeline'''
 
         self.setInteractorStyle(CILInteractorStyle(self))
 
         self.sliceActorNo = 0
+
         # Render decimation
         self.decimate = vtk.vtkDecimatePro()
 
-        # Setup the slice histogram:
+        # Setup the slice histogram
         self.sliceIA = vtk.vtkImageAccumulate()
         self.histogramPlotActor.SetPosition2(0.98, 0.98)
         self.histogramPlotActor.SetPosition(0., 0.)
@@ -496,7 +517,7 @@ class CILViewer(CILViewerBase):
         # Help text
         self.ren.AddActor(self.helpActor)
 
-        # These may be optionally set by the user:
+        # These may be optionally set by the user
         self.volume_colormap_limits = None
         self.volume_colormap_name = 'viridis'
 
@@ -506,8 +527,11 @@ class CILViewer(CILViewerBase):
         self.clipping_plane_initialised = False
 
     def createPolyDataActor(self, polydata):
-        '''returns an actor for a given polydata'''
+        """
+        Creates and returns an actor for a given polydata.
 
+        :return: A vtkActor() for a given polydata.
+        """
         self.decimate.SetInputData(polydata)
         self.decimate.SetTargetReduction(0.0)
         self.decimate.Update()
@@ -523,8 +547,9 @@ class CILViewer(CILViewerBase):
         return actor
 
     def setPolyDataActor(self, actor):
-        '''displays the given polydata'''
-
+        """
+        Displays the given polydata.
+        """
         self.hideActor(1, delete=True)
         self.ren.AddActor(actor)
 
@@ -536,7 +561,9 @@ class CILViewer(CILViewerBase):
         self.setPolyDataActor(self.createPolyDataActor(polydata))
 
     def hideActor(self, actorno, delete=False):
-        '''Hides an actor identified by its number in the list of actors'''
+        """
+        Hides an actor identified by its number in the list of actors.
+        """
         try:
             if self.actors[actorno][1]:
                 self.ren.RemoveActor(self.actors[actorno][0])
@@ -550,7 +577,9 @@ class CILViewer(CILViewerBase):
             print("Warning Actor not present")
 
     def showActor(self, actorno, actor=None):
-        '''Shows hidden actor identified by its number in the list of actors'''
+        """
+        Shows hidden actor identified by its number in the list of actors.
+        """
         try:
             if not self.actors[actorno][1]:
                 self.ren.AddActor(self.actors[actorno][0])
@@ -564,7 +593,9 @@ class CILViewer(CILViewerBase):
                 return len(self.actors)
 
     def addActor(self, actor):
-        '''Adds an actor to the render'''
+        """
+        Adds an actor to the render.
+        """
         return self.showActor(0, actor)
 
     def setInput3DData(self, imageData):
@@ -607,7 +638,9 @@ class CILViewer(CILViewerBase):
         self.saveDefaultCamera()
 
     def setInputData(self, imageData):
-        '''alias of setInput3DData'''
+        """
+        Alias of setInput3DData().
+        """
         return self.setInput3DData(imageData)
 
     def setInputAsNumpy(self, numpyarray):
@@ -666,28 +699,34 @@ class CILViewer(CILViewerBase):
         self.renWin.Render()
 
     def saveDefaultCamera(self):
-        ''' Saves the default camera settings for a particular
-        loaded 3D image.'''
+        """
+        Saves the default camera settings for a particular
+        loaded 3D image.
+        """
         self.default_camera_data = CameraData(self.getCamera())
 
     def resetCameraToDefault(self):
-        ''' resets to the default camera settings for the current
-        loaded 3D image'''
+        """
+        Resets to the default camera settings for the current
+        loaded 3D image.
+        """
         if hasattr(self, 'default_camera_data'):
             self.adjustCamera(resetcamera=True)
             CameraData.CopyDataToCamera(self.default_camera_data, self.getCamera())
 
     def setVolumeMapper(self, mapper):
-        '''Sets the volume mapper to the specified mapper
-        Parameters
-        ----------
-        mapper : vtkVolumeMapper
-            The volume mapper to use, defaults is vtkSmartVolumeMapper
-        '''
+        """
+        Sets the volume mapper to the specified mapper
+        
+        :param mapper: The volume mapper to use, defaults is vtkSmartVolumeMapper.
+        :type mapper: vtkVolumeMapper
+        """
         self.volume_mapper = mapper
 
     def getVolumeMapper(self):
-        '''Returns the volume mapper'''
+        """
+        Returns the volume mapper.
+        """
         return self.volume_mapper
 
     def installVolumeRenderActorPipeline(self):
@@ -752,12 +791,10 @@ class CILViewer(CILViewerBase):
         return self._vol_render_opacity_method
 
     def setVolumeRenderOpacityMethod(self, method='gradient'):
-        '''
-        Parameters
-        ----------
-        method: string: 'scalar' or 'gradient'
-            method for setting opacity of the volume render            
-        '''
+        """
+        :param method: 'scalar' or 'gradient' method for setting opacity of the volume render.
+        :type method: string
+        """
         if method in ['scalar', 'gradient']:
             self._vol_render_opacity_method = method
             # self.updateVolumePipeline()
@@ -774,52 +811,47 @@ class CILViewer(CILViewerBase):
                     self.volume.Modified()
 
     def setMaximumOpacity(self, max, update_pipeline=True):
-        '''
-        Parameters
-        ----------
-        max_opacity: float in [0,1]
-            representing the maximum rendered opacity
-        update_pipeline: bool
-            whether to immediately update the pipeline with this new
-            setting
-        '''
+        """
+        :param max_opacity: float in [0,1] representing the maximum rendered opacity.
+        :type max_opacity: float
+        :param update_pipeline: Whether to immediately update the pipeline with this new setting.
+        :type update_pipeline: bool
+        """
         self.maximum_opacity = max
         if update_pipeline:
             self.updateVolumePipeline()
 
     def getMaximumOpacity(self):
-        '''
-        Returns
-        ----------
-        max_opacity: float in [0,1]
-            representing the maximum rendered opacity
-        '''
+        """
+        :return max_opacity: float in [0,1] representing the maximum rendered opacity.
+        """
         return self.maximum_opacity
 
     def setGradientOpacityPercentiles(self, min, max, update_pipeline=True):
-        '''
-        Parameters
-        -----------
-        min, max: float, default: (80., 99.)
-            the percentiles on the image gradient values that the 
+        """
+        :param min: Default: 80.
+            The lower percentile of the image gradient values that the 
             opacity will be mapped to if setVolumeRenderOpacityMethod
             has been set to 'gradient'.
-        update_pipeline: bool
-            whether to immediately update the pipeline with this new
-            setting
-        '''
+        :type min: float
+        :param max: Default: 99.
+            The upper percentile of the image gradient values that the 
+            opacity will be mapped to if setVolumeRenderOpacityMethod
+            has been set to 'gradient'.
+        :type max: float
+        :param update_pipeline: Whether to immediately update the pipeline with this new setting.
+        :type update_pipeline: bool
+        """
         go_min, go_max = self.getImageMapRange((min, max), 'gradient')
         self.setGradientOpacityRange(go_min, go_max, update_pipeline)
 
     def getGradientOpacityPercentiles(self):
-        '''
-        Returns
-        -----------
-        min, max: float, default: (80., 99.)
-            the percentiles on the image gradient values that the 
+        """
+        :return min, max: float, default: (80., 99.). 
+            The percentiles of the image gradient values that the 
             opacity will be mapped to if setVolumeRenderOpacityMethod
             has been set to 'gradient'.
-        '''
+        """
         go_min, go_max = self.getGradientOpacityRange()
         value_min, value_max = self.getImageMapWholeRange('gradient')
         min_percentage = (go_min - value_min) / (value_max - value_min) * 100
@@ -827,24 +859,30 @@ class CILViewer(CILViewerBase):
         return min_percentage, max_percentage
 
     def setScalarOpacityPercentiles(self, min, max, update_pipeline=True):
-        '''
-        min, max: float, default: (80., 99.)
-            the percentiles on the image values that the 
+        """
+        :param min: Default: 80.
+            The lower percentile of the image values that the 
             opacity will be mapped to if setVolumeRenderOpacityMethod
             has been set to 'scalar'.
-        '''
+        :type min: float
+        :param max: Default: 99.
+            The lower percentile of the image values that the 
+            opacity will be mapped to if setVolumeRenderOpacityMethod
+            has been set to 'scalar'.
+        :type max: float
+        :param update_pipeline: Whether to immediately update the pipeline with this new setting.
+        :type update_pipeline: bool
+        """
         so_min, so_max = self.getImageMapRange((min, max), 'scalar')
         self.setScalarOpacityRange(so_min, so_max, update_pipeline)
 
     def getScalarOpacityPercentiles(self):
-        '''
-        Returns
-        -----------
-        min, max: float, default: (80., 99.)
-            the percentiles on the image values that the 
+        """
+        :return min, max: float, default: (80., 99.). 
+            The percentiles of the image values that the 
             opacity will be mapped to if setVolumeRenderOpacityMethod
             has been set to 'scalar'.
-        '''
+        """
         so_min, so_max = self.getScalarOpacityRange()
         value_min, value_max = self.getImageMapWholeRange('scalar')
         min_percentage = (so_min - value_min) / (value_max - value_min) * 100
@@ -852,22 +890,24 @@ class CILViewer(CILViewerBase):
         return min_percentage, max_percentage
 
     def setVolumeColorPercentiles(self, min, max, update_pipeline=True):
-        '''
-        Parameters
-        -----------
-        min, max: int, default: (85., 95.)
-            the percentiles on the image values upon which the colours will be mapped to
-        '''
+        """
+        :param min: Default: 85.
+            The lower percentile of the image values that the colours will be mapped to.
+        :type min: float
+        :param max: Default: 95.
+            The upper percentile of the image values that the colours will be mapped to.
+        :type max: float
+        :param update_pipeline: Whether to immediately update the pipeline with this new setting.
+        :type update_pipeline: bool
+        """
         cmin, cmax = self.getImageMapRange((min, max), 'scalar')
         self.setVolumeColorRange(cmin, cmax, update_pipeline)
 
     def getVolumeColorPercentiles(self):
-        '''
-        Returns
-        -----------
-        min, max: int, default: (85., 95.)
-            the percentiles on the image values upon which the colours will be mapped to
-        '''
+        """
+        :return min, max: float, default: (85., 95.). 
+            The percentiles of the image values that the colours will be mapped to.
+        """
         cmin, cmax = self.getVolumeColorRange()
         value_min, value_max = self.getImageMapWholeRange('scalar')
         min_percentage = (cmin - value_min) / (value_max - value_min) * 100
@@ -875,97 +915,100 @@ class CILViewer(CILViewerBase):
         return min_percentage, max_percentage
 
     def setGradientOpacityRange(self, min, max, update_pipeline=True):
-        '''
-        Parameters
-        -----------
-        min, max: float, default: (80., 99.)
-            the upper and lower image gradient values that the 
+        """
+        :param min: Default: 80.
+            The lower image gradient value that the 
             opacity will be mapped to if setVolumeRenderOpacityMethod
             has been set to 'gradient'.
-        update_pipeline: bool
-            whether to immediately update the pipeline with this new
-            setting
-        '''
+        :type min: float
+        :param max: Default: 99.
+            The upper image gradient value that the 
+            opacity will be mapped to if setVolumeRenderOpacityMethod
+            has been set to 'gradient'.
+        :type max: float
+        :param update_pipeline: Whether to immediately update the pipeline with this new setting.
+        :type update_pipeline: bool
+        """
         self.gradient_opacity_limits = (min, max)
         if update_pipeline:
             self.updateVolumePipeline()
 
     def getGradientOpacityRange(self):
-        '''
-        Returns
-        -----------
-        (min, max): tuple, default: (80., 99.)
-            the upper and lower image gradient values that the 
+        """
+        :return min, max: tuple, default: (80., 99.). 
+            The upper and lower image gradient values that the 
             opacity will be mapped to if setVolumeRenderOpacityMethod
             has been set to 'gradient'.
-        '''
+        """
         return self.gradient_opacity_limits
 
     def setScalarOpacityRange(self, min, max, update_pipeline=True):
-        '''
-        Parameters
-        -----------
-        min, max: float, default: (80., 99.)
-            the upper and lower image values that the 
+        """
+        :param min: Default: 80.
+            The lower image value that the 
             opacity will be mapped to if setVolumeRenderOpacityMethod
             has been set to 'scalar'.
-        update_pipeline: bool
-            whether to immediately update the pipeline with this new
-            setting
-        '''
+        :type min: float
+        :param max: Default: 99.
+            The upper image value that the 
+            opacity will be mapped to if setVolumeRenderOpacityMethod
+            has been set to 'scalar'.
+        :type max: float
+        :param update_pipeline: Whether to immediately update the pipeline with this new setting.
+        :type update_pipeline: bool
+        """
         self.scalar_opacity_limits = (min, max)
         if update_pipeline:
             self.updateVolumePipeline()
 
     def getScalarOpacityRange(self):
-        '''
-        Returns
-        -----------
-        (min, max): tuple, default: (80., 99.)
-            the upper and lower image values that the 
+        """
+        :return min, max: tuple, default: (80., 99.). 
+            The upper and lower image values that the 
             opacity will be mapped to if setVolumeRenderOpacityMethod
             has been set to 'scalar'.
-        '''
+        """
         return self.scalar_opacity_limits
 
     def setVolumeColorRange(self, min, max, update_pipeline=True):
-        '''
-        Parameters
-        -----------
-        min, max: float, default: the raw value of the 80. percentile for min, and the raw value of the 99. percentile for max.
-            the upper and lower image values that the 
-            color will be mapped to.
-        update_pipeline: bool
-            whether to immediately update the pipeline with this new
-            setting
-        '''
+        """
+        :param min: Default: 80.
+            The lower image value that the color will be mapped to.
+        :type min: float
+        :param max: Default: 99.
+            The upper image value that the color will be mapped to.
+        :type max: float
+        :param update_pipeline: Whether to immediately update the pipeline with this new setting.
+        :type update_pipeline: bool
+        """
         self.volume_colormap_limits = (min, max)
         if update_pipeline:
             self.updateVolumePipeline()
 
     def getVolumeColorRange(self):
-        '''
-        Returns
-        -----------
-        (min, max): tuple, default: (80., 99.)
-            the upper and lower image values that the 
+        """
+        :return min, max: tuple, default: (80., 99.). 
+            The upper and lower image values that the 
             color will be mapped to.
-        '''
+        """
         return self.volume_colormap_limits
 
     def setVolumeColorMapName(self, cmap='viridis'):
-        '''set the volume color map name
-        Parameters
-        ----------
-        cmap: string, default: 'viridis'
-            with one of ['viridis', 'plasma', 'magma', 'inferno'],
-            or matplotlib's cmaps if available
-        '''
+        """
+        Set the volume colour map name.
+
+        :param cmap: Default: 'viridis'
+            String value, one of ['viridis', 'plasma', 'magma', 'inferno'],
+            or matplotlib's cmaps if available.
+        :type cmap: string
+        """
         self.volume_colormap_name = cmap
         self.updateVolumePipeline()
 
     def getVolumeColorMapName(self):
-        '''get the volume color map name'''
+        """
+        Get the volume colour map name.
+        """
         return self.volume_colormap_name
 
     def _setDefaultScalarOpacityFunction(self):
@@ -977,15 +1020,13 @@ class CILViewer(CILViewerBase):
         return self.default_scalar_opacity
 
     def getColorOpacityForVolumeRender(self, color_num=255):
-        '''
-        Defines the color and opacity tables
+        """
+        Defines the colour and opacity tables.
         
-        Parameters
-        ----------
-        color_num: int, default: 255 
-            number of colors in the map
-        '''
-
+        :param color_num: Default: 255
+            Number of colours in the map.
+        :type color_num: int
+        """
         colors = colormaps.CILColorMaps.get_color_transfer_function(self.getVolumeColorMapName(),
                                                                     self.volume_colormap_limits)
 
@@ -1004,10 +1045,10 @@ class CILViewer(CILViewerBase):
         return colors, opacity
 
     def getMappingArray(self, color_num, method):
-        '''
-        generates array of color_num values between min and max values in 
+        """
+        Generates an array of color_num values between min and max values in 
         image or image gradient (depending on method).
-        '''
+        """
         ia = self.getImageHistogramStatistics(method)
         x = numpy.linspace(ia.GetMinimum(), ia.GetMaximum(), num=color_num)
         return x
