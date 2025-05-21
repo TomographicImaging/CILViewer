@@ -278,4 +278,3 @@ class VolumeRenderSettingsDialog(FormDialog):
         colour_scheme = self.getWidget("colour_scheme").currentText()
         self.viewer.setVolumeColorMapName(colour_scheme)
         self.viewer.updateVolumePipeline()
-
