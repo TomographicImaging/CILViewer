@@ -96,7 +96,6 @@ class QCILViewerWidget(QtWidgets.QFrame):
             self._toolBar = None
 
 
-
 class QCILDockableWidget(QtWidgets.QDockWidget):
     '''Inserts a vtk viewer in a dock widget.'''
 
