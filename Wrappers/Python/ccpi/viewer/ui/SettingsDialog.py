@@ -42,8 +42,8 @@ class SettingsDialog(FormDialog):
         Configures the Background Colour QComboBox, which controls the background colour of the viewer.
         """
         background_colour = QtWidgets.QComboBox(self.groupBox)
-        for i in background_color_list():
-            background_colour.addItem(i["text"])
+        for colour in background_color_list():
+            background_colour.addItem(colour["text"])
 
         self.addWidget(background_colour, "Background Colour:", "background_colour")
         self.formWidget.widgets["background_colour_label"].setToolTip(TOOLTIPS_IMAGE_SETTINGS["background_colour"])
