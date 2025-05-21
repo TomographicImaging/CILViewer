@@ -212,4 +212,3 @@ class SettingsDialog(FormDialog):
             return
         else:
             self.viewer.style.ToggleSliceVisibility()
-

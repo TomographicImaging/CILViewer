@@ -467,7 +467,7 @@ Keyboard Interactions:
 
     def GetInputData(self):
         return self._viewer.img3D
-    
+
     def GetVolumeRenderParameters(self):
         # set defaults for opacity and colour mapping:
         return self._volume_render_pars
