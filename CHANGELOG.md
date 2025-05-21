@@ -1,13 +1,16 @@
 # Changelog
 
 ## vx.x.x
+
 Enhancements:
   - Update recipe to require eqt Version 2.0.0
   - Add a toolbar to the 3D viewer
-  - Add tooltips to relevant widgets
-  - Add eqt UISlider support to 3D toolbar settings dialogs
+  - Add toolbar menus to settings dialogs
+  - Add script to generate numpy array test data
+
 
 ## v25.0.0
+
 Enhancements:
 - Have `hdf5_attrs` as attribute to `HDF5InputDialog` #452
 - Add `SaveableRawInputDialog` #444
@@ -28,12 +31,14 @@ Build and CI:
 ## v24.1.0
 
 Enhancements:
+  - Add option to edit help text #441
   - Update corner annotation with axis label #433
   - Add title to ViewerCoordsDockWidget #422
   - Adds methods to CILviewer and CILviewer2D #425
-  - adds Qt GUI toolbar to control 3D viewer
   
 Bugfix:
+  - Fix error when visualising 2D images #439
+  - Hides the slider when one image dimension is 1 #432
   - Differentiate 3D and 2D images in the converter `numpy2vtkImage` #437
   - Edit slider min value #420
   - Fix extent error when user clicks in the viewer to create a box by clicking outside of the image #425
@@ -74,7 +79,6 @@ Documentation
 - Transfer repository to "TomographicImaging" #402
 - Add PR template #244 #373
 - Edit README.md #344
-
 
 ## v23.1.0
 - Raise error if try to add multiple widgets with the same name to CILViewer or CILViewer2D.

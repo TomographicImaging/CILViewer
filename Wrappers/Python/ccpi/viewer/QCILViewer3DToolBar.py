@@ -22,16 +22,14 @@ class QCILViewer3DToolBar(QtWidgets.QToolBar):
 
         viewer: The CILViewer instance that the toolbar will be embedded in.
         """
-        self.parent = parent
         self.viewer = viewer
 
         if self.viewer.img3D is None:
             self.data = None
         else:
             self.data = viewer.img3D
-            print(self.data)
 
-        super(QCILViewer3DToolBar, self).__init__(parent=self.parent)
+        super(QCILViewer3DToolBar, self).__init__(parent=parent)
         self.dialog = {"settings_2d": None, "settings_3d": None, "settings_render": None}
 
         self._setUpSettingsMenu()
@@ -109,43 +107,34 @@ class QCILViewer3DToolBar(QtWidgets.QToolBar):
         if mode == "settings_2d":
             if self.dialog["settings_2d"] is None:
                 self._createSettingsDialog()
-            self.settings = self.dialog[mode].getSettings()
             self.dialog[mode].open()
             return
 
         if mode == "settings_3d":
             if self.dialog["settings_3d"] is None:
                 self._createVolumeRenderSettingsDialog()
-            self.settings = self.dialog[mode].getSettings()
             self.dialog[mode].open()
             return
 
         if mode == "settings_render":
             if self.dialog["settings_render"] is None:
                 self._createCaptureRenderDialog()
-            self.settings = self.dialog[mode].getSettings()
             self.dialog[mode].open()
             return
 
     def _createSettingsDialog(self):
         mode = "settings_2d"
-        dialog = SettingsDialog(parent=self.parent, viewer=self.viewer, title="Slice Settings")
-        dialog.Ok.clicked.connect(lambda: self.accepted(mode))
-        dialog.Cancel.clicked.connect(lambda: self.rejected(mode))
+        dialog = SettingsDialog(parent=self.parent(), viewer=self.viewer, title="Slice Settings")
         self.dialog[mode] = dialog
 
     def _createVolumeRenderSettingsDialog(self):
         mode = "settings_3d"
-        dialog = VolumeRenderSettingsDialog(parent=self.parent, viewer=self.viewer, title="Volume Render Settings")
-        dialog.Ok.clicked.connect(lambda: self.accepted(mode))
-        dialog.Cancel.clicked.connect(lambda: self.rejected(mode))
+        dialog = VolumeRenderSettingsDialog(parent=self.parent(), viewer=self.viewer, title="Volume Render Settings")
         self.dialog[mode] = dialog
 
     def _createCaptureRenderDialog(self):
         mode = "settings_render"
-        dialog = CaptureRenderDialog(parent=self.parent, viewer=self.viewer, title="Capture Render")
-        dialog.Ok.clicked.connect(lambda: self.accepted(mode))
-        dialog.Cancel.clicked.connect(lambda: self.rejected(mode))
+        dialog = CaptureRenderDialog(parent=self.parent(), viewer=self.viewer, title="Capture Render")
         self.dialog[mode] = dialog
 
     def _isNewData(self, data):
@@ -171,20 +160,3 @@ class QCILViewer3DToolBar(QtWidgets.QToolBar):
             return
         else:
             self.viewer.updatePipeline()
-
-    def accepted(self, mode):
-        """
-        Extracts settings from the dialog and applies them.
-
-        mode: The key for the type of settings dialog.
-        """
-        self.dialog[mode].close()
-
-    def rejected(self, mode):
-        """
-        Reapplies the dialog's previous settings.
-
-        mode: The key for the type of settings dialog.
-        """
-        self.dialog[mode].applySettings(self.settings)
-        self.dialog[mode].close()

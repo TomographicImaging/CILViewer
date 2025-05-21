@@ -213,36 +213,3 @@ class SettingsDialog(FormDialog):
         else:
             self.viewer.style.ToggleSliceVisibility()
 
-    def getSettings(self):
-        """
-        Returns a dictionary of widget settings from the dialog.
-        """
-        settings = {}
-        for key, value in self.formWidget.widgets.items():
-            if isinstance(value, QtWidgets.QLabel):
-                settings[key] = value.text()
-            elif isinstance(value, QtWidgets.QCheckBox):
-                settings[key] = value.isChecked()
-            elif isinstance(value, QtWidgets.QComboBox):
-                settings[key] = value.currentIndex()
-            elif isinstance(value, UISliderWidget.UISliderWidget):
-                settings[key] = value.value()
-
-        return settings
-
-    def applySettings(self, settings):
-        """
-        Applies the widget settings to the dialog.
-
-        settings: A dictionary of widget names and their associated state/value.
-        """
-        for key, value in settings.items():
-            widg = self.formWidget.widgets[key]
-            if isinstance(widg, QtWidgets.QLabel):
-                widg.setText(value)
-            elif isinstance(widg, QtWidgets.QCheckBox):
-                widg.setChecked(value)
-            elif isinstance(widg, QtWidgets.QComboBox):
-                widg.setCurrentIndex(value)
-            elif isinstance(widg, UISliderWidget.UISliderWidget):
-                widg.setValue(value)
