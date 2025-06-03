@@ -6,6 +6,8 @@ from ccpi.viewer import viewer2D, viewer3D
 from ccpi.viewer.ui.main_windows import TwoViewersMainWindow
 from PySide2 import QtWidgets
 from PySide2.QtWidgets import QAction, QCheckBox
+import logging
+import argparse
 
 
 class StandaloneViewerMainWindow(TwoViewersMainWindow):
@@ -149,6 +151,17 @@ class standalone_viewer(object):
 
 
 def main():
+
+    parser = argparse.ArgumentParser(description='Standalone CIL Viewer')
+
+    parser.add_argument('--debug', type=str)
+    args = parser.parse_args()
+
+    if args.debug in ['debug', 'info', 'warning', 'error', 'critical']:
+        level = eval(f'logging.{args.debug.upper()}')
+        logging.basicConfig(level=level)
+        logging.info(f"cilviewer: Setting debugging level to {args.debug.upper()}")
+
     # Run a standalone viewer with a 2D and a 3D viewer:
     err = vtk.vtkFileOutputWindow()
     err.SetFileName("viewer.log")
