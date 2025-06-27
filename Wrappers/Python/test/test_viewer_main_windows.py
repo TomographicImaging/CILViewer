@@ -16,7 +16,13 @@ else:
     skip_as_conda_build = False
 
 print("skip_as_conda_build is set to ", skip_as_conda_build)
-
+def get_QApplication(args):
+    if QApplication.instance() is None:
+        print("Creating a new QApplication instance")
+        return QApplication(args)
+    else:
+        print("Using existing QApplication instance")
+        return QApplication.instance()
 
 @unittest.skipIf(skip_as_conda_build, "On conda builds do not do any test with interfaces")
 class TestViewerMainWindow(unittest.TestCase):
@@ -29,10 +35,10 @@ class TestViewerMainWindow(unittest.TestCase):
     '''
 
     def setUp(self):
-        self.app = QApplication(sys.argv)
+        get_QApplication(sys.argv)
 
     def tearDown(self) -> None:
-        self.app.quit()
+        get_QApplication(sys.argv).quit()
 
     def test_all(self):
         # https://stackoverflow.com/questions/5387299/python-unittest-testcase-execution-order
