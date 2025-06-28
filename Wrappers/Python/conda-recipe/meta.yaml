@@ -17,7 +17,7 @@ build:
   
 test:
   requires:
-    - cil-data=22.0.0
+    - ccpi::cil-data=22.0.0
     - pillow
     - pytest
     - pyside2
@@ -26,7 +26,7 @@ test:
     - ./Wrappers/Python/test
 
   commands:
-    - python -m pytest Wrappers/Python/test # [not win]
+    - cd Wrappers/Python/test && python -m pytest . # [not win]
   
 requirements:
   build:
