@@ -20,11 +20,9 @@ from unittest import mock
 
 from ccpi.viewer.CILViewer import CILViewer
 
-# skip the tests on GitHub actions
-if os.environ.get('CONDA_BUILD', '0') == '1':
-    skip_test = True
-else:
-    skip_test = False
+from vtkmodules.vtkRenderingCore import vtkGraphicsFactory
+
+skip_test = False
 
 print("skip_test is set to ", skip_test)
 
@@ -33,6 +31,7 @@ print("skip_test is set to ", skip_test)
 class CILViewer3DTest(unittest.TestCase):
 
     def setUp(self):
+        vgf = vtkGraphicsFactory(off_screen_only_mode=True, use_mesa_classes=True)
         self.cil_viewer = CILViewer()
 
     def test_getGradientOpacityPercentiles_returns_correct_percentiles_when_image_values_start_at_zero(self):
