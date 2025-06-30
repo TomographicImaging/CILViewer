@@ -31,7 +31,10 @@ print("skip_test is set to ", skip_test)
 class CILViewer3DTest(unittest.TestCase):
 
     def setUp(self):
-        vgf = vtkGraphicsFactory(off_screen_only_mode=True, use_mesa_classes=True)
+        vgf = vtkGraphicsFactory()
+        vgf.SetOffScreenOnlyMode(True)
+        vgf.SetUseMesaClasses(True)
+        self.vgf = vgf
         self.cil_viewer = CILViewer()
 
     def test_getGradientOpacityPercentiles_returns_correct_percentiles_when_image_values_start_at_zero(self):

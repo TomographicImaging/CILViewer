@@ -31,7 +31,10 @@ class CILViewerBaseTest(unittest.TestCase):
 
     def setUp(self):
         '''Creates an instance of the CIL viewer base class.'''
-        vgf = vtkGraphicsFactory(off_screen_only_mode=True, use_mesa_classes=True)
+        vgf = vtkGraphicsFactory()
+        vgf.SetOffScreenOnlyMode(True)
+        vgf.SetUseMesaClasses(True)
+        self.vgf = vgf
         self.CILViewerBase_instance = CILViewerBase()
 
     def test_setAxisLabels(self):
