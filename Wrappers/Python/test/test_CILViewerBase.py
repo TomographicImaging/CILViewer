@@ -19,12 +19,9 @@ from unittest import mock
 import os
 
 from ccpi.viewer.CILViewer import CILViewerBase
+from vtkmodules.vtkRenderingCore import vtkGraphicsFactory
 
-# skip the tests on GitHub actions
-if os.environ.get('CONDA_BUILD', '0') == '1':
-    skip_test = True
-else:
-    skip_test = False
+skip_test = False
 
 print("skip_test is set to ", skip_test)
 
@@ -34,6 +31,10 @@ class CILViewerBaseTest(unittest.TestCase):
 
     def setUp(self):
         '''Creates an instance of the CIL viewer base class.'''
+        vgf = vtkGraphicsFactory()
+        vgf.SetOffScreenOnlyMode(True)
+        vgf.SetUseMesaClasses(True)
+        self.vgf = vgf
         self.CILViewerBase_instance = CILViewerBase()
 
     def test_setAxisLabels(self):
@@ -56,6 +57,7 @@ class CILViewerBaseTest(unittest.TestCase):
 class CILViewer3DTest(unittest.TestCase):
 
     def setUp(self):
+        vgf = vtkGraphicsFactory(off_screen_only_mode=True, use_mesa_classes=True)
         self.cil_viewer = CILViewerBase()
 
     def test_getSliceColorPercentiles_returns_correct_percentiles_when_slice_values_start_at_zero(self):
