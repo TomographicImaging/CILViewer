@@ -13,7 +13,7 @@ from qtpy.QtWidgets import QApplication, QLabel, QFrame, QDoubleSpinBox, QCheckB
 from qtpy.QtCore import QSettings
 from eqt.ui import FormDialog
 from functools import partial
-from qt_utils import TestCaseQt
+from .qt_utils import TestCaseQt
 import sys
 
 # skip the tests on GitHub actions

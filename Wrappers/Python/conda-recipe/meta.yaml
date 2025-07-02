@@ -26,7 +26,7 @@ test:
     - ./Wrappers/Python/test
 
   commands:
-    - cd Wrappers/Python/test && python -m pytest . # [not win]
+    - python -m pytest Wrappers/Python/test # [not win]
   
 requirements:
   build:
