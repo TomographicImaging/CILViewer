@@ -29,7 +29,7 @@ class TestViewerMainWindow(TestCaseQt):
     '''
 
     def setUp(self):
-        TestCaseQt.get_QApplication(sys.argv)
+        self.app = TestCaseQt.get_QApplication(sys.argv)
 
     def tearDown(self) -> None:
         TestCaseQt.get_QApplication(sys.argv).quit()
