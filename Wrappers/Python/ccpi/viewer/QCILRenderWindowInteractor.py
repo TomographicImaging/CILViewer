@@ -58,10 +58,9 @@ class QCILRenderWindowInteractor(QVTKRenderWindowInteractor):
         alt = self._GetAlt(ev)
         self._Iren.SetAltKey(alt)
         super().mouseReleaseEvent(ev)
-        
+
     def mouseMoveEvent(self, ev):
         '''Overload of mouseMoveEvent from base class to get also the Alt modifier'''
         alt = self._GetAlt(ev)
         self._Iren.SetAltKey(alt)
         super().mouseMoveEvent(ev)
-

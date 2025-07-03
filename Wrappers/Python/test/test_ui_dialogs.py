@@ -71,20 +71,22 @@ class TestHDF5InputDialog(TestCaseQt):
 
         self.parent = QMainWindow()
         self.fname = "test.h5"
-        
+
     def tearDown(self) -> None:
         TestCaseQt.get_QApplication(sys.argv).quit()
 
     def test_init(self):
         HDF5InputDialog.createLineEditForDatasetName = mock.Mock()
-        HDF5InputDialog.createLineEditForDatasetName.return_value = (QtWidgets.QHBoxLayout(), None, QLineEdit(), QPushButton())
+        HDF5InputDialog.createLineEditForDatasetName.return_value = (QtWidgets.QHBoxLayout(), None, QLineEdit(),
+                                                                     QPushButton())
         HDF5InputDialog.setDefaultDatasetName = mock.Mock()
         h5id = HDF5InputDialog(self.parent, self.fname)
         assert h5id is not None
 
     def test_init_creates_widgets(self):
         HDF5InputDialog.createLineEditForDatasetName = mock.Mock()
-        HDF5InputDialog.createLineEditForDatasetName.return_value = (QtWidgets.QHBoxLayout(), None, QLineEdit(), QPushButton())
+        HDF5InputDialog.createLineEditForDatasetName.return_value = (QtWidgets.QHBoxLayout(), None, QLineEdit(),
+                                                                     QPushButton())
         HDF5InputDialog.setDefaultDatasetName = mock.Mock()
         h5id = HDF5InputDialog(self.parent, self.fname)
 
@@ -99,7 +101,8 @@ class TestHDF5InputDialog(TestCaseQt):
 
     def test_getHDF5Attributes(self):
         HDF5InputDialog.createLineEditForDatasetName = mock.Mock()
-        HDF5InputDialog.createLineEditForDatasetName.return_value = (QtWidgets.QHBoxLayout(), None, QLineEdit(), QPushButton())
+        HDF5InputDialog.createLineEditForDatasetName.return_value = (QtWidgets.QHBoxLayout(), None, QLineEdit(),
+                                                                     QPushButton())
         HDF5InputDialog.setDefaultDatasetName = mock.Mock()
         h5id = HDF5InputDialog(self.parent, self.fname)
         assert h5id.getHDF5Attributes() == {'dataset_name': '', 'resample_z': False}
@@ -109,7 +112,8 @@ class TestHDF5InputDialog(TestCaseQt):
 
     def test_getCurrentGroup(self):
         HDF5InputDialog.createLineEditForDatasetName = mock.Mock()
-        HDF5InputDialog.createLineEditForDatasetName.return_value = (QtWidgets.QHBoxLayout(), None, QLineEdit(), QPushButton())
+        HDF5InputDialog.createLineEditForDatasetName.return_value = (QtWidgets.QHBoxLayout(), None, QLineEdit(),
+                                                                     QPushButton())
         HDF5InputDialog.setDefaultDatasetName = mock.Mock()
         h5id = HDF5InputDialog(self.parent, self.fname)
         h5id.current_group = '/'
@@ -117,7 +121,8 @@ class TestHDF5InputDialog(TestCaseQt):
 
     def test_getCurrentParentGroup_when_parent_exists(self):
         HDF5InputDialog.createLineEditForDatasetName = mock.Mock()
-        HDF5InputDialog.createLineEditForDatasetName.return_value = (QtWidgets.QHBoxLayout(), None, QLineEdit(), QPushButton())
+        HDF5InputDialog.createLineEditForDatasetName.return_value = (QtWidgets.QHBoxLayout(), None, QLineEdit(),
+                                                                     QPushButton())
         HDF5InputDialog.setDefaultDatasetName = mock.Mock()
         h5id = HDF5InputDialog(self.parent, self.fname)
         h5id.current_group = '/test/child'
@@ -125,7 +130,8 @@ class TestHDF5InputDialog(TestCaseQt):
 
     def test_getCurrentParentGroup_when_parent_does_not_exist(self):
         HDF5InputDialog.createLineEditForDatasetName = mock.Mock()
-        HDF5InputDialog.createLineEditForDatasetName.return_value = (QtWidgets.QHBoxLayout(), None, QLineEdit(), QPushButton())
+        HDF5InputDialog.createLineEditForDatasetName.return_value = (QtWidgets.QHBoxLayout(), None, QLineEdit(),
+                                                                     QPushButton())
         HDF5InputDialog.setDefaultDatasetName = mock.Mock()
         h5id = HDF5InputDialog(self.parent, self.fname)
         h5id.current_group = '/'
@@ -137,7 +143,8 @@ class TestHDF5InputDialog(TestCaseQt):
 
     def test_goToParentGroup(self):
         HDF5InputDialog.createLineEditForDatasetName = mock.Mock()
-        HDF5InputDialog.createLineEditForDatasetName.return_value = (QtWidgets.QHBoxLayout(), None, QLineEdit(), QPushButton())
+        HDF5InputDialog.createLineEditForDatasetName.return_value = (QtWidgets.QHBoxLayout(), None, QLineEdit(),
+                                                                     QPushButton())
         HDF5InputDialog.setDefaultDatasetName = mock.Mock()
         HDF5InputDialog.getCurrentParentGroup = mock.Mock()
         HDF5InputDialog.getCurrentParentGroup.return_value = 'test'
@@ -158,7 +165,6 @@ class TestRawInputDialog(TestCaseQt):
         self.app = TestCaseQt.get_QApplication(sys.argv)
         self.parent = QMainWindow()
         self.fname = "test.raw"
-        
 
     def tearDown(self) -> None:
         TestCaseQt.get_QApplication(sys.argv).quit()
@@ -220,7 +226,6 @@ class TestSaveableRawInputDialog(TestCaseQt):
         self.parent = QMainWindow()
         self.settings = QSettings()
         self.fname = "test.raw"
-        
 
     def tearDown(self) -> None:
         TestCaseQt.get_QApplication(sys.argv).quit()
@@ -228,7 +233,7 @@ class TestSaveableRawInputDialog(TestCaseQt):
     def test_init_calls_raw_input_dialog_init(self):
         rdi = SaveableRawInputDialog(self.parent, self.fname, self.settings)
         assert isinstance(rdi.formWidget, QWidget)
-        
+
     def test_init(self):
         rdi = SaveableRawInputDialog(self.parent, self.fname, self.settings)
         assert rdi is not None
