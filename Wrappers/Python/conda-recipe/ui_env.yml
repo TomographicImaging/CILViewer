@@ -1,9 +1,6 @@
 name: cilviewer
-channels:
-  - ccpi
-  - conda-forge
 dependencies: 
-    - pyside2
-    - eqt>=2.0.0
-    - cil-data=22.0.0
+    - conda-forge::pyside2
+    - conda-forge::eqt>=2.0.0
+    - ccpi::cil-data=22.0.0
 
