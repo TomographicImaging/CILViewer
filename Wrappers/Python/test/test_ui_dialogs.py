@@ -29,7 +29,7 @@ print("skip_as_conda_build is set to ", skip_as_conda_build)
 class TestViewerSettingsDialog(TestCaseQt):
 
     def setUp(self):
-        TestCaseQt.get_QApplication(sys.argv)
+        self.app = TestCaseQt.get_QApplication(sys.argv)
 
     def tearDown(self) -> None:
         TestCaseQt.get_QApplication(sys.argv).quit()
@@ -67,7 +67,7 @@ class TestHDF5InputDialog(TestCaseQt):
     # TODO: test creation of HDF5 dataset browsing widget functionality
 
     def setUp(self):
-        TestCaseQt.get_QApplication(sys.argv)
+        self.app = TestCaseQt.get_QApplication(sys.argv)
 
         self.parent = QMainWindow()
         self.fname = "test.h5"
@@ -155,7 +155,7 @@ class TestHDF5InputDialog(TestCaseQt):
 class TestRawInputDialog(TestCaseQt):
 
     def setUp(self):
-        TestCaseQt.get_QApplication(sys.argv)
+        self.app = TestCaseQt.get_QApplication(sys.argv)
         self.parent = QMainWindow()
         self.fname = "test.raw"
         
@@ -216,7 +216,7 @@ class TestRawInputDialog(TestCaseQt):
 class TestSaveableRawInputDialog(TestCaseQt):
 
     def setUp(self):
-        TestCaseQt.get_QApplication(sys.argv)
+        self.app = TestCaseQt.get_QApplication(sys.argv)
         self.parent = QMainWindow()
         self.settings = QSettings()
         self.fname = "test.raw"
