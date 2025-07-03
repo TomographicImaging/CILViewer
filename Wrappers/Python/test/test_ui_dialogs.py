@@ -3,16 +3,17 @@ from unittest import mock
 from ccpi.viewer.ui.dialogs import ViewerSettingsDialog, HDF5InputDialog, RawInputDialog, SaveableRawInputDialog
 from eqt.ui.SessionDialogs import AppSettingsDialog
 
-from PySide2.QtWidgets import QMainWindow
+from qtpy.QtWidgets import QMainWindow
 import os
 
 from unittest import mock
 from unittest.mock import patch
-from PySide2.QtWidgets import QApplication, QLabel, QFrame, QDoubleSpinBox, QCheckBox, QPushButton, QLineEdit, QComboBox, QWidget
-from PySide2.QtCore import QSettings
+from qtpy import QtWidgets
+from qtpy.QtWidgets import QApplication, QLabel, QFrame, QDoubleSpinBox, QCheckBox, QPushButton, QLineEdit, QComboBox, QWidget
+from qtpy.QtCore import QSettings
 from eqt.ui import FormDialog
 from functools import partial
-
+from .qt_utils import TestCaseQt
 import sys
 
 # skip the tests on GitHub actions
@@ -23,16 +24,15 @@ else:
 
 print("skip_as_conda_build is set to ", skip_as_conda_build)
 
-_instance = None
-
 
 @unittest.skipIf(skip_as_conda_build, "On conda builds do not do any test with interfaces")
-class TestViewerSettingsDialog(unittest.TestCase):
+class TestViewerSettingsDialog(TestCaseQt):
 
     def setUp(self):
-        global _instance
-        if _instance is None:
-            _instance = QApplication(sys.argv)
+        self.app = TestCaseQt.get_QApplication(sys.argv)
+
+    def tearDown(self) -> None:
+        TestCaseQt.get_QApplication(sys.argv).quit()
 
     def test_init(self):
         parent = QMainWindow()
@@ -63,26 +63,28 @@ class TestViewerSettingsDialog(unittest.TestCase):
 
 
 @unittest.skipIf(skip_as_conda_build, "On conda builds do not do any test with interfaces")
-class TestHDF5InputDialog(unittest.TestCase):
+class TestHDF5InputDialog(TestCaseQt):
     # TODO: test creation of HDF5 dataset browsing widget functionality
 
     def setUp(self):
-        global _instance
-        if _instance is None:
-            _instance = QApplication(sys.argv)
+        self.app = TestCaseQt.get_QApplication(sys.argv)
+
         self.parent = QMainWindow()
         self.fname = "test.h5"
+        
+    def tearDown(self) -> None:
+        TestCaseQt.get_QApplication(sys.argv).quit()
 
     def test_init(self):
         HDF5InputDialog.createLineEditForDatasetName = mock.Mock()
-        HDF5InputDialog.createLineEditForDatasetName.return_value = (None, None, QLineEdit(), QPushButton())
+        HDF5InputDialog.createLineEditForDatasetName.return_value = (QtWidgets.QHBoxLayout(), None, QLineEdit(), QPushButton())
         HDF5InputDialog.setDefaultDatasetName = mock.Mock()
         h5id = HDF5InputDialog(self.parent, self.fname)
         assert h5id is not None
 
     def test_init_creates_widgets(self):
         HDF5InputDialog.createLineEditForDatasetName = mock.Mock()
-        HDF5InputDialog.createLineEditForDatasetName.return_value = (None, None, QLineEdit(), QPushButton())
+        HDF5InputDialog.createLineEditForDatasetName.return_value = (QtWidgets.QHBoxLayout(), None, QLineEdit(), QPushButton())
         HDF5InputDialog.setDefaultDatasetName = mock.Mock()
         h5id = HDF5InputDialog(self.parent, self.fname)
 
@@ -97,7 +99,7 @@ class TestHDF5InputDialog(unittest.TestCase):
 
     def test_getHDF5Attributes(self):
         HDF5InputDialog.createLineEditForDatasetName = mock.Mock()
-        HDF5InputDialog.createLineEditForDatasetName.return_value = (None, None, QLineEdit(), QPushButton())
+        HDF5InputDialog.createLineEditForDatasetName.return_value = (QtWidgets.QHBoxLayout(), None, QLineEdit(), QPushButton())
         HDF5InputDialog.setDefaultDatasetName = mock.Mock()
         h5id = HDF5InputDialog(self.parent, self.fname)
         assert h5id.getHDF5Attributes() == {'dataset_name': '', 'resample_z': False}
@@ -107,7 +109,7 @@ class TestHDF5InputDialog(unittest.TestCase):
 
     def test_getCurrentGroup(self):
         HDF5InputDialog.createLineEditForDatasetName = mock.Mock()
-        HDF5InputDialog.createLineEditForDatasetName.return_value = (None, None, QLineEdit(), QPushButton())
+        HDF5InputDialog.createLineEditForDatasetName.return_value = (QtWidgets.QHBoxLayout(), None, QLineEdit(), QPushButton())
         HDF5InputDialog.setDefaultDatasetName = mock.Mock()
         h5id = HDF5InputDialog(self.parent, self.fname)
         h5id.current_group = '/'
@@ -115,7 +117,7 @@ class TestHDF5InputDialog(unittest.TestCase):
 
     def test_getCurrentParentGroup_when_parent_exists(self):
         HDF5InputDialog.createLineEditForDatasetName = mock.Mock()
-        HDF5InputDialog.createLineEditForDatasetName.return_value = (None, None, QLineEdit(), QPushButton())
+        HDF5InputDialog.createLineEditForDatasetName.return_value = (QtWidgets.QHBoxLayout(), None, QLineEdit(), QPushButton())
         HDF5InputDialog.setDefaultDatasetName = mock.Mock()
         h5id = HDF5InputDialog(self.parent, self.fname)
         h5id.current_group = '/test/child'
@@ -123,7 +125,7 @@ class TestHDF5InputDialog(unittest.TestCase):
 
     def test_getCurrentParentGroup_when_parent_does_not_exist(self):
         HDF5InputDialog.createLineEditForDatasetName = mock.Mock()
-        HDF5InputDialog.createLineEditForDatasetName.return_value = (None, None, QLineEdit(), QPushButton())
+        HDF5InputDialog.createLineEditForDatasetName.return_value = (QtWidgets.QHBoxLayout(), None, QLineEdit(), QPushButton())
         HDF5InputDialog.setDefaultDatasetName = mock.Mock()
         h5id = HDF5InputDialog(self.parent, self.fname)
         h5id.current_group = '/'
@@ -135,7 +137,7 @@ class TestHDF5InputDialog(unittest.TestCase):
 
     def test_goToParentGroup(self):
         HDF5InputDialog.createLineEditForDatasetName = mock.Mock()
-        HDF5InputDialog.createLineEditForDatasetName.return_value = (None, None, QLineEdit(), QPushButton())
+        HDF5InputDialog.createLineEditForDatasetName.return_value = (QtWidgets.QHBoxLayout(), None, QLineEdit(), QPushButton())
         HDF5InputDialog.setDefaultDatasetName = mock.Mock()
         HDF5InputDialog.getCurrentParentGroup = mock.Mock()
         HDF5InputDialog.getCurrentParentGroup.return_value = 'test'
@@ -150,14 +152,16 @@ class TestHDF5InputDialog(unittest.TestCase):
 
 
 @unittest.skipIf(skip_as_conda_build, "On conda builds do not do any test with interfaces")
-class TestRawInputDialog(unittest.TestCase):
+class TestRawInputDialog(TestCaseQt):
 
     def setUp(self):
-        global _instance
-        if _instance is None:
-            _instance = QApplication(sys.argv)
+        self.app = TestCaseQt.get_QApplication(sys.argv)
         self.parent = QMainWindow()
         self.fname = "test.raw"
+        
+
+    def tearDown(self) -> None:
+        TestCaseQt.get_QApplication(sys.argv).quit()
 
     def test_init(self):
         rdi = RawInputDialog(self.parent, self.fname)
@@ -209,24 +213,22 @@ class TestRawInputDialog(unittest.TestCase):
 
 
 @unittest.skipIf(skip_as_conda_build, "On conda builds do not do any test with interfaces")
-class TestSaveableRawInputDialog(unittest.TestCase):
+class TestSaveableRawInputDialog(TestCaseQt):
 
     def setUp(self):
-        global _instance
-        if _instance is None:
-            _instance = QApplication(sys.argv)
+        self.app = TestCaseQt.get_QApplication(sys.argv)
         self.parent = QMainWindow()
         self.settings = QSettings()
         self.fname = "test.raw"
+        
 
-    @patch("ccpi.viewer.ui.dialogs.RawInputDialog.__init__")
-    def test_init_calls_raw_input_dialog_init(self, mock_init_call):
-        mock_init_call.return_value = partial(FormDialog.__init__)
-        # expect attribute error after init call:
-        with self.assertRaises(AttributeError):
-            rdi = SaveableRawInputDialog(self.parent, self.fname, self.settings)
-            mock_init_call.assert_called_once()
+    def tearDown(self) -> None:
+        TestCaseQt.get_QApplication(sys.argv).quit()
 
+    def test_init_calls_raw_input_dialog_init(self):
+        rdi = SaveableRawInputDialog(self.parent, self.fname, self.settings)
+        assert isinstance(rdi.formWidget, QWidget)
+        
     def test_init(self):
         rdi = SaveableRawInputDialog(self.parent, self.fname, self.settings)
         assert rdi is not None

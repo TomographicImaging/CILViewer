@@ -1,7 +1,7 @@
 import vtk
 import sys
 import vtk
-from PySide2 import QtCore, QtWidgets
+from qtpy import QtCore, QtWidgets
 from ccpi.viewer.QCILRenderWindowInteractor import QCILRenderWindowInteractor
 from ccpi.viewer import viewer2D, viewer3D
 
