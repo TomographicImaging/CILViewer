@@ -225,14 +225,10 @@ class TestSaveableRawInputDialog(TestCaseQt):
     def tearDown(self) -> None:
         TestCaseQt.get_QApplication(sys.argv).quit()
 
-    @patch("ccpi.viewer.ui.dialogs.RawInputDialog.__init__")
-    def test_init_calls_raw_input_dialog_init(self, mock_init_call):
-        mock_init_call.return_value = partial(FormDialog.__init__)
-        # expect attribute error after init call:
-        with self.assertRaises(AttributeError):
-            rdi = SaveableRawInputDialog(self.parent, self.fname, self.settings)
-            mock_init_call.assert_called_once()
-
+    def test_init_calls_raw_input_dialog_init(self):
+        rdi = SaveableRawInputDialog(self.parent, self.fname, self.settings)
+        assert isinstance(rdi.formWidget, QWidget)
+        
     def test_init(self):
         rdi = SaveableRawInputDialog(self.parent, self.fname, self.settings)
         assert rdi is not None
