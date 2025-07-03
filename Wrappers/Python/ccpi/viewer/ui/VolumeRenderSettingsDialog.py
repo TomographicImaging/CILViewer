@@ -70,7 +70,7 @@ class VolumeRenderSettingsDialog(FormDialog):
             TOOLTIPS_VOLUME_RENDER_SETTINGS["windowing_slider_min"])
 
         self.getWidget("windowing_slider_min").setValue(self.default_slider_values["windowing_min"])
-        self.getWidget("windowing_slider_min").slider.valueChanged.connect(self.updateVolumeOpacityMin)
+        self.getWidget("windowing_slider_min").slider.sliderReleased.connect(self.updateVolumeOpacityMin)
         self.getWidget("windowing_slider_min").line_edit.editingFinished.connect(self.updateVolumeOpacityMin)
 
     def _setUpWindowingMax(self):
@@ -81,7 +81,7 @@ class VolumeRenderSettingsDialog(FormDialog):
             TOOLTIPS_VOLUME_RENDER_SETTINGS["windowing_slider_max"])
 
         self.getWidget("windowing_slider_max").setValue(self.default_slider_values["windowing_max"])
-        self.getWidget("windowing_slider_max").slider.valueChanged.connect(self.updateVolumeOpacityMax)
+        self.getWidget("windowing_slider_max").slider.sliderReleased.connect(self.updateVolumeOpacityMax)
         self.getWidget("windowing_slider_max").line_edit.editingFinished.connect(self.updateVolumeOpacityMax)
 
     def _setUpOpacityMapping(self):
@@ -123,7 +123,7 @@ class VolumeRenderSettingsDialog(FormDialog):
             TOOLTIPS_VOLUME_RENDER_SETTINGS["colour_range_slider_min"])
 
         self.getWidget("colour_range_slider_min").setValue(self.default_slider_values["colour_range_min"])
-        self.getWidget("colour_range_slider_min").slider.valueChanged.connect(self.updateColourRangeMin)
+        self.getWidget("colour_range_slider_min").slider.sliderReleased.connect(self.updateColourRangeMin)
         self.getWidget("colour_range_slider_min").line_edit.editingFinished.connect(self.updateColourRangeMin)
 
     def _setUpColourRangeMax(self):
@@ -134,7 +134,7 @@ class VolumeRenderSettingsDialog(FormDialog):
             TOOLTIPS_VOLUME_RENDER_SETTINGS["colour_range_slider_max"])
 
         self.getWidget("colour_range_slider_max").setValue(self.default_slider_values["colour_range_max"])
-        self.getWidget("colour_range_slider_max").slider.valueChanged.connect(self.updateColourRangeMax)
+        self.getWidget("colour_range_slider_max").slider.sliderReleased.connect(self.updateColourRangeMax)
         self.getWidget("colour_range_slider_max").line_edit.editingFinished.connect(self.updateColourRangeMax)
 
     def _setUpMaxOpacity(self):
@@ -145,7 +145,7 @@ class VolumeRenderSettingsDialog(FormDialog):
             TOOLTIPS_VOLUME_RENDER_SETTINGS["max_opacity_input"])
 
         self.getWidget("max_opacity_input").setValue(self.viewer.style.GetVolumeRenderParameters()['max_opacity'] * 100)
-        self.getWidget("max_opacity_input").slider.valueChanged.connect(self.setVolumeMaxOpacity)
+        self.getWidget("max_opacity_input").slider.sliderReleased.connect(self.setVolumeMaxOpacity)
         self.getWidget("max_opacity_input").line_edit.editingFinished.connect(self.setVolumeMaxOpacity)
 
     def updateColourRangeMin(self):
