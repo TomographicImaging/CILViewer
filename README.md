@@ -17,7 +17,7 @@ conda create --name cilviewer ccpi-viewer=24.0.1 -c ccpi -c conda-forge
 ```
 ### Qt embedding
 
-To embed the viewer in Qt applications we provide extra [UI utilities](Wrappers/Python/ccpi/viewer/ui). To use those, the environment needs to include the extra requirements `eqt` and one Python-Qt binding, such as `PySide2`, `PySide6` or `PyQt5`. The [UI examples](Wrappers/Python/examples/ui_examples) require `cil-data` as well. 
+To embed the viewer in Qt applications we provide extra [UI utilities](Wrappers/Python/ccpi/viewer/ui). To use those, the environment needs to include the extra requirements `eqt>=2.0.0` and one Python-Qt binding, such as `PySide2`, `PySide6` or `PyQt5`. The [UI examples](Wrappers/Python/examples/ui_examples) require `cil-data` as well. 
 
 The environment can be updated to include these (`pyside2`) dependencies as follows:
 ```sh

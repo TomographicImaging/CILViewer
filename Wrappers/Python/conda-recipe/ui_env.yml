@@ -4,6 +4,6 @@ channels:
   - conda-forge
 dependencies: 
     - pyside2
-    - eqt>=1.0.0
+    - eqt>=2.0.0
     - cil-data=22.0.0
 
