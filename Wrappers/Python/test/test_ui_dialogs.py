@@ -219,9 +219,8 @@ class TestRawInputDialog(TestCaseQt):
 
 
 @unittest.skipIf(skip_as_conda_build, "On conda builds do not do any test with interfaces")
-
 class TestSaveableRawInputDialog(TestCaseQt):
-    maxDiff = None # enables full diff output when unittest fails
+    maxDiff = None  # enables full diff output when unittest fails
 
     def setUp(self):
         self.app = TestCaseQt.get_QApplication(sys.argv)
