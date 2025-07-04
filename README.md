@@ -13,7 +13,7 @@ Examples of QApplications are the [`iviewer`](Wrappers/Python/ccpi/viewer/iviewe
 To install via `conda`, create a **minimal** environment using:
 
 ```bash
-conda create --name cilviewer ccpi-viewer=24.0.1 -c ccpi -c conda-forge
+conda create --name cilviewer ccpi-viewer=25.0.0 -c ccpi -c conda-forge
 ```
 ### Qt embedding
 
