@@ -220,6 +220,7 @@ class TestRawInputDialog(TestCaseQt):
 
 @unittest.skipIf(skip_as_conda_build, "On conda builds do not do any test with interfaces")
 class TestSaveableRawInputDialog(TestCaseQt):
+    maxDiff = None  # enables full diff output when unittest fails
 
     def setUp(self):
         self.app = TestCaseQt.get_QApplication(sys.argv)
@@ -244,13 +245,15 @@ class TestSaveableRawInputDialog(TestCaseQt):
 
     @patch("ccpi.viewer.ui.dialogs.SaveableRawInputDialog._get_settings_save_name")
     def test_save_settings_when_nothing_in_qsettings(self, mock_get_name):
+        import time
+        random_sting = str(time.time())
         mock_get_name.return_value = "my_name"
-        empty_settings = QSettings('A', 'A')
+        empty_settings = QSettings('A', random_sting)
         rdi = SaveableRawInputDialog(self.parent, self.fname, empty_settings)
         rdi._save_settings()
         the_dict = empty_settings.value('raw_dialog')
         self.assertEqual(empty_settings.allKeys(), ['raw_dialog'])
-        self.assertEqual(the_dict, {'my_name': rdi.getAllWidgetStates()})
+        self.assertEqual(the_dict, {'my_name': rdi.getSavedWidgetStates()})
 
     @patch("ccpi.viewer.ui.dialogs.SaveableRawInputDialog._get_settings_save_name")
     def test_save_settings_when_no_qsettings(self, mock_get_name):
@@ -259,10 +262,10 @@ class TestSaveableRawInputDialog(TestCaseQt):
         rdi._save_settings()
         the_dict = rdi.settings.value('raw_dialog')
         self.assertEqual(rdi.settings.allKeys(), ['raw_dialog'])
-        self.assertEqual(the_dict, {'my_name': rdi.getAllWidgetStates()})
+        self.assertEqual(the_dict['my_name'], rdi.getSavedWidgetStates())
 
     @patch("ccpi.viewer.ui.dialogs.SaveableRawInputDialog._get_settings_save_name")
-    def test_save_settings_when_soemthing_in_qsettings(self, mock_get_name):
+    def test_save_settings_when_something_in_qsettings(self, mock_get_name):
         mock_get_name.return_value = "my_name_2"
         pop_settings = QSettings('C', 'D')
         pop_settings.setValue('raw_dialog', {'hi': "I'm not empty"})

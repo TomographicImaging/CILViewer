@@ -9,7 +9,7 @@ Enhancements:
 
 Bugfix:
 - Fix `cilHDF5CroppedReader` #462
-- Correctly handle the Alt modifier and non 1 display pixel ratio, for Qt application with the viewer. #464
+- Correctly handle the Alt modifier and non 1 display pixel ratio, for Qt application with the viewer #464
 
 Requirements:
 - Reduced the requirements to the basic packages, add extra requirements in `ui_env.yml` file #451
