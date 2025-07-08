@@ -10,6 +10,3 @@ Wrappers/Python/ccpi/web_viewer/data/*
 .idea
 
 Wrappers/Python/build/*
-Wrappers/Python/test/test_data/*
-
-
