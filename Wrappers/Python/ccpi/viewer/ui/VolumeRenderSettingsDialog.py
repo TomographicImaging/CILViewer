@@ -1,5 +1,5 @@
 from eqt.ui import FormDialog, UISliderWidget
-from PySide2 import QtCore, QtWidgets, QtGui
+from qtpy import QtCore, QtWidgets, QtGui
 
 from ccpi.viewer.utils.settings_tooltips import TOOLTIPS_VOLUME_RENDER_SETTINGS
 from ccpi.viewer.ui.helpers import color_scheme_list
