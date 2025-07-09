@@ -1,6 +1,6 @@
 import vtk
 from vtk.qt.QVTKRenderWindowInteractor import QVTKRenderWindowInteractor
-from PySide2.QtCore import Qt, QEvent
+from qtpy.QtCore import Qt, QEvent
 
 
 class QCILRenderWindowInteractor(QVTKRenderWindowInteractor):
@@ -22,69 +22,45 @@ class QCILRenderWindowInteractor(QVTKRenderWindowInteractor):
         self.__wheelDelta = self._QVTKRenderWindowInteractor__wheelDelta
         #print ("__saveModifiers  should be defined", self.__saveModifiers)
 
-    def _GetCtrlShiftAlt(self, ev):
-        '''Get CTRL SHIFT ALT key modifiers'''
+    def _GetAlt(self, ev):
+        '''Get ALT key modifier'''
         ctrl = shift = alt = False
 
         if hasattr(ev, 'modifiers'):
-
-            if ev.modifiers() & Qt.ShiftModifier:
-                shift = True
-            if ev.modifiers() & Qt.ControlModifier:
-                ctrl = True
             if ev.modifiers() & Qt.AltModifier:
                 alt = True
         else:
-            if self.__saveModifiers & Qt.ShiftModifier:
-                shift = True
-            if self.__saveModifiers & Qt.ControlModifier:
-                ctrl = True
             if self.__saveModifiers & Qt.AltModifier:
                 alt = True
 
-        return ctrl, shift, alt
+        return alt
 
     def enterEvent(self, ev):
-        '''Overload of enterEvent from base class to use _GetCtrlShiftAlt'''
-        ctrl, shift, alt = self._GetCtrlShiftAlt(ev)
-        self._Iren.SetEventInformationFlipY(self.__saveX, self.__saveY, ctrl, shift, chr(0), 0, None)
-        self._Iren.EnterEvent()
+        '''Overload of enterEvent from base class to get also the Alt modifier'''
+        alt = self._GetAlt(ev)
+        self._Iren.SetAltKey(alt)
+        super().enterEvent(ev)
 
     def leaveEvent(self, ev):
-        '''Overload of leaveEvent from base class to use _GetCtrlShiftAlt'''
-        ctrl, shift, alt = self._GetCtrlShiftAlt(ev)
-        self._Iren.SetEventInformationFlipY(self.__saveX, self.__saveY, ctrl, shift, chr(0), 0, None)
-        self._Iren.LeaveEvent()
+        '''Overload of leaveEvent from base class to get also the Alt modifier'''
+        alt = self._GetAlt(ev)
+        self._Iren.SetAltKey(alt)
+        super().leaveEvent(ev)
 
     def mousePressEvent(self, ev):
-        '''Overload of mousePressEvent from base class to use _GetCtrlShiftAlt'''
-        ctrl, shift, alt = self._GetCtrlShiftAlt(ev)
-        repeat = 0
-        if ev.type() == QEvent.MouseButtonDblClick:
-            repeat = 1
-        self._Iren.SetEventInformationFlipY(ev.x(), ev.y(), ctrl, shift, chr(0), repeat, None)
+        '''Overload of mousePressEvent from base class to get also the Alt modifier'''
+        alt = self._GetAlt(ev)
         self._Iren.SetAltKey(alt)
-        self._Iren.SetShiftKey(shift)
-        self._Iren.SetControlKey(ctrl)
+        super().mousePressEvent(ev)
 
-        self._ActiveButton = ev.button()
-
-        if self._ActiveButton == Qt.LeftButton:
-            self._Iren.LeftButtonPressEvent()
-        elif self._ActiveButton == Qt.RightButton:
-            self._Iren.RightButtonPressEvent()
-        elif self._ActiveButton == Qt.MidButton:
-            self._Iren.MiddleButtonPressEvent()
+    def mouseReleaseEvent(self, ev):
+        '''Overload of mousePressEvent from base class to get also the Alt modifier'''
+        alt = self._GetAlt(ev)
+        self._Iren.SetAltKey(alt)
+        super().mouseReleaseEvent(ev)
 
     def mouseMoveEvent(self, ev):
-        '''Overload of mouseMoveEvent from base class to use _GetCtrlShiftAlt'''
-        self.__saveModifiers = ev.modifiers()
-        self.__saveButtons = ev.buttons()
-        self.__saveX = ev.x()
-        self.__saveY = ev.y()
-
-        #ctrl, shift = self._GetCtrlShift(ev)
-        ctrl, shift, alt = self._GetCtrlShiftAlt(ev)
-        self._Iren.SetEventInformationFlipY(ev.x(), ev.y(), ctrl, shift, chr(0), 0, None)
+        '''Overload of mouseMoveEvent from base class to get also the Alt modifier'''
+        alt = self._GetAlt(ev)
         self._Iren.SetAltKey(alt)
-        self._Iren.MouseMoveEvent()
+        super().mouseMoveEvent(ev)
