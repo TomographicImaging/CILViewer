@@ -2,8 +2,8 @@ import os
 import h5py
 from eqt.ui import FormDialog
 from eqt.ui.SessionDialogs import AppSettingsDialog, ErrorDialog
-from PySide2 import QtCore, QtGui, QtWidgets
-from PySide2.QtWidgets import QCheckBox, QDoubleSpinBox, QLabel, QLineEdit, QComboBox, QPushButton
+from qtpy import QtCore, QtGui, QtWidgets
+from qtpy.QtWidgets import QCheckBox, QDoubleSpinBox, QLabel, QLineEdit, QComboBox, QPushButton
 import numpy as np
 from ccpi.viewer.utils import Converter
 from ccpi.viewer.utils.conversion import cilRawCroppedReader

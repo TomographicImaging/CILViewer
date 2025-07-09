@@ -1,6 +1,6 @@
 import sys
 import vtk
-from PySide2 import QtCore, QtWidgets
+from qtpy import QtCore, QtWidgets
 from ccpi.viewer import viewer2D, viewer3D
 from ccpi.viewer.QCILViewerWidget import QCILViewerWidget
 import ccpi.viewer.viewerLinker as vlink

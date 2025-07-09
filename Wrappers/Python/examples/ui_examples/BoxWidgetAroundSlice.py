@@ -1,5 +1,5 @@
 import sys
-from PySide2 import QtWidgets
+from qtpy import QtWidgets
 from ccpi.viewer import viewer2D, viewer3D
 from SingleViewerCentralWidget import SingleViewerCenterWidget
 from ccpi.viewer.widgets import cilviewerBoxWidget, cilviewerLineWidget

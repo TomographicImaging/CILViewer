@@ -1,5 +1,5 @@
 from eqt.ui import FormDialog, UISliderWidget
-from PySide2 import QtCore, QtWidgets
+from qtpy import QtCore, QtWidgets
 
 from ccpi.viewer import (SLICE_ORIENTATION_XY, SLICE_ORIENTATION_XZ, SLICE_ORIENTATION_YZ)
 from vtk.util import colors

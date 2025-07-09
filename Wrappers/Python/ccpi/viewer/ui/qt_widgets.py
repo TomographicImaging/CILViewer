@@ -1,5 +1,5 @@
 from eqt.ui.UIFormWidget import FormDockWidget
-from PySide2.QtWidgets import QComboBox, QLabel
+from qtpy.QtWidgets import QComboBox, QLabel
 from ccpi.viewer.CILViewer import CILViewer
 from ccpi.viewer.CILViewer2D import CILViewer2D
 

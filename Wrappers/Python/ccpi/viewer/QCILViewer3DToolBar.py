@@ -1,4 +1,4 @@
-from PySide2 import QtWidgets, QtCore
+from qtpy import QtWidgets, QtCore
 
 from ccpi.viewer.utils.settings_tooltips import TOOLTIPS_3D_TOOLBAR
 from ccpi.viewer.ui.SettingsDialog import SettingsDialog

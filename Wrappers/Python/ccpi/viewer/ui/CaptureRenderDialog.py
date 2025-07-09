@@ -1,7 +1,7 @@
 import os
 
 from eqt.ui import FormDialog, UISliderWidget
-from PySide2 import QtCore, QtGui, QtWidgets
+from qtpy import QtCore, QtGui, QtWidgets
 
 try:
     import vtkmodules.all as vtk

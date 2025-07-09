@@ -5,9 +5,9 @@ from ccpi.viewer import viewer3D
 from ccpi.viewer.iviewer import SingleViewerCenterWidget
 from ccpi.viewer.QCILViewerWidget import QCILViewerWidget
 from eqt.ui.UIFormWidget import FormDockWidget
-from PySide2 import QtWidgets
-from PySide2.QtCore import Qt
-from PySide2.QtWidgets import QComboBox
+from qtpy import QtWidgets
+from qtpy.QtCore import Qt
+from qtpy.QtWidgets import QComboBox
 from ccpi.viewer.utils import example_data
 
 try:
