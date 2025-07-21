@@ -145,6 +145,7 @@ class QCILViewer3DToolBar(QtWidgets.QToolBar):
         data: The data that will be checked.
         """
         if data != self.data:
+            del self.data
             self.data = data
             return True
         else:
