@@ -17,6 +17,7 @@ from ccpi.viewer.CILViewer import CILViewer
 from PySide2.QtWidgets import QMainWindow
 from PySide2.QtWidgets import QApplication, QLabel, QFrame, QDoubleSpinBox, QCheckBox, QPushButton, QLineEdit, QComboBox, QWidget
 from PySide2.QtCore import QSettings
+from .qt_utils import TestCaseQt
 
 from eqt.ui import FormDialog
 from functools import partial
@@ -33,12 +34,10 @@ _instance = None
 
 
 @unittest.skipIf(skip_as_conda_build, "On conda builds do not do any test with interfaces")
-class TestViewerSettingsDialog(unittest.TestCase):  #TODO: Add window/level tests using numpy arrays
+class TestViewerSettingsDialog(TestCaseQt):  #TODO: Add window/level tests using numpy arrays
 
     def setUp(self):
-        global _instance
-        if _instance is None:
-            _instance = QApplication(sys.argv)
+        self.app = TestCaseQt.get_QApplication()
 
     def test_init(self):
         parent = QMainWindow()
@@ -288,12 +287,9 @@ class TestSaveableRawInputDialog(unittest.TestCase):
 
 
 @unittest.skipIf(skip_as_conda_build, "On conda builds do not do any test with interfaces")
-class TestSettingsDialog(unittest.TestCase):
-
+class TestSettingsDialog(TestCaseQt):
     def setUp(self):
-        global _instance
-        if _instance is None:
-            _instance = QApplication(sys.argv)
+        self.app = TestCaseQt.get_QApplication()
         self.parent = QMainWindow()
         self.viewer = CILViewer()
         self.settings = QSettings()
@@ -314,12 +310,10 @@ class TestSettingsDialog(unittest.TestCase):
 
 
 @unittest.skipIf(skip_as_conda_build, "On conda builds do not do any test with interfaces")
-class TestVolumeRenderSettingsDialog(unittest.TestCase):
+class TestVolumeRenderSettingsDialog(TestCaseQt):
 
     def setUp(self):
-        global _instance
-        if _instance is None:
-            _instance = QApplication(sys.argv)
+        self.app = TestCaseQt.get_QApplication()
         self.parent = QMainWindow()
         self.viewer = CILViewer()
         self.settings = QSettings()

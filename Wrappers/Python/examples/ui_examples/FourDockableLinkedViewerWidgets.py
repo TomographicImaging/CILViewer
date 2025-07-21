@@ -18,7 +18,6 @@ class FourLinkedViewersDockableWidget(QtWidgets.QMainWindow):
         #self.resize(800,600)
 
         # create the dockable widgets with the viewer inside
-
         self.v00 = QCILDockableWidget(parent,
                                       viewer=viewer2D,
                                       shape=(600, 600),
