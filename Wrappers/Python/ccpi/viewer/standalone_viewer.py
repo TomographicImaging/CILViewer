@@ -55,15 +55,11 @@ class StandaloneViewerMainWindow(TwoViewersMainWindow):
         # insert image selection as first action in file menu:
 
         image2_action = QAction("Select Image Overlay", self)
-        image2_action.triggered.connect(
-            lambda: self.setViewersInputFromDialog(self.viewers, input_num=2)
-        )
+        image2_action.triggered.connect(lambda: self.setViewersInputFromDialog(self.viewers, input_num=2))
         file_menu.insertAction(file_menu.actions()[0], image2_action)
 
         image1_action = QAction("Select Image", self)
-        image1_action.triggered.connect(
-            lambda: self.setViewersInputFromDialog(self.viewers)
-        )
+        image1_action.triggered.connect(lambda: self.setViewersInputFromDialog(self.viewers))
         file_menu.insertAction(file_menu.actions()[0], image1_action)
 
     def addToViewerCoordsDockWidget(self):
@@ -155,9 +151,7 @@ class standalone_viewer(object):
         if self.has_run is None:
             self.has_run = self.app.exec_()
         else:
-            print(
-                "No instance can be run interactively again. Delete and re-instantiate."
-            )
+            print("No instance can be run interactively again. Delete and re-instantiate.")
 
     def __del__(self):
         """destructor"""
@@ -170,9 +164,7 @@ def main():
     err = vtk.vtkFileOutputWindow()
     err.SetFileName("viewer.log")
     vtk.vtkOutputWindow.SetInstance(err)
-    standalone_viewer_instance = standalone_viewer(
-        "Standalone Viewer", viewer1_type="2D", viewer2_type="3D"
-    )
+    standalone_viewer_instance = standalone_viewer("Standalone Viewer", viewer1_type="2D", viewer2_type="3D")
     standalone_viewer_instance.show()
     return 0
 

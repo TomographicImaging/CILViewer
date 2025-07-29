@@ -27,7 +27,6 @@ from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QApplication, QFileDialog, QMainWindow, QSizePolicy
 
 
-
 class ViewerMainWindow(MainWindowWithProgressDialogs):
     """Creates a window which is designed to house one or more viewers.
     Note: does not create a viewer as we don't know whether the user would like it to exist in a
@@ -113,9 +112,7 @@ class ViewerMainWindow(MainWindowWithProgressDialogs):
         override here to make our own settings dialog"""
         if self.vs_dialog is None:
             self.vs_dialog = ViewerSettingsDialog(self)
-            self.vs_dialog.Ok.clicked.connect(
-                lambda: self.onAppSettingsDialogAccepted(self.vs_dialog)
-            )
+            self.vs_dialog.Ok.clicked.connect(lambda: self.onAppSettingsDialogAccepted(self.vs_dialog))
             self.vs_dialog.Ok.clicked.connect(self.acceptViewerSettings)
             self.vs_dialog.Cancel.clicked.connect(self.vs_dialog.close)
         self.setAppSettingsDialogWidgets(self.vs_dialog)
@@ -145,16 +142,12 @@ class ViewerMainWindow(MainWindowWithProgressDialogs):
         Saves the viewer settings to the QSettings object.
         """
 
-        self.settings.setValue(
-            "vis_size", float(self.vs_dialog.widgets["vis_size_field"].value())
-        )
+        self.settings.setValue("vis_size", float(self.vs_dialog.widgets["vis_size_field"].value()))
 
         # Check if the user has changed the volume mapper setting:
         current_setting = self.settings.value("use_gpu_volume_mapper")
 
-        if current_setting == str(
-            self.vs_dialog.widgets["gpu_checkbox_field"].isChecked()
-        ):
+        if current_setting == str(self.vs_dialog.widgets["gpu_checkbox_field"].isChecked()):
             return
         else:
             bool_to_volume_mapper = {
@@ -162,9 +155,7 @@ class ViewerMainWindow(MainWindowWithProgressDialogs):
                 False: vtk.vtkFixedPointVolumeRayCastMapper(),
             }
 
-            use_gpu_volume_mapper = self.vs_dialog.widgets[
-                "gpu_checkbox_field"
-            ].isChecked()
+            use_gpu_volume_mapper = self.vs_dialog.widgets["gpu_checkbox_field"].isChecked()
 
             self.settings.setValue("use_gpu_volume_mapper", use_gpu_volume_mapper)
 
@@ -203,9 +194,7 @@ class ViewerMainWindow(MainWindowWithProgressDialogs):
                     self.raw_dialog.restoreAllSavedWidgetStates()
                 else:
                     raw_dialog = SaveableRawInputDialog(self, file, self.settings)
-                    raw_dialog.Ok.clicked.connect(
-                        lambda: self.getRawAttrsFromDialog(raw_dialog)
-                    )
+                    raw_dialog.Ok.clicked.connect(lambda: self.getRawAttrsFromDialog(raw_dialog))
                     self.raw_dialog = raw_dialog
                 # See https://doc.qt.io/qt-6/qdialog.html#exec
                 # Shows a modal dialog, blocking until the user closes it.
@@ -265,12 +254,8 @@ class ViewerMainWindow(MainWindowWithProgressDialogs):
         """
         dock = ViewerCoordsDockWidget(self)
         self.viewer_coords_dock = dock
-        self.viewer_coords_dock.setSizePolicy(
-            QSizePolicy.Preferred, QSizePolicy.Preferred
-        )
-        dock.getWidgets()["coords_combo_field"].currentIndexChanged.connect(
-            self.updateViewerCoords
-        )
+        self.viewer_coords_dock.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
+        dock.getWidgets()["coords_combo_field"].currentIndexChanged.connect(self.updateViewerCoords)
 
     def placeViewerCoordsDockWidget(self):
         """
@@ -324,11 +309,8 @@ class ViewerMainWindow(MainWindowWithProgressDialogs):
         if image_name is None and isinstance(image, str):
             image_name = image
         image_reader_worker.signals.result.connect(
-            partial(self.displayImage, viewers, input_num, image_reader, image_name)
-        )
-        image_reader_worker.signals.finished.connect(
-            lambda: self.finishProcess("Reading Image")
-        )
+            partial(self.displayImage, viewers, input_num, image_reader, image_name))
+        image_reader_worker.signals.finished.connect(lambda: self.finishProcess("Reading Image"))
         image_reader_worker.signals.error.connect(self.processErrorDialog)
         self.threadpool.start(image_reader_worker)
 
@@ -508,9 +490,7 @@ class ViewerMainWindow(MainWindowWithProgressDialogs):
         return self.default_downsampled_size
 
 
-class ViewerMainWindowWithSessionManagement(
-    MainWindowWithSessionManagement, ViewerMainWindow
-):
+class ViewerMainWindowWithSessionManagement(MainWindowWithSessionManagement, ViewerMainWindow):
     """Creates a window which is designed to house one or more viewers.
     Note: does not create a viewer as we don't know whether the user would like it to exist in a
     dockwidget or central widget
@@ -702,9 +682,7 @@ class TwoViewersMainWindowMixin(object):
                     viewer.PlaneClipper.UpdateClippingPlanes,
                     0.9,
                 )
-                viewer.style.AddObserver(
-                    "KeyPressEvent", viewer.PlaneClipper.UpdateClippingPlanes, 0.9
-                )
+                viewer.style.AddObserver("KeyPressEvent", viewer.PlaneClipper.UpdateClippingPlanes, 0.9)
 
     def placeViewerCoordsDockWidget(self):
         """
@@ -760,15 +738,11 @@ class TwoViewersMainWindow(TwoViewersMainWindowMixin, ViewerMainWindow):
         viewer2_type="3D",
     ):
 
-        super(TwoViewersMainWindow, self).__init__(
-            title, app_name, settings_name, organisation_name
-        )
+        super(TwoViewersMainWindow, self).__init__(title, app_name, settings_name, organisation_name)
         self.setupTwoViewers(viewer1_type, viewer2_type)
 
 
-class TwoViewersMainWindowWithSessionManagement(
-    TwoViewersMainWindowMixin, ViewerMainWindowWithSessionManagement
-):
+class TwoViewersMainWindowWithSessionManagement(TwoViewersMainWindowMixin, ViewerMainWindowWithSessionManagement):
     """
     Creates a window containing two viewers, both in dockwidgets.
     This main window has methods for saving and loading sessions.
@@ -824,9 +798,8 @@ class TwoViewersMainWindowWithSessionManagement(
         viewer1_type="2D",
         viewer2_type="3D",
     ):
-        super(TwoViewersMainWindowWithSessionManagement, self).__init__(
-            title, app_name, settings_name, organisation_name
-        )
+        super(TwoViewersMainWindowWithSessionManagement, self).__init__(title, app_name, settings_name,
+                                                                        organisation_name)
         self.setupTwoViewers(viewer1_type, viewer2_type)
 
 
