@@ -17,6 +17,7 @@ from ccpi.viewer.CILViewer import CILViewer
 from qtpy.QtWidgets import QMainWindow
 import os
 
+
 from unittest import mock
 from unittest.mock import patch
 from qtpy import QtWidgets
@@ -44,6 +45,7 @@ class TestViewerSettingsDialog(TestCaseQt):
 
     def tearDown(self) -> None:
         TestCaseQt.get_QApplication(sys.argv).quit()
+
 
     def test_init(self):
         parent = QMainWindow()
@@ -303,12 +305,9 @@ class TestSaveableRawInputDialog(TestCaseQt):
 
 
 @unittest.skipIf(skip_as_conda_build, "On conda builds do not do any test with interfaces")
-class TestSettingsDialog(unittest.TestCase):
-
+class TestSettingsDialog(TestCaseQt):
     def setUp(self):
-        global _instance
-        if _instance is None:
-            _instance = QApplication(sys.argv)
+        self.app = TestCaseQt.get_QApplication()
         self.parent = QMainWindow()
         self.viewer = CILViewer()
         self.settings = QSettings()
@@ -329,12 +328,10 @@ class TestSettingsDialog(unittest.TestCase):
 
 
 @unittest.skipIf(skip_as_conda_build, "On conda builds do not do any test with interfaces")
-class TestVolumeRenderSettingsDialog(unittest.TestCase):
+class TestVolumeRenderSettingsDialog(TestCaseQt):
 
     def setUp(self):
-        global _instance
-        if _instance is None:
-            _instance = QApplication(sys.argv)
+        self.app = TestCaseQt.get_QApplication()
         self.parent = QMainWindow()
         self.viewer = CILViewer()
         self.settings = QSettings()

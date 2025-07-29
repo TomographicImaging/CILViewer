@@ -2,7 +2,7 @@ import os
 import numpy as np
 
 ARRAY_SIZE = (10, 10, 10)
-TEST_DATA_FOLDER = os.path.join(os.getcwd(), "Wrappers\\Python\\test\\test_data")
+TEST_DATA_FOLDER = os.path.join(os.getcwd(), "Wrappers", "Python", "test", "test_data")
 
 os.makedirs(TEST_DATA_FOLDER, exist_ok=True)
 
