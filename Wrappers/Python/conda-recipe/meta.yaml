@@ -17,7 +17,7 @@ build:
   
 test:
   requires:
-    - cil-data=22.0.0
+    - ccpi::cil-data=22.0.0
     - pillow
     - pytest
     - pyside2
@@ -42,6 +42,7 @@ requirements:
     - h5py
     - pyyaml
     - schema
+    - qtpy
 
 about:
   home: http://www.ccpi.ac.uk

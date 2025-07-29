@@ -15,8 +15,13 @@ Enhancements:
 - Add `SaveableRawInputDialog` #444
 - Standalone viewer uses `SaveableRawInputDialog` - this allows user to save and reload settings for loading raw data #444
 
+Bugfix:
+- Fix `cilHDF5CroppedReader` #462
+- Correctly handle the Alt modifier and non 1 display pixel ratio, for Qt application with the viewer #464
+
 Requirements:
 - Reduced the requirements to the basic packages, add extra requirements in `ui_env.yml` file #451
+- Use the `qtpy` abstraction layer #464
 
 Documentation:
 - Update readme, contributing, documentation #451
@@ -25,7 +30,6 @@ Build and CI:
 - Renamed mambaforge to miniforge to fix docker action #446
 - Use ubuntu v22.04 in the actions #446
 - Add setuptools as a build requirement #446
-
 
 ## v24.1.0
 
