@@ -6,8 +6,10 @@ from ccpi.viewer import viewer2D, viewer3D
 from ccpi.viewer.ui.main_windows import TwoViewersMainWindow
 from qtpy import QtWidgets
 from qtpy.QtWidgets import QAction, QCheckBox
+
 import logging
 import argparse
+
 
 
 class StandaloneViewerMainWindow(TwoViewersMainWindow):
