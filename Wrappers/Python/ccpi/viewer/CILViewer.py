@@ -149,9 +149,7 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
             advance = 10
 
         if event == "MouseWheelForwardEvent":
-            maxSlice = self._viewer.img3D.GetExtent()[
-                self.GetSliceOrientation() * 2 + 1
-            ]
+            maxSlice = self._viewer.img3D.GetExtent()[self.GetSliceOrientation() * 2 + 1]
             # print (self.GetActiveSlice())
             if self.GetActiveSlice() + advance <= maxSlice:
                 self.SetActiveSlice(self.GetActiveSlice() + advance)
@@ -514,15 +512,11 @@ class CILViewer(CILViewerBase):
     Simple 3D Viewer based on VTK classes
     """
 
-    def __init__(
-        self, dimx=600, dimy=600, renWin=None, iren=None, ren=None, debug=False
-    ):
+    def __init__(self, dimx=600, dimy=600, renWin=None, iren=None, ren=None, debug=False):
         """
         Creates the rendering pipeline.
         """
-        CILViewerBase.__init__(
-            self, dimx=dimx, dimy=dimy, ren=ren, renWin=renWin, iren=iren, debug=debug
-        )
+        CILViewerBase.__init__(self, dimx=dimx, dimy=dimy, ren=ren, renWin=renWin, iren=iren, debug=debug)
 
         self.setInteractorStyle(CILInteractorStyle(self))
 
@@ -680,9 +674,7 @@ class CILViewer(CILViewerBase):
             for i in range(shape[0]):
                 for j in range(shape[1]):
                     for k in range(shape[2]):
-                        doubleImg.SetScalarComponentFromDouble(
-                            i, j, k, 0, numpyarray[i][j][k]
-                        )
+                        doubleImg.SetScalarComponentFromDouble(i, j, k, 0, numpyarray[i][j][k])
 
             # rescale to appropriate VTK_UNSIGNED_SHORT
             stats = vtk.vtkImageAccumulate()
@@ -774,21 +766,13 @@ class CILViewer(CILViewerBase):
 
         # set defaults for opacity and colour mapping:
         color_percentiles = self.style.GetVolumeRenderParameters()["color_percentiles"]
-        scalar_opacity_percentiles = self.style.GetVolumeRenderParameters()[
-            "scalar_opacity_percentiles"
-        ]
-        gradient_opacity_percentiles = self.style.GetVolumeRenderParameters()[
-            "gradient_opacity_percentiles"
-        ]
+        scalar_opacity_percentiles = self.style.GetVolumeRenderParameters()["scalar_opacity_percentiles"]
+        gradient_opacity_percentiles = self.style.GetVolumeRenderParameters()["gradient_opacity_percentiles"]
         max_opacity = self.style.GetVolumeRenderParameters()["max_opacity"]
 
         self.setVolumeColorPercentiles(*color_percentiles, update_pipeline=False)
-        self.setScalarOpacityPercentiles(
-            *scalar_opacity_percentiles, update_pipeline=False
-        )
-        self.setGradientOpacityPercentiles(
-            *gradient_opacity_percentiles, update_pipeline=False
-        )
+        self.setScalarOpacityPercentiles(*scalar_opacity_percentiles, update_pipeline=False)
+        self.setGradientOpacityPercentiles(*gradient_opacity_percentiles, update_pipeline=False)
         self.setMaximumOpacity(max_opacity)
 
         # define colors and opacity with default values
@@ -1070,9 +1054,8 @@ class CILViewer(CILViewerBase):
             Number of colours in the map.
         :type color_num: int
         """
-        colors = colormaps.CILColorMaps.get_color_transfer_function(
-            self.getVolumeColorMapName(), self.volume_colormap_limits
-        )
+        colors = colormaps.CILColorMaps.get_color_transfer_function(self.getVolumeColorMapName(),
+                                                                    self.volume_colormap_limits)
 
         method = self.getVolumeRenderOpacityMethod()
 
@@ -1083,9 +1066,8 @@ class CILViewer(CILViewerBase):
 
         # mapping values in the image or gradient to the opacity:
         x = self.getMappingArray(color_num, method)
-        opacity = colormaps.CILColorMaps.get_opacity_transfer_function(
-            x, colormaps.relu, omin, omax, self.maximum_opacity
-        )
+        opacity = colormaps.CILColorMaps.get_opacity_transfer_function(x, colormaps.relu, omin, omax,
+                                                                       self.maximum_opacity)
 
         return colors, opacity
 
@@ -1107,9 +1089,7 @@ class CILViewer(CILViewerBase):
         extent[self.sliceOrientation * 2] = self.getActiveSlice()
         extent[self.sliceOrientation * 2 + 1] = self.getActiveSlice()
 
-        self.voi.SetVOI(
-            extent[0], extent[1], extent[2], extent[3], extent[4], extent[5]
-        )
+        self.voi.SetVOI(extent[0], extent[1], extent[2], extent[3], extent[4], extent[5])
 
         self.voi.Update()
 
@@ -1138,9 +1118,7 @@ class CILViewer(CILViewerBase):
         extent = [i for i in self.img3D.GetExtent()]
         extent[self.sliceOrientation * 2] = self.getActiveSlice()
         extent[self.sliceOrientation * 2 + 1] = self.getActiveSlice()
-        self.voi.SetVOI(
-            extent[0], extent[1], extent[2], extent[3], extent[4], extent[5]
-        )
+        self.voi.SetVOI(extent[0], extent[1], extent[2], extent[3], extent[4], extent[5])
 
         self.voi.Update()
         self.ia.Update()
@@ -1170,9 +1148,7 @@ class CILViewer(CILViewerBase):
                 # Also return the scalar opacity to its default value:
                 # If we don't do this then the gradient opacity changes depending on what the
                 # user set for the scalar opacity - not sure we want this:
-                self.volume_property.SetScalarOpacity(
-                    self._getDefaultScalarOpacityFunction()
-                )
+                self.volume_property.SetScalarOpacity(self._getDefaultScalarOpacityFunction())
                 self.volume_property.DisableGradientOpacityOff()
                 self.volume_property.SetGradientOpacity(opacity)
 

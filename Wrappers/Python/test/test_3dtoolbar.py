@@ -25,8 +25,10 @@ print("skip_as_conda_build is set to ", skip_as_conda_build)
 
 from .qt_utils import TestCaseQt
 
+
 @unittest.skipIf(skip_as_conda_build, "On conda builds do not do any test with interfaces")
 class TestQCILViewer3DToolBar(TestCaseQt):
+
     def setUp(self):
         self.app = TestCaseQt.get_QApplication()
         self.parent = QMainWindow()

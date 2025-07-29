@@ -17,7 +17,6 @@ from ccpi.viewer.CILViewer import CILViewer
 from qtpy.QtWidgets import QMainWindow
 import os
 
-
 from unittest import mock
 from unittest.mock import patch
 from qtpy import QtWidgets
@@ -305,6 +304,7 @@ class TestSaveableRawInputDialog(TestCaseQt):
 
 @unittest.skipIf(skip_as_conda_build, "On conda builds do not do any test with interfaces")
 class TestSettingsDialog(TestCaseQt):
+
     def setUp(self):
         self.app = TestCaseQt.get_QApplication()
         self.parent = QMainWindow()
