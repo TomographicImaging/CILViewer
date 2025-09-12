@@ -45,6 +45,7 @@ class TestViewerSettingsDialog(TestCaseQt):
     def tearDown(self) -> None:
         TestCaseQt.get_QApplication(sys.argv).quit()
 
+
     def test_init(self):
         parent = QMainWindow()
         vsd = ViewerSettingsDialog(parent)
