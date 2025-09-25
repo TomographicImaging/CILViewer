@@ -3,7 +3,9 @@ from qtpy import QtCore, QtWidgets, QtGui
 
 from ccpi.viewer.utils.settings_tooltips import TOOLTIPS_VOLUME_RENDER_SETTINGS
 from ccpi.viewer.ui.helpers import color_scheme_list
+import logging
 
+logger = logging.getLogger(__name__)
 
 class VolumeRenderSettingsDialog(FormDialog):
     """
@@ -230,7 +232,7 @@ class VolumeRenderSettingsDialog(FormDialog):
         Removes the clipping plane from the viewer.
         """
         if hasattr(self.viewer, "planew"):
-            self.viewer.removeClippingPlane()
+            self.viewer.remove_clipping_plane()
             self.viewer.getRenderer().Render()
             self.viewer.updatePipeline()
 
