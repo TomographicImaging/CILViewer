@@ -119,9 +119,13 @@ class QCILViewer3DToolBar(QtWidgets.QToolBar):
         if mode == "settings_3d":
             if self.dialog["settings_3d"] is None:
                 self._createVolumeRenderSettingsDialog()
+            volume_visibility = False
+            if self.viewer.volume is not None:
+                volume_visibility = self.viewer.getVolumeRenderVisibility()
             self.dialog[mode].getWidget("volume_visibility").setChecked(
-                self.viewer.getVolumeRenderVisibility())
+                volume_visibility)
             self.dialog[mode].saveAllWidgetStates()
+            self.dialog[mode].updateEnabledWidgetsWithVolumeVisibility()
             self.dialog[mode].open()
             return
 

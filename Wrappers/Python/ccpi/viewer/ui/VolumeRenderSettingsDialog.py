@@ -21,7 +21,7 @@ class VolumeRenderSettingsDialog(FormDialog):
         viewer: The CILViewer instance that the dialog's settings will connect to.
         """
         FormDialog.__init__(self, parent, title=title)
-        self.setWindowFlag(QtCore.Qt.WindowStaysOnTopHint, True)
+        self.setWindowFlag(QtCore.Qt.WindowStaysOnTopHint, False)
         self.viewer = viewer
 
         self.default_slider_values = {
@@ -41,7 +41,7 @@ class VolumeRenderSettingsDialog(FormDialog):
         self._setUpColourRangeMax()
         self._setUpMaxOpacity()
 
-        self.toggleVolumeVisibility(is_init=True)
+        self.updateEnabledWidgetsWithVolumeVisibility()
 
     def _setUpVolumeVisibility(self):
         """
@@ -62,7 +62,7 @@ class VolumeRenderSettingsDialog(FormDialog):
         else:
             self.getWidget("volume_visibility").setChecked(False)
 
-        self.getWidget("volume_visibility").stateChanged.connect(self.toggleVolumeVisibility)
+        self.getWidget("volume_visibility").clicked.connect(self.toggleVolumeVisibility)
 
     def _setUpWindowingMin(self):
         windowing_slider_min = UISliderWidget.UISliderWidget(0.0, 100.0)
@@ -236,12 +236,9 @@ class VolumeRenderSettingsDialog(FormDialog):
             self.viewer.getRenderer().Render()
             self.viewer.updatePipeline()
 
-    def toggleVolumeVisibility(self, is_init=False):
+    def updateEnabledWidgetsWithVolumeVisibility(self, is_init=False):
         """
-        Toggles the volume visibility in the viewer. The volume visibility QCheckBox
-        determines whether the dialog's widgets are enabled/disabled.
-
-        is_init: Boolean value that limits the method's behaviour when the dialog is created.
+        Unables/disables the dialog's widgets based on the volume visibility QCheckBox state.
         """
         volume_visibility_checked = self.getWidget("volume_visibility").isChecked()
 
@@ -255,22 +252,26 @@ class VolumeRenderSettingsDialog(FormDialog):
         self.getWidget("colour_range_slider_max").setEnabled(volume_visibility_checked)
         self.getWidget("max_opacity_input").setEnabled(volume_visibility_checked)
 
-        if is_init is True:
-            return
-        else:
-            self.viewer.style.ToggleVolumeVisibility()
-
-            if volume_visibility_checked:
-                self.setOpacityMapping()
-                if self.getWidget("volume_clipping").isChecked() and hasattr(self.viewer, "planew"):
-                    self.viewer.planew.On()
-                    self.viewer.updatePipeline()
-            elif hasattr(self.viewer, "planew"):
-                self.viewer.planew.Off()
+    def toggleVolumeVisibility(self):
+        """
+        Toggles the volume visibility in the viewer. The volume visibility QCheckBox
+        determines whether the dialog's widgets are enabled/disabled.
+        """
+        self.viewer.style.ToggleVolumeVisibility()
+        volume_visibility_checked = self.getWidget("volume_visibility").isChecked()
+        
+        if volume_visibility_checked:
+            self.setOpacityMapping()
+            if self.getWidget("volume_clipping").isChecked() and hasattr(self.viewer, "planew"):
+                self.viewer.planew.On()
                 self.viewer.updatePipeline()
-                print("Volume visibility off")
+        elif hasattr(self.viewer, "planew"):
+            self.viewer.planew.Off()
+            self.viewer.updatePipeline()
+            print("Volume visibility off")
 
-            self.viewer.updateVolumePipeline()
+        self.viewer.updateVolumePipeline()
+        self.updateEnabledWidgetsWithVolumeVisibility()
 
     def setOpacityMapping(self):
         """
