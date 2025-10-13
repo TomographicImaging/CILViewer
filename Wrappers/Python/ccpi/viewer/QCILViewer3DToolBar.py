@@ -110,9 +110,8 @@ class QCILViewer3DToolBar(QtWidgets.QToolBar):
             if self.dialog["settings_2d"] is None:
                 self._createSettingsDialog()
             if self.viewer.img3D is not None:
-                self.dialog[mode].getWidget("slice_visibility").setChecked(self.viewer.getSliceActorVisibility())
-                self.dialog[mode].saveAllWidgetStates()
-                self.dialog[mode].updateEnabledWidgetsWithSliceVisibility()
+                self.dialog[mode].updateWidgetsWithViewerState()
+                
             self.dialog[mode].open()
             return
 
