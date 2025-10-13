@@ -294,7 +294,9 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
         Create a clipping plane for the volume render
 
         :param foc: Focal Point. If None this is the active camera focal point
-        :param proj: list. Normal to the clipping plane. If None this is calculated from the active camera direction of projection
+        :type foc: list of 3 floats
+        :param proj: Normal to the clipping plane. If None this is calculated from the active camera direction of projection
+        :type proj: list of 3 floats
         """
         viewer = self._viewer
         planew = vtk.vtkImplicitPlaneWidget2()
@@ -1204,6 +1206,7 @@ class CILViewer(CILViewerBase):
     def getVolumeRenderVisibility(self):
         if self.volume is not None:
             return self.volume.GetVisibility()
+        return False
         
     def getSliceActorVisibility(self):
         return self.imageSlice.GetVisibility()
