@@ -201,6 +201,10 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
     def SetVolumeClipping(self, clipping_on):
         if hasattr(self._viewer, "planew") and self._viewer.clipping_plane_initialised:
             self._viewer.planew.SetEnabled(clipping_on)
+            if clipping_on:
+                self._viewer.planew.On()
+            else:
+                self._viewer.planew.Off()
             self._viewer.getRenderer().Render()
         else:
             # Doesn't exist and turn it off do nothing else:

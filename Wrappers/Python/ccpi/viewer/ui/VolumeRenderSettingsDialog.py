@@ -114,7 +114,7 @@ class VolumeRenderSettingsDialog(FormDialog):
         self.formWidget.widgets["volume_clipping_reset_field"].setToolTip(
             TOOLTIPS_VOLUME_RENDER_SETTINGS["volume_clipping_reset"])
 
-        self.getWidget("volume_clipping").stateChanged.connect(self.viewer.style.ToggleVolumeClipping)
+        self.getWidget("volume_clipping").clicked.connect(self.viewer.style.ToggleVolumeClipping)
         self.getWidget("volume_clipping_reset").clicked.connect(self.resetVolumeClipping)
 
     def _setUpColourRangeMin(self):
@@ -288,3 +288,18 @@ class VolumeRenderSettingsDialog(FormDialog):
         colour_scheme = self.getWidget("colour_scheme").currentText()
         self.viewer.setVolumeColorMapName(colour_scheme)
         self.viewer.updateVolumePipeline()
+
+    def updateWidgetsWithViewerState(self):
+        """
+        Updates the dialog's widgets based on the Viewer state.
+        """
+        volume_visibility = self.viewer.getVolumeRenderVisibility()
+        self.getWidget("volume_visibility").setChecked(volume_visibility)
+        self.updateEnabledWidgetsWithVolumeVisibility()
+
+        is_clipping_enabled = False
+        if hasattr(self.viewer, "planew") and self.viewer.clipping_plane_initialised:
+            is_clipping_enabled = self.viewer.planew.GetEnabled()
+        self.getWidget("volume_clipping").setChecked(is_clipping_enabled)
+
+        self.saveAllWidgetStates()
