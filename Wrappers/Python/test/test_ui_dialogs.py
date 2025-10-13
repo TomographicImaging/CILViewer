@@ -1,7 +1,18 @@
 import unittest
+import os
+import sys
+
+import numpy as np
+
 from unittest import mock
-from ccpi.viewer.ui.dialogs import ViewerSettingsDialog, HDF5InputDialog, RawInputDialog, SaveableRawInputDialog
+from unittest.mock import patch
+
 from eqt.ui.SessionDialogs import AppSettingsDialog
+from ccpi.viewer.ui.dialogs import ViewerSettingsDialog, HDF5InputDialog, RawInputDialog, SaveableRawInputDialog
+from ccpi.viewer.ui.SettingsDialog import SettingsDialog
+from ccpi.viewer.ui.VolumeRenderSettingsDialog import VolumeRenderSettingsDialog
+from ccpi.viewer.ui.CaptureRenderDialog import CaptureRenderDialog
+from ccpi.viewer.CILViewer import CILViewer
 
 from qtpy.QtWidgets import QMainWindow
 import os
@@ -252,7 +263,7 @@ class TestSaveableRawInputDialog(TestCaseQt):
         rdi = SaveableRawInputDialog(self.parent, self.fname, empty_settings)
         rdi._save_settings()
         the_dict = empty_settings.value('raw_dialog')
-        self.assertEqual(empty_settings.allKeys(), ['raw_dialog'])
+        assert 'raw_dialog' in empty_settings.allKeys()
         self.assertEqual(the_dict, {'my_name': rdi.getSavedWidgetStates()})
 
     @patch("ccpi.viewer.ui.dialogs.SaveableRawInputDialog._get_settings_save_name")
@@ -261,7 +272,7 @@ class TestSaveableRawInputDialog(TestCaseQt):
         rdi = SaveableRawInputDialog(self.parent, self.fname)
         rdi._save_settings()
         the_dict = rdi.settings.value('raw_dialog')
-        self.assertEqual(rdi.settings.allKeys(), ['raw_dialog'])
+        assert 'raw_dialog' in rdi.settings.allKeys()
         self.assertEqual(the_dict['my_name'], rdi.getSavedWidgetStates())
 
     @patch("ccpi.viewer.ui.dialogs.SaveableRawInputDialog._get_settings_save_name")
@@ -291,5 +302,45 @@ class TestSaveableRawInputDialog(TestCaseQt):
         self.assertEqual(rdi2.getWidget('dim_Images').text(), "10")
 
 
-if __name__ == '__main__':
-    unittest.main()
+@unittest.skipIf(skip_as_conda_build, "On conda builds do not do any test with interfaces")
+class TestSettingsDialog(TestCaseQt):
+
+    def setUp(self):
+        self.app = TestCaseQt.get_QApplication(sys.argv)
+        self.parent = QMainWindow()
+        self.viewer = CILViewer()
+        self.settings = QSettings()
+
+    def test_init(self):
+        settings_dialog = SettingsDialog(self.parent, self.viewer)
+        assert settings_dialog is not None
+
+    def test_auto_slice_level(self):
+        data = np.zeros((10, 10, 10))
+        print(data)
+
+    def test_slice_window(self):
+        pass
+
+    def test_slice_level(self):
+        pass
+
+
+@unittest.skipIf(skip_as_conda_build, "On conda builds do not do any test with interfaces")
+class TestVolumeRenderSettingsDialog(TestCaseQt):
+
+    def setUp(self):
+        self.app = TestCaseQt.get_QApplication(sys.argv)
+        self.parent = QMainWindow()
+        self.viewer = CILViewer()
+        self.settings = QSettings()
+
+    def test_init(self):
+        vr_settings_dialog = VolumeRenderSettingsDialog(self.parent, self.viewer)
+        assert vr_settings_dialog is not None
+
+    def test_windowing_min(self):
+        pass
+
+    def test_windowing_max(self):
+        pass

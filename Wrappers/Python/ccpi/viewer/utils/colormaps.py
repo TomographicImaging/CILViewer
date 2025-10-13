@@ -411,7 +411,7 @@ def relu(x, xmin, xmax, scaling=1):
     returns values as
     1. x< xmin : f(x) = 0
     2. xmin <= x <= xmax : f(x) =  (x - xmin) / (xmax - xmin)
-    3. x > xmax: f(x) = 0
+    3. x > xmax: f(x) = 1
 
     :param x: ndarray to evaluate the function at
     :param xmin: value at which the function start increasing
@@ -422,8 +422,10 @@ def relu(x, xmin, xmax, scaling=1):
     out = []
     dx = xmax - xmin
     for i, val in enumerate(x):
-        if val < xmin or val > xmax:
+        if val < xmin:
             out.append(0)
+        elif val > xmax:
+            out.append(scaling)
         else:
             out.append(scaling * ((val - xmin) / dx))
     return numpy.asarray(out)

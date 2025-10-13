@@ -6,10 +6,12 @@ from ccpi.viewer import viewer2D, viewer3D
 from ccpi.viewer.ui.main_windows import TwoViewersMainWindow
 from qtpy import QtWidgets
 from qtpy.QtWidgets import QAction, QCheckBox
+import logging
+import argparse
 
 
 class StandaloneViewerMainWindow(TwoViewersMainWindow):
-    '''
+    """
     A main window for displaying two viewers side by side, with a menu bar
     for selecting the images to be displayed.
 
@@ -18,18 +20,26 @@ class StandaloneViewerMainWindow(TwoViewersMainWindow):
 
     A dock widget is created which contains widgets for displaying the
     file name of the image shown on the viewer, and the level of downsampling
-    of the image displayed on the viewer.    
-    '''
+    of the image displayed on the viewer.
+    """
 
-    def __init__(self,
-                 title="StandaloneViewer",
-                 app_name="Standalone Viewer",
-                 settings_name=None,
-                 organisation_name=None,
-                 viewer1_type='2D',
-                 viewer2_type='3D'):
-        super(StandaloneViewerMainWindow, self).__init__(title, app_name, settings_name, organisation_name,
-                                                         viewer1_type, viewer2_type)
+    def __init__(
+        self,
+        title="StandaloneViewer",
+        app_name="Standalone Viewer",
+        settings_name=None,
+        organisation_name=None,
+        viewer1_type="2D",
+        viewer2_type="3D",
+    ):
+        super(StandaloneViewerMainWindow, self).__init__(
+            title,
+            app_name,
+            settings_name,
+            organisation_name,
+            viewer1_type,
+            viewer2_type,
+        )
 
         self.addToMenu()
         self.addToViewerCoordsDockWidget()
@@ -37,10 +47,10 @@ class StandaloneViewerMainWindow(TwoViewersMainWindow):
         self.image_overlay = vtk.vtkImageData()
 
     def addToMenu(self):
-        '''
+        """
         Adds actions to the menu bar for selecting the images to be displayed
-        '''
-        file_menu = self.menus['File']
+        """
+        file_menu = self.menus["File"]
 
         # insert image selection as first action in file menu:
 
@@ -53,13 +63,13 @@ class StandaloneViewerMainWindow(TwoViewersMainWindow):
         file_menu.insertAction(file_menu.actions()[0], image1_action)
 
     def addToViewerCoordsDockWidget(self):
-        '''
+        """
         Adds widgets to the viewer coords dock widget for displaying the
         image overlay, and for showing/hiding the 2D and 3D viewers.
-        '''
+        """
         checkbox = QCheckBox("Show Image Overlay")
         checkbox.setChecked(True)
-        self.viewer_coords_dock.widget().addSpanningWidget(checkbox, 'image_overlay')
+        self.viewer_coords_dock.widget().addSpanningWidget(checkbox, "image_overlay")
         checkbox.stateChanged.connect(partial(self.showHideImageOverlay))
 
         checkbox2 = QCheckBox("Show 2D Viewer")
@@ -68,17 +78,17 @@ class StandaloneViewerMainWindow(TwoViewersMainWindow):
 
         checkbox3 = QCheckBox("Show 3D Viewer")
         checkbox3.setChecked(True)
-        self.viewer_coords_dock.widget().addWidget(checkbox3, checkbox2, 'show_viewer')
+        self.viewer_coords_dock.widget().addWidget(checkbox3, checkbox2, "show_viewer")
         checkbox3.stateChanged.connect(partial(self.showHideViewer, 1))
 
     def showHideImageOverlay(self, show=True):
-        '''
+        """
         Shows or hides the image overlay/s on the viewers
-        '''
+        """
         for viewer in self.viewer_coords_dock.viewers:
             if isinstance(viewer, viewer2D):
                 if show:
-                    if hasattr(self, 'image_overlay'):
+                    if hasattr(self, "image_overlay"):
                         viewer.setInputData2(self.image_overlay)
                 else:
                     self.image_overlay = viewer.image2
@@ -86,7 +96,7 @@ class StandaloneViewerMainWindow(TwoViewersMainWindow):
 
 
 class standalone_viewer(object):
-    '''
+    """
     Launches a StandaloneViewerMainWindow instance.
 
     Parameters:
@@ -94,28 +104,28 @@ class standalone_viewer(object):
     title: str
         title of the window
     viewer1_type: '2D' or '3D'
-    viewer2_type: '2D', '3D' or None 
+    viewer2_type: '2D', '3D' or None
         if None, only one viewer is displayed
-    '''
+    """
 
-    def __init__(self, title="", viewer1_type='2D', viewer2_type='3D', *args, **kwargs):
-        '''Creator
-        
+    def __init__(self, title="", viewer1_type="2D", viewer2_type="3D", *args, **kwargs):
+        """Creator
+
         Parameters:
         ------------
         title: str
             title of the window
         viewer1_type: '2D' or '3D'
-        viewer2_type: '2D', '3D' or None 
+        viewer2_type: '2D', '3D' or None
             if None, only one viewer is displayed
-        '''
+        """
         app = QtWidgets.QApplication(sys.argv)
         self.app = app
 
         self.set_up(title, viewer1_type, viewer2_type, *args, **kwargs)
 
     def set_up(self, title, viewer1_type, viewer2_type=None, *args, **kwargs):
-        '''
+        """
         Sets up the standalone viewer.
 
         Parameters:
@@ -123,9 +133,9 @@ class standalone_viewer(object):
         title: str
             title of the window
         viewer1_type: '2D' or '3D'
-        viewer2_type: '2D', '3D' or None 
+        viewer2_type: '2D', '3D' or None
             if None, only one viewer is displayed
-        '''
+        """
 
         window = StandaloneViewerMainWindow(title, viewer1_type, viewer2_type)
 
@@ -135,28 +145,29 @@ class standalone_viewer(object):
         window.show()
 
     def show(self):
-        '''
+        """
         Shows the window
-        '''
+        """
         if self.has_run is None:
             self.has_run = self.app.exec_()
         else:
-            print('No instance can be run interactively again. Delete and re-instantiate.')
+            print("No instance can be run interactively again. Delete and re-instantiate.")
 
     def __del__(self):
-        '''destructor'''
+        """destructor"""
         self.app.exit()
 
 
 def main():
+
     # Run a standalone viewer with a 2D and a 3D viewer:
     err = vtk.vtkFileOutputWindow()
     err.SetFileName("viewer.log")
     vtk.vtkOutputWindow.SetInstance(err)
-    standalone_viewer_instance = standalone_viewer("Standalone Viewer", viewer1_type='2D', viewer2_type='3D')
+    standalone_viewer_instance = standalone_viewer("Standalone Viewer", viewer1_type="2D", viewer2_type="3D")
     standalone_viewer_instance.show()
     return 0
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
