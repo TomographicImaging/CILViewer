@@ -22,6 +22,8 @@ class QCILViewer3DToolBar(QtWidgets.QToolBar):
 
         viewer: The CILViewer instance that the toolbar will be embedded in.
         """
+        if viewer is None:
+            raise ValueError("A CILViewer instance must be provided to the QCILViewer3DToolBar.")
         self.viewer = viewer
 
         if self.viewer.img3D is None:
@@ -107,12 +109,18 @@ class QCILViewer3DToolBar(QtWidgets.QToolBar):
         if mode == "settings_2d":
             if self.dialog["settings_2d"] is None:
                 self._createSettingsDialog()
+            if self.viewer.img3D is not None:
+                self.dialog[mode].updateWidgetsWithViewerState()
+                
             self.dialog[mode].open()
             return
 
         if mode == "settings_3d":
             if self.dialog["settings_3d"] is None:
                 self._createVolumeRenderSettingsDialog()
+            else:
+                self.dialog[mode].updateWidgetsWithViewerState()
+            
             self.dialog[mode].open()
             return
 

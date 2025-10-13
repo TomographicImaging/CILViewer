@@ -201,6 +201,10 @@ class CILInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
     def SetVolumeClipping(self, clipping_on):
         if hasattr(self._viewer, "planew") and self._viewer.clipping_plane_initialised:
             self._viewer.planew.SetEnabled(clipping_on)
+            if clipping_on:
+                self._viewer.planew.On()
+            else:
+                self._viewer.planew.Off()
             self._viewer.getRenderer().Render()
         else:
             # Doesn't exist and turn it off do nothing else:
@@ -543,6 +547,9 @@ class CILViewer(CILViewerBase):
 
         self.volume_render_initialised = False
         self.clipping_plane_initialised = False
+
+        # volume 
+        self.volume = None
 
     def createPolyDataActor(self, polydata):
         """
@@ -1191,3 +1198,10 @@ class CILViewer(CILViewerBase):
 
             self.getRenderer().Render()
             self.updatePipeline()
+    
+    def getVolumeRenderVisibility(self):
+        if self.volume is not None:
+            return self.volume.GetVisibility()
+        
+    def getSliceActorVisibility(self):
+        return self.imageSlice.GetVisibility()

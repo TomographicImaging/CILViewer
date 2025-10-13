@@ -35,7 +35,7 @@ class SettingsDialog(FormDialog):
         self._setUpSliceWindow()
         self._setUpSliceLevel()
 
-        self.toggleSliceVisibility(is_init=True)
+        self.updateEnabledWidgetsWithSliceVisibility()
 
     def _setUpBackgroundColour(self):
         """
@@ -68,7 +68,8 @@ class SettingsDialog(FormDialog):
         else:
             self.getWidget("slice_visibility").setChecked(True)
 
-        self.getWidget("slice_visibility").stateChanged.connect(self.toggleSliceVisibility)
+        # self.getWidget("slice_visibility").stateChanged.connect(self.toggleSliceVisibility)
+        self.getWidget("slice_visibility").clicked.connect(self.toggleSliceVisibility)
 
     def _setUpSliceOrientation(self):
         """
@@ -114,7 +115,9 @@ class SettingsDialog(FormDialog):
         if self.viewer.img3D is None:
             slice_window_slider = UISliderWidget.UISliderWidget(self.default_slider_min, self.default_slider_max)
         else:
-            slice_window_slider = UISliderWidget.UISliderWidget(window_min, window_max)
+            # the slider wants percentage values
+            slice_window_slider = UISliderWidget.UISliderWidget(0, window_max-window_min)
+            window_default = (window_max - window_min) / 2
 
         self.addWidget(slice_window_slider, "Slice Window:", "slice_window_slider")
         self.formWidget.widgets["slice_window_slider_label"].setToolTip(TOOLTIPS_IMAGE_SETTINGS["slice_window_slider"])
@@ -194,12 +197,18 @@ class SettingsDialog(FormDialog):
         else:
             self.viewer.updatePipeline()
 
-    def toggleSliceVisibility(self, is_init=False):
+
+    def toggleSliceVisibility(self):
         """
         Toggles the slice visibility in the viewer. The slice visibility QCheckBox
         determines whether the dialog's widgets are enabled/disabled.
+        """
+        self.viewer.style.ToggleSliceVisibility()
+        self.updateEnabledWidgetsWithSliceVisibility()
 
-        is_init: Boolean value that limits the method's behaviour when the dialog is created.
+    def updateEnabledWidgetsWithSliceVisibility(self):
+        """
+        Enables/disables the dialog's widgets based on the slice visibility QCheckBox state.
         """
         slice_visibility_checked = self.getWidget("slice_visibility").isChecked()
 
@@ -208,7 +217,23 @@ class SettingsDialog(FormDialog):
         self.getWidget("slice_window_slider").setEnabled(slice_visibility_checked)
         self.getWidget("slice_level_slider").setEnabled(slice_visibility_checked)
 
-        if is_init is True:
-            return
-        else:
-            self.viewer.style.ToggleSliceVisibility()
+    def updateWidgetsWithViewerState(self):
+        """
+        Updates the dialog's widgets based on the Viewer state.
+        """
+        # get state of the viewer
+        slice_orientation = self.viewer.sliceOrientation
+        window = self.viewer.getSliceColorWindow()
+        level = self.viewer.getSliceColorLevel()
+        slice_visibility = self.viewer.getSliceActorVisibility()
+
+        # update widgets
+        self.getWidget("slice_visibility").setChecked(slice_visibility)
+        self.updateEnabledWidgetsWithSliceVisibility()
+
+        self.getWidget("orientation").setCurrentIndex(slice_orientation)
+
+        self.getWidget("slice_window_slider").setValue(window)
+        self.getWidget("slice_level_slider").setValue(level)
+
+        self.saveAllWidgetStates()
