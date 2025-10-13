@@ -7,7 +7,6 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-
 class VolumeRenderSettingsDialog(FormDialog):
     """
     A FormDialog listing the viewer's volume render settings.
@@ -260,7 +259,6 @@ class VolumeRenderSettingsDialog(FormDialog):
         """
         self.viewer.style.ToggleVolumeVisibility()
         volume_visibility_checked = self.getWidget("volume_visibility").isChecked()
-
         if volume_visibility_checked:
             self.setOpacityMapping()
             if self.getWidget("volume_clipping").isChecked() and hasattr(self.viewer, "planew"):

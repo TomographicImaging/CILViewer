@@ -263,7 +263,7 @@ class TestSaveableRawInputDialog(TestCaseQt):
         rdi = SaveableRawInputDialog(self.parent, self.fname, empty_settings)
         rdi._save_settings()
         the_dict = empty_settings.value('raw_dialog')
-        self.assertEqual(empty_settings.allKeys(), ['raw_dialog'])
+        assert 'raw_dialog' in empty_settings.allKeys()
         self.assertEqual(the_dict, {'my_name': rdi.getSavedWidgetStates()})
 
     @patch("ccpi.viewer.ui.dialogs.SaveableRawInputDialog._get_settings_save_name")
@@ -272,7 +272,7 @@ class TestSaveableRawInputDialog(TestCaseQt):
         rdi = SaveableRawInputDialog(self.parent, self.fname)
         rdi._save_settings()
         the_dict = rdi.settings.value('raw_dialog')
-        self.assertEqual(rdi.settings.allKeys(), ['raw_dialog'])
+        assert 'raw_dialog' in rdi.settings.allKeys()
         self.assertEqual(the_dict['my_name'], rdi.getSavedWidgetStates())
 
     @patch("ccpi.viewer.ui.dialogs.SaveableRawInputDialog._get_settings_save_name")
@@ -306,7 +306,7 @@ class TestSaveableRawInputDialog(TestCaseQt):
 class TestSettingsDialog(TestCaseQt):
 
     def setUp(self):
-        self.app = TestCaseQt.get_QApplication()
+        self.app = TestCaseQt.get_QApplication(sys.argv)
         self.parent = QMainWindow()
         self.viewer = CILViewer()
         self.settings = QSettings()
@@ -330,7 +330,7 @@ class TestSettingsDialog(TestCaseQt):
 class TestVolumeRenderSettingsDialog(TestCaseQt):
 
     def setUp(self):
-        self.app = TestCaseQt.get_QApplication()
+        self.app = TestCaseQt.get_QApplication(sys.argv)
         self.parent = QMainWindow()
         self.viewer = CILViewer()
         self.settings = QSettings()

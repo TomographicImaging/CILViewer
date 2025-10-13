@@ -111,7 +111,6 @@ class QCILViewer3DToolBar(QtWidgets.QToolBar):
                 self._createSettingsDialog()
             if self.viewer.img3D is not None:
                 self.dialog[mode].updateWidgetsWithViewerState()
-
             self.dialog[mode].open()
             return
 
@@ -120,7 +119,6 @@ class QCILViewer3DToolBar(QtWidgets.QToolBar):
                 self._createVolumeRenderSettingsDialog()
             else:
                 self.dialog[mode].updateWidgetsWithViewerState()
-
             self.dialog[mode].open()
             return
 
