@@ -1202,11 +1202,11 @@ class CILViewer(CILViewerBase):
 
             self.getRenderer().Render()
             self.updatePipeline()
-    
+
     def getVolumeRenderVisibility(self):
         if self.volume is not None:
             return self.volume.GetVisibility()
         return False
-        
+
     def getSliceActorVisibility(self):
         return self.imageSlice.GetVisibility()

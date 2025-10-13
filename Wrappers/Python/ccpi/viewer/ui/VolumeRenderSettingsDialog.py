@@ -7,6 +7,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
 class VolumeRenderSettingsDialog(FormDialog):
     """
     A FormDialog listing the viewer's volume render settings.
