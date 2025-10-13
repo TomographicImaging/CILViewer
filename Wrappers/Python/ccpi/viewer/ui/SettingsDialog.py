@@ -115,7 +115,6 @@ class SettingsDialog(FormDialog):
         if self.viewer.img3D is None:
             slice_window_slider = UISliderWidget.UISliderWidget(self.default_slider_min, self.default_slider_max)
         else:
-            # the slider wants percentage values
             slice_window_slider = UISliderWidget.UISliderWidget(0, window_max-window_min)
             window_default = (window_max - window_min) / 2
 
