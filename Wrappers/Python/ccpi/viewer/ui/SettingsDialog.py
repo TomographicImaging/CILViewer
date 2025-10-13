@@ -116,7 +116,7 @@ class SettingsDialog(FormDialog):
             slice_window_slider = UISliderWidget.UISliderWidget(self.default_slider_min, self.default_slider_max)
         else:
             # the slider wants percentage values
-            slice_window_slider = UISliderWidget.UISliderWidget(0, window_max-window_min)
+            slice_window_slider = UISliderWidget.UISliderWidget(0, window_max - window_min)
             window_default = (window_max - window_min) / 2
 
         self.addWidget(slice_window_slider, "Slice Window:", "slice_window_slider")
@@ -196,7 +196,6 @@ class SettingsDialog(FormDialog):
             return
         else:
             self.viewer.updatePipeline()
-
 
     def toggleSliceVisibility(self):
         """

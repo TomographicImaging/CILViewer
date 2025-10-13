@@ -548,7 +548,7 @@ class CILViewer(CILViewerBase):
         self.volume_render_initialised = False
         self.clipping_plane_initialised = False
 
-        # volume 
+        # volume
         self.volume = None
 
     def createPolyDataActor(self, polydata):
@@ -1198,10 +1198,10 @@ class CILViewer(CILViewerBase):
 
             self.getRenderer().Render()
             self.updatePipeline()
-    
+
     def getVolumeRenderVisibility(self):
         if self.volume is not None:
             return self.volume.GetVisibility()
-        
+
     def getSliceActorVisibility(self):
         return self.imageSlice.GetVisibility()
