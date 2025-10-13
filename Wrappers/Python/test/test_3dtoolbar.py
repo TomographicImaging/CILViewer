@@ -8,9 +8,9 @@ from unittest.mock import patch
 from ccpi.viewer.QCILViewer3DToolBar import QCILViewer3DToolBar
 from ccpi.viewer.CILViewer import CILViewer
 
-from PySide2.QtWidgets import QMainWindow
-from PySide2.QtWidgets import QApplication, QLabel, QFrame, QDoubleSpinBox, QCheckBox, QPushButton, QLineEdit, QComboBox, QWidget
-from PySide2.QtCore import QSettings
+from qtpy.QtWidgets import QMainWindow
+from qtpy.QtWidgets import QApplication, QLabel, QFrame, QDoubleSpinBox, QCheckBox, QPushButton, QLineEdit, QComboBox, QWidget
+from qtpy.QtCore import QSettings
 
 from eqt.ui import FormDialog
 from functools import partial
@@ -30,7 +30,7 @@ from .qt_utils import TestCaseQt
 class TestQCILViewer3DToolBar(TestCaseQt):
 
     def setUp(self):
-        self.app = TestCaseQt.get_QApplication()
+        self.app = TestCaseQt.get_QApplication([])
         self.parent = QMainWindow()
         self.viewer = CILViewer()
         self.settings = QSettings()
