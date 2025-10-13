@@ -116,8 +116,8 @@ class SettingsDialog(FormDialog):
             slice_window_slider = UISliderWidget.UISliderWidget(self.default_slider_min, self.default_slider_max)
         else:
             # the slider wants percentage values
-            slice_window_slider = UISliderWidget.UISliderWidget(0, 100)
-            window_default = (window_default - window_min) / (window_max - window_min) * 100.0
+            slice_window_slider = UISliderWidget.UISliderWidget(0, window_max-window_min)
+            window_default = (window_max - window_min) / 2
 
         self.addWidget(slice_window_slider, "Slice Window:", "slice_window_slider")
         self.formWidget.widgets["slice_window_slider_label"].setToolTip(TOOLTIPS_IMAGE_SETTINGS["slice_window_slider"])
@@ -216,3 +216,24 @@ class SettingsDialog(FormDialog):
         self.getWidget("auto_window_level").setEnabled(slice_visibility_checked)
         self.getWidget("slice_window_slider").setEnabled(slice_visibility_checked)
         self.getWidget("slice_level_slider").setEnabled(slice_visibility_checked)
+
+    def updateWidgetsWithViewerState(self):
+        """
+        Updates the dialog's widgets based on the Viewer state.
+        """
+        # get state of the viewer
+        slice_orientation = self.viewer.sliceOrientation
+        window = self.viewer.getSliceColorWindow()
+        level = self.viewer.getSliceColorLevel()
+        slice_visibility = self.viewer.getSliceActorVisibility()
+
+        # update widgets
+        self.getWidget("slice_visibility").setChecked(slice_visibility)
+        self.updateEnabledWidgetsWithSliceVisibility()
+
+        self.getWidget("orientation").setCurrentIndex(slice_orientation)
+
+        self.getWidget("slice_window_slider").setValue(window)
+        self.getWidget("slice_level_slider").setValue(level)
+
+        self.saveAllWidgetStates()
