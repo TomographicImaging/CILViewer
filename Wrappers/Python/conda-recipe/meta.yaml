@@ -21,7 +21,7 @@ test:
     - pillow
     - pytest
     - pyside2
-    - eqt>=1.0.0
+    - eqt>=2.0.0
   source_files:
     - ./Wrappers/Python/test
 
@@ -30,15 +30,14 @@ test:
   
 requirements:
   build:
-    - python >=3.7
+    - python
     - vtk
     - setuptools
  
   run:
-    - python >=3.7
+    - python
     - numpy
     - vtk
-    - importlib_metadata    # [py<38]
     - h5py
     - pyyaml
     - schema
