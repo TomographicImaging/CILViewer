@@ -8,6 +8,9 @@ Enhancements:
 - Update recipe to require eqt Version 2.0.0 #458
 - Add a toolbar and settings menus to the 3D viewer #458
 - Add script to generate numpy array test data #458
+Dependencies:
+- removed python pinning (#482)
+- removed importlib_metadata, required for python <3.8 (#482)
 
 
 ## v25.0.0
