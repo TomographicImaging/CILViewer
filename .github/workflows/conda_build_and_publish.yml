@@ -18,7 +18,7 @@ jobs:
       with:
         fetch-depth: 0 # All history for use later with the meta.yaml file for conda-recipes
     - name: publish-to-conda
-      uses: TomographicImaging/conda-package-publish-action@v2
+      uses: TomographicImaging/conda-package-publish-action@v2.1
       with:
         subDir: 'Wrappers/Python/conda-recipe'
         channels: '-c conda-forge -c ccpi'
