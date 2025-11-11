@@ -27,7 +27,7 @@ jobs:
     - name: conda build
       run: >
         conda mambabuild -c conda-forge -c ccpi  --python=3.7  --output-folder dist recipe
-    -name: conda-upload
+    - name: conda-upload
       if: github.ref == startsWith(github.ref, 'refs/tags')
       defaults: {run: {shell: 'bash -el {0}', working-directory: dist}}
       runs-on: ubuntu-latest
