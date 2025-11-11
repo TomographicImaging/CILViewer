@@ -35,18 +35,4 @@ jobs:
       - run: mamba install anaconda-client
       - name: anaconda upload -c ccpi
         run: >
-          anaconda -v -t ${{ secrets.CCPI_CONDA_TOKEN }} upload --force --label  'main' noarch/*
-
-
-    # - uses: actions/checkout@v4
-    #   with:
-    #     fetch-depth: 0 # All history for use later with the meta.yaml file for conda-recipes
-    # - name: publish-to-conda
-    #   uses: TomographicImaging/conda-package-publish-action@v2.1
-    #   with:
-    #     subDir: 'Wrappers/Python/conda-recipe'
-    #     channels: '-c conda-forge -c ccpi'
-    #     AnacondaToken: ${{ secrets.ANACONDA_TOKEN }}
-    #     publish: ${{ github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags') }}
-    #     test_all: ${{(github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')) || (github.ref == 'refs/heads/master')}}
-    #     additional_apt_packages: 'libegl1-mesa libegl1-mesa-dev'
+          anaconda -v -t ${{ secrets.ANACONDA_TOKEN }} upload --force --label  'main' noarch/*
