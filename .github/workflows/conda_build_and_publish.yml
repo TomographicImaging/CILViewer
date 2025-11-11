@@ -16,14 +16,37 @@ jobs:
     steps:
     - uses: actions/checkout@v4
       with:
-        fetch-depth: 0 # All history for use later with the meta.yaml file for conda-recipes
-    - name: publish-to-conda
-      uses: TomographicImaging/conda-package-publish-action@v2.1
+        fetch-depth: 0
+    - uses: conda-incubator/setup-miniconda@v3
       with:
-        subDir: 'Wrappers/Python/conda-recipe'
-        channels: '-c conda-forge -c ccpi'
-        AnacondaToken: ${{ secrets.ANACONDA_TOKEN }}
-        publish: ${{ github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags') }}
-        test_all: ${{(github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')) || (github.ref == 'refs/heads/master')}}
-        additional_apt_packages: 'libegl1-mesa libegl1-mesa-dev'
+        python-version: 3.7
+        mamba-version: "*"
+        channels: conda-forge, ccpi
+        conda-remove-defaults: "true"
+    - run: conda install boa conda-verify
+    - name: conda build
+      run: >
+        conda mambabuild -c conda-forge -c ccpi  --python=3.7  --output-folder dist recipe
+    -name: conda-upload
+      if: github.ref == startsWith(github.ref, 'refs/tags')
+      defaults: {run: {shell: 'bash -el {0}', working-directory: dist}}
+      runs-on: ubuntu-latest
+      steps:
+      - run: mamba install anaconda-client
+      - name: anaconda upload -c ccpi
+        run: >
+          anaconda -v -t ${{ secrets.CCPI_CONDA_TOKEN }} upload --force --label  'main' noarch/*
 
+
+    # - uses: actions/checkout@v4
+    #   with:
+    #     fetch-depth: 0 # All history for use later with the meta.yaml file for conda-recipes
+    # - name: publish-to-conda
+    #   uses: TomographicImaging/conda-package-publish-action@v2.1
+    #   with:
+    #     subDir: 'Wrappers/Python/conda-recipe'
+    #     channels: '-c conda-forge -c ccpi'
+    #     AnacondaToken: ${{ secrets.ANACONDA_TOKEN }}
+    #     publish: ${{ github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags') }}
+    #     test_all: ${{(github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')) || (github.ref == 'refs/heads/master')}}
+    #     additional_apt_packages: 'libegl1-mesa libegl1-mesa-dev'
