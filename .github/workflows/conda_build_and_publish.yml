@@ -20,7 +20,7 @@ jobs:
 
       - uses: conda-incubator/setup-miniconda@v3
         with:
-          python-version: 3.11
+          python-version: 3.13
           mamba-version: "*"
           channels: conda-forge, ccpi
           conda-remove-defaults: "true"
