@@ -22,6 +22,7 @@ jobs:
       with:
         subDir: 'Wrappers/Python/conda-recipe'
         channels: '-c conda-forge -c ccpi'
+        test_pyver: 3.10
         AnacondaToken: ${{ secrets.ANACONDA_TOKEN }}
         publish: ${{ github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags') }}
         test_all: ${{(github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')) || (github.ref == 'refs/heads/master')}}
