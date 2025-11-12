@@ -25,6 +25,8 @@ jobs:
           channels: conda-forge, ccpi
           conda-remove-defaults: "true"
 
+      - run: conda install conda-build conda-verify
+
       - name: conda build
         run: >
           conda build -c conda-forge -c ccpi --python=3.13 --output-folder dist recipe
