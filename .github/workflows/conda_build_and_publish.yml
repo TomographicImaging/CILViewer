@@ -25,11 +25,9 @@ jobs:
           channels: conda-forge, ccpi
           conda-remove-defaults: "true"
 
-      - run: conda install boa conda-verify
-
       - name: conda build
         run: >
-          conda mambabuild -c conda-forge -c ccpi --python=3.7 --output-folder dist recipe
+          conda mambabuild -c conda-forge -c ccpi --python=3.13 --output-folder dist recipe
 
       - name: Upload conda package as artifact
         uses: actions/upload-artifact@v4
