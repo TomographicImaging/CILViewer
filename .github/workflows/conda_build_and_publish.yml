@@ -29,7 +29,7 @@ jobs:
 
       - name: conda build
         run: >
-          conda build -c conda-forge -c ccpi --python=3.13 --output-folder dist recipe
+          conda build -c conda-forge -c ccpi --python=3.13 --output-folder dist Wrappers/Python/conda-recipe
 
       - name: Upload conda package as artifact
         uses: actions/upload-artifact@v4
