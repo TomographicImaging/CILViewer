@@ -37,6 +37,30 @@ jobs:
           name: cilviewer
           path: dist
 
+
+  conda-print:
+    if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'release'
+    runs-on: ubuntu-22.04
+    needs: build
+    defaults: {run: {shell: 'bash -el {0}', working-directory: dist}}
+    steps:
+      - uses: conda-incubator/setup-miniconda@v3
+        with:
+          mamba-version: "*"
+          channels: conda-forge
+
+      - name: Download built conda package
+        uses: actions/download-artifact@v4
+        with:
+          name: cilviewer
+          path: dist
+
+      - run: conda install anaconda-client
+
+      - name: print contents of dist folder
+        run: >
+          ls dist
+
   conda-upload:
     if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'release'
     runs-on: ubuntu-22.04
