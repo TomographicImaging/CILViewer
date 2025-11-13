@@ -58,7 +58,7 @@ jobs:
 
       - name: print contents of dist folder
         run: >
-          ls dist
+          ls .
 
   conda-upload:
     if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'release'
