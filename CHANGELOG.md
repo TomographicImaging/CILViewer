@@ -13,7 +13,8 @@ Enhancements:
 Dependencies:
   - removed python pinning (#482)
   - removed importlib_metadata, required for python <3.8 (#482)
-
+CI:
+  -  Created new action for conda build and publish - no longer uses conda-package-publish-action (#486)
 
 ## v25.0.0
 
