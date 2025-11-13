@@ -39,7 +39,6 @@ jobs:
 
 
   conda-print:
-    if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'release'
     runs-on: ubuntu-22.04
     needs: build
     defaults: {run: {shell: 'bash -el {0}', working-directory: dist}}
