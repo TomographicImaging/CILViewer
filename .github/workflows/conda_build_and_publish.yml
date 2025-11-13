@@ -58,4 +58,4 @@ jobs:
 
       - name: Upload to ccpi anaconda channel
         run: >
-          anaconda -v -t ${{ secrets.ANACONDA_TOKEN }} upload --force --label 'main' noarch/*
+          anaconda -v -t ${{ secrets.ANACONDA_TOKEN }} upload --force --label 'main' noarch/*.conda
