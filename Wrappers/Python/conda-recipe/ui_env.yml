@@ -1,5 +1,6 @@
-name: cilviewer
+name: cilviewer_ui
 dependencies: 
+    - ccpi::ccpi-viewer=25.1.0
     - conda-forge::pyside2
     - conda-forge::eqt>=2.0.0
     - ccpi::cil-data=22.0.0
