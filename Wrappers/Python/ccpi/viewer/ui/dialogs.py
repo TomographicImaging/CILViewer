@@ -263,6 +263,7 @@ class RawInputDialog(FormDialog):
 
         diag = QtWidgets.QDialog(parent=self)
         diag.setModal(True)
+
         if dimensionality == 3:
             if pars['is_fortran'] is True:
                 slicing = 'image'
@@ -273,6 +274,10 @@ class RawInputDialog(FormDialog):
             diag.setWindowTitle(f'Preview Image')
         diag.setWindowFlag(QtCore.Qt.WindowContextHelpButtonHint, False)
         diag.setWindowFlag(QtCore.Qt.WindowMaximizeButtonHint)
+        diag.setWindowFlag(QtCore.Qt.WindowCloseButtonHint, True)
+        
+        buttonBox = QtWidgets.QDialogButtonBox(QtWidgets.QDialogButtonBox.Ok)
+        buttonBox.button(QtWidgets.QDialogButtonBox.Ok).clicked.connect(diag.close)
         # add a layout
         verticalLayout = QtWidgets.QVBoxLayout(diag)
         verticalLayout.setContentsMargins(10, 10, 10, 10)
@@ -283,6 +288,7 @@ class RawInputDialog(FormDialog):
 
         # add it to the layout of the dialog
         verticalLayout.addWidget(sc)
+        verticalLayout.addWidget(buttonBox)
         # add the layout to the dialog
         diag.setLayout(verticalLayout)
 
