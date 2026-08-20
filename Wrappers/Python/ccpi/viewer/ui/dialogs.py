@@ -275,7 +275,7 @@ class RawInputDialog(FormDialog):
         diag.setWindowFlag(QtCore.Qt.WindowContextHelpButtonHint, False)
         diag.setWindowFlag(QtCore.Qt.WindowMaximizeButtonHint)
         diag.setWindowFlag(QtCore.Qt.WindowCloseButtonHint, True)
-        
+
         buttonBox = QtWidgets.QDialogButtonBox(QtWidgets.QDialogButtonBox.Ok)
         buttonBox.button(QtWidgets.QDialogButtonBox.Ok).clicked.connect(diag.close)
         # add a layout
