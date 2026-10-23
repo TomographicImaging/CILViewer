@@ -438,11 +438,11 @@ class CILColorMaps(object):
         if not cmap in _color_map_dict.keys():
 
             try:
-                from matplotlib import cm
+                import matplotlib
 
                 colors = []
                 for x in range(0, 255):
-                    color = cm.get_cmap(cmap)(x)
+                    color = matplotlib.colormaps[cmap](x)
                     colors.append([color[0], color[1], color[2]])
             except ImportError:
                 print("To use colormaps other than: ",
