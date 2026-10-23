@@ -4,8 +4,7 @@
 New Functionality:
   - Added toolbar to control the slice and volume render in QCILViewerWidget (#458)
   - added methods to access the state of the viewer3D (#479)
-  
-
+  - added buttons to close preview dialog on macos
 Enhancements:
   - Update recipe to require eqt Version 2.0.0 #458
   - Add a toolbar and settings menus to the 3D viewer #458
