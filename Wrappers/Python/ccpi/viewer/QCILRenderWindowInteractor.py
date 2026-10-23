@@ -1,6 +1,7 @@
 import vtk
 from vtk.qt.QVTKRenderWindowInteractor import QVTKRenderWindowInteractor
 from qtpy.QtCore import Qt, QEvent
+import platform
 
 
 class QCILRenderWindowInteractor(QVTKRenderWindowInteractor):
@@ -21,6 +22,10 @@ class QCILRenderWindowInteractor(QVTKRenderWindowInteractor):
         self.__saveButtons = self._QVTKRenderWindowInteractor__saveButtons
         self.__wheelDelta = self._QVTKRenderWindowInteractor__wheelDelta
         #print ("__saveModifiers  should be defined", self.__saveModifiers)
+        
+        # WA_PaintOnScreen makes the first paintEvent hang with Qt6 on macOS
+        if platform.system() == 'Darwin' and hasattr(Qt.WidgetAttribute, 'WA_PaintOnScreen'):
+            self.setAttribute(Qt.WidgetAttribute.WA_PaintOnScreen, False)
 
     def _GetAlt(self, ev):
         '''Get ALT key modifier'''
