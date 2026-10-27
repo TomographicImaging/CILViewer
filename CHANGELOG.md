@@ -1,6 +1,6 @@
 # Changelog
 
-## v25.1.0
+## v26.0.0
 New Functionality:
   - Added toolbar to control the slice and volume render in QCILViewerWidget (#458)
   - added methods to access the state of the viewer3D (#479)
@@ -17,6 +17,8 @@ Dependencies:
 Bugfixes:
   - removes hang on macos with Qt6 (PySide6)
   - bugfix for matplotlib >= 3.9
+  - bugfix unittests for numpy > 2.2
+  - removed conda-verify package in GHA
 CI:
   -  Created new action for conda build and publish - no longer uses conda-package-publish-action (#486)
 
