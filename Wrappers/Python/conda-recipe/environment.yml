@@ -6,7 +6,7 @@ dependencies:
     - python
     - numpy
     - vtk
-    - pyside2
+    - pyside6
     - eqt>=2.0.0
     - importlib_metadata    # [py<38]
     - h5py
