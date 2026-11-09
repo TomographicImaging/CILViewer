@@ -16,7 +16,7 @@ class TestCroppedReaders(unittest.TestCase):
         bits = 8
         self.input_3D_array = np.random.randint(10, size=shape, dtype=eval(f"np.uint{bits}"))
         self.input_3D_array = np.reshape(np.arange(self.input_3D_array.size),
-                                         newshape=shape).astype(dtype=eval(f"np.uint{bits}"))
+                                         shape).astype(dtype=eval(f"np.uint{bits}"))
         self.raw_type_code = str(self.input_3D_array.dtype)
         bytes_3D_array = bytes(self.input_3D_array)
         self.raw_filename_3D = 'test_3D_data.raw'

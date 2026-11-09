@@ -2,13 +2,15 @@ name: cilviewer_webapp
 channels:
   - conda-forge
 dependencies:
-  - python==3.9
+  - python==3.13
   - matplotlib # Optional for more colormaps
   - h5py
   - pip
   - schema
   - pyyaml
+  - vtk
   - pip:
     # Have to install Trame via pip due to unavailability on conda
     - trame <3, >=2.1.1  # Unpinned worked with version 2.1.1, should work with higher versions.
-    - vtk==9.1
+    - --extra-index-url https://wheels.vtk.org
+    - vtk

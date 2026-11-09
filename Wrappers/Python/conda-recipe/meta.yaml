@@ -20,7 +20,7 @@ test:
     - ccpi::cil-data=22.0.0
     - pillow
     - pytest
-    - pyside2
+    - pyside6
     - eqt>=2.0.0
   source_files:
     - ./Wrappers/Python/test
